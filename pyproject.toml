@@ -1,7 +1,95 @@
 [project]
-name = "bcw-reduction"
+name = "bcw"
 version = "0.1.0"
-description = "Add your description here"
+description = "Implementation of the Bass–Connell–Wright reduction of polynomial Keller maps."
 readme = "README.md"
 requires-python = ">=3.13"
-dependencies = []
+license = { text = "MIT" }
+
+authors = [
+    { name = "Raphael" }
+]
+
+keywords = [
+    "jacobian conjecture",
+    "polynomial maps",
+    "sympy",
+    "computer algebra",
+    "algebraic geometry"
+]
+
+classifiers = [
+    "Development Status :: 2 - Pre-Alpha",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Scientific/Engineering :: Mathematics"
+]
+
+dependencies = [
+    "sympy>=1.13",
+]
+
+[dependency-groups]
+dev = [
+    "pytest>=8",
+    "pytest-cov>=6",
+    "ruff>=0.12",
+    "mypy>=1.17",
+    "black>=25",
+    "ipykernel>=6",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
+[tool.ruff]
+line-length = 88
+target-version = "py313"
+
+[tool.ruff.lint]
+select = [
+    "E",
+    "F",
+    "I",
+    "UP",
+    "B",
+]
+
+ignore = [
+]
+
+[tool.black]
+line-length = 88
+target-version = ["py313"]
+
+[tool.mypy]
+python_version = "3.13"
+strict = true
+
+[tool.coverage.run]
+source = ["src/bcw"]
+
+[tool.coverage.report]
+show_missing = true
+skip_covered = true
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project.optional-dependencies]
+docs = [
+    "sphinx",
+    "furo",
+]
+
+notebooks = [
+    "jupyterlab",
+    "matplotlib",
+]
+
+latex = [
+    "pylatex",
+]
