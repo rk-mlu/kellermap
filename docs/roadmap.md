@@ -19,7 +19,8 @@ state.
 - composition
 - Jacobian
 - determinant
-- degree
+- degree and order
+- displacement and filtration degree (`MA^d`)
 - stable extension
 
 ### Quality
@@ -93,8 +94,17 @@ Tasks
 - search strategies
 - pruning
 
-Benchmark against the current reference instance
-(currently dimension 39).
+Benchmark against the published reductions of Alpöge's counterexample.
+
+As of July 2026 the reported cubic homogeneous results are dimension 19
+(Tao, "A digestion of the Jacobian conjecture counterexample"), dimension 24
+(Secret Blogging Seminar), and dimension 79 for a deliberately conservative
+tracking of the reduction (Long, arXiv:2607.18186). The earlier internal
+estimate of dimension 39 is obsolete.
+
+Reproducing dimension 19 and 24 with verified certificates is the correctness
+target for this milestone. Undercutting them is a secondary goal: the value
+this project adds is the machine-checkable derivation, not the dimension.
 
 This milestone targets scientific improvements rather than software features.
 

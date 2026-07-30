@@ -77,8 +77,14 @@ Responsibilities:
 - composition
 - Jacobian matrix
 - Jacobian determinant
-- degree
+- degree and order
+- displacement `F - X` and filtration degree
 - stable extension
+
+Degree and order are always taken with respect to the map's own variables.
+A symbol that is not one of them — an indeterminate `T` as in `MA_n(k[T])`, or
+a symbolic coefficient — belongs to the coefficient domain and must not
+contribute. Section 4 of BCW depends on this distinction.
 
 The public interface is independent of the internal polynomial
 representation.
@@ -96,6 +102,39 @@ Responsibilities:
 - composition
 
 Every elementary automorphism must be explicitly invertible.
+
+---
+
+## Filtration
+
+Bass–Connell–Wright filter the monoid by the order of the displacement:
+
+    F ∈ MA^d_n(k)   ⟺   ord(F - X) > d
+
+and put
+
+    EA^d_n(k) = EA_n(k) ∩ MA^d_n(k).
+
+The distinction is not cosmetic. Proposition (3.1) places `G` and `H` in
+`EA^1` during degree reduction, but only in `EA^0` once `H` is allowed to make
+`F'` linear in each variable, because the factorization `aM = PQ` may then
+produce a linear `P`. Section 4 correspondingly uses `G(T), H(T)` in
+`EA^0_2n(k[T])`.
+
+A reduction step must therefore record which filtration level it establishes,
+not merely that its elementary factors are invertible.
+
+`PolynomialMap` exposes this as
+
+```
+order()
+displacement()
+filtration_degree()
+is_in_MA(d)
+```
+
+where `filtration_degree()` is `ord(F - X) - 1`, so that the identity lies in
+every `MA^d`.
 
 ---
 
@@ -127,6 +166,12 @@ which checks
 - the polynomial identity
 - equality of Jacobian determinants
 - invertibility of G and H
+- the filtration level of G and H, as the step requires
+
+The determinant check is a cheap consistency check rather than an independent
+condition: elementary automorphisms have Jacobian determinant 1, so equality
+follows from the other checks. It is kept because it is nearly free and
+catches implementation errors early.
 
 A verified BCWStep is considered a complete proof certificate for one
 reduction step.
@@ -208,6 +253,18 @@ Verify complete reduction sequences.
 
 Known benchmark examples from the literature are preserved to guarantee that
 future optimizations never change mathematical correctness.
+
+The current benchmark is Alpöge's counterexample to the Jacobian Conjecture
+(dimension 3, degree 7, announced July 2026). The regression test asserts the
+two properties that carry mathematical content:
+
+- the Jacobian determinant is constant and invertible, so the map is Keller,
+- three pairwise distinct rational points share an image, so the map is not
+  injective and therefore not an automorphism.
+
+Dimension and degree are checked separately as characteristic numbers. They
+are not evidence: a test asserting only degree 7 and determinant -2 would pass
+for a tame automorphism as well and would prove nothing about the example.
 
 ---
 

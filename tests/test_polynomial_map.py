@@ -2,6 +2,7 @@ import math
 
 import pytest
 import sympy as sp
+
 from bcw import PolynomialMap
 
 
