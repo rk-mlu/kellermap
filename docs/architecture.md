@@ -1,199 +1,219 @@
-# Software Architecture
+# Architecture
 
-## Design Philosophy
+## Overview
 
-The implementation follows the mathematical structure of the proof by
-Bass–Connell–Wright rather than viewing the reduction as a purely symbolic
-algorithm.
+The goal of **bcw** is to construct and verify Bass–Connell–Wright (BCW)
+reductions of polynomial maps with constant Jacobian determinant.
 
-Every mathematical object appearing in the proof is represented by a dedicated
-Python class.
+The central design principle is that every reduction step produces a
+**machine-verifiable certificate**.
 
-The implementation therefore mirrors the mathematical notation as closely as
-possible.
+Rather than proving correctness globally, the reduction is decomposed into
+independent local transformations. Each transformation is verified by checking
+explicit polynomial identities. The correctness of a complete reduction follows
+immediately by induction over the sequence of verified steps.
 
 ---
 
-# High-Level Overview
+## Design Principles
+
+The implementation follows five guiding principles.
+
+1. **Mathematical correctness**
+
+   Every transformation must preserve the mathematical meaning of the map.
+   Verification has higher priority than execution speed.
+
+2. **Immutable objects**
+
+   Mathematical objects are immutable whenever possible.
+
+3. **Local verification**
+
+   Every reduction step carries its own proof certificate.
+
+4. **Backend independence**
+
+   The public API must not depend on the internal polynomial representation.
+
+5. **Extensibility**
+
+   New reduction strategies and polynomial backends should be easy to add.
+
+---
+
+## Main Objects
 
 ```
 PolynomialMap
         │
         │
-        ├──────────────┐
-        │              │
-        ▼              ▼
-Elementary      StableExtension
-Automorphism
+ElementaryAutomorphism
         │
-        ▼
-BCWStep
         │
-        ▼
-BCWHistory
+      BCWStep
         │
-        ▼
-BCWReducer
+        │
+     Reduction
 ```
 
 ---
-
-# Package Structure
-
-```
-src/bcw/
-
-    algebra/
-
-        polynomial_map.py
-        automorphism.py
-
-    reduction/
-
-        term.py
-        factorization.py
-        step.py
-        reducer.py
-        history.py
-
-    verification/
-
-        verify.py
-
-    output/
-
-        latex.py
-        pretty.py
-```
-
----
-
-# Core Classes
 
 ## PolynomialMap
 
-Represents a polynomial mapping
+Represents a polynomial map
 
-\[
-F : K^n \rightarrow K^m.
-\]
+    F : Kⁿ → Kⁿ
 
-Responsibilities
+Version 0.1 intentionally models polynomial endomorphisms.
 
+Future versions may generalize this to arbitrary polynomial maps
+
+    Kⁿ → Kᵐ.
+
+Responsibilities:
+
+- evaluation
 - composition
-- Jacobian
-- determinant
+- Jacobian matrix
+- Jacobian determinant
 - degree
-- substitution
 - stable extension
+
+The public interface is independent of the internal polynomial
+representation.
 
 ---
 
 ## ElementaryAutomorphism
 
-Represents elementary polynomial automorphisms
+Represents an elementary polynomial automorphism.
 
-\[
-x_i
-\mapsto
-x_i+p(x).
-\]
+Responsibilities:
 
-Responsibilities
+- evaluation
+- inverse
+- composition
 
-- construction
-- inversion
-- verification
-
----
-
-## Term
-
-Represents one monomial term
-
-\[
-aM.
-\]
-
----
-
-## Factorization
-
-Stores
-
-\[
-aM=P\,Q.
-\]
-
-Responsibilities
-
-- factors
-- degree
-- verification
+Every elementary automorphism must be explicitly invertible.
 
 ---
 
 ## BCWStep
 
-Represents exactly one application of Proposition 3.1.
+The fundamental building block of the project.
 
-Contains
+A BCW step stores
 
-- original map
-- transformed map
-- chosen coordinate
-- chosen monomial
-- factorization
-- automorphisms
+- the original map
+- the transformed map
+- the left elementary automorphism
+- the right elementary automorphism
 
----
+such that
 
-## BCWHistory
+    F' = G ∘ F[m] ∘ H
 
-Stores an entire reduction.
+holds.
 
-Responsibilities
+The class provides
 
-- ordered list of BCWStep objects
-- verification
-- LaTeX export
-- pretty printing
+```
+verify()
+```
 
----
+which checks
 
-## BCWReducer
+- the polynomial identity
+- equality of Jacobian determinants
+- invertibility of G and H
 
-Implements the complete reduction algorithm.
-
-Responsibilities
-
-- selecting terms
-- selecting factorizations
-- performing BCW steps
-- termination
+A verified BCWStep is considered a complete proof certificate for one
+reduction step.
 
 ---
 
-# Mathematical Invariants
+## Reduction
 
-Every BCWStep preserves
+Represents a complete BCW reduction.
 
-- stable equivalence
-- Jacobian determinant
-- Keller property
+Internally
 
-The implementation will provide verification methods for these invariants.
+```
+steps : list[BCWStep]
+```
+
+Verification consists simply of
+
+```
+all(step.verify() for step in steps)
+```
+
+The mathematical correctness of the whole reduction follows immediately from
+the correctness of every individual step.
 
 ---
 
-# Development Strategy
+## Variable Management
 
-The implementation proceeds in the following order.
+Stable extensions introduce fresh variables.
 
-1. Algebra
-2. Elementary automorphisms
-3. BCW step
-4. Complete reduction
-5. Verification
-6. LaTeX export
-7. Optimisation
+Variable creation is delegated to a dedicated
+
+```
+VariableFactory
+```
+
+(or a future ReductionContext)
+
+to guarantee globally unique variable names during long reduction sequences.
+
+---
+
+## Polynomial Backend
+
+The public API deliberately hides the concrete polynomial representation.
+
+Version 0.1 uses SymPy expressions.
+
+Future implementations may use
+
+- sympy.polys.rings
+- python-flint
+- Singular
+
+without changing the public interface.
+
+---
+
+## Testing Strategy
+
+Testing is divided into three levels.
+
+### Unit tests
+
+Verify individual mathematical objects.
+
+Examples:
+
+- PolynomialMap
+- ElementaryAutomorphism
+- BCWStep
+
+### Integration tests
+
+Verify complete reduction sequences.
+
+### Regression tests
+
+Known benchmark examples from the literature are preserved to guarantee that
+future optimizations never change mathematical correctness.
+
+---
+
+## Performance
+
+Performance optimizations must never affect correctness.
+
+Optimizations should be confined to the polynomial backend so that the public
+API remains stable.

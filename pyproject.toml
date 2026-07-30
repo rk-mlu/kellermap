@@ -1,5 +1,5 @@
 [project]
-name = "bcw"
+name = "bcw-reduction"
 version = "0.1.0"
 description = "Implementation of the Bass–Connell–Wright reduction of polynomial Keller maps."
 readme = "README.md"
@@ -97,3 +97,6 @@ notebooks = [
 latex = [
     "pylatex",
 ]
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/bcw"]

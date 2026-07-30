@@ -1,70 +1,159 @@
-# Development Roadmap
+# Roadmap
 
-## Version 0.1
+The project follows an incremental development strategy.
+Every milestone should leave the repository in a fully functional and tested
+state.
 
-### Algebra
+---
+
+# Version 0.1
+
+## Core mathematical objects
 
 - PolynomialMap
-- Composition
+- ElementaryAutomorphism
+
+### Features
+
+- evaluation
+- composition
 - Jacobian
-- Stable extension
+- determinant
+- degree
+- stable extension
+
+### Quality
+
+- complete unit tests
+- mypy
+- ruff
+- black
+- documentation
 
 ---
 
-## Version 0.2
+# Version 0.2
 
-### Elementary Automorphisms
+## Verification framework
 
-- shift maps
-- inverse maps
-- verification
+Introduce
 
----
+- BCWStep
+- Reduction
+- VariableFactory
 
-## Version 0.3
+Implement
 
-### BCW Step
+```
+BCWStep.verify()
+```
 
-Implementation of Proposition 3.1.
+Verification checks
 
----
+- polynomial identity
 
-## Version 0.4
+      F' = G ∘ F[m] ∘ H
 
-### Complete Reduction
+- equality of Jacobian determinants
 
-Recursive reduction to degree three.
+- invertibility of elementary automorphisms
 
----
-
-## Version 0.5
-
-### History Objects
-
-Recording all reduction steps.
+At this point the project can already produce machine-verifiable proof
+certificates.
 
 ---
 
-## Version 0.6
+# Version 0.3
 
-### Verification
+## BCW reduction
 
-Automatic verification of
+Implement
 
-- Jacobian determinant
-- factorisations
-- stable equivalence
+- degree reduction
+- elementary transformations
+- stable extension
+- complete reduction pipeline
 
----
+Goal:
 
-## Version 0.7
-
-### LaTeX Export
-
-Automatic generation of mathematical reports.
+Produce verified reductions for examples from the literature.
 
 ---
 
-## Version 1.0
+# Version 0.4
 
-First stable release.
+## Reduction heuristics
+
+Develop heuristics for selecting reduction steps.
+
+Tasks
+
+- candidate generation
+- ranking heuristics
+- search strategies
+- pruning
+
+Benchmark against the current reference instance
+(currently dimension 39).
+
+This milestone targets scientific improvements rather than software features.
+
+---
+
+# Version 0.5
+
+## Polynomial backend
+
+Introduce an abstraction layer for polynomial arithmetic.
+
+Initially support
+
+- SymPy expressions
+
+Evaluate alternative implementations
+
+- sympy.polys.rings
+- python-flint
+- Singular
+
+The public API must remain unchanged.
+
+---
+
+# Version 0.6
+
+## Complete verification framework
+
+Large-scale regression tests.
+
+Benchmark suite.
+
+Performance evaluation.
+
+Verified reduction certificates for large examples.
+
+---
+
+# Version 0.7
+
+## User experience
+
+History management.
+
+LaTeX export.
+
+Visualization.
+
+Command-line improvements.
+
+Documentation.
+
+---
+
+# Long-term Goals
+
+- dimensions well beyond the current benchmark
+- interchangeable polynomial backends
+- reproducible reduction certificates
+- publishable benchmark results
+- automated verification of complete BCW reductions
