@@ -1,6 +1,8 @@
 from __future__ import annotations
 
+from collections.abc import Iterable
 from dataclasses import dataclass
+from typing import cast
 
 import sympy as sp
 
@@ -11,7 +13,9 @@ class PolynomialMap:
     variables: tuple[sp.Symbol, ...]
     components: sp.Matrix
 
-    def __init__(self, variables, components):
+    def __init__(
+        self, variables: Iterable[sp.Symbol], components: Iterable[sp.Expr]
+    ) -> None:
 
         self.variables = tuple(variables)
         self.components = sp.Matrix(components)
@@ -20,7 +24,7 @@ class PolynomialMap:
             raise ValueError("Number of variables and components differ.")
 
     @property
-    def dimension(self):
+    def dimension(self) -> int:
 
         return len(self.variables)
 
@@ -48,7 +52,7 @@ class PolynomialMap:
 
     def degree(self) -> int:
 
-        return max(sp.total_degree(f) for f in self.components)
+        return cast(int, max(sp.total_degree(f) for f in self.components))
 
     def extend(self, number: int = 2) -> PolynomialMap:
 
@@ -72,6 +76,6 @@ class PolynomialMap:
 
         return sp.Matrix([f.subs(subs) for f in self.components])
 
-    def __repr__(self):
+    def __repr__(self) -> str:
 
         return f"PolynomialMap(" f"{self.components})"
