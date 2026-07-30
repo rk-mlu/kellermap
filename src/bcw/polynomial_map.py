@@ -24,7 +24,7 @@ class PolynomialMap:
 
         return len(self.variables)
 
-    def compose(self, other):
+    def compose(self, other: PolynomialMap) -> PolynomialMap:
         """
         self ∘ other
         """
@@ -38,19 +38,19 @@ class PolynomialMap:
 
         return PolynomialMap(other.variables, new)
 
-    def jacobian(self):
+    def jacobian(self) -> sp.Matrix:
 
         return self.components.jacobian(self.variables)
 
-    def determinant(self):
+    def determinant(self) -> sp.Expr:
 
         return sp.expand(self.jacobian().det())
 
-    def degree(self):
+    def degree(self) -> int:
 
         return max(sp.total_degree(f) for f in self.components)
 
-    def extend(self, number=2):
+    def extend(self, number: int = 2) -> PolynomialMap:
 
         vars = list(self.variables)
         comps = list(self.components)
@@ -66,7 +66,7 @@ class PolynomialMap:
 
         return PolynomialMap(vars, comps)
 
-    def __call__(self, *args):
+    def __call__(self, *args: sp.Expr) -> sp.Matrix:
 
         subs = dict(zip(self.variables, args, strict=True))
 
