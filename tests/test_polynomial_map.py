@@ -44,6 +44,20 @@ def test_degree(F: PolynomialMap) -> None:
     assert F.degree() == 1
 
 
+def test_degree_of_mixed_map() -> None:
+    x, y = sp.symbols("x y")
+
+    F = PolynomialMap(
+        (x, y),
+        (
+            x**3 + y**5,
+            x**7,
+        ),
+    )
+
+    assert F.degree() == 7
+
+
 def test_compose(F: PolynomialMap) -> None:
     x, y = F.variables
     G = PolynomialMap((x, y), (x * y, x))
@@ -94,8 +108,28 @@ def test_call_wrong_arity(F: PolynomialMap) -> None:
         F(sp.Integer(1))
 
 
+def test_call_symbolic(F: PolynomialMap) -> None:
+    a, b = sp.symbols("a b")
+
+    assert F(a, b) == sp.Matrix([a + b, a - b])
+
+
 def test_repr(F: PolynomialMap) -> None:
     assert repr(F).startswith("PolynomialMap(")
+
+
+def test_order_of_mixed_map() -> None:
+    x, y = sp.symbols("x y")
+
+    F = PolynomialMap(
+        (x, y),
+        (
+            x**3 + y**5,
+            x**7,
+        ),
+    )
+
+    assert F.order() == 3
 
 
 def test_frozen(F: PolynomialMap) -> None:
@@ -110,6 +144,16 @@ def test_hashable(F: PolynomialMap) -> None:
     assert len({F, F}) == 1
 
 
+def test_cached_matrix_does_not_change_hash(F: PolynomialMap) -> None:
+    before = hash(F)
+
+    _ = F.matrix
+
+    after = hash(F)
+
+    assert before == after
+
+
 # --------------------------------------------------------------------------
 # Validierung
 # --------------------------------------------------------------------------
@@ -119,6 +163,20 @@ def test_length_mismatch() -> None:
     x, y = sp.symbols("x y")
     with pytest.raises(ValueError, match="differ"):
         PolynomialMap((x, y), (x + y,))
+
+
+def test_determinant_need_not_be_constant() -> None:
+    x, y = sp.symbols("x y")
+
+    F = PolynomialMap(
+        (x, y),
+        (
+            x**2,
+            y,
+        ),
+    )
+
+    assert sp.expand(F.determinant() - 2 * x) == 0
 
 
 def test_duplicate_variables() -> None:
@@ -139,6 +197,36 @@ def test_compose_requires_same_variables() -> None:
     G = PolynomialMap((u, v), (u, v))
     with pytest.raises(ValueError, match="different variables"):
         F.compose(G)
+
+
+def test_compose_is_associative() -> None:
+    x, y = sp.symbols("x y")
+
+    F = PolynomialMap((x, y), (x + y, x - y))
+    G = PolynomialMap((x, y), (x**2, x + y))
+    H = PolynomialMap((x, y), (y, x))
+
+    left = F.compose(G).compose(H)
+    right = F.compose(G.compose(H))
+
+    assert all(
+        sp.expand(a - b) == 0
+        for a, b in zip(left.components, right.components, strict=True)
+    )
+
+
+def test_matrix_is_column_vector(F: PolynomialMap) -> None:
+    assert F.matrix.rows == F.dimension
+    assert F.matrix.cols == 1
+
+
+def test_compose_does_not_substitute_recursively() -> None:
+    x, y = sp.symbols("x y")
+
+    F = PolynomialMap((x, y), (x, y))
+    G = PolynomialMap((x, y), (y, x + 1))
+
+    assert F.compose(G).components == (y, x + 1)
 
 
 # --------------------------------------------------------------------------
@@ -233,6 +321,22 @@ def test_bcw_H_lies_only_in_MA0_when_P_is_linear() -> None:
     assert H.filtration_degree() == 0
     assert H.is_in_MA(0)
     assert not H.is_in_MA(1)
+
+
+def test_bcw_G_not_in_MA2() -> None:
+    X1, X2, X3, X4 = sp.symbols("X1 X2 X3 X4")
+
+    G = PolynomialMap(
+        (X1, X2, X3, X4),
+        (
+            X1 - X3 * X4,
+            X2,
+            X3,
+            X4,
+        ),
+    )
+
+    assert not G.is_in_MA(2)
 
 
 # --------------------------------------------------------------------------
