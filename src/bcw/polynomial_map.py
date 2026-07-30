@@ -1,14 +1,14 @@
 from __future__ import annotations
 
+import math
 from collections.abc import Iterable
 from dataclasses import dataclass
 from functools import cached_property
-from typing import cast
 
 import sympy as sp
 
 
-@dataclass(frozen=True, slots=True)
+@dataclass(frozen=True)
 class PolynomialMap:
     """
     A polynomial map F : Kⁿ → Kⁿ.
@@ -65,7 +65,7 @@ class PolynomialMap:
         substitutions = dict(zip(self.variables, other.components, strict=True))
 
         components = tuple(
-            component.subs(substitutions) for component in self.components
+            component.xreplace(substitutions) for component in self.components
         )
 
         return PolynomialMap(
@@ -81,9 +81,59 @@ class PolynomialMap:
         """Return the Jacobian determinant."""
         return sp.expand(self.jacobian().det())
 
+    def _poly(self, component: sp.Expr) -> sp.Poly:
+        """Return a component as a polynomial in ``self.variables``.
+
+        Symbols that are not among ``self.variables`` (an indeterminate ``T``,
+        a symbolic coefficient) end up in the coefficient domain and therefore
+        do not contribute to degree or order.
+        """
+        return sp.Poly(component, *self.variables)
+
     def degree(self) -> int:
-        """Return the degree of the polynomial map."""
-        return cast(int, max(sp.total_degree(f) for f in self.components))
+        """Return the total degree of the map with respect to its variables.
+
+        The degree of the zero map is ``0`` by SymPy convention.
+        """
+        return max(int(self._poly(f).total_degree()) for f in self.components)
+
+    def order(self) -> int | float:
+        """Return the order: the lowest total degree occurring in the map.
+
+        The order of the zero map is ``math.inf``.
+        """
+        orders = [
+            min(sum(monomial) for monomial in poly.monoms())
+            for f in self.components
+            if not (poly := self._poly(f)).is_zero
+        ]
+
+        return min(orders) if orders else math.inf
+
+    def displacement(self) -> PolynomialMap:
+        """Return ``F - X``."""
+        return PolynomialMap(
+            self.variables,
+            tuple(
+                sp.expand(component - variable)
+                for component, variable in zip(
+                    self.components, self.variables, strict=True
+                )
+            ),
+        )
+
+    def filtration_degree(self) -> int | float:
+        """Return the largest ``d`` with ``F`` in ``MA^d``.
+
+        Bass–Connell–Wright filter ``MA_n(k)`` by the order of ``F - X``:
+        ``F`` lies in ``MA^d_n(k)`` exactly when ``ord(F - X) > d``. The
+        identity therefore lies in every ``MA^d`` and returns ``math.inf``.
+        """
+        return self.displacement().order() - 1
+
+    def is_in_MA(self, d: int) -> bool:  # noqa: N802
+        """Return whether the map lies in ``MA^d``."""
+        return self.filtration_degree() >= d
 
     def extend(self, number: int = 2) -> PolynomialMap:
         """Extend the polynomial map by the identity."""
@@ -105,7 +155,7 @@ class PolynomialMap:
 
         substitutions = dict(zip(self.variables, args, strict=True))
 
-        return self.matrix.subs(substitutions)
+        return self.matrix.xreplace(substitutions)
 
     def __repr__(self) -> str:
         return (
