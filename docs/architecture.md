@@ -24,21 +24,26 @@ The implementation follows five guiding principles.
    Every transformation must preserve the mathematical meaning of the map.
    Verification has higher priority than execution speed.
 
-2. **Immutable objects**
+2. **Immutable mathematical objects**
 
-   Mathematical objects are immutable whenever possible.
+   Public mathematical objects are immutable whenever possible. Internally,
+   mutable low-level objects are never shared with callers.
 
 3. **Local verification**
 
    Every reduction step carries its own proof certificate.
 
-4. **Backend independence**
+4. **Sparse polynomial arithmetic**
 
-   The public API must not depend on the internal polynomial representation.
+   Polynomial arithmetic is performed in
+   `sympy.polys.rings.PolyRing`. General SymPy expressions are restricted to
+   the input and output boundary.
 
-5. **Extensibility**
+5. **Measured optimization**
 
-   New reduction strategies and polynomial backends should be easy to add.
+   Additional arithmetic kernels or external dependencies are considered only
+   after reproducible benchmarks show that the PolyRing implementation is
+   insufficient.
 
 ---
 
@@ -74,20 +79,75 @@ Future versions may generalize this to arbitrary polynomial maps
 Responsibilities:
 
 - evaluation
-- composition
+- simultaneous composition
 - Jacobian matrix
 - Jacobian determinant
 - degree and order
 - displacement `F - X` and filtration degree
 - stable extension
 
-Degree and order are always taken with respect to the map's own variables.
-A symbol that is not one of them — an indeterminate `T` as in `MA_n(k[T])`, or
-a symbolic coefficient — belongs to the coefficient domain and must not
-contribute. Section 4 of BCW depends on this distinction.
+### Public boundary
 
-The public interface is independent of the internal polynomial
-representation.
+The constructor accepts
+
+- a tuple or iterable of SymPy `Symbol` objects,
+- a tuple or iterable of polynomial SymPy `Expr` objects.
+
+The public properties `variables`, `components`, `matrix`, `jacobian()`, and
+`determinant()` expose immutable SymPy objects suitable for inspection,
+printing, testing, and LaTeX output.
+
+### Internal representation
+
+Internally a map stores
+
+```
+PolyRing
+private tuple[PolyElement, ...]
+```
+
+The ring is constructed with the map variables as generators. Every other
+symbol occurring in a component belongs to the coefficient domain. Thus an
+indeterminate `T` in `MA_n(k[T])`, or a symbolic coefficient, does not
+contribute to degree or order.
+
+`PolyElement` inherits from `dict` and is mutable. Therefore:
+
+- coordinate polynomials remain private,
+- the expression-level constructor copies its internal polynomials,
+- `from_ring()` copies all supplied polynomials,
+- `to_polynomials()` returns defensive copies.
+
+This preserves the value semantics of the frozen `PolynomialMap` class.
+
+### Composition
+
+For maps over the same ring, composition uses the simultaneous multivariate
+substitution implemented by `PolyElement.compose()`.
+
+If two maps have the same generators but compatible, different coefficient
+domains, they are first coerced into a common `PolyRing`. The usual reduction
+pipeline should keep all related maps in one ring so that this fallback remains
+exceptional.
+
+### Jacobian and determinant
+
+Partial derivatives are computed directly on sparse `PolyElement` objects.
+The public Jacobian is converted to an expression-valued SymPy matrix only at
+the output boundary.
+
+The determinant is computed by a `DomainMatrix` over the polynomial-ring
+domain. It must not be computed by first expanding a general expression-valued
+matrix.
+
+### Degree and order
+
+Degree and order are obtained directly from exponent tuples in the sparse
+monomial support:
+
+- `degree()` is the largest total degree,
+- `order()` is the smallest occurring total degree,
+- the zero map has degree `0` and order `math.inf`.
 
 ---
 
@@ -100,8 +160,10 @@ Responsibilities:
 - evaluation
 - inverse
 - composition
+- conversion to `PolynomialMap`
 
-Every elementary automorphism must be explicitly invertible.
+Every elementary automorphism must be explicitly invertible and must use the
+same `PolyRing` context as the map on which it acts.
 
 ---
 
@@ -140,41 +202,40 @@ every `MA^d`.
 
 ## BCWStep
 
-The fundamental building block of the project.
+The fundamental certificate object of the project.
 
 A BCW step stores
 
-- the original map
-- the transformed map
-- the left elementary automorphism
-- the right elementary automorphism
+- the original map,
+- the transformed map,
+- the left elementary automorphism,
+- the right elementary automorphism,
+- the number of stabilization variables,
+- the required filtration levels.
 
-such that
+It certifies the identity
 
-    F' = G ∘ F[m] ∘ H
+    F' = G ∘ F[m] ∘ H.
 
-holds.
-
-The class provides
+The method
 
 ```
 verify()
 ```
 
-which checks
+checks
 
-- the polynomial identity
-- equality of Jacobian determinants
-- invertibility of G and H
-- the filtration level of G and H, as the step requires
+- the polynomial identity in the common `PolyRing`,
+- invertibility of `G` and `H`,
+- the required filtration levels,
+- equality of Jacobian determinants as a consistency check.
 
-The determinant check is a cheap consistency check rather than an independent
-condition: elementary automorphisms have Jacobian determinant 1, so equality
-follows from the other checks. It is kept because it is nearly free and
-catches implementation errors early.
+The determinant equality is not an independent proof obligation: elementary
+automorphisms have determinant one. It is retained because it catches
+implementation errors early when it is computationally cheap.
 
-A verified BCWStep is considered a complete proof certificate for one
-reduction step.
+A verified `BCWStep` is a complete proof certificate for one local
+transformation.
 
 ---
 
@@ -185,92 +246,123 @@ Represents a complete BCW reduction.
 Internally
 
 ```
-steps : list[BCWStep]
+steps: list[BCWStep]
 ```
 
-Verification consists simply of
-
-```
-all(step.verify() for step in steps)
-```
-
-The mathematical correctness of the whole reduction follows immediately from
-the correctness of every individual step.
+Verification consists of checking every step and the adjacency of consecutive
+maps. The mathematical correctness of the whole reduction follows by induction
+from the local certificates.
 
 ---
 
 ## Variable Management
 
-Stable extensions introduce fresh variables.
+Stable extensions introduce fresh generators and therefore create a new
+`PolyRing` containing the old generators and the new identity coordinates.
+Existing coordinate polynomials are transferred into the enlarged ring without
+passing through general expressions.
 
-Variable creation is delegated to a dedicated
+Version 0.1 creates deterministic names while avoiding collisions with
+
+- existing ring generators,
+- symbols in the coefficient domain.
+
+Version 0.2 delegates this responsibility to a dedicated
 
 ```
 VariableFactory
 ```
 
-(or a future ReductionContext)
-
-to guarantee globally unique variable names during long reduction sequences.
+or `ReductionContext`, ensuring reproducible names over complete reduction
+sequences.
 
 ---
 
-## Polynomial Backend
+## Polynomial Arithmetic Strategy
 
-The public API deliberately hides the concrete polynomial representation.
+`PolyRing` is the canonical polynomial representation of the project.
+`Expr` is not an alternative computational backend; it is an interchange and
+presentation format.
 
-Version 0.1 uses SymPy expressions.
+The core operations are implemented as follows:
 
-Future implementations may use
+| Operation | PolyRing primitive |
+| --- | --- |
+| addition and multiplication | `PolyElement` arithmetic |
+| simultaneous composition | `PolyElement.compose()` |
+| partial derivative | `PolyElement.diff()` |
+| degree and order | iteration over exponent tuples |
+| homogeneous parts | monomial support filtering |
+| Jacobian determinant | `DomainMatrix` over `PolyRing.to_domain()` |
+| conversion to output | `PolyElement.as_expr()` |
 
-- sympy.polys.rings
-- python-flint
-- Singular
-
-without changing the public interface.
+Potential future accelerators include python-flint or Singular. They are not
+planned as parallel public backends. They may be introduced behind the same
+polynomial-ring semantics only if benchmarks demonstrate a compelling need.
 
 ---
 
 ## Testing Strategy
 
-Testing is divided into three levels.
+Testing is divided into four levels.
 
 ### Unit tests
 
-Verify individual mathematical objects.
+Verify individual mathematical objects and backend invariants.
 
 Examples:
 
-- PolynomialMap
-- ElementaryAutomorphism
-- BCWStep
+- `PolynomialMap`
+- `ElementaryAutomorphism`
+- `BCWStep`
+- simultaneous composition
+- coefficient-domain handling
+- defensive copying of mutable `PolyElement` objects
+
+### Cross-representation tests
+
+For small examples, compare PolyRing results with independently computed SymPy
+expressions. These tests guard the conversion boundary and the custom
+integration with `DomainMatrix`.
 
 ### Integration tests
 
-Verify complete reduction sequences.
+Verify complete reduction sequences and their certificates.
 
-### Regression tests
+### Regression and benchmark tests
 
-Known benchmark examples from the literature are preserved to guarantee that
-future optimizations never change mathematical correctness.
+Known examples from the literature are preserved to guarantee that future
+optimizations never change mathematical correctness.
 
-The current benchmark is Alpöge's counterexample to the Jacobian Conjecture
-(dimension 3, degree 7, announced July 2026). The regression test asserts the
-two properties that carry mathematical content:
+The current small regression example checks a degree-seven map in dimension
+three by asserting both its constant Jacobian determinant and an explicit
+collision. The cubic Keller map in 19 variables described at
+`https://rhicksrad.github.io/jacobian-degree3/` is the first performance
+reference for sparse Jacobian and determinant computations.
 
-- the Jacobian determinant is constant and invertible, so the map is Keller,
-- three pairwise distinct rational points share an image, so the map is not
-  injective and therefore not an automorphism.
-
-Dimension and degree are checked separately as characteristic numbers. They
-are not evidence: a test asserting only degree 7 and determinant -2 would pass
-for a tame automorphism as well and would prove nothing about the example.
+Correctness tests and performance benchmarks remain separate: timing thresholds
+must not make the unit test suite machine-dependent.
 
 ---
 
 ## Performance
 
-Performance optimizations must never affect correctness.
+Performance work follows three rules.
 
-Optimizations should be confined to the polynomial backend so that the public
-API remains stable.
+1. Benchmark complete BCW-relevant operations, not isolated micro-operations
+   alone.
+2. Keep conversion between `Expr` and `PolyElement` outside timed inner loops.
+3. Avoid recomputing invariants that follow from verified elementary
+   transformations.
+
+The initial benchmark suite measures
+
+- construction from expressions,
+- composition,
+- Jacobian construction,
+- determinant computation,
+- degree and order,
+- stable extension,
+- verification of a complete BCW step.
+
+Results from the former expression implementation are retained as a baseline.
