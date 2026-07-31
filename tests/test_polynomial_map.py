@@ -111,6 +111,65 @@ def test_hashable(F: PolynomialMap) -> None:
 
 
 # --------------------------------------------------------------------------
+# Gleichheit und Hash
+#
+# eq=False im Dataclass-Dekorator: __eq__ und __hash__ sind handgeschrieben
+# und muessen deshalb eigens geprueft werden. len({F, F}) == 1 testet nur
+# Identitaet, nicht Gleichheit.
+# --------------------------------------------------------------------------
+
+
+def test_equal_maps_built_separately_compare_equal(F: PolynomialMap) -> None:
+    x, y = F.variables
+    twin = PolynomialMap((x, y), (x + y, x - y))
+
+    assert twin is not F
+    assert twin == F
+
+
+def test_equality_is_polynomial_not_syntactic(F: PolynomialMap) -> None:
+    """Der Normalisierung durch den PolyRing ist zu trauen."""
+    x, y = F.variables
+    unexpanded = PolynomialMap((x, y), ((x + y) * (x - y) / (x - y), x - y))
+
+    assert unexpanded == F
+
+
+def test_maps_differing_in_a_component_are_unequal(F: PolynomialMap) -> None:
+    x, y = F.variables
+
+    assert PolynomialMap((x, y), (x + y, x + y)) != F
+
+
+def test_maps_differing_in_the_variables_are_unequal() -> None:
+    """Gleiche Komponenten, andere Traegervariablen: verschiedene Abbildungen."""
+    x, y, u, v = sp.symbols("x y u v")
+
+    assert PolynomialMap((x, y), (x, y)) != PolynomialMap((u, v), (u, v))
+
+
+def test_variable_order_matters(F: PolynomialMap) -> None:
+    """(x, y) und (y, x) erzeugen verschiedene Ringe."""
+    x, y = F.variables
+
+    assert PolynomialMap((y, x), (x + y, x - y)) != F
+
+
+def test_equality_with_a_foreign_type_is_not_implemented(F: PolynomialMap) -> None:
+    assert F.__eq__(object()) is NotImplemented
+    assert F != object()
+
+
+def test_equal_maps_share_a_hash(F: PolynomialMap) -> None:
+    """Das Vertragsversprechen von __hash__: a == b impliziert hash(a) == hash(b)."""
+    x, y = F.variables
+    twin = PolynomialMap((x, y), (x + y, x - y))
+
+    assert hash(twin) == hash(F)
+    assert len({F, twin}) == 1
+
+
+# --------------------------------------------------------------------------
 # Validierung
 # --------------------------------------------------------------------------
 

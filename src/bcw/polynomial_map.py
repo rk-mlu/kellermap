@@ -152,7 +152,7 @@ class PolynomialMap:
     @property
     def dimension(self) -> int:
         """Return the dimension of the polynomial endomorphism."""
-        return self._ring.ngens
+        return int(self._ring.ngens)
 
     @cached_property
     def matrix(self) -> sp.Matrix:
@@ -200,7 +200,9 @@ class PolynomialMap:
 
         return PolynomialMap.from_ring(common_ring, components)
 
-    def _coerce_to_common_ring(self, other: PolynomialMap) -> tuple[
+    def _coerce_to_common_ring(
+        self, other: PolynomialMap
+    ) -> tuple[
         tuple[PolyElement, ...],
         tuple[PolyElement, ...],
         PolyRing,
@@ -314,7 +316,5 @@ class PolynomialMap:
 
     def __repr__(self) -> str:
         return (
-            "PolynomialMap("
-            f"variables={self.variables}, "
-            f"components={self.components})"
+            f"PolynomialMap(variables={self.variables}, components={self.components})"
         )
