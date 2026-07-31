@@ -1,15 +1,25 @@
 from __future__ import annotations
 
 import math
-from collections.abc import Iterable
+from collections.abc import Iterable, Sequence
 from dataclasses import dataclass
 from functools import cached_property
+from graphlib import CycleError, TopologicalSorter
 from typing import cast
 
 import sympy as sp
 from sympy.polys.matrices import DomainMatrix
 from sympy.polys.polyerrors import PolynomialError
 from sympy.polys.rings import PolyElement, PolyRing, sring
+
+from .variables import (
+    DEFAULT_VARIABLE_FACTORY,
+    VariableFactory,
+    reserved_names,
+)
+
+# Eine Matrix duenn besetzter Polynome, zeilenweise.
+Block = tuple[tuple["PolyElement", ...], ...]
 
 
 @dataclass(frozen=True, eq=False)
@@ -172,20 +182,189 @@ class PolynomialMap:
             [[entry.as_expr() for entry in row] for row in self._jacobian_polynomials]
         )
 
+    # ----------------------------------------------------------------------
+    # Jacobian determinant
+    # ----------------------------------------------------------------------
+
     @cached_property
-    def _determinant_polynomial(self) -> PolyElement:
-        domain = self._ring.to_domain()
+    def carrier_indices(self) -> tuple[int, ...]:
+        """Return coordinates spanning a unipotent block of the Jacobian.
+
+        An index ``i`` qualifies when ``dF_i/dX_i == 1`` and the dependencies
+        among the qualifying coordinates are acyclic. The induced block is
+        then ``I + L`` with ``L`` nilpotent, because an acyclic dependency
+        graph makes ``L`` permutation-similar to a strictly triangular matrix.
+
+        Stable extensions and elementary automorphisms produce exactly this
+        shape, so BCW-reduced maps carry a large unipotent block by
+        construction. The result is a valid, not necessarily maximal, such
+        set: breaking a cycle drops every coordinate on it.
+        """
+        rows = self._jacobian_polynomials
+        one = self._ring.one
+
+        candidates = {
+            index for index in range(self.dimension) if rows[index][index] == one
+        }
+
+        while candidates:
+            try:
+                TopologicalSorter(self._dependency_graph(candidates)).prepare()
+            except CycleError as error:
+                candidates -= set(error.args[1])
+            else:
+                break
+
+        return tuple(sorted(candidates))
+
+    def _dependency_graph(self, indices: Iterable[int]) -> dict[int, set[int]]:
+        """Return, for each of ``indices``, the others it differentiates against."""
+        rows = self._jacobian_polynomials
+        index_set = set(indices)
+
+        return {
+            index: {
+                other for other in index_set if other != index and rows[index][other]
+            }
+            for index in index_set
+        }
+
+    def _is_unipotent_block(self, indices: Sequence[int]) -> bool:
+        """Return whether ``J[indices, indices]`` is ``I + L`` with ``L`` nilpotent.
+
+        Nilpotency is decided on the dependency graph, not by taking powers:
+        an acyclic graph orders the block strictly triangular, so ``L`` raised
+        to the block size vanishes. That is a boolean test on monomial
+        supports and costs no polynomial arithmetic.
+        """
+        rows = self._jacobian_polynomials
+
+        if not all(rows[index][index] == self._ring.one for index in indices):
+            return False
+
+        try:
+            TopologicalSorter(self._dependency_graph(indices)).prepare()
+        except CycleError:
+            return False
+
+        return True
+
+    def _determinant_by_domain_matrix(self, block: Block) -> PolyElement:
+        """Return ``det(block)`` over the sparse polynomial-ring domain.
+
+        The empty matrix has determinant one; ``DomainMatrix`` does not
+        accept it.
+        """
+        if not block:
+            return self._ring.one
+
         matrix = DomainMatrix.from_list(
-            [list(row) for row in self._jacobian_polynomials],
-            domain,
+            [list(row) for row in block],
+            self._ring.to_domain(),
         )
         return cast(PolyElement, matrix.det())
+
+    def _schur_complement(self, carrier: Sequence[int]) -> Block | None:
+        """Return ``A - B D^-1 C`` for the split induced by ``carrier``.
+
+        With ``D = I + L`` unipotent, the block determinant formula
+
+            det J = det(D) * det(A - B D^-1 C) = det(A - B D^-1 C)
+
+        replaces an ``n x n`` determinant by one of size ``n - len(carrier)``.
+
+        Only ``D^-1 C`` is formed, never ``D^-1``: the Neumann series
+        ``sum_k (-L)^k C`` keeps every intermediate result as narrow as the
+        head block.
+
+        ``None`` signals that ``carrier`` does not induce a unipotent block.
+        The precondition is checked here and not merely inherited from
+        ``carrier_indices``, because the identity above needs ``det(D) = 1``.
+        Terminating the series is not evidence for that: with an empty head
+        block the series terminates immediately whatever ``L`` is, and the
+        empty Schur complement would then claim determinant one for a map
+        whose determinant is anything at all.
+        """
+        if not self._is_unipotent_block(carrier):
+            return None
+
+        rows = self._jacobian_polynomials
+        carrier_set = set(carrier)
+        head = tuple(i for i in range(self.dimension) if i not in carrier_set)
+
+        displacement = tuple(
+            tuple(
+                rows[i][j] - self._ring.one if i == j else rows[i][j] for j in carrier
+            )
+            for i in carrier
+        )
+        lower_right = tuple(tuple(rows[i][j] for j in head) for i in carrier)
+
+        # L^len(carrier) = 0 by the precondition, so the loop always breaks.
+        solution = lower_right
+        term = lower_right
+        for _ in range(len(carrier)):
+            term = self._negated_product(displacement, term)
+            if not any(entry for row in term for entry in row):
+                break
+            solution = tuple(
+                tuple(a + b for a, b in zip(left, right, strict=True))
+                for left, right in zip(solution, term, strict=True)
+            )
+
+        upper_right = tuple(tuple(rows[i][j] for j in carrier) for i in head)
+        correction = self._product(upper_right, solution)
+
+        return tuple(
+            tuple(rows[i][j] - entry for j, entry in zip(head, row, strict=True))
+            for i, row in zip(head, correction, strict=True)
+        )
+
+    @staticmethod
+    def _product(left: Block, right: Block) -> Block:
+        """Return the matrix product, computed on sparse polynomials."""
+        if not left or not right:
+            return tuple(() for _ in left)
+
+        width = len(right[0])
+        return tuple(
+            tuple(
+                sum(
+                    (row[k] * right[k][j] for k in range(len(right))),
+                    right[0][0].ring.zero,
+                )
+                for j in range(width)
+            )
+            for row in left
+        )
+
+    @classmethod
+    def _negated_product(cls, left: Block, right: Block) -> Block:
+        return tuple(
+            tuple(-entry for entry in row) for row in cls._product(left, right)
+        )
+
+    @cached_property
+    def _determinant_polynomial(self) -> PolyElement:
+        carrier = self.carrier_indices
+
+        if carrier:
+            schur_complement = self._schur_complement(carrier)
+            if schur_complement is not None:
+                return self._determinant_by_domain_matrix(schur_complement)
+
+        return self._determinant_by_domain_matrix(self._jacobian_polynomials)
 
     def determinant(self) -> sp.Expr:
         """Return the Jacobian determinant.
 
         The determinant is computed over the sparse polynomial-ring domain,
         not through an expression-valued SymPy matrix.
+
+        Where the Jacobian has a unipotent block -- which BCW-reduced maps
+        always do -- the computation is reduced to the Schur complement of
+        that block. An elementary automorphism is unipotent throughout, so
+        its determinant is one by structure rather than by expansion.
         """
         return self._determinant_polynomial.as_expr()
 
@@ -263,14 +442,31 @@ class PolynomialMap:
         """Return whether the map lies in ``MA^d``."""
         return self.filtration_degree() >= d
 
-    def extend(self, number: int = 2) -> PolynomialMap:
-        """Extend the map by ``number`` identity coordinates."""
+    def extend(
+        self,
+        number: int = 2,
+        factory: VariableFactory | None = None,
+    ) -> PolynomialMap:
+        """Extend the map by ``number`` identity coordinates.
+
+        ``factory`` names the new generators; see
+        :class:`~bcw.variables.VariableFactory` for the purity requirement it
+        must satisfy. Passing one explicitly is how an identity such as
+
+            (F o G)^[m] = F^[m] o G^[m]
+
+        states that all three extensions share a naming policy, instead of
+        relying on equal-dimensional maps happening to agree.
+        """
         if number < 0:
             raise ValueError("The extension size must be non-negative.")
         if number == 0:
             return self
 
-        new_variables = self._fresh_variables(number)
+        make_variables = DEFAULT_VARIABLE_FACTORY if factory is None else factory
+        new_variables = make_variables(self._ring, number)
+        self._validate_fresh_variables(new_variables, number)
+
         new_ring = self._ring.clone(symbols=self.variables + new_variables)
         old_components = tuple(
             component.set_ring(new_ring) for component in self._poly_components
@@ -278,25 +474,32 @@ class PolynomialMap:
         components = old_components + new_ring.gens[-number:]
         return PolynomialMap.from_ring(new_ring, components)
 
-    def _fresh_variables(self, number: int) -> tuple[sp.Symbol, ...]:
-        """Create deterministic variable names without ring/domain collisions."""
-        domain_symbols = tuple(getattr(self._ring.domain, "symbols", ()))
-        used_names = {
-            symbol.name
-            for symbol in self.variables + domain_symbols
-            if isinstance(symbol, sp.Symbol)
-        }
+    def _validate_fresh_variables(
+        self, fresh: tuple[sp.Symbol, ...], number: int
+    ) -> None:
+        """Check what a factory promised but is not trusted to have delivered.
 
-        fresh: list[sp.Symbol] = []
-        index = self.dimension + 1
-        while len(fresh) < number:
-            name = f"X{index}"
-            if name not in used_names:
-                fresh.append(sp.Symbol(name))
-                used_names.add(name)
-            index += 1
+        A colliding name would not raise anywhere downstream: ``clone`` would
+        accept it and produce a ring in which two coordinates silently denote
+        the same generator.
+        """
+        if len(fresh) != number:
+            raise ValueError(
+                f"The variable factory returned {len(fresh)} names, expected {number}."
+            )
 
-        return tuple(fresh)
+        if not all(isinstance(symbol, sp.Symbol) for symbol in fresh):
+            raise TypeError("The variable factory must return SymPy symbols.")
+
+        if len(set(fresh)) != len(fresh):
+            raise ValueError("The variable factory returned duplicate names.")
+
+        collisions = {symbol.name for symbol in fresh} & reserved_names(self._ring)
+        if collisions:
+            raise ValueError(
+                "The variable factory returned names already in use: "
+                f"{sorted(collisions)}."
+            )
 
     def __call__(self, *args: sp.Expr) -> sp.Matrix:
         """Evaluate the map, allowing arbitrary symbolic arguments."""

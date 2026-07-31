@@ -12,7 +12,10 @@ Seitenangaben beziehen sich auf Bass, Connell, Wright, Bull. AMS 1982.
 import pytest
 import sympy as sp
 
-from bcw import PolynomialMap
+from bcw import IndexedVariableFactory, PolynomialMap
+
+# Eine eigene Namenspolitik fuer die Stabilisierungsvariablen.
+CARRIER = IndexedVariableFactory(prefix="u")
 
 x, y = sp.symbols("x y")
 
@@ -119,12 +122,17 @@ def test_stabilization_is_a_monoid_homomorphism(
 ) -> None:
     """(F o G)^[m] = F^[m] o G^[m], BCW S. 304.
 
-    Dieser Test haengt daran, dass extend() fuer gleichdimensionale
-    Abbildungen dieselben neuen Variablen erzeugt. Sobald eine
-    VariableFactory eingefuehrt wird, muss er nachgezogen werden.
+    Die Identitaet erreicht ``extend`` ueber drei getrennte Aufrufe, und sie
+    gilt nur, wenn alle drei dieselben Namen vergeben. Frueher stand das hier
+    als Kommentar und wurde davon getragen, dass gleichdimensionale
+    Abbildungen zufaellig uebereinstimmten. Jetzt wird die Factory
+    durchgereicht: die Voraussetzung steht im Test, statt in einer Fussnote.
+
+    ``CARRIER`` ist absichtlich nicht die Standard-Factory -- ein zufaelliges
+    Uebereinstimmen mit deren Namen wuerde den Test wieder aussagelos machen.
     """
-    left = F.compose(G).extend(2)
-    right = F.extend(2).compose(G.extend(2))
+    left = F.compose(G).extend(2, CARRIER)
+    right = F.extend(2, CARRIER).compose(G.extend(2, CARRIER))
 
     assert all(
         vanishes(a, b) for a, b in zip(left.components, right.components, strict=True)

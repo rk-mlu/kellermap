@@ -433,3 +433,114 @@ def test_extend_rejects_negative_size(F: PolynomialMap) -> None:
 
 def test_extend_by_zero_returns_same_object(F: PolynomialMap) -> None:
     assert F.extend(0) is F
+
+
+# --------------------------------------------------------------------------
+# Determinantenstrategie: unipotenter Traegerblock und Schur-Komplement
+# --------------------------------------------------------------------------
+
+X1, X2, X3, X4 = sp.symbols("X1 X2 X3 X4")
+
+# Kandidaten fuer die Kreuzprobe: mit und ohne Traegerblock, mit rationalen
+# und mit symbolischen Koeffizienten.
+DETERMINANT_CASES = [
+    PolynomialMap((X1, X2), (X1, X2)),
+    PolynomialMap((X1, X2), (X1 + X2, X1 - X2)),
+    PolynomialMap((X1, X2), (X1**2, X2)),
+    PolynomialMap((X1, X2), (X1 * X2 + 1, X1 - X2**2)),
+    PolynomialMap((X1, X2), (X1 + X2**2, X2 + X1**2)),
+    PolynomialMap((X1, X2), (sp.Symbol("T") * X1 + X2, X1 - X2)),
+    PolynomialMap((X1, X2, X3, X4), (X1 - X3 * X4, X2, X3, X4)),
+    PolynomialMap((X1, X2, X3, X4), (X1, X2, X3 + X2**2, X4 + X2**2)),
+    PolynomialMap((X1, X2, X3), (X1 + X2 * X3, X2 + X3**2, X3)),
+]
+
+
+@pytest.mark.parametrize("F", DETERMINANT_CASES)
+def test_determinant_matches_an_expression_valued_computation(
+    F: PolynomialMap,
+) -> None:
+    """Cross-representation test nach ``docs/architecture.md``.
+
+    Die Referenz laeuft vollstaendig ueber ``Expr``: SymPys eigene
+    ``Matrix.jacobian`` und ``Matrix.det``. Damit haengt sie an keinem Teil
+    der hiesigen Integration mit ``DomainMatrix`` oder der Strategiewahl.
+    """
+    reference = sp.Matrix(F.components).jacobian(sp.Matrix(F.variables)).det()
+
+    assert sp.expand(F.determinant() - reference) == 0
+
+
+@pytest.mark.parametrize("F", DETERMINANT_CASES)
+def test_schur_complement_agrees_with_the_domain_matrix_path(
+    F: PolynomialMap,
+) -> None:
+    """Beide Strategien muessen dasselbe Polynom liefern."""
+    reference = F._determinant_by_domain_matrix(F._jacobian_polynomials)
+
+    assert F.determinant() == reference.as_expr()
+
+
+def test_elementary_automorphism_is_unipotent_throughout() -> None:
+    """Der Grenzfall: der Kopfblock ist leer, die Determinante folgt aus der
+    Struktur und nicht aus einer Entwicklung."""
+    G = PolynomialMap((X1, X2, X3, X4), (X1 - X3 * X4, X2, X3, X4))
+
+    assert G.carrier_indices == (0, 1, 2, 3)
+    assert G.determinant() == 1
+
+
+def test_carrier_requires_a_unit_diagonal_entry() -> None:
+    """dF_i/dX_i muss exakt 1 sein, nicht bloss konstant."""
+    F = PolynomialMap((X1, X2), (2 * X1 + X2**2, X2))
+
+    assert F.carrier_indices == (1,)
+
+
+def test_carrier_drops_coordinates_on_a_dependency_cycle() -> None:
+    """X1 haengt von X2 ab und X2 von X1: der Block ist nicht nilpotent.
+
+    Die Diagonale ist hier zweimal 1, die Erkennung darf sich davon nicht
+    taeuschen lassen, sonst waere die Neumann-Reihe divergent.
+    """
+    F = PolynomialMap((X1, X2), (X1 + X2**2, X2 + X1**2))
+
+    assert F.carrier_indices == ()
+    assert F.determinant() == 1 - 4 * X1 * X2
+
+
+def test_carrier_keeps_an_acyclic_chain() -> None:
+    """Dieselbe Diagonale, aber azyklisch: der ganze Block ist brauchbar."""
+    F = PolynomialMap((X1, X2), (X1 + X2**2, X2))
+
+    assert F.carrier_indices == (0, 1)
+    assert F.determinant() == 1
+
+
+def test_schur_complement_refuses_a_non_nilpotent_block() -> None:
+    """Regression fuer einen echten Fehler.
+
+    Ein erster Entwurf hat die Nilpotenz nicht geprueft, sondern aus dem
+    Abbruch der Neumann-Reihe geschlossen. Bei leerem Kopfblock bricht die
+    Reihe sofort ab, ganz gleich wie L aussieht -- das leere
+    Schur-Komplement lieferte dann Determinante 1 fuer eine Abbildung mit
+    Determinante 1 - 4*X1*X2.
+
+    ``carrier_indices`` gibt einen solchen Block nie heraus, der Fall wird
+    hier von Hand erzwungen.
+    """
+    F = PolynomialMap((X1, X2), (X1 + X2**2, X2 + X1**2))
+
+    assert F.carrier_indices == ()
+    assert F._schur_complement((0, 1)) is None
+    assert F.determinant() == 1 - 4 * X1 * X2
+
+
+def test_unipotent_block_rejects_a_non_unit_diagonal() -> None:
+    """Zweiter Teil der Vorbedingung: D muss I + L sein, nicht bloss
+    dreiecksfoermig."""
+    F = PolynomialMap((X1, X2), (2 * X1 + X2**2, X2))
+
+    assert F._is_unipotent_block((1,))
+    assert not F._is_unipotent_block((0, 1))
+    assert F._schur_complement((0, 1)) is None

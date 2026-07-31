@@ -35,38 +35,50 @@ General SymPy expressions remain the public input and output format.
 - reject non-polynomial coordinate functions at construction
 - test defensive copies of mutable `PolyElement` objects
 - compare small Jacobians and determinants with expression-based results
+- cross-check the Schur-complement path against `DomainMatrix` at full size
 
-### Performance baseline
+### Determinant strategy
 
-Create a benchmark suite comparing the former `Expr` implementation with the
-new PolyRing implementation.
+Select the determinant algorithm from the structure of the Jacobian. Where a
+subset of coordinates spans a unipotent block `I + L` -- which stable
+extensions, elementary automorphisms and BCW-reduced maps always produce --
+the determinant reduces to the Schur complement of that block.
 
-Measure
+The unipotence precondition is decided on the dependency graph, not by taking
+powers, and it is checked rather than assumed: the block identity needs
+`det(D) = 1`, and an empty head block would otherwise report determinant one
+for any map at all.
 
-- construction,
-- composition,
-- Jacobian construction,
-- determinant computation,
-- degree and order,
-- stable extension.
-
-Use the cubic Keller map in 19 variables from
-`https://rhicksrad.github.io/jacobian-degree3/` as the first large reference
-case. Benchmarks must record runtime, peak memory where practical, SymPy
-version, Python version, and hardware information.
+`DomainMatrix` over the polynomial-ring domain remains the fallback and the
+reference against which the optimized path is cross-checked.
 
 ### ElementaryAutomorphism
 
-Implement only after the PolyRing migration and benchmark baseline are stable.
-It must operate in an existing ring and avoid expression conversions inside
-reduction loops.
+Implement after the PolyRing migration is stable. It must operate in an
+existing ring and avoid expression conversions inside reduction loops.
+
+### VariableFactory
+
+An injectable, collision-safe name generator for stable extensions. Version
+0.1 derives the names inside `PolynomialMap.extend()` from the current
+dimension; the monoid-homomorphism invariant
+
+    (F o G)^[m] = F^[m] o G^[m]
+
+then holds only because equal-dimensional maps happen to receive equal names.
+Making the generator explicit turns that accident into a stated precondition.
+
+The wider `ReductionContext` stays in 0.2, where the objects that determine
+its requirements are built.
 
 ### Quality
 
 - complete unit tests
 - mypy strict mode
-- ruff
-- black
+- ruff (`ruff check` and `ruff format`; black was dropped in favour of a
+  single formatter)
+- a `slow` pytest marker so that long-running exact checks stay in the suite
+  instead of being disabled by an environment variable
 - API documentation
 - migration notes from the expression implementation
 
@@ -80,7 +92,7 @@ Introduce
 
 - `BCWStep`
 - `Reduction`
-- `VariableFactory` or `ReductionContext`
+- `ReductionContext` (building on the `VariableFactory` from 0.1)
 
 Implement
 
@@ -155,7 +167,7 @@ Profile the complete reduction pipeline and optimize only measured bottlenecks.
 Possible work:
 
 - power caching during repeated composition,
-- sparse determinant strategy selection,
+- further determinant strategies beyond the unipotent-block case of 0.1,
 - fraction-free or modular determinant algorithms,
 - parallel candidate evaluation,
 - memory-aware term storage,

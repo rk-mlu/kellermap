@@ -9,8 +9,6 @@ sind das Ziel, das ein spaeterer ``BCWStep`` reproduzieren muss. Bis dahin ist
 diese Datei eine Regression gegen ein extern gerechnetes Ergebnis.
 """
 
-import random
-
 import pytest
 import sympy as sp
 
@@ -115,23 +113,9 @@ BCW17_COLLISION = (
 BCW17_IMAGE = sp.Matrix([0, 0, R(-1, 4)] + [0] * 14)
 
 
-# --------------------------------------------------------------------------
-# Parameter der probabilistischen Determinantenpruefung
-# --------------------------------------------------------------------------
-
-# deg(det J) <= n * (deg F - 1) = 17 * 2. Nach Schwartz-Zippel verschwindet ein
-# von Null verschiedenes Polynom dieses Grades auf einem gleichverteilt
-# gezogenen Punkt aus S^n mit Wahrscheinlichkeit hoechstens 34 / |S|.
-DETERMINANT_DEGREE_BOUND = 17 * (3 - 1)
-
-# |S| = 2 * 10**6 + 1, also Irrtumswahrscheinlichkeit < 2e-5 je Punkt und
-# < 1e-28 fuer alle Punkte zusammen.
-SAMPLE_BOUND = 10**6
-SAMPLE_COUNT = 6
-
-# Fester Seed: die Stichprobe ist damit Teil der Regression und nicht Quelle
-# sporadisch roter Laeufe.
-SAMPLE_SEED = 20260720
+# Die 14 Stabilisierungskoordinaten x4..x17 aus BCW Proposition (3.1). Ihr
+# Jacobi-Block ist unipotent, worauf die Determinantenstrategie aufsetzt.
+CARRIER_INDICES = tuple(range(3, 17))
 
 
 @pytest.fixture(scope="module")
@@ -142,20 +126,6 @@ def bcw17() -> PolynomialMap:
     einmal statt einmal pro Test an.
     """
     return PolynomialMap(variables=X, components=COMPONENTS)
-
-
-@pytest.fixture(scope="module")
-def sample_points() -> tuple[dict[sp.Symbol, sp.Integer], ...]:
-    """Ganzzahlige Auswertungspunkte fuer die Determinantenpruefung."""
-    generator = random.Random(SAMPLE_SEED)
-
-    return tuple(
-        {
-            variable: sp.Integer(generator.randint(-SAMPLE_BOUND, SAMPLE_BOUND))
-            for variable in X
-        }
-        for _ in range(SAMPLE_COUNT)
-    )
 
 
 def test_bcw17_is_not_injective(bcw17: PolynomialMap) -> None:
@@ -200,60 +170,66 @@ def test_bcw17_linear_part_is_invertible(bcw17: PolynomialMap) -> None:
 # --------------------------------------------------------------------------
 
 
-def test_bcw17_determinant_is_one_on_a_random_sample(
-    bcw17: PolynomialMap,
-    sample_points: tuple[dict[sp.Symbol, sp.Integer], ...],
-) -> None:
-    """Keller-Eigenschaft, in Sekundenbruchteilen statt in einer Minute.
+def test_bcw17_determinant_is_one(bcw17: PolynomialMap) -> None:
+    """Keller-Eigenschaft, exakt und als Polynomidentitaet.
 
-    Statt det J als Polynom in 17 Variablen aufzustellen, wird die
-    Jacobi-Matrix an ganzzahligen Punkten ausgewertet und dort exakt ueber
-    Z determiniert. Waere det J - 1 nicht das Nullpolynom, muesste es nach
-    Schwartz-Zippel auf jedem der Punkte zufaellig verschwinden; die
-    Wahrscheinlichkeit dafuer liegt unter 1e-28.
-
-    Der exakte Nachweis steht darunter und ist als ``slow`` markiert.
+    Frueher war dieser Test hinter einer Umgebungsvariablen versteckt, weil
+    die 17x17-Determinante ueber QQ[x1..x17] rund eine Minute brauchte. Seit
+    ``determinant`` den unipotenten Traegerblock ueber das Schur-Komplement
+    herausrechnet, bleiben davon Millisekunden.
     """
-    assert bcw17.dimension * (bcw17.degree() - 1) == DETERMINANT_DEGREE_BOUND
-
-    determinants = [
-        bcw17.jacobian().xreplace(point).det(method="berkowitz")
-        for point in sample_points
-    ]
-
-    assert determinants == [sp.Integer(1)] * SAMPLE_COUNT
+    assert bcw17.determinant() == 1
 
 
-def test_sample_detects_a_perturbed_determinant(
-    sample_points: tuple[dict[sp.Symbol, sp.Integer], ...],
+def test_bcw17_carrier_block_is_the_stabilization_block(
+    bcw17: PolynomialMap,
 ) -> None:
+    """Woher die Beschleunigung kommt.
+
+    Die Stabilisierungskoordinaten sind genau die, die BCW anfuegt: jede hat
+    die Form X_k + P mit P in den uebrigen Variablen, und die Abhaengigkeiten
+    unter ihnen sind azyklisch. Der Test haelt fest, dass die Erkennung diese
+    Struktur findet und nicht bloss zufaellig irgendeinen Block.
+    """
+    assert bcw17.carrier_indices == CARRIER_INDICES
+
+    head = bcw17.dimension - len(CARRIER_INDICES)
+
+    assert head == 3
+
+
+def test_bcw17_determinant_is_not_constant_after_a_perturbation() -> None:
     """Gegenprobe: der Test oben besteht nicht deshalb, weil er nichts prueft.
 
-    Ein zusaetzlicher kubischer Term in der ersten Komponente macht det J
-    nicht-konstant. Die Stichprobe muss das bemerken.
+    Ein zusaetzlicher kubischer Term in der ersten Komponente laesst den
+    Traegerblock unberuehrt, aendert aber das Schur-Komplement. Waere die
+    Strategie falsch, faende sie hier weiterhin 1.
     """
     perturbed = PolynomialMap(
         variables=X,
         components=(COMPONENTS[0] + _2**3,) + COMPONENTS[1:],
     )
 
-    determinants = [
-        perturbed.jacobian().xreplace(point).det(method="berkowitz")
-        for point in sample_points
-    ]
-
-    assert any(determinant != 1 for determinant in determinants)
+    assert perturbed.carrier_indices == CARRIER_INDICES
+    assert perturbed.determinant() != 1
 
 
 @pytest.mark.slow
-def test_bcw17_determinant_is_one_exactly(bcw17: PolynomialMap) -> None:
-    """Derselbe Nachweis ohne Stichprobe, als Polynomidentitaet.
+def test_bcw17_determinant_strategies_agree(bcw17: PolynomialMap) -> None:
+    """Kreuzprobe der beiden Determinantenstrategien in voller Groesse.
 
-    ``PolynomialMap.determinant`` rechnet seit dem Umstieg auf
-    ``DomainMatrix`` ueber der Ringdomain und terminiert damit auch in
-    Dimension 17 -- in rund einer Minute. Das ist zu langsam fuer jeden
-    Lauf, aber schnell genug, um die Stichprobe oben regelmaessig
-    abzusichern. Siehe ``docs/architecture.md``, Abschnitt Polynomial
-    Backend.
+    ``architecture.md`` verlangt unter "Cross-representation tests", die
+    eigene ``DomainMatrix``-Integration gegen ein unabhaengig gerechnetes
+    Ergebnis zu halten. Hier laeuft der Vergleich andersherum: der
+    ``DomainMatrix``-Pfad ist die Referenz, das Schur-Komplement die
+    Optimierung. Der Zugriff auf die private Methode ist Absicht -- die
+    oeffentliche API waehlt die Strategie selbst, und genau diese Wahl soll
+    hier umgangen werden.
+
+    Als ``slow`` markiert: der Referenzpfad braucht rund eine Minute. Das ist
+    der Preis dafuer, die Optimierung nicht bloss gegen sich selbst zu
+    pruefen.
     """
-    assert bcw17.determinant() == 1
+    reference = bcw17._determinant_by_domain_matrix(bcw17._jacobian_polynomials)
+
+    assert reference.as_expr() == bcw17.determinant() == 1
