@@ -3,6 +3,8 @@
 Seitenangaben beziehen sich auf Bass, Connell, Wright, Bull. AMS 1982.
 """
 
+import math
+
 import pytest
 import sympy as sp
 from sympy.polys.domains import QQ, ZZ
@@ -54,24 +56,25 @@ def test_polynomial_must_be_polynomial() -> None:
         ElementaryFactor(R, 0, sp.sin(sp.Symbol("X2")))
 
 
-def test_coefficient_must_be_invertible_in_the_domain() -> None:
-    """Nicht in irgendeinem Oberkoerper, sondern in der Domain der Abbildung.
-
-    Eine aus ganzzahligen Koeffizienten gebaute Abbildung lebt ueber ZZ, wo
-    nur +-1 invertierbar sind. BCW rechnen ueber einem Koerper; wer skalieren
-    will, muss die Abbildung entsprechend bauen.
-    """
-    integral = ring("Y1,Y2", ZZ)[0]
-
-    with pytest.raises(ValueError, match="not invertible in ZZ"):
-        ElementaryFactor(integral, 0, integral.zero, coefficient=2)
-
-    assert ElementaryFactor(R, 0, R.zero, coefficient=2).coefficient == 2
+@pytest.mark.parametrize("index", [True, 0.5, "0", None])
+def test_index_must_be_an_integer(index: object) -> None:
+    """``True`` ist in Python ein int und ``0.5`` besteht jeden
+    Bereichsvergleich; beides muss dennoch scheitern."""
+    with pytest.raises(TypeError, match="must be an integer"):
+        ElementaryFactor(R, index, R.zero)  # type: ignore[arg-type]
 
 
-def test_zero_coefficient_is_rejected() -> None:
-    with pytest.raises(ValueError, match="not invertible"):
-        ElementaryFactor(R, 0, R.zero, coefficient=0)
+def test_factors_over_different_domains_are_unequal() -> None:
+    """Gleiche Symbole, gleiches P, andere Koeffizientendomain."""
+    over_zz = ring("X1,X2", ZZ)[0]
+    over_qq = ring("X1,X2", QQ)[0]
+
+    left = ElementaryFactor(over_zz, 0, over_zz.gens[1] ** 2)
+    right = ElementaryFactor(over_qq, 0, over_qq.gens[1] ** 2)
+
+    assert left.polynomial == right.polynomial
+    assert left != right
+    assert hash(left) != hash(right)
 
 
 def test_factors_of_a_product_must_share_a_ring() -> None:
@@ -136,8 +139,8 @@ FACTORS = [
     BCW_G,
     ElementaryFactor(R, 2, X2**2),
     ElementaryFactor(R, 1, X3**3 + X4),
-    ElementaryFactor(R, 0, X2**2, coefficient=sp.Rational(3, 2)),
-    ElementaryFactor(R, 3, R.zero, coefficient=-1),
+    ElementaryFactor(R, 0, X2 + X3 * X4),
+    ElementaryFactor(R, 3, R.zero),
 ]
 
 
@@ -162,12 +165,13 @@ def test_inverting_twice_returns_the_factor(factor: ElementaryFactor) -> None:
 def test_structural_determinant_matches_the_computed_one(
     factor: ElementaryFactor,
 ) -> None:
-    """Die Determinante ist a, ohne Polynomarithmetik.
+    """Jeder Erzeuger von EA_n(k) hat Determinante 1, ohne Rechnung.
 
     Das ist die Zusage, auf die sich ``BCWStep.verify`` stuetzen soll; sie
     wird hier gegen den gerechneten Weg gehalten.
     """
-    assert factor.determinant() == factor.to_polynomial_map().determinant()
+    assert factor.determinant() == 1
+    assert factor.to_polynomial_map().determinant() == 1
 
 
 @pytest.mark.parametrize("factor", FACTORS)
@@ -209,11 +213,19 @@ def test_product_inverse_is_two_sided(
     assert automorphism.inverse().compose(automorphism).to_polynomial_map() == identity
 
 
-def test_product_determinant_is_the_product_of_the_coefficients() -> None:
+def test_every_element_of_EA_has_determinant_one() -> None:  # noqa: N802
+    """BCW S. 304: EA_n(k) wird von Abbildungen mit Determinante 1 erzeugt.
+
+    Ein frueherer Entwurf liess X_j |-> a X_j + P mit beliebiger Einheit a zu.
+    Das ist ein polynomialer Automorphismus, aber kein elementarer: sein
+    Displacement (a - 1) X_j haengt von X_j ab. Er haette Elemente mit
+    Determinante ungleich 1 in EA_n(k) gebracht und damit das Argument
+    zerstoert, dass ein Reduktionsschritt die Jacobi-Determinante erhaelt.
+    """
     automorphism = ElementaryAutomorphism(FACTORS)
 
-    assert automorphism.determinant() == sp.Rational(-3, 2)
-    assert automorphism.determinant() == automorphism.to_polynomial_map().determinant()
+    assert automorphism.determinant() == 1
+    assert automorphism.to_polynomial_map().determinant() == 1
 
 
 def test_composition_concatenates_the_factorizations() -> None:
@@ -262,18 +274,10 @@ def test_composing_with_the_identity_changes_nothing() -> None:
 # --------------------------------------------------------------------------
 
 
-def test_a_scaling_factor_caps_the_order_at_one() -> None:
-    """Bei a != 1 traegt das Displacement den Linearterm (a - 1) X_i.
-
-    Wie tief P sitzt, ist dann gleichgueltig -- ein Faktor mit Skalierung
-    liegt nie tiefer als EA^0.
-    """
-    deep = ElementaryFactor(R, 0, X2**5)
-    scaled = ElementaryFactor(R, 0, X2**5, coefficient=2)
-
-    assert deep.order() == 5
-    assert scaled.order() == 1
-    assert not scaled.is_in_EA(1)
+def test_order_is_the_order_of_the_polynomial() -> None:
+    """Das Displacement ist P, also braucht die Ordnung keine Abbildung."""
+    assert ElementaryFactor(R, 0, X2**5).order() == 5
+    assert ElementaryFactor(R, 0, X2 + X3**4).order() == 1
 
 
 def test_the_identity_factor_has_infinite_order() -> None:
@@ -314,8 +318,8 @@ def test_factors_differing_in_the_index_are_unequal() -> None:
     assert ElementaryFactor(R, 0, X3 * X4) != ElementaryFactor(R, 1, X3 * X4)
 
 
-def test_factors_differing_in_the_coefficient_are_unequal() -> None:
-    assert ElementaryFactor(R, 0, X2) != ElementaryFactor(R, 0, X2, coefficient=-1)
+def test_factors_differing_in_the_polynomial_are_unequal() -> None:
+    assert ElementaryFactor(R, 0, X2) != ElementaryFactor(R, 0, -X2)
 
 
 def test_comparison_with_a_foreign_type_is_not_implemented() -> None:
@@ -361,12 +365,6 @@ def test_identity_has_no_ring() -> None:
         _ = ElementaryAutomorphism.identity().ring
 
 
-def test_coefficient_must_lie_in_the_domain() -> None:
-    """Ein Symbol, das die Domain nicht kennt, ist kein Skalar dieser Abbildung."""
-    with pytest.raises(ValueError, match="coefficient domain QQ"):
-        ElementaryFactor(R, 0, R.zero, coefficient=sp.Symbol("T"))
-
-
 def test_factor_exposes_index_and_variable() -> None:
     assert BCW_G.index == 0
     assert BCW_G.variable == x1
@@ -376,3 +374,54 @@ def test_factor_exposes_index_and_variable() -> None:
 def test_automorphisms_are_hashable() -> None:
     assert len({BCW_H, ElementaryAutomorphism(BCW_H.factors)}) == 1
     assert len({BCW_H, ElementaryAutomorphism.identity()}) == 2
+
+
+def test_identity_lies_in_every_EA() -> None:  # noqa: N802
+    """Das leere Produkt traegt keinen Ring, ist aber in jedem EA^d."""
+    empty = ElementaryAutomorphism.identity()
+
+    assert empty.filtration_degree() == math.inf
+    assert empty.is_in_EA(0)
+    assert empty.is_in_EA(17)
+
+
+def test_factor_does_not_adopt_the_callers_ring() -> None:
+    """Dieselbe Zusage wie bei PolynomialMap.ring, aus demselben Grund."""
+    R2, Y1, Y2 = ring("Y1,Y2", QQ)
+    factor = ElementaryFactor(R2, 0, Y2**2)
+    before = factor.to_polynomial_map().components
+
+    R2.gens[0].clear()
+
+    assert factor.to_polynomial_map().components == before
+
+
+def test_factor_ring_property_does_not_leak() -> None:
+    R2, Y1, Y2 = ring("Y1,Y2", QQ)
+    factor = ElementaryFactor(R2, 0, Y2**2)
+    before = factor.to_polynomial_map().components
+
+    factor.ring.gens[0].clear()
+
+    assert factor.to_polynomial_map().components == before
+
+
+@pytest.mark.parametrize("factor", FACTORS)
+def test_every_generator_has_determinant_one(factor: ElementaryFactor) -> None:
+    """EA_n(k) liegt in SA_n(k).
+
+    BCW definieren einen Faktor durch E_j - X_j = P mit P frei von X_j; der
+    Linearteil ist damit unipotent und die Determinante 1. Ein Faktor mit
+    Skalierung a auf X_j haette Determinante a und waere kein Element von
+    EA_n(k) -- ein frueherer Entwurf liess das zu.
+    """
+    assert factor.determinant() == 1
+    assert factor.to_polynomial_map().determinant() == 1
+
+
+def test_identity_lies_in_every_filtration_level() -> None:
+    """Das leere Produkt traegt keinen Ring, ist aber in jedem EA^d."""
+    empty = ElementaryAutomorphism.identity()
+
+    assert empty.filtration_degree() == float("inf")
+    assert empty.is_in_EA(17)

@@ -14,32 +14,44 @@ inverses" is a proof.
 
 from __future__ import annotations
 
+import math
 from collections.abc import Iterable
 from dataclasses import dataclass
-from typing import Any, cast
+from functools import cached_property
+from typing import cast
 
 import sympy as sp
-from sympy.polys.polyerrors import CoercionFailed, ExactQuotientFailed
+from sympy.polys.polyerrors import CoercionFailed
 from sympy.polys.rings import PolyElement, PolyRing
 
-from .polynomial_map import PolynomialMap, copy_polynomial
+from .polynomial_map import PolynomialMap, clone_ring, copy_polynomial
 
 
 @dataclass(frozen=True, eq=False)
 class ElementaryFactor:
     """A generator of ``EA_n(k)``.
 
-    The map fixing every coordinate but one,
+    BCW, p. 304: ``F`` in ``MA_n(k)`` is elementary if for some ``j`` the
+    difference ``F_i - X_i`` vanishes for ``i != j`` and is independent of
+    ``X_j`` for ``i = j``. So
 
-        X_i  |-->  a * X_i + P,
+        X_j  |-->  X_j + P,      P free of X_j,
 
-    with ``a`` a unit of the coefficient domain and ``P`` free of ``X_i``.
-    Both conditions are what make the inverse explicit,
+    with no coefficient on ``X_j``. The paper draws the inverse straight from
+    the definition, ``(F^-1)_i - X_i = -(F_i - X_i)``, that is
 
-        X_i  |-->  a^-1 * (X_i - P),
+        X_j  |-->  X_j - P,
 
-    and ``P`` is unchanged by the substitution precisely because it does not
-    involve ``X_i``.
+    and ``P`` survives the substitution unchanged precisely because it does
+    not involve ``X_j``.
+
+    A scaling ``X_j |-> a X_j + P`` with ``a != 1`` is a polynomial
+    automorphism, but not an elementary one: its displacement ``(a - 1) X_j``
+    depends on ``X_j``. Admitting it here would put elements of determinant
+    other than one into ``EA_n(k)``, and the argument that a reduction step
+    preserves the Jacobian determinant rests on every element of ``EA_n(k)``
+    having determinant one. Scalings belong to the linear part, which
+    Section 4 handles separately.
 
     Parameters
     ----------
@@ -49,13 +61,10 @@ class ElementaryFactor:
         The coordinate that moves.
     polynomial
         ``P``, as a SymPy expression or an element of ``ring``.
-    coefficient
-        ``a``. Defaults to one, which is the case BCW use throughout.
     """
 
     _ring: PolyRing
     _index: int
-    _coefficient: Any
     _polynomial: PolyElement
 
     def __init__(
@@ -63,8 +72,12 @@ class ElementaryFactor:
         ring: PolyRing,
         index: int,
         polynomial: sp.Expr | PolyElement,
-        coefficient: sp.Expr | int = 1,
     ) -> None:
+        if isinstance(index, bool) or not isinstance(index, int):
+            raise TypeError(
+                f"The index must be an integer, not {type(index).__name__}."
+            )
+
         if not 0 <= index < ring.ngens:
             raise ValueError(
                 f"Index {index} is out of range for {ring.ngens} variables."
@@ -78,12 +91,11 @@ class ElementaryFactor:
                 "otherwise the factor is not invertible by the elementary formula."
             )
 
-        unit = self._coerce_unit(ring, coefficient)
+        owned = clone_ring(ring)
 
-        object.__setattr__(self, "_ring", ring)
+        object.__setattr__(self, "_ring", owned)
         object.__setattr__(self, "_index", index)
-        object.__setattr__(self, "_coefficient", unit)
-        object.__setattr__(self, "_polynomial", copy_polynomial(element))
+        object.__setattr__(self, "_polynomial", copy_polynomial(element, owned))
 
     @staticmethod
     def _coerce_polynomial(
@@ -101,42 +113,23 @@ class ElementaryFactor:
                 "The polynomial must be a polynomial over the specified ring."
             ) from error
 
-    @staticmethod
-    def _coerce_unit(ring: PolyRing, coefficient: sp.Expr | int) -> Any:
-        """Return ``coefficient`` as an invertible element of the domain.
-
-        The check is against the domain the map actually lives in, not against
-        some field it could be embedded into. A map built from integer
-        coefficients has domain ``ZZ``, where the only units are +-1; BCW work
-        over a field, so a map that needs a scaling factor has to be built
-        over one.
-        """
-        domain = ring.domain
-
-        try:
-            element = domain.from_sympy(sp.sympify(coefficient))
-        except CoercionFailed as error:
-            raise ValueError(
-                f"The coefficient must lie in the coefficient domain {domain}."
-            ) from error
-
-        try:
-            domain.exquo(domain.one, element)
-        except (ExactQuotientFailed, ZeroDivisionError) as error:
-            raise ValueError(
-                f"The coefficient {coefficient} is not invertible in {domain}."
-            ) from error
-
-        return element
-
     # ----------------------------------------------------------------------
     # Inspection
     # ----------------------------------------------------------------------
 
+    @cached_property
+    def _view_ring(self) -> PolyRing:
+        """A value-equal clone of the internal ring, for handing out."""
+        return clone_ring(self._ring)
+
     @property
     def ring(self) -> PolyRing:
-        """Return the arithmetic context of the factor."""
-        return self._ring
+        """Return the arithmetic context of the factor.
+
+        A clone, for the reason given at ``PolynomialMap.ring``: a
+        ``PolyRing`` owns mutable generators, and SymPy reads them.
+        """
+        return self._view_ring
 
     @property
     def index(self) -> int:
@@ -153,35 +146,33 @@ class ElementaryFactor:
         """Return ``P`` as an immutable SymPy expression."""
         return cast(sp.Expr, self._polynomial.as_expr())
 
-    @property
-    def coefficient(self) -> sp.Expr:
-        """Return ``a`` as an immutable SymPy expression."""
-        return cast(sp.Expr, self._ring.domain.to_sympy(self._coefficient))
-
     # ----------------------------------------------------------------------
     # Group structure
     # ----------------------------------------------------------------------
 
     def inverse(self) -> ElementaryFactor:
-        """Return the inverse factor, by formula rather than by solving."""
-        domain = self._ring.domain
-        reciprocal = domain.exquo(domain.one, self._coefficient)
+        """Return the inverse factor, read off the definition rather than solved.
 
+        BCW state it directly: ``(F^-1)_i - X_i = -(F_i - X_i)``.
+        """
         return ElementaryFactor(
             ring=self._ring,
             index=self._index,
-            polynomial=-self._polynomial * reciprocal,
-            coefficient=domain.to_sympy(reciprocal),
+            polynomial=-self._polynomial,
         )
 
     def determinant(self) -> sp.Expr:
-        """Return the Jacobian determinant, which is ``a``.
+        """Return the Jacobian determinant, which is one.
 
-        Structural: the Jacobian is the identity except for row ``i``, whose
-        diagonal entry is ``a``. No polynomial arithmetic is involved, which
-        is what lets a reduction check determinants at every step.
+        Structural, and a theorem rather than a computation: the Jacobian is
+        the identity except for row ``i``, whose off-diagonal entries are the
+        partials of ``P`` and whose diagonal entry is one, because ``P`` does
+        not involve ``X_i``. The matrix is unipotent.
+
+        A reduction step rests on this. It is also why a scaling factor has no
+        place in the class: it would break the property for the whole group.
         """
-        return self.coefficient
+        return cast(sp.Expr, sp.Integer(1))
 
     def apply_to(self, other: PolynomialMap) -> PolynomialMap:
         """Return ``self o other``.
@@ -196,18 +187,16 @@ class ElementaryFactor:
         components = list(other.to_polynomials())
         substitution = dict(zip(self._ring.gens, components, strict=True))
 
-        components[self._index] = components[
-            self._index
-        ] * self._coefficient + self._polynomial.compose(substitution)
+        components[self._index] = components[self._index] + self._polynomial.compose(
+            substitution
+        )
 
         return PolynomialMap.from_ring(self._ring, components)
 
     def to_polynomial_map(self) -> PolynomialMap:
         """Return the factor as a ``PolynomialMap``."""
         components = list(self._ring.gens)
-        components[self._index] = (
-            components[self._index] * self._coefficient + self._polynomial
-        )
+        components[self._index] = components[self._index] + self._polynomial
         return PolynomialMap.from_ring(self._ring, components)
 
     # ----------------------------------------------------------------------
@@ -215,19 +204,14 @@ class ElementaryFactor:
     # ----------------------------------------------------------------------
 
     def order(self) -> int | float:
-        """Return ``ord(E - X)``.
+        """Return ``ord(E - X)``, which is ``ord(P)``.
 
-        Computed on the one component that moves. The displacement is
-        ``(a - 1) X_i + P``, so a factor with ``a != 1`` has order at most one
-        however deep ``P`` sits.
+        The displacement has the single nonzero component ``P``, so no map has
+        to be formed.
         """
-        displacement = (
-            self._polynomial
-            + (self._coefficient - self._ring.domain.one) * self._ring.gens[self._index]
-        )
         return min(
-            (sum(monomial) for monomial in displacement.itermonoms()),
-            default=float("inf"),
+            (sum(monomial) for monomial in self._polynomial.itermonoms()),
+            default=math.inf,
         )
 
     def filtration_degree(self) -> int | float:
@@ -245,20 +229,19 @@ class ElementaryFactor:
             return NotImplemented
         return (
             self._ring.symbols == other._ring.symbols
+            and self._ring.domain == other._ring.domain
             and self._index == other._index
-            and self.coefficient == other.coefficient
             and self.polynomial == other.polynomial
         )
 
     def __hash__(self) -> int:
         return hash(
-            (self._ring.symbols, self._index, self.coefficient, self.polynomial)
+            (self._ring.symbols, self._ring.domain, self._index, self.polynomial)
         )
 
     def __repr__(self) -> str:
         return (
-            f"ElementaryFactor(variable={self.variable}, "
-            f"coefficient={self.coefficient}, polynomial={self.polynomial})"
+            f"ElementaryFactor(variable={self.variable}, polynomial={self.polynomial})"
         )
 
 
@@ -319,15 +302,13 @@ class ElementaryAutomorphism:
         )
 
     def determinant(self) -> sp.Expr:
-        """Return the Jacobian determinant, the product of the coefficients.
+        """Return the Jacobian determinant, which is one.
 
-        This is why ``BCWStep.verify`` can afford a determinant check: for the
-        elementary factors it is a product of scalars, not an expansion.
+        Every generator of ``EA_n(k)`` has determinant one, so every element
+        does. This is why ``BCWStep.verify`` can afford a determinant check at
+        every step: for the elementary parts there is nothing to compute.
         """
-        result = sp.Integer(1)
-        for factor in self.factors:
-            result *= factor.coefficient
-        return cast(sp.Expr, result)
+        return cast(sp.Expr, sp.Integer(1))
 
     def apply_to(self, other: PolynomialMap) -> PolynomialMap:
         """Return ``self o other``.
@@ -362,7 +343,13 @@ class ElementaryAutomorphism:
         Unlike the determinant this does not follow from the factors: a
         product of factors in ``EA^0`` can land in ``EA^1``, so the map has to
         be formed. ``MA^d`` being a submonoid gives a lower bound only.
+
+        The empty product is the identity, which lies in every ``EA^d`` and
+        carries no ring to form a map from.
         """
+        if not self.factors:
+            return math.inf
+
         return self.to_polynomial_map().filtration_degree()
 
     def is_in_EA(self, d: int) -> bool:  # noqa: N802

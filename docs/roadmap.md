@@ -54,8 +54,19 @@ reference against which the optimized path is cross-checked.
 
 ### ElementaryAutomorphism
 
-Implement after the PolyRing migration is stable. It must operate in an
-existing ring and avoid expression conversions inside reduction loops.
+`ElementaryFactor` is a generator of `EA_n(k)` in the sense of BCW p. 304:
+`X_j |-> X_j + P` with `P` free of `X_j`, no coefficient on `X_j`. The inverse
+is `X_j |-> X_j - P`, read off the definition. `ElementaryAutomorphism` is an
+element of the group, kept as the ordered product of its factors.
+
+Every generator has determinant one, hence so does every element. Admitting a
+scaling `a X_j + P` would put elements of other determinant into `EA_n(k)` and
+break the argument that a reduction step preserves the Jacobian determinant;
+scalings belong to the linear part that Section 4 handles separately, and if
+they are ever needed they get their own type.
+
+Both operate in an existing ring and avoid expression conversions inside
+reduction loops: `apply_to()` touches the single coordinate that moves.
 
 ### VariableFactory
 
@@ -89,13 +100,21 @@ remembers.
 - complete unit tests
 - immutable SymPy objects across the whole public boundary, including
   `matrix` and `jacobian()`
+- no mutable low-level object shared with a caller: rings are cloned on the
+  way in and on the way out, through `clone_ring()` rather than SymPy's
+  memoised `PolyRing.clone()`
+- mypy strict mode, and a `py.typed` marker so that the annotations reach
+  consumers rather than stopping at the project boundary
 - mypy strict mode
+- ruff and mypy targeting the lower bound from `requires-python`, so that
+  the static tools guard the oldest supported version rather than the
+  newest; the test matrix covers the rest
 - ruff (`ruff check` and `ruff format`; black was dropped in favour of a
   single formatter)
 - a `slow` pytest marker so that long-running exact checks stay in the suite
   instead of being disabled by an environment variable
-- API documentation
-- migration notes from the expression implementation
+- API documentation in `docs/api.md`, with every example executed by the
+  test suite so that the reference cannot drift from the implementation
 
 ---
 

@@ -1,9 +1,9 @@
 [project]
 name = "bcw-reduction"
-version = "0.1.0"
+version = "0.1.0rc1"
 description = "Implementation of the Bass–Connell–Wright reduction of polynomial Keller maps."
 readme = "README.md"
-requires-python = ">=3.13"
+requires-python = ">=3.10"
 license = { text = "MIT" }
 
 authors = [
@@ -41,15 +41,20 @@ dev = [
 ]
 
 [tool.pytest.ini_options]
-testpaths = ["tests"]
-addopts = "-m 'not slow'"
+testpaths = ["tests", "docs"]
+# Die Beispiele in docs/api.md sind Doctests: die Referenz kann nicht von der
+# Implementierung abweichen, ohne dass der Testlauf es meldet.
+addopts = "-m 'not slow' --doctest-glob=*.md"
 markers = [
     "slow: Laufzeit im Minutenbereich; mit `pytest -m slow` oder `pytest -m ''` ausfuehren.",
 ]
 
 [tool.ruff]
 line-length = 88
-target-version = "py313"
+# Auf die Untergrenze aus requires-python gesetzt, nicht auf die neueste
+# Version: die UP-Regeln schreiben sonst Idiome vor, die auf 3.10 nicht
+# laufen, und ruff meldete das erst, wenn jemand sie uebernimmt.
+target-version = "py310"
 
 [tool.ruff.lint]
 select = [
@@ -64,7 +69,10 @@ ignore = [
 ]
 
 [tool.mypy]
-python_version = "3.13"
+# Ebenfalls die Untergrenze: sonst prueft mypy gegen Semantik, die die
+# aelteste unterstuetzte Version nicht hat, und laesst etwa tomllib oder
+# itertools.batched durch.
+python_version = "3.10"
 strict = true
 
 [[tool.mypy.overrides]]

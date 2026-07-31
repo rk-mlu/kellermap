@@ -5,9 +5,10 @@ from collections.abc import Iterable, Sequence
 from dataclasses import dataclass
 from functools import cached_property
 from graphlib import CycleError, TopologicalSorter
-from typing import cast
+from typing import Any, cast
 
 import sympy as sp
+from sympy.polys.fields import FracElement
 from sympy.polys.matrices import DomainMatrix
 from sympy.polys.polyerrors import PolynomialError
 from sympy.polys.rings import PolyElement, PolyRing, sring
@@ -22,18 +23,64 @@ from .variables import (
 Block = tuple[tuple["PolyElement", ...], ...]
 
 
-def copy_polynomial(polynomial: PolyElement) -> PolyElement:
-    """Recursively copy a polynomial and its polynomial coefficients.
+def copy_polynomial(
+    polynomial: PolyElement, ring: PolyRing | None = None
+) -> PolyElement:
+    """Recursively copy a polynomial and its coefficients.
 
-    ``PolyElement`` inherits from ``dict``; over ``k[T]`` a coefficient is
-    itself one, so a shallow copy would still share that inner level.
+    ``PolyElement`` inherits from ``dict`` and is mutable, and so are the
+    coefficients over the domains this project uses: over ``k[T]`` a
+    coefficient is another ``PolyElement``, over ``k(T)`` a ``FracElement``
+    whose numerator and denominator are again mutable. A copy stopping at the
+    top level would still share those inner objects -- and a domain's ``one``
+    is a single shared instance, so one mutation there reaches every term with
+    coefficient one, in every map over that domain.
+
+    ``ring`` rebinds the copy to a value-equal ring. Rebinding cannot go
+    through ``PolyElement.set_ring``, which short-circuits on value-equal
+    rings and hands back the original, still bound to the original object --
+    a defensive clone built on it would look effective without being so.
     """
-    terms = []
-    for monomial, coefficient in polynomial.iterterms():
-        if isinstance(coefficient, PolyElement):
-            coefficient = copy_polynomial(coefficient)
-        terms.append((monomial, coefficient))
-    return polynomial.ring.from_terms(terms)
+    target = polynomial.ring if ring is None else ring
+
+    return target.from_terms(
+        [
+            (monomial, _copy_coefficient(coefficient))
+            for monomial, coefficient in polynomial.iterterms()
+        ]
+    )
+
+
+def _copy_coefficient(coefficient: Any) -> Any:
+    """Copy a coefficient if it is one of the mutable kinds."""
+    if isinstance(coefficient, PolyElement):
+        return copy_polynomial(coefficient)
+
+    if isinstance(coefficient, FracElement):
+        return coefficient.field.raw_new(
+            copy_polynomial(coefficient.numer),
+            copy_polynomial(coefficient.denom),
+        )
+
+    return coefficient
+
+
+def clone_ring(
+    polynomial_ring: PolyRing, symbols: tuple[sp.Symbol, ...] | None = None
+) -> PolyRing:
+    """Return a fresh, value-equal ring with its own generators.
+
+    Deliberately not ``PolyRing.clone``: that goes through SymPy's ``cacheit``,
+    and cloning a ring that is itself a clone hands the same object straight
+    back. Defensive isolation built on it would do nothing at all for every
+    map produced by ``from_ring`` -- which is every result of ``compose`` and
+    ``extend``.
+    """
+    return PolyRing(
+        polynomial_ring.symbols if symbols is None else symbols,
+        polynomial_ring.domain,
+        polynomial_ring.order,
+    )
 
 
 def _names_are_distinct(symbols: Iterable[sp.Symbol]) -> bool:
@@ -99,8 +146,10 @@ class PolynomialMap:
         """Construct a map directly from elements of ``polynomial_ring``.
 
         This is the efficient construction path for internal algorithms. The
-        components are copied so that the immutable ``PolynomialMap`` does not
-        share mutable ``PolyElement`` instances with its caller.
+        ring is cloned and the components are copied onto the clone, so that
+        the immutable ``PolynomialMap`` shares no mutable object with its
+        caller -- neither the coordinate polynomials nor, through the ring,
+        its generators.
         """
         components_tuple = tuple(components)
 
@@ -119,12 +168,14 @@ class PolynomialMap:
         if not all(polynomial_ring.is_element(f) for f in components_tuple):
             raise ValueError("All components must belong to the specified ring.")
 
+        owned = clone_ring(polynomial_ring)
+
         instance = object.__new__(cls)
-        object.__setattr__(instance, "_ring", polynomial_ring)
+        object.__setattr__(instance, "_ring", owned)
         object.__setattr__(
             instance,
             "_poly_components",
-            tuple(copy_polynomial(component) for component in components_tuple),
+            tuple(copy_polynomial(component, owned) for component in components_tuple),
         )
         return instance
 
@@ -149,14 +200,27 @@ class PolynomialMap:
         if not all(isinstance(component, sp.Expr) for component in components):
             raise TypeError("Components must be SymPy expressions.")
 
+    @cached_property
+    def _view_ring(self) -> PolyRing:
+        """A value-equal clone of the internal ring, for handing out."""
+        return clone_ring(self._ring)
+
     @property
     def ring(self) -> PolyRing:
-        """Return the internal sparse polynomial ring.
+        """Return the sparse polynomial ring the map lives over.
 
-        The returned ring is the arithmetic context. Coordinate polynomials
-        remain private because ``PolyElement`` is mutable.
+        A clone of the internal one, not the internal one itself. ``PolyRing``
+        is not a value object: its ``gens`` are ``PolyElement`` instances and
+        therefore mutable dicts, and SymPy reads them in ``from_expr`` and
+        ``ring_new``. Handing out the internal ring would let a caller change
+        what the map computes -- ``F.ring.gens[0].clear()`` used to alter
+        ``F.displacement()`` while ``F.components`` still reported the
+        original map.
+
+        The clone is value-equal, so it composes, compares and coerces
+        interchangeably with the internal one.
         """
-        return self._ring
+        return self._view_ring
 
     @property
     def variables(self) -> tuple[sp.Symbol, ...]:
@@ -169,8 +233,16 @@ class PolynomialMap:
         return tuple(component.as_expr() for component in self._poly_components)
 
     def to_polynomials(self) -> tuple[PolyElement, ...]:
-        """Return defensive copies of the internal coordinate polynomials."""
-        return tuple(copy_polynomial(component) for component in self._poly_components)
+        """Return defensive copies of the internal coordinate polynomials.
+
+        Bound to the clone returned by ``ring``: a ``PolyElement`` carries a
+        reference to its ring, so copies bound to the internal one would leak
+        it straight back out.
+        """
+        return tuple(
+            copy_polynomial(component, self._view_ring)
+            for component in self._poly_components
+        )
 
     @property
     def dimension(self) -> int:
@@ -488,10 +560,11 @@ class PolynomialMap:
             return self
 
         make_variables = DEFAULT_VARIABLE_FACTORY if factory is None else factory
-        new_variables = make_variables(self._ring, number)
+        # Der Factory wird die Ansicht gereicht, nicht der interne Ring.
+        new_variables = make_variables(self._view_ring, number)
         self._validate_fresh_variables(new_variables, number)
 
-        new_ring = self._ring.clone(symbols=self.variables + new_variables)
+        new_ring = clone_ring(self._ring, self.variables + new_variables)
         old_components = tuple(
             component.set_ring(new_ring) for component in self._poly_components
         )
@@ -536,10 +609,14 @@ class PolynomialMap:
     def __eq__(self, other: object) -> bool:
         if not isinstance(other, PolynomialMap):
             return NotImplemented
-        return self.variables == other.variables and self.components == other.components
+        return (
+            self.variables == other.variables
+            and self._ring.domain == other._ring.domain
+            and self.components == other.components
+        )
 
     def __hash__(self) -> int:
-        return hash((self.variables, self.components))
+        return hash((self.variables, self._ring.domain, self.components))
 
     def __repr__(self) -> str:
         return (

@@ -726,3 +726,181 @@ def test_from_ring_copies_nested_coefficients() -> None:
     coefficient[coefficient.ring.zero_monom] = coefficient.ring.domain.one  # type: ignore[index]
 
     assert F.components[0] == T * sp.Symbol("a") + sp.Symbol("b")
+
+
+def test_fraction_field_coefficients_are_copied() -> None:
+    """Ueber k(T) ist ein Koeffizient ein FracElement mit veraenderlichem
+    Zaehler und Nenner.
+
+    Regression fuer einen echten Fehler: die Kopie stieg nur in PolyElement
+    ab. Weil die Eins der Domain eine einzige geteilte Instanz ist, traf eine
+    Mutation dort jeden Term mit Koeffizient eins -- die Abbildung
+    (x/(T+1) + y, x) wurde zu (x/(T+1), 0).
+    """
+    x, y, T = sp.symbols("x y T")
+    F = PolynomialMap((x, y), (x / (T + 1) + y, x))
+
+    assert str(F.ring.domain) == "ZZ(T)"
+
+    fractions = [c for _, c in F.to_polynomials()[0].iterterms() if hasattr(c, "numer")]
+
+    assert fractions
+
+    for coefficient in fractions:
+        coefficient.numer.clear()
+        coefficient.denom.clear()
+
+    assert F.components == (x / (T + 1) + y, x)
+
+
+def test_maps_over_different_domains_are_unequal() -> None:
+    """Gleiche Variablen und Komponenten, andere Koeffizientendomain."""
+    from sympy.polys.domains import QQ, ZZ
+    from sympy.polys.rings import ring
+
+    a, b = sp.symbols("a b")
+    over_zz = ring([a, b], ZZ)[0]
+    over_qq = ring([a, b], QQ)[0]
+
+    left = PolynomialMap.from_ring(over_zz, over_zz.gens)
+    right = PolynomialMap.from_ring(over_qq, over_qq.gens)
+
+    assert left.components == right.components
+    assert left != right
+
+
+# --------------------------------------------------------------------------
+# Der Ring wird nicht geteilt
+# --------------------------------------------------------------------------
+
+# PolyRing ist kein Wertobjekt: seine gens sind PolyElement, also veraenderliche
+# dicts, und SymPy liest sie in from_expr und ring_new. Ein Aufrufer, der den
+# internen Ring in die Hand bekaeme, koennte aendern, was die Abbildung
+# rechnet -- ohne dass components davon etwas meldeten.
+
+
+def test_ring_property_does_not_hand_out_the_internal_ring(
+    F: PolynomialMap,
+) -> None:
+    before = F.displacement().components
+
+    F.ring.gens[0].clear()
+
+    assert F.displacement().components == before
+
+
+def test_to_polynomials_does_not_leak_the_ring_either(F: PolynomialMap) -> None:
+    """Ein PolyElement traegt eine Referenz auf seinen Ring; Kopien am internen
+    Ring wuerden ihn direkt wieder herausreichen."""
+    before = F.displacement().components
+
+    F.to_polynomials()[0].ring.gens[0].clear()
+
+    assert F.displacement().components == before
+
+
+def test_from_ring_does_not_adopt_the_callers_ring() -> None:
+    from sympy.polys.domains import QQ
+    from sympy.polys.rings import ring
+
+    R, a, b = ring("a,b", QQ)
+    G = PolynomialMap.from_ring(R, (a + b, a))
+    before = G.displacement().components
+
+    R.gens[0].clear()
+
+    assert G.displacement().components == before
+
+
+def test_the_variable_factory_never_sees_the_internal_ring(
+    F: PolynomialMap,
+) -> None:
+    seen: list[object] = []
+
+    def peeking(ring: object, count: int) -> tuple[sp.Symbol, ...]:
+        seen.append(ring)
+        return (sp.Symbol("u1"),)
+
+    F.extend(1, peeking)
+    before = F.displacement().components
+
+    seen[0].gens[0].clear()  # type: ignore[attr-defined]
+
+    assert F.displacement().components == before
+
+
+def test_the_handed_out_ring_stays_interchangeable(F: PolynomialMap) -> None:
+    """Die Isolierung darf den Ring nicht unbrauchbar machen.
+
+    Der Klon ist wertgleich, komponiert und vergleicht sich also wie der
+    interne -- sonst waere er als Argument fuer ``from_ring`` oder eine
+    Factory wertlos.
+    """
+    view = F.ring
+
+    assert view == F.ring
+    assert PolynomialMap.from_ring(view, F.to_polynomials()) == F
+
+
+# Der Klon muss ueber PolyRing gebaut werden, nicht ueber PolyRing.clone:
+# letzteres laeuft durch SymPys cacheit, und das Klonen eines Klons gibt
+# dasselbe Objekt zurueck. Eine Isolierung darauf waere fuer jede Abbildung
+# aus from_ring -- also jedes Ergebnis von compose und extend -- wirkungslos,
+# ohne dass ein Test es meldete, der nur den Ausdruckskonstruktor prueft.
+
+CONSTRUCTION_PATHS = ["expressions", "from_ring", "compose", "extend"]
+
+
+def _build(path: str) -> PolynomialMap:
+    x, y = sp.symbols("x y")
+    base = PolynomialMap((x, y), (x + y**2, x - y))
+
+    if path == "expressions":
+        return base
+    if path == "from_ring":
+        return PolynomialMap.from_ring(base.ring, base.to_polynomials())
+    if path == "compose":
+        return base.compose(base)
+    return base.extend(2)
+
+
+@pytest.mark.parametrize("path", CONSTRUCTION_PATHS)
+def test_every_construction_path_owns_its_ring(path: str) -> None:
+    F = _build(path)
+
+    assert F.ring is not F._ring
+    assert F.ring.gens[0] is not F._ring.gens[0]
+
+
+@pytest.mark.parametrize("path", CONSTRUCTION_PATHS)
+def test_every_construction_path_is_isolated(path: str) -> None:
+    F = _build(path)
+    before = F.displacement().components
+
+    F.ring.gens[0].clear()
+    F.to_polynomials()[0].ring.gens[0].clear()
+
+    assert F.displacement().components == before
+
+
+def test_clone_ring_is_not_sympys_memoised_clone() -> None:
+    """Die Falle festgehalten.
+
+    ``PolyRing.clone`` eines Klons liefert den Klon selbst; ``clone_ring``
+    liefert immer ein eigenes Objekt mit eigenen Generatoren.
+    """
+    from sympy.polys.domains import QQ
+    from sympy.polys.rings import ring
+
+    from bcw.polynomial_map import clone_ring
+
+    R = ring("a,b", QQ)[0]
+    memoised = R.clone(symbols=R.symbols)
+
+    assert memoised.clone(symbols=memoised.symbols) is memoised
+
+    fresh = clone_ring(memoised)
+
+    assert fresh is not memoised
+    assert fresh == memoised
+    assert fresh.gens[0] is not memoised.gens[0]

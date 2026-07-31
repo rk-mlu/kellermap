@@ -97,9 +97,58 @@ The constructor accepts
 - a tuple or iterable of SymPy `Symbol` objects,
 - a tuple or iterable of polynomial SymPy `Expr` objects.
 
-The public properties `variables`, `components`, `matrix`, `jacobian()`, and
+The public properties `variables`, `components`, `matrix`, `jacobian()` and
 `determinant()` expose immutable SymPy objects suitable for inspection,
-printing, testing, and LaTeX output.
+printing, testing and LaTeX output.
+
+Two members cross into the sparse representation rather than staying at the
+expression boundary, and are public because internal algorithms and callers
+building on them need the fast path: `ring` and `to_polynomials()`. Both are
+covered by the cloning rule below.
+
+`docs/api.md` is the reference for the whole surface; its examples are
+executed by the test suite.
+
+The package ships a `py.typed` marker. Without it the annotations stop at
+the project boundary: a consumer running mypy sees every member of `bcw`
+as `Any`, however strictly the project checks itself. Members typed in
+terms of SymPy stay `Any` downstream regardless, since SymPy ships no
+type information.
+
+### The ring is cloned, not shared
+
+`PolyRing` is not a value object. Its `gens` are `PolyElement` instances and
+therefore mutable dicts, and SymPy reads them in `from_expr` and `ring_new`.
+A map that handed out its internal ring would let a caller change what it
+computes: `F.ring.gens[0].clear()` altered `F.displacement()` while
+`F.components` still reported the original map.
+
+Every value object therefore clones the ring it is given and never hands out
+the one it computes with. Four paths carry it:
+
+- `from_ring()` clones the caller's ring and rebinds the components onto the
+  clone,
+- `ring` returns a further clone,
+- `to_polynomials()` binds its copies to that clone, since a `PolyElement`
+  carries a reference to its ring,
+- `extend()` passes the clone to the variable factory.
+
+Cloning must not go through `PolyRing.clone()`. That method is memoised by
+SymPy's `cacheit`, and cloning a ring that is *itself* a clone returns the
+same object. Isolation built on it does nothing for any map produced by
+`from_ring()` — which is every result of `compose()` and `extend()` — while
+still passing a test that only exercises the expression constructor.
+`clone_ring()` constructs a `PolyRing` directly instead.
+
+Rebinding likewise cannot go through `PolyElement.set_ring()`, which
+short-circuits on value-equal rings and returns the original. `copy_polynomial()`
+takes the target ring and rebuilds through `from_terms()`.
+
+The clones are value-equal, so they compose, compare and coerce
+interchangeably with the internal ring, and remain usable as arguments to
+`from_ring()`, `ElementaryFactor` and a `VariableFactory`.
+
+### Matrices
 
 `matrix` and `jacobian()` return `sp.ImmutableMatrix`. For `matrix` this is
 load-bearing rather than decorative: the property is cached, so a mutable
@@ -207,18 +256,27 @@ one a reduction step must record.
 Two objects, because `EA_n(k)` is a group and its generators are not closed
 under composition.
 
-`ElementaryFactor` is a generator: the map fixing every coordinate but one,
+`ElementaryFactor` is a generator, in the sense of BCW p. 304: `F` in
+`MA_n(k)` is elementary if for some `j` the difference `F_i - X_i` vanishes
+for `i != j` and is independent of `X_j` for `i = j`. So
 
-    X_i  |-->  a X_i + P,
+    X_j  |-->  X_j + P,      P free of X_j,
 
-with `a` a unit of the coefficient domain and `P` free of `X_i`. Both
-conditions carry the inverse, which is then a formula rather than a solved
-equation,
+with no coefficient on `X_j`. The paper draws the inverse straight from the
+definition, `(F^-1)_i - X_i = -(F_i - X_i)`:
 
-    X_i  |-->  a^-1 (X_i - P),
+    X_j  |-->  X_j - P,
 
-with `P` unchanged under the substitution precisely because it does not
-involve `X_i`. Both are enforced at construction.
+where `P` survives the substitution unchanged precisely because it does not
+involve `X_j`. The condition on `P` is enforced at construction.
+
+A scaling `X_j |-> a X_j + P` with `a != 1` is a polynomial automorphism but
+not an elementary one: its displacement `(a - 1) X_j` depends on `X_j`.
+Admitting it would put elements of determinant other than one into
+`EA_n(k)` — and the argument that a reduction step preserves the Jacobian
+determinant rests on every element of `EA_n(k)` having determinant one.
+Scalings belong to the linear part, which Section 4 normalizes separately; if
+they are needed they get their own type rather than a parameter here.
 
 `ElementaryAutomorphism` is an element of `EA_n(k)`, stored as the ordered
 product `f_1 o ... o f_k` of the factors that build it, with the empty product
@@ -248,9 +306,11 @@ exhibit the factorization it used.
 
 ### What is structural and what is not
 
-The Jacobian determinant of a factor is `a`, and of a product the product of
-the coefficients — no polynomial arithmetic at all. This is what allows
-`BCWStep.verify()` to check determinants at every step.
+The Jacobian determinant of a factor is one, and hence so is that of any
+product: the Jacobian is the identity except for row `j`, whose off-diagonal
+entries are the partials of `P` and whose diagonal entry is one. This is a
+theorem, not a computation, and it is what allows `BCWStep.verify()` to check
+determinants at every step.
 
 The filtration level is *not* structural. Factors in `EA^0` can multiply to
 something in `EA^1`: `X_1 |-> X_1 + X_2` composed with `X_1 |-> X_1 - X_2` is
@@ -504,6 +564,13 @@ integration with `DomainMatrix`.
 ### Integration tests
 
 Verify complete reduction sequences and their certificates.
+
+### Executable documentation
+
+`docs/api.md` is collected by pytest with `--doctest-glob=*.md`. Every example
+in it runs on every `make check`, so the reference cannot describe an API the
+library no longer has. It is not a substitute for the unit tests: it covers the
+surface a reader meets first, not the edge cases.
 
 ### Regression and benchmark tests
 
