@@ -7,6 +7,7 @@ prueft statt es zu glauben.
 
 import pytest
 import sympy as sp
+from sympy.polys.rings import PolyRing
 
 from bcw import (
     DEFAULT_VARIABLE_FACTORY,
@@ -170,3 +171,71 @@ def test_extend_rejects_non_symbols() -> None:
 
     with pytest.raises(TypeError, match="SymPy symbols"):
         F.extend(1, not_symbols)  # type: ignore[arg-type]
+
+
+# --------------------------------------------------------------------------
+# Zweimal erweitern muss einmal erweitern gleichen
+# --------------------------------------------------------------------------
+
+SPLITS = [(1, 1), (2, 2), (1, 3), (3, 1)]
+
+FACTORIES = [None, IndexedVariableFactory(), IndexedVariableFactory(prefix="u")]
+
+
+@pytest.mark.parametrize(("m", "ell"), SPLITS)
+@pytest.mark.parametrize("factory", FACTORIES)
+def test_extending_twice_equals_extending_once(
+    m: int, ell: int, factory: IndexedVariableFactory | None
+) -> None:
+    """(F^[m])^[l] = F^[m+l].
+
+    Eine Reduktion stabilisiert schrittweise; sie muss dort landen, wo eine
+    einzige Stabilisierung landet. Der Test prueft die Namensvergabe, nicht
+    die Komponenten -- die sind ohnehin Identitaeten.
+    """
+    F = PolynomialMap((x, y), (x + y, x - y))
+
+    assert F.extend(m, factory).extend(ell, factory) == F.extend(m + ell, factory)
+
+
+@pytest.mark.parametrize(("m", "ell"), SPLITS)
+def test_extending_twice_survives_a_reserved_name_in_between(m: int, ell: int) -> None:
+    """Derselbe Test mit einer Luecke in der Namensfolge.
+
+    X3 ist als Koeffizientensymbol belegt, die Vergabe muss es ueberspringen
+    -- in beiden Zerlegungen an derselben Stelle.
+    """
+    F = PolynomialMap((x, y), (sp.Symbol("X3") * x, y))
+
+    assert F.extend(m).extend(ell) == F.extend(m + ell)
+
+
+def test_extending_twice_reads_the_numbered_convention(
+    numbered: PolynomialMap,
+) -> None:
+    """x1..x5 -> x6..x9, gleich ob in einem oder in zwei Schritten."""
+    stepwise = numbered.extend(2).extend(2)
+
+    assert stepwise == numbered.extend(4)
+    assert stepwise.variables[-4:] == sp.symbols("x6 x7 x8 x9")
+
+
+def test_purity_alone_does_not_give_the_composition_invariant() -> None:
+    """Warum die Anforderung eigenstaendig im Protokoll steht.
+
+    Diese Factory ist eine reine Funktion von Ring und Anzahl und kollidiert
+    nie -- ``extend`` findet also nichts zu beanstanden. Trotzdem liefern
+    beide Zerlegungen verschiedene Abbildungen, weil die Ringgroesse in den
+    Namen eingeht statt nur in die Laufweite.
+    """
+
+    def by_ring_size(ring: PolyRing, count: int) -> tuple[sp.Symbol, ...]:
+        return tuple(sp.Symbol(f"g{ring.ngens}_{i}") for i in range(1, count + 1))
+
+    F = PolynomialMap((x, y), (x + y, x - y))
+
+    assert by_ring_size(F.ring, 2) == by_ring_size(F.ring, 2)
+
+    assert F.extend(2, by_ring_size).extend(2, by_ring_size) != F.extend(
+        4, by_ring_size
+    )

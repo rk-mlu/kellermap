@@ -59,21 +59,36 @@ existing ring and avoid expression conversions inside reduction loops.
 
 ### VariableFactory
 
-An injectable, collision-safe name generator for stable extensions. Version
-0.1 derives the names inside `PolynomialMap.extend()` from the current
-dimension; the monoid-homomorphism invariant
+An injectable, collision-safe name generator for stable extensions, in
+`bcw.variables`. `PolynomialMap.extend()` takes one and falls back to
+`DEFAULT_VARIABLE_FACTORY`.
+
+A factory must be a pure function of ring and count. The monoid-homomorphism
+invariant
 
     (F o G)^[m] = F^[m] o G^[m]
 
-then holds only because equal-dimensional maps happen to receive equal names.
-Making the generator explicit turns that accident into a stated precondition.
+reaches `extend()` through three separate calls, and a factory that counted
+upwards would name the sides differently and break the identity silently. The
+invariant test passes a factory explicitly rather than relying on
+equal-dimensional maps happening to agree.
+
+`IndexedVariableFactory` reads the naming convention off the existing
+generators, so `x1, ..., x17` extends by `x18, x19` instead of `X18, X19`.
+`extend()` rechecks count, type, distinctness and collisions rather than
+trusting the factory, because `PolyRing.clone()` accepts a duplicated
+generator name without complaint.
 
 The wider `ReductionContext` stays in 0.2, where the objects that determine
-its requirements are built.
+its requirements are built. It inherits the purity requirement: per-step
+naming means handing out a fresh pure factory per step, not carrying one that
+remembers.
 
 ### Quality
 
 - complete unit tests
+- immutable SymPy objects across the whole public boundary, including
+  `matrix` and `jacobian()`
 - mypy strict mode
 - ruff (`ruff check` and `ruff format`; black was dropped in favour of a
   single formatter)

@@ -98,22 +98,54 @@ def test_stabilization_preserves_determinant(F: PolynomialMap) -> None:
     assert vanishes(F.extend(2).determinant(), F.determinant())
 
 
-@pytest.mark.parametrize("F", [LINEAR, TRIANGULAR, KELLER, QUADRATIC])
-def test_stabilization_preserves_degree_and_order(F: PolynomialMap) -> None:
-    """Die Stabilisierung fuegt nur Identitaetskomponenten hinzu.
+# Die neuen Komponenten X_{n+i} sind Monome vom Grad genau 1. Grad und
+# Ordnung werden daher nicht erhalten, sondern gegen 1 abgeschnitten:
+#
+#     deg(F^[m]) = max(deg F, 1),    ord(F^[m]) = min(ord F, 1)   fuer m > 0.
+#
+# Erhalten bleiben Grad und Ordnung des Displacements und damit der
+# Filtrierungsgrad -- und nur darauf stuetzt sich BCW.
 
-    Sie kann den Grad nicht erhoehen und die Ordnung nicht senken, denn die
-    neuen Komponenten X_{n+i} liefern keine neuen Monome ausserhalb von Grad 1.
+DEGREE_AND_ORDER_CASES = [
+    LINEAR,
+    TRIANGULAR,
+    KELLER,
+    QUADRATIC,
+    # Ordnung 2: die Stabilisierung senkt sie auf 1.
+    PolynomialMap((x, y), (x**2, y**2)),
+    # Grad 0: die Stabilisierung hebt ihn auf 1.
+    PolynomialMap((x, y), (sp.Integer(5), sp.Integer(7))),
+]
+
+
+@pytest.mark.parametrize("F", DEGREE_AND_ORDER_CASES)
+def test_stabilization_truncates_degree_and_order_at_one(F: PolynomialMap) -> None:
+    """Grad und Ordnung unter Stabilisierung, exakt.
+
+    Eine fruehere Fassung behauptete Erhaltung und pruefte das an vier
+    Abbildungen, die saemtlich Grad >= 1 und Ordnung <= 1 hatten -- also
+    genau an den Faellen, in denen die Abschneidung nicht sichtbar wird. Die
+    beiden zusaetzlichen Faelle oben schliessen diese Luecke.
     """
     extended = F.extend(2)
 
-    assert extended.degree() == F.degree()
-    assert extended.order() == F.order()
+    assert extended.degree() == max(F.degree(), 1)
+    assert extended.order() == min(F.order(), 1)
 
 
-@pytest.mark.parametrize("F", [TRIANGULAR, KELLER])
-def test_stabilization_preserves_filtration_degree(F: PolynomialMap) -> None:
-    assert F.extend(2).filtration_degree() == F.filtration_degree()
+@pytest.mark.parametrize("F", DEGREE_AND_ORDER_CASES)
+def test_stabilization_preserves_the_displacement(F: PolynomialMap) -> None:
+    """Was tatsaechlich erhalten bleibt und was BCW braucht.
+
+    F^[m] - X unterscheidet sich von F - X nur um m Nullkomponenten, also
+    stimmen Grad und Ordnung des Displacements ueberein. Der Filtrierungsgrad
+    folgt daraus.
+    """
+    extended = F.extend(2)
+
+    assert extended.displacement().degree() == F.displacement().degree()
+    assert extended.displacement().order() == F.displacement().order()
+    assert extended.filtration_degree() == F.filtration_degree()
 
 
 @pytest.mark.parametrize(("F", "G"), PAIRS)
@@ -256,3 +288,15 @@ def test_bcw_step_factors_lie_in_EA1() -> None:  # noqa: N802
 
     assert BCW_G.is_in_MA(1)
     assert BCW_H.is_in_MA(1)
+
+
+@pytest.mark.parametrize("F", [LINEAR, TRIANGULAR, KELLER, QUADRATIC])
+@pytest.mark.parametrize(("m", "ell"), [(1, 1), (2, 2), (1, 3)])
+def test_stabilization_composes(F: PolynomialMap, m: int, ell: int) -> None:
+    """(F^[m])^[l] = F^[m+l], BCW S. 304.
+
+    Zusammen mit dem Monoid-Homomorphismus ist das die zweite Zusage, die
+    eine schrittweise stabilisierende Reduktion braucht: sie muss dort
+    landen, wo eine einzige Stabilisierung landet.
+    """
+    assert F.extend(m, CARRIER).extend(ell, CARRIER) == F.extend(m + ell, CARRIER)

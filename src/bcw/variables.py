@@ -44,6 +44,25 @@ class VariableFactory(Protocol):
     A factory is also responsible for avoiding collisions; see
     ``reserved_names``. ``PolynomialMap.extend`` rechecks the result rather
     than trusting it.
+
+    **Extending twice must equal extending once.** Stable extension composes,
+
+        (F^[m])^[l] = F^[m+l],
+
+    so the names allocated by an extension of size ``m`` followed by one of
+    size ``l`` must be exactly those allocated by a single extension of size
+    ``m + l``, in that order.
+
+    This does not follow from purity. A factory naming its output after the
+    size of the ring it was handed -- ``g2_1, g2_2`` for a two-generator ring
+    -- is perfectly pure and never collides, yet gives
+
+        (F^[2])^[2] -> g2_1, g2_2, g4_1, g4_2
+        F^[4]       -> g2_1, g2_2, g2_3, g2_4,
+
+    two different maps where BCW needs one. Names must therefore be allocated
+    from a sequence determined by the ring alone, with the count deciding only
+    how far to walk it -- never entering the name itself.
     """
 
     def __call__(self, ring: PolyRing, count: int) -> tuple[sp.Symbol, ...]:

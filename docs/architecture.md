@@ -101,6 +101,17 @@ The public properties `variables`, `components`, `matrix`, `jacobian()`, and
 `determinant()` expose immutable SymPy objects suitable for inspection,
 printing, testing, and LaTeX output.
 
+`matrix` and `jacobian()` return `sp.ImmutableMatrix`. For `matrix` this is
+load-bearing rather than decorative: the property is cached, so a mutable
+matrix would let a caller alter the value of every subsequent evaluation
+while `components` still reported the original map. `sp.Matrix(F.matrix)`
+gives a mutable copy where one is wanted.
+
+Generators must have pairwise distinct *names*, not merely be distinct
+symbols. Two `Symbol` objects with different assumptions compare unequal but
+print identically, and `PolyRing` accepts both, yielding two generators that
+no expression can tell apart. Both constructors reject this.
+
 ### Internal representation
 
 Internally a map stores
@@ -115,7 +126,9 @@ symbol occurring in a component belongs to the coefficient domain. Thus an
 indeterminate `T` in `MA_n(k[T])`, or a symbolic coefficient, does not
 contribute to degree or order.
 
-`PolyElement` inherits from `dict` and is mutable. Therefore:
+`PolyElement` inherits from `dict` and is mutable, and so is a coefficient
+that is itself a `PolyElement` — over `k[T]` the copy must therefore descend
+recursively, not stop at the top level. Therefore:
 
 - coordinate polynomials remain private,
 - the expression-level constructor copies its internal polynomials,
@@ -176,6 +189,16 @@ monomial support:
 - `degree()` is the largest total degree,
 - `order()` is the smallest occurring total degree,
 - the zero map has degree `0` and order `math.inf`.
+
+Neither is preserved by stable extension. The added coordinates `X_{n+i}` are
+monomials of degree exactly one, so for `m > 0`
+
+    deg(F^[m]) = max(deg F, 1),      ord(F^[m]) = min(ord F, 1).
+
+What survives is the displacement: `F^[m] - X` differs from `F - X` by zero
+components only, so its degree and order — and therefore the filtration
+degree — are unchanged. That is the invariant BCW actually relies on, and the
+one a reduction step must record.
 
 ---
 
@@ -322,6 +345,27 @@ state. It is also the constraint a `ReductionContext` inherits: anything that
 must remember something across calls belongs there, and the context is then
 responsible for handing the *same* factory to every side of such an identity.
 
+### Extending twice must equal extending once
+
+Stable extension composes,
+
+    (F^[m])^[l] = F^[m+l],
+
+so an extension of size `m` followed by one of size `l` must allocate exactly
+the names a single extension of size `m + l` would, in that order. A reduction
+stabilizes step by step and must land where one stabilization lands.
+
+This does *not* follow from purity, and the two requirements are stated
+separately for that reason. A factory naming its output after the size of the
+ring it was handed — `g2_1, g2_2` for a two-generator ring — is pure and never
+collides, so `extend()` finds nothing to object to, yet
+
+    (F^[2])^[2] -> g2_1, g2_2, g4_1, g4_2
+    F^[4]       -> g2_1, g2_2, g2_3, g2_4.
+
+Names must be drawn from a sequence determined by the ring alone, with the
+count deciding only how far along it to walk, never entering the name.
+
 ### Naming convention
 
 `IndexedVariableFactory` produces `prefix1, prefix2, ...`, skipping names
@@ -396,7 +440,10 @@ Examples:
 - simultaneous composition
 - coefficient-domain handling
 - defensive copying of mutable `PolyElement` objects
-- purity of variable factories, and the validation `extend()` performs on them
+- purity and composition of variable factories, and the validation `extend()`
+  performs on them
+- rejection of empty input and of malformed rings passed to `from_ring()`
+- recursive defensive copying where a coefficient is itself a polynomial
 
 ### Cross-representation tests
 

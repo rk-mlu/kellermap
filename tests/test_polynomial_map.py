@@ -544,3 +544,185 @@ def test_unipotent_block_rejects_a_non_unit_diagonal() -> None:
     assert F._is_unipotent_block((1,))
     assert not F._is_unipotent_block((0, 1))
     assert F._schur_complement((0, 1)) is None
+
+
+# --------------------------------------------------------------------------
+# Unveraenderlichkeit der oeffentlichen Matrizen
+# --------------------------------------------------------------------------
+
+
+def test_matrix_is_immutable(F: PolynomialMap) -> None:
+    """Regression fuer einen echten Fehler.
+
+    ``matrix`` ist gecacht. Solange sie veraenderlich war, verfaelschte eine
+    Zuweisung von aussen jede spaetere Auswertung: nach ``F.matrix[0] = 0``
+    lieferte ``F(1, 2)`` den Wert ``[0, -1]`` statt ``[3, -1]``, obwohl
+    ``components`` unberuehrt blieb.
+    """
+    with pytest.raises(TypeError):
+        F.matrix[0] = sp.Integer(0)  # type: ignore[index]
+
+    assert F(sp.Integer(1), sp.Integer(2)) == sp.Matrix([3, -1])
+
+
+def test_jacobian_is_immutable(F: PolynomialMap) -> None:
+    """Hier kein Fehler, sondern Konsistenz: die oeffentliche Grenze sagt
+    unveraenderliche SymPy-Objekte zu."""
+    with pytest.raises(TypeError):
+        F.jacobian()[0, 0] = sp.Integer(0)  # type: ignore[index]
+
+
+def test_evaluation_returns_an_immutable_matrix(F: PolynomialMap) -> None:
+    result = F(sp.Integer(1), sp.Integer(2))
+
+    assert isinstance(result, sp.ImmutableMatrix)
+    assert result == sp.Matrix([3, -1])
+
+
+def test_mutable_copies_remain_available(F: PolynomialMap) -> None:
+    """Wer eine veraenderliche Matrix braucht, bekommt sie -- als Kopie."""
+    copy = sp.Matrix(F.matrix)
+    copy[0] = sp.Integer(0)
+
+    assert F.matrix[0] != 0
+
+
+# --------------------------------------------------------------------------
+# Eindeutigkeit der Generatoren
+# --------------------------------------------------------------------------
+
+
+def test_from_ring_rejects_duplicate_generators() -> None:
+    """Ein PolyRing ueber (x, x) laesst sich bauen; die beiden Generatoren
+    sind beim Uebergang zu Ausdruecken nicht mehr zu unterscheiden."""
+    from sympy.polys.domains import QQ
+    from sympy.polys.rings import ring
+
+    x = sp.Symbol("x")
+    R, first, second = ring([x, x], QQ)
+
+    with pytest.raises(ValueError, match="pairwise distinct"):
+        PolynomialMap.from_ring(R, (first, second))
+
+
+def test_duplicate_variables_are_detected_by_name() -> None:
+    """Verschiedene Annahmen, gleicher Name: die Symbole sind ungleich, ihre
+    Ausdruecke aber ununterscheidbar."""
+    plain = sp.Symbol("x")
+    positive = sp.Symbol("x", positive=True)
+
+    assert plain != positive
+
+    with pytest.raises(ValueError, match="pairwise distinct"):
+        PolynomialMap((plain, positive), (plain, positive))
+
+
+# --------------------------------------------------------------------------
+# Leere Eingaben und ungueltige Ringe
+# --------------------------------------------------------------------------
+
+
+def test_empty_input_is_rejected() -> None:
+    with pytest.raises(ValueError, match="at least one variable"):
+        PolynomialMap((), ())
+
+
+def test_non_expression_components_are_rejected() -> None:
+    x, y = sp.symbols("x y")
+
+    with pytest.raises(TypeError, match="SymPy expressions"):
+        PolynomialMap((x, y), (x, "y"))  # type: ignore[arg-type]
+
+
+def test_from_ring_rejects_a_ring_without_generators() -> None:
+    from sympy.polys.domains import QQ
+    from sympy.polys.rings import ring
+
+    empty = ring("", QQ)[0]
+
+    with pytest.raises(ValueError, match="at least one variable"):
+        PolynomialMap.from_ring(empty, ())
+
+
+def test_from_ring_rejects_non_symbol_generators() -> None:
+    """``PolyRing`` nimmt einen zusammengesetzten Ausdruck als Generator an."""
+    from sympy.polys.domains import QQ
+    from sympy.polys.rings import ring
+
+    x, y = sp.symbols("x y")
+    composite = ring([x * y], QQ)[0]
+
+    assert not isinstance(composite.symbols[0], sp.Symbol)
+
+    with pytest.raises(TypeError, match="SymPy symbols"):
+        PolynomialMap.from_ring(composite, composite.gens)
+
+
+def test_from_ring_rejects_a_component_count_mismatch() -> None:
+    from sympy.polys.domains import QQ
+    from sympy.polys.rings import ring
+
+    R, a, b = ring("a,b", QQ)
+
+    with pytest.raises(ValueError, match="differ"):
+        PolynomialMap.from_ring(R, (a,))
+
+
+def test_from_ring_rejects_a_component_from_another_ring() -> None:
+    from sympy.polys.domains import QQ
+    from sympy.polys.rings import ring
+
+    R, a, b = ring("a,b", QQ)
+    S, c, d = ring("c,d", QQ)
+
+    with pytest.raises(ValueError, match="belong to the specified ring"):
+        PolynomialMap.from_ring(R, (a, c))
+
+
+# --------------------------------------------------------------------------
+# Verschachtelte defensive Kopien
+# --------------------------------------------------------------------------
+
+# Ueber k[T] ist der Koeffizient eines Monoms selbst ein PolyElement, also
+# wieder ein veraenderliches dict. Eine flache Kopie wuerde diese innere
+# Ebene teilen; _copy_polynomial steigt deshalb rekursiv ab.
+
+
+def _nested_coefficient(polynomial: object) -> object:
+    """Return the first coefficient that is itself a polynomial."""
+    from sympy.polys.rings import PolyElement
+
+    assert isinstance(polynomial, PolyElement)
+    for _, coefficient in polynomial.iterterms():
+        if isinstance(coefficient, PolyElement) and coefficient != coefficient.ring.one:
+            return coefficient
+    raise AssertionError("no nested coefficient found")
+
+
+def test_to_polynomials_copies_nested_coefficients() -> None:
+    x, y, T = sp.symbols("x y T")
+    F = PolynomialMap((x, y), (T * x + y, x))
+
+    assert str(F.ring.domain) == "ZZ[T]"
+
+    coefficient = _nested_coefficient(F.to_polynomials()[0])
+    coefficient[coefficient.ring.zero_monom] = coefficient.ring.domain.one  # type: ignore[index]
+
+    assert F.components == (T * x + y, x)
+
+
+def test_from_ring_copies_nested_coefficients() -> None:
+    """Dieselbe Ebene, andere Richtung: die Eingabe darf nachtraeglich
+    veraendert werden, ohne die Abbildung zu treffen."""
+    from sympy.polys.rings import ring
+
+    T = sp.Symbol("T")
+    R, a, b = ring("a,b", sp.polys.domains.QQ[T])
+    component = T * a + b
+
+    F = PolynomialMap.from_ring(R, (component, a))
+
+    coefficient = _nested_coefficient(component)
+    coefficient[coefficient.ring.zero_monom] = coefficient.ring.domain.one  # type: ignore[index]
+
+    assert F.components[0] == T * sp.Symbol("a") + sp.Symbol("b")
