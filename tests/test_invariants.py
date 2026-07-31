@@ -12,7 +12,12 @@ Seitenangaben beziehen sich auf Bass, Connell, Wright, Bull. AMS 1982.
 import pytest
 import sympy as sp
 
-from bcw import IndexedVariableFactory, PolynomialMap
+from bcw import (
+    ElementaryAutomorphism,
+    ElementaryFactor,
+    IndexedVariableFactory,
+    PolynomialMap,
+)
 
 # Eine eigene Namenspolitik fuer die Stabilisierungsvariablen.
 CARRIER = IndexedVariableFactory(prefix="u")
@@ -300,3 +305,39 @@ def test_stabilization_composes(F: PolynomialMap, m: int, ell: int) -> None:
     landen, wo eine einzige Stabilisierung landet.
     """
     assert F.extend(m, CARRIER).extend(ell, CARRIER) == F.extend(m + ell, CARRIER)
+
+
+# --------------------------------------------------------------------------
+# Formel (1) mit Elementarautomorphismen statt mit rohen Abbildungen
+# --------------------------------------------------------------------------
+
+
+def test_bcw_step_can_be_built_from_elementary_factors(
+    reduced: PolynomialMap,
+) -> None:
+    """Dieselbe Reduktion, aus G und H als Gruppenelemente.
+
+    Oben werden G und H als gewoehnliche PolynomialMaps hingeschrieben und
+    ihre Invertierbarkeit nur behauptet. Hier tragen sie ihre Faktorisierung
+    mit sich, und der Schritt laesst sich rueckgaengig machen. Das ist die
+    Form, in der ein BCWStep sie ablegen muss.
+    """
+    stabilized = BCW_F.extend(2)
+    ring = stabilized.ring
+    X1, X2, X3, X4 = ring.gens
+
+    G = ElementaryAutomorphism([ElementaryFactor(ring, 0, -X3 * X4)])
+    H = ElementaryAutomorphism(
+        [ElementaryFactor(ring, 2, X2**2), ElementaryFactor(ring, 3, X2**2)]
+    )
+
+    assert G.apply_to(stabilized.compose(H.to_polynomial_map())) == reduced
+
+    assert G.determinant() == H.determinant() == 1
+    assert G.is_in_EA(1)
+    assert H.is_in_EA(1)
+
+    # Der Schritt ist umkehrbar, ohne dass irgendetwas geloest wird.
+    undone = G.inverse().apply_to(reduced).compose(H.inverse().to_polynomial_map())
+
+    assert undone == stabilized

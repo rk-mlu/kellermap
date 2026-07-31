@@ -53,7 +53,7 @@ The implementation follows five guiding principles.
 PolynomialMap  ←──uses──  VariableFactory
         │
         │
-ElementaryAutomorphism
+ElementaryFactor ──► ElementaryAutomorphism
         │
         │
       BCWStep
@@ -204,7 +204,27 @@ one a reduction step must record.
 
 ## ElementaryAutomorphism
 
-Represents an elementary polynomial automorphism.
+Two objects, because `EA_n(k)` is a group and its generators are not closed
+under composition.
+
+`ElementaryFactor` is a generator: the map fixing every coordinate but one,
+
+    X_i  |-->  a X_i + P,
+
+with `a` a unit of the coefficient domain and `P` free of `X_i`. Both
+conditions carry the inverse, which is then a formula rather than a solved
+equation,
+
+    X_i  |-->  a^-1 (X_i - P),
+
+with `P` unchanged under the substitution precisely because it does not
+involve `X_i`. Both are enforced at construction.
+
+`ElementaryAutomorphism` is an element of `EA_n(k)`, stored as the ordered
+product `f_1 o ... o f_k` of the factors that build it, with the empty product
+as the identity. Composition concatenates, inversion reverses and inverts.
+Proposition (3.1) needs this: its `G` is a single factor, its `H` is a product
+of two.
 
 Responsibilities:
 
@@ -212,9 +232,39 @@ Responsibilities:
 - inverse
 - composition
 - conversion to `PolynomialMap`
+- filtration level, since the proposition places its factors in `EA^1` or
+  `EA^0` and a step must record which
 
-Every elementary automorphism must be explicitly invertible and must use the
-same `PolyRing` context as the map on which it acts.
+Every factor uses the `PolyRing` context of the maps it acts on; mismatches
+are rejected rather than coerced.
+
+### The factorization is kept
+
+The product is not multiplied out. Two different factorizations of the same
+automorphism are different objects and compare unequal, even though their
+`PolynomialMap`s agree. This is deliberate. "Invertible" is a claim; "here are
+the generators and their inverses" is a proof, and a certificate has to
+exhibit the factorization it used.
+
+### What is structural and what is not
+
+The Jacobian determinant of a factor is `a`, and of a product the product of
+the coefficients — no polynomial arithmetic at all. This is what allows
+`BCWStep.verify()` to check determinants at every step.
+
+The filtration level is *not* structural. Factors in `EA^0` can multiply to
+something in `EA^1`: `X_1 |-> X_1 + X_2` composed with `X_1 |-> X_1 - X_2` is
+the identity, which lies in every `EA^d`. `MA^d` being a submonoid gives a
+lower bound only, so `ElementaryAutomorphism.filtration_degree()` forms the
+map.
+
+### Applying a factor
+
+`apply_to()` composes a factor with a map on the left. Only one coordinate
+changes, so one polynomial composition suffices where a full map composition
+would perform `n`. This is the reason the class exists rather than everything
+being a `PolynomialMap`, and it is checked against `PolynomialMap.compose()`
+in the tests.
 
 ---
 

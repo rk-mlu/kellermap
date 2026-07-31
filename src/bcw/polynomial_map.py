@@ -22,6 +22,20 @@ from .variables import (
 Block = tuple[tuple["PolyElement", ...], ...]
 
 
+def copy_polynomial(polynomial: PolyElement) -> PolyElement:
+    """Recursively copy a polynomial and its polynomial coefficients.
+
+    ``PolyElement`` inherits from ``dict``; over ``k[T]`` a coefficient is
+    itself one, so a shallow copy would still share that inner level.
+    """
+    terms = []
+    for monomial, coefficient in polynomial.iterterms():
+        if isinstance(coefficient, PolyElement):
+            coefficient = copy_polynomial(coefficient)
+        terms.append((monomial, coefficient))
+    return polynomial.ring.from_terms(terms)
+
+
 def _names_are_distinct(symbols: Iterable[sp.Symbol]) -> bool:
     """Return whether no two symbols share a name.
 
@@ -73,10 +87,7 @@ class PolynomialMap:
         object.__setattr__(
             self,
             "_poly_components",
-            tuple(
-                self._copy_polynomial(polynomial)
-                for polynomial in polynomial_components
-            ),
+            tuple(copy_polynomial(polynomial) for polynomial in polynomial_components),
         )
 
     @classmethod
@@ -113,19 +124,9 @@ class PolynomialMap:
         object.__setattr__(
             instance,
             "_poly_components",
-            tuple(cls._copy_polynomial(component) for component in components_tuple),
+            tuple(copy_polynomial(component) for component in components_tuple),
         )
         return instance
-
-    @staticmethod
-    def _copy_polynomial(polynomial: PolyElement) -> PolyElement:
-        """Recursively copy a polynomial and polynomial coefficients."""
-        terms = []
-        for monomial, coefficient in polynomial.iterterms():
-            if isinstance(coefficient, PolyElement):
-                coefficient = PolynomialMap._copy_polynomial(coefficient)
-            terms.append((monomial, coefficient))
-        return polynomial.ring.from_terms(terms)
 
     @staticmethod
     def _validate_expr_input(
@@ -169,9 +170,7 @@ class PolynomialMap:
 
     def to_polynomials(self) -> tuple[PolyElement, ...]:
         """Return defensive copies of the internal coordinate polynomials."""
-        return tuple(
-            self._copy_polynomial(component) for component in self._poly_components
-        )
+        return tuple(copy_polynomial(component) for component in self._poly_components)
 
     @property
     def dimension(self) -> int:
