@@ -10,7 +10,7 @@ from __future__ import annotations
 
 import re
 from dataclasses import dataclass
-from typing import Protocol
+from typing import Any, Protocol
 
 import sympy as sp
 from sympy.polys.rings import PolyRing
@@ -70,20 +70,41 @@ class VariableFactory(Protocol):
         ...
 
 
+def domain_symbol_names(domain: Any) -> frozenset[str]:
+    """Return the names of every indeterminate in ``domain``, at every level.
+
+    Coefficient domains nest: over ``QQ[X3][S]`` the symbol ``S`` sits at the
+    top and ``X3`` one level down. Looking only at ``domain.symbols`` finds
+    ``S`` and misses ``X3``, which is enough for a stable extension to hand
+    out a coordinate named ``X3`` and collapse it with the parameter.
+    """
+    names: set[str] = set()
+    seen: set[int] = set()
+
+    while domain is not None and domain.is_Composite and id(domain) not in seen:
+        seen.add(id(domain))
+        names.update(
+            symbol.name
+            for symbol in getattr(domain, "symbols", ())
+            if isinstance(symbol, sp.Symbol)
+        )
+        domain = getattr(domain, "dom", None)
+
+    return frozenset(names)
+
+
 def reserved_names(ring: PolyRing) -> frozenset[str]:
     """Return the names a fresh generator must not take.
 
-    Generators of the ring itself, and symbols of the coefficient domain: an
-    indeterminate ``T`` in ``k[T]`` is not a generator, but reusing its name
-    would still collapse two distinct objects.
+    Generators of the ring itself, and every indeterminate of the coefficient
+    domain however deeply nested: a ``T`` in ``k[T]`` is not a generator, but
+    reusing its name would still collapse two distinct objects.
     """
-    domain_symbols: tuple[object, ...] = tuple(getattr(ring.domain, "symbols", ()))
-
-    return frozenset(
-        symbol.name
-        for symbol in tuple(ring.symbols) + domain_symbols
-        if isinstance(symbol, sp.Symbol)
+    generator_names = frozenset(
+        symbol.name for symbol in ring.symbols if isinstance(symbol, sp.Symbol)
     )
+
+    return generator_names | domain_symbol_names(ring.domain)
 
 
 @dataclass(frozen=True)

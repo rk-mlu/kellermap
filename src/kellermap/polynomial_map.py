@@ -16,6 +16,7 @@ from sympy.polys.rings import PolyElement, PolyRing, sring
 from .variables import (
     DEFAULT_VARIABLE_FACTORY,
     VariableFactory,
+    domain_symbol_names,
     reserved_names,
 )
 
@@ -45,40 +46,69 @@ def copy_polynomial(
 
     return target.from_terms(
         [
-            (monomial, _copy_coefficient(coefficient))
+            (monomial, _copy_coefficient(coefficient, target.domain))
             for monomial, coefficient in polynomial.iterterms()
         ]
     )
 
 
-def _copy_coefficient(coefficient: Any) -> Any:
-    """Copy a coefficient if it is one of the mutable kinds."""
+def _copy_coefficient(coefficient: Any, domain: Any) -> Any:
+    """Copy a coefficient, rebinding it to ``domain``.
+
+    Rebinding matters once the domain itself is cloned: a coefficient carries
+    a reference to the ring or field it lives in, so copies left on the
+    original would hand that object back out through ``to_polynomials()``.
+    """
     if isinstance(coefficient, PolyElement):
-        return copy_polynomial(coefficient)
+        return copy_polynomial(coefficient, getattr(domain, "ring", None))
 
     if isinstance(coefficient, FracElement):
-        return coefficient.field.raw_new(
-            copy_polynomial(coefficient.numer),
-            copy_polynomial(coefficient.denom),
+        field = getattr(domain, "field", coefficient.field)
+        return field.raw_new(
+            copy_polynomial(coefficient.numer, field.ring),
+            copy_polynomial(coefficient.denom, field.ring),
         )
 
     return coefficient
 
 
+def clone_domain(domain: Any) -> Any:
+    """Return a fresh, value-equal coefficient domain.
+
+    Composite domains own generators as mutable ``PolyElement`` instances,
+    exactly like a ring does, and they nest: ``QQ[X3][S]`` carries mutable
+    state at two levels. Ground domains such as ``ZZ`` and ``QQ`` are
+    stateless singletons and are returned unchanged.
+    """
+    if not domain.is_Composite:
+        return domain
+
+    base = clone_domain(domain.dom)
+
+    if domain.is_FractionField:
+        return base.frac_field(*domain.symbols)
+
+    return base.poly_ring(*domain.symbols)
+
+
 def clone_ring(
     polynomial_ring: PolyRing, symbols: tuple[sp.Symbol, ...] | None = None
 ) -> PolyRing:
-    """Return a fresh, value-equal ring with its own generators.
+    """Return a fresh, value-equal ring with its own generators and domain.
 
     Deliberately not ``PolyRing.clone``: that goes through SymPy's ``cacheit``,
     and cloning a ring that is itself a clone hands the same object straight
     back. Defensive isolation built on it would do nothing at all for every
     map produced by ``from_ring`` -- which is every result of ``compose`` and
     ``extend``.
+
+    The domain is cloned too. Sharing it would leave the ring able to consult
+    a caller's mutable object: after ``caller_domain.gens[0].clear()`` the
+    supposedly isolated ring converted ``T*u`` to ``0``.
     """
     return PolyRing(
         polynomial_ring.symbols if symbols is None else symbols,
-        polynomial_ring.domain,
+        clone_domain(polynomial_ring.domain),
         polynomial_ring.order,
     )
 
@@ -100,6 +130,19 @@ def validate_ring(polynomial_ring: PolyRing) -> None:
 
     if not _names_are_distinct(polynomial_ring.symbols):
         raise ValueError("Ring generators must be pairwise distinct.")
+
+    # SymPy rejects a collision with the top level of a composite domain, but
+    # not with a nested one: over QQ[X3][S] a generator named X3 is accepted.
+    clashes = {
+        symbol.name
+        for symbol in polynomial_ring.symbols
+        if isinstance(symbol, sp.Symbol)
+    } & domain_symbol_names(polynomial_ring.domain)
+    if clashes:
+        raise ValueError(
+            "Ring generators must not share a name with a coefficient "
+            f"indeterminate: {sorted(clashes)}."
+        )
 
 
 def _names_are_distinct(symbols: Iterable[sp.Symbol]) -> bool:
@@ -212,9 +255,15 @@ class PolynomialMap:
         if not all(isinstance(component, sp.Expr) for component in components):
             raise TypeError("Components must be SymPy expressions.")
 
-    @cached_property
-    def _view_ring(self) -> PolyRing:
-        """A value-equal clone of the internal ring, for handing out."""
+    def _fresh_view_ring(self) -> PolyRing:
+        """A value-equal clone of the internal ring, for handing out.
+
+        Deliberately not cached. A cached clone is shared between callers, so
+        one caller mutating it corrupts what every later caller sees: after
+        ``F.ring.gens[0].clear()`` a subsequent ``F.ring`` returned the same,
+        already broken object. Cloning costs microseconds even in dimension
+        17, which is not worth trading a guarantee for.
+        """
         return clone_ring(self._ring)
 
     @property
@@ -232,7 +281,7 @@ class PolynomialMap:
         The clone is value-equal, so it composes, compares and coerces
         interchangeably with the internal one.
         """
-        return self._view_ring
+        return self._fresh_view_ring()
 
     @property
     def variables(self) -> tuple[sp.Symbol, ...]:
@@ -251,9 +300,13 @@ class PolynomialMap:
         reference to its ring, so copies bound to the internal one would leak
         it straight back out.
         """
+        # Ein Ring fuer alle Komponenten eines Aufrufs: sie gehoeren zu
+        # derselben Abbildung und muessen sich untereinander verrechnen
+        # lassen. Zwischen zwei Aufrufen ist der Ring verschieden.
+        view = self._fresh_view_ring()
+
         return tuple(
-            copy_polynomial(component, self._view_ring)
-            for component in self._poly_components
+            copy_polynomial(component, view) for component in self._poly_components
         )
 
     @property
@@ -566,6 +619,10 @@ class PolynomialMap:
         states that all three extensions share a naming policy, instead of
         relying on equal-dimensional maps happening to agree.
         """
+        # bool ist eine Unterklasse von int: extend(True) waere sonst eine
+        # Erweiterung um eine Variable, was fast sicher ein Tippfehler ist.
+        if isinstance(number, bool) or not isinstance(number, int):
+            raise TypeError("The extension size must be an integer.")
         if number < 0:
             raise ValueError("The extension size must be non-negative.")
         if number == 0:
@@ -573,7 +630,7 @@ class PolynomialMap:
 
         make_variables = DEFAULT_VARIABLE_FACTORY if factory is None else factory
         # Der Factory wird die Ansicht gereicht, nicht der interne Ring.
-        new_variables = make_variables(self._view_ring, number)
+        new_variables = make_variables(self._fresh_view_ring(), number)
         self._validate_fresh_variables(new_variables, number)
 
         new_ring = clone_ring(self._ring, self.variables + new_variables)

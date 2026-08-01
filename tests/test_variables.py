@@ -7,7 +7,8 @@ prueft statt es zu glauben.
 
 import pytest
 import sympy as sp
-from sympy.polys.rings import PolyRing
+from sympy.polys.domains import QQ
+from sympy.polys.rings import PolyRing, ring
 
 from kellermap import (
     DEFAULT_VARIABLE_FACTORY,
@@ -239,3 +240,60 @@ def test_purity_alone_does_not_give_the_composition_invariant() -> None:
     assert F.extend(2, by_ring_size).extend(2, by_ring_size) != F.extend(
         4, by_ring_size
     )
+
+
+# --------------------------------------------------------------------------
+# Verschachtelte Koeffizientendomaenen
+#
+# Domains verschachteln sich: ueber QQ[X3][S] steht S oben und X3 eine Ebene
+# tiefer. Wer nur domain.symbols liest, findet S und uebersieht X3 -- genug,
+# damit extend() eine Koordinate X3 vergibt und sie mit dem Parameter
+# zusammenfaellt.
+# --------------------------------------------------------------------------
+
+NESTED_DOMAINS = [
+    (QQ[sp.Symbol("X3")][sp.Symbol("S")], {"S", "X3"}),
+    (QQ[sp.Symbol("T")].frac_field(sp.Symbol("S")), {"S", "T"}),
+    (QQ[sp.Symbol("A")][sp.Symbol("B")][sp.Symbol("C")], {"A", "B", "C"}),
+    (QQ.frac_field(sp.Symbol("T")), {"T"}),
+    (QQ, set()),
+]
+
+
+@pytest.mark.parametrize(("domain", "expected"), NESTED_DOMAINS)
+def test_reserved_names_reaches_every_domain_level(
+    domain: object, expected: set[str]
+) -> None:
+    R = ring("u,v", domain)[0]
+
+    assert reserved_names(R) == expected | {"u", "v"}
+
+
+@pytest.mark.parametrize(("domain", "expected"), NESTED_DOMAINS)
+def test_extension_avoids_nested_domain_symbols(
+    domain: object, expected: set[str]
+) -> None:
+    """Der Fehler, den die Luecke ermoeglichte."""
+    R, u, v = ring("u,v", domain)
+    F = PolynomialMap.from_ring(R, (u + v, v))
+
+    fresh = {symbol.name for symbol in F.extend(3).variables[2:]}
+
+    assert not fresh & expected
+
+
+def test_a_generator_may_not_share_a_name_with_a_nested_parameter() -> None:
+    """SymPy prueft nur die oberste Domain-Ebene; hier wird tiefer geschaut."""
+    X3, S = sp.symbols("X3 S")
+    R, generator, other = ring("X3,w", QQ[X3][S])
+
+    with pytest.raises(ValueError, match="coefficient indeterminate"):
+        PolynomialMap.from_ring(R, (generator, other))
+
+
+def test_a_generator_may_not_share_a_name_with_a_fraction_field_parameter() -> None:
+    T, S = sp.symbols("T S")
+    R, generator, other = ring("T,w", QQ[T].frac_field(S))
+
+    with pytest.raises(ValueError, match="coefficient indeterminate"):
+        PolynomialMap.from_ring(R, (generator, other))

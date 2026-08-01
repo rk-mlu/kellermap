@@ -5,7 +5,8 @@ comes from.
 
 Status note: the counterexample below has been checked publicly by many people
 and reconstructed geometrically, but as of this writing it has not completed
-journal peer review. This file records what is publicly documented.
+journal peer review. This file records what is publicly documented, not a
+verdict on it.
 
 ---
 
@@ -68,6 +69,11 @@ dimension `n >= 3` — append identity coordinates — while `n = 2` remains ope
   <https://sbseminar.wordpress.com/2026/07/20/the-new-counterexample-to-the-jacobian-conjecture/>
 - **Wolfram MathWorld.** *Jacobian Conjecture.*
   <https://mathworld.wolfram.com/JacobianConjecture.html>
+- **Archive of Formal Proofs.** *Jacobian_Counterexample.*
+  <https://isa-afp.org/entries/Jacobian_Counterexample.html>
+  An independent machine-checked verification of the three-dimensional map in
+  Isabelle/HOL. It covers the published counterexample, not the
+  seventeen-dimensional candidate used here.
 
 ### Historical note
 
@@ -109,9 +115,13 @@ these are *different* reductions, not alternative descriptions of the map in
 
 | Source | Dimension | Shape | Determinant |
 | --- | --- | --- | --- |
-| this project, `tests/test_bcw17.py` | 17 | degree 3 | 1 |
+| this project, `tests/test_bcw17.py` (candidate) | 17 | degree 3 | 1 |
 | <https://rhicksrad.github.io/jacobian-degree3/> | 19 | degree 3 | −2 |
 | <https://github.com/wtho704/explicit-cubic-homogeneous-jacobian-counterexample> | 24 | cubic homogeneous | 1 |
+
+The first row is marked *candidate* on purpose: the map's own properties are
+recomputed by the test suite, but that it arises from a BCW reduction of
+Alpöge's map is asserted, not derived. See the provenance section below.
 
 The three are not directly comparable. BCW reduce in two stages, first to
 degree 3 and then to cubic homogeneous form; the 24-variable map has completed
@@ -140,4 +150,11 @@ Not established here: the stabilization to dimension 17 and the elementary
 factors that reduce the degree from 7 to 3. That is the content of milestone
 0.2.
 
+---
 
+## A note on the local copy of the BCW paper
+
+A scanned copy of the 1982 paper has been used during development. It is not
+part of the repository and should not be committed: it is a 7.5 MB binary of
+page images, it is not searchable, and its distribution is not ours to make.
+Use the Project Euclid link above.

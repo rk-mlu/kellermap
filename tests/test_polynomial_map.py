@@ -904,3 +904,123 @@ def test_clone_ring_is_not_sympys_memoised_clone() -> None:
     assert fresh is not memoised
     assert fresh == memoised
     assert fresh.gens[0] is not memoised.gens[0]
+
+
+# --------------------------------------------------------------------------
+# Die Ansicht wird nicht geteilt, und die Domain auch nicht
+# --------------------------------------------------------------------------
+
+
+def test_the_view_ring_is_not_cached(F: PolynomialMap) -> None:
+    """Regression fuer einen echten Fehler.
+
+    ``_view_ring`` war ein ``cached_property``. Damit bekamen alle Aufrufer
+    denselben Klon, und einer, der ihn veraenderte, beschaedigte die Ansicht
+    fuer alle folgenden -- ``F.ring`` lieferte anschliessend denselben,
+    bereits kaputten Ring zurueck.
+    """
+    view = F.ring
+    view.gens[0].clear()
+
+    assert F.ring is not view
+    assert F.ring.gens[0] != 0
+    assert F.ring == view
+
+
+def test_extension_after_a_mutated_view_is_unaffected(F: PolynomialMap) -> None:
+    """Die Factory bekommt ebenfalls einen frischen Ring."""
+    before = F.extend(1).variables
+
+    F.ring.gens[0].clear()
+
+    assert F.extend(1).variables == before
+
+
+def test_to_polynomials_binds_each_call_to_its_own_ring(F: PolynomialMap) -> None:
+    first, second = F.to_polynomials(), F.to_polynomials()
+
+    assert first[0].ring is not second[0].ring
+    # Innerhalb eines Aufrufs teilen sich die Komponenten einen Ring, sonst
+    # liessen sie sich nicht miteinander verrechnen.
+    assert first[0].ring is first[1].ring
+
+    first[0].ring.gens[0].clear()
+
+    assert F.to_polynomials()[0].ring.gens[0] != 0
+
+
+def test_the_coefficient_domain_is_cloned_too() -> None:
+    """Regression fuer das zweite Leck.
+
+    ``clone_ring`` uebernahm die Domain unveraendert. Nach
+    ``caller_domain.gens[0].clear()`` wandelte der angeblich isolierte Ring
+    ``T*u`` in ``0`` um -- lautlos, weil ``components`` weiter stimmte.
+    """
+    from sympy.polys.domains import QQ
+    from sympy.polys.rings import ring
+
+    T = sp.Symbol("T")
+    R, u, v = ring("u,v", QQ[T])
+    caller_domain = R.domain
+
+    G = PolynomialMap.from_ring(R, (T * u + v, u))
+
+    assert caller_domain is not G.ring.domain
+
+    caller_domain.gens[0].clear()
+
+    assert G.ring.from_expr(T * sp.Symbol("u")) == G.to_polynomials()[0].ring.from_expr(
+        T * sp.Symbol("u")
+    )
+    assert G.components == (T * sp.Symbol("u") + sp.Symbol("v"), sp.Symbol("u"))
+
+
+def test_nested_coefficient_domains_are_cloned_at_every_level() -> None:
+    from sympy.polys.domains import QQ
+    from sympy.polys.rings import ring
+
+    X3, S = sp.symbols("X3 S")
+    R, u, v = ring("u,v", QQ[X3][S])
+
+    G = PolynomialMap.from_ring(R, (u + v, v))
+    view = G.ring
+
+    assert view.domain is not R.domain
+    assert view.domain.dom is not R.domain.dom
+    assert view.domain == R.domain
+
+
+def test_handed_out_coefficients_do_not_carry_the_internal_domain() -> None:
+    """Ein PolyElement-Koeffizient traegt seinen eigenen Ring mit."""
+    from sympy.polys.domains import QQ
+    from sympy.polys.rings import PolyElement, ring
+
+    T = sp.Symbol("T")
+    R, u, v = ring("u,v", QQ[T])
+    G = PolynomialMap.from_ring(R, (T * u + v, u))
+
+    for _, coefficient in G.to_polynomials()[0].iterterms():
+        if isinstance(coefficient, PolyElement):
+            assert coefficient.ring is not G._ring.domain.ring
+
+
+def test_extend_rejects_a_boolean() -> None:
+    """bool ist eine Unterklasse von int.
+
+    ``F.extend(True)`` waere sonst eine Erweiterung um genau eine Variable --
+    fast sicher ein Tippfehler und nicht das, was jemand meinte.
+    """
+    x, y = sp.symbols("x y")
+    F = PolynomialMap((x, y), (x + y, y))
+
+    with pytest.raises(TypeError, match="must be an integer"):
+        F.extend(True)  # type: ignore[arg-type]
+
+
+@pytest.mark.parametrize("number", [2.0, "2", None])
+def test_extend_rejects_non_integers(number: object) -> None:
+    x, y = sp.symbols("x y")
+    F = PolynomialMap((x, y), (x + y, y))
+
+    with pytest.raises(TypeError, match="must be an integer"):
+        F.extend(number)  # type: ignore[arg-type]

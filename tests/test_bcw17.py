@@ -1,8 +1,15 @@
-"""Regression: eine BCW-Reduktion der Alpoege-Abbildung auf Dimension 17.
+"""Regression: kubische Keller-Abbildung in Dimension 17, Kandidat.
 
 Diese Abbildung hat Grad 3 und konstante Jacobi-Determinante 1, und sie erbt
 die Kollision der Alpoege-Abbildung. Sie ist damit selbst ein Gegenbeispiel
-zur Jacobi-Vermutung, nicht bloss eine Keller-Abbildung.
+zur Jacobi-Vermutung, nicht bloss eine Keller-Abbildung. All das rechnen die
+Tests unten selbst nach.
+
+"Kandidat" bezieht sich auf etwas anderes: dass sie *durch eine
+BCW-Reduktion* aus der Alpoege-Abbildung hervorgeht, ist hier nicht bewiesen.
+Der Titel hat das frueher behauptet. Was nachgerechnet ist, steht unter
+"Herkunft"; solange die Faktoren fehlen, ist sie ein Regressionskandidat und
+keine verifizierte Reduktion.
 
 Herkunft
 --------

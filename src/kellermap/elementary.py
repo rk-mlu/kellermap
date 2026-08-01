@@ -17,7 +17,6 @@ from __future__ import annotations
 import math
 from collections.abc import Iterable
 from dataclasses import dataclass
-from functools import cached_property
 from typing import cast
 
 import sympy as sp
@@ -124,9 +123,11 @@ class ElementaryFactor:
     # Inspection
     # ----------------------------------------------------------------------
 
-    @cached_property
-    def _view_ring(self) -> PolyRing:
-        """A value-equal clone of the internal ring, for handing out."""
+    def _fresh_view_ring(self) -> PolyRing:
+        """A value-equal clone of the internal ring, for handing out.
+
+        Not cached, for the reason given at ``PolynomialMap._fresh_view_ring``.
+        """
         return clone_ring(self._ring)
 
     @property
@@ -136,7 +137,7 @@ class ElementaryFactor:
         A clone, for the reason given at ``PolynomialMap.ring``: a
         ``PolyRing`` owns mutable generators, and SymPy reads them.
         """
-        return self._view_ring
+        return self._fresh_view_ring()
 
     @property
     def index(self) -> int:

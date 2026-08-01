@@ -2,7 +2,7 @@
 
 ## Overview
 
-The goal of **bcw** is to construct and verify Bass–Connell–Wright (BCW)
+The goal of **kellermap** is to construct and verify Bass–Connell–Wright (BCW)
 reductions of polynomial maps with constant Jacobian determinant.
 
 The central design principle is that every reduction step produces a
@@ -152,6 +152,26 @@ the one it computes with. Four paths carry it:
 - `to_polynomials()` binds its copies to that clone, since a `PolyElement`
   carries a reference to its ring,
 - `extend()` passes the clone to the variable factory.
+
+The clone is built fresh on every access to `ring`, and once per call to
+`to_polynomials()`. Caching it would defeat the purpose: all callers would
+share one clone, and the first to mutate it would corrupt what every later
+caller sees. Cloning costs microseconds even in dimension 17.
+
+Cloning covers the coefficient domain, recursively. A composite domain owns
+mutable generators just as a ring does, and domains nest — `QQ[X3][S]` carries
+such state at two levels. Sharing the domain left the ring consulting a
+caller's object: after `caller_domain.gens[0].clear()` the supposedly isolated
+ring converted `T*u` to `0`. Coefficients are rebound onto the cloned domain,
+since a `PolyElement` or `FracElement` carries a reference to its own ring or
+field.
+
+The same nesting matters for naming. `reserved_names()` walks the whole domain
+chain, not just its top level: over `QQ[X3][S]`, reading `domain.symbols` alone
+finds `S` and misses `X3` — enough for a stable extension to hand out a
+coordinate named `X3` and collapse it with the parameter. `validate_ring()`
+rejects that collision up front, which SymPy itself only does for the top
+level.
 
 Cloning must not go through `PolyRing.clone()`. That method is memoised by
 SymPy's `cacheit`, and cloning a ring that is *itself* a clone returns the

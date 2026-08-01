@@ -4,15 +4,17 @@ A Python library for polynomial Keller maps — polynomial endomorphisms with a
 nonzero constant Jacobian determinant — and for certified transformations of
 them.
 
-KellerMap is named after Ott-Heinrich Keller, whose work gave rise to the notion
-of Keller maps and who served as a professor at the Martin-Luther-Universität 
-Halle-Wittenberg—the present-day academic home of this project.
+Whether every Keller map is an automorphism was the Jacobian conjecture, posed
+by Ott-Heinrich Keller in 1939 — or, on a recent reading of the sources, by
+Ludwig Kraus in 1884; see `docs/references.md`. It stood until July 2026 and is
+now known to be false in every dimension `n >= 3`. The maps this library is
+built to handle are therefore precisely those that need not be invertible,
+which is why it is named after them rather than after automorphisms.
 
-Whether every Keller map is an automorphism was the Jacobian conjecture, open
-from 1939 (or 1884, see `docs/references.md`) until July 2026. It is now known
-to be false for every dimension `n >= 3`. The maps this library is built to
-handle are therefore exactly the ones that need not be invertible, which is why
-it is named after them rather than after automorphisms.
+There is a local coincidence in that name. Keller held the second chair of
+mathematics at the Martin-Luther-Universität Halle-Wittenberg from 1952 until
+his retirement in 1971, succeeding Heinrich W. E. Jung, and he lectured there
+into the 1980s — the present-day academic home of this project.
 
 The first goal is the degree reduction introduced by
 
@@ -34,7 +36,7 @@ certificate. That is the goal of the project; `BCWStep` and `Reduction` arrive i
 
 ## Project Status
 
-Current version: **0.1.0rc2**
+Current version: **0.1.0rc3**
 
 The first milestone covers the algebraic foundations:
 
@@ -46,6 +48,34 @@ The first milestone covers the algebraic foundations:
 
 The BCW reduction itself follows in later milestones: `BCWStep` and
 `Reduction` in 0.2, the reduction algorithm in 0.3.
+
+---
+
+## Installation
+
+```
+pip install kellermap
+```
+
+Requires Python 3.10 or newer and SymPy 1.14 or newer.
+
+## Quick start
+
+```python
+import sympy as sp
+from kellermap import PolynomialMap
+
+x, y = sp.symbols("x y")
+F = PolynomialMap((x, y), (x + y**3, y))
+
+F.determinant()  # 1 — a Keller map
+F.degree()  # 3
+F.filtration_degree()  # 2, from ord(F - X) = 3
+F.extend(2).variables  # (x, y, X3, X4)
+```
+
+`docs/api.md` covers the rest; every example in it is executed by the test
+suite.
 
 ---
 

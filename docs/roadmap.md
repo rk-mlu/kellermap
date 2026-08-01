@@ -5,7 +5,7 @@ leave the repository in a fully functional, typed, formatted, and tested state.
 
 ---
 
-# Version 0.1
+# Version 0.1 — complete
 
 ## Sparse polynomial core
 
@@ -114,7 +114,6 @@ remembers.
   memoised `PolyRing.clone()`
 - mypy strict mode, and a `py.typed` marker so that the annotations reach
   consumers rather than stopping at the project boundary
-- mypy strict mode
 - ruff and mypy targeting the lower bound from `requires-python`, so that
   the static tools guard the oldest supported version rather than the
   newest; the test matrix covers the rest

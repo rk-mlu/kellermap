@@ -1,13 +1,13 @@
 [project]
 name = "kellermap"
-version = "0.1.0rc2"
-description = "Polynomial Keller maps and certified transformations of them, including the Bass–Connell–Wright degree reduction."
+version = "0.1.0rc3"
+description = "Polynomial Keller maps and certified transformations of them, working towards the Bass–Connell–Wright degree reduction."
 readme = "README.md"
 requires-python = ">=3.10"
 license = { file = "LICENSE" }
 
 authors = [
-    { name = "Raphael" }
+    { name = "Raphael Kruse" }
 ]
 
 keywords = [
@@ -29,6 +29,7 @@ classifiers = [
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
     "Topic :: Scientific/Engineering :: Mathematics",
     "Typing :: Typed"
 ]
@@ -104,3 +105,23 @@ build-backend = "hatchling.build"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/kellermap"]
+
+[tool.hatch.build.targets.sdist]
+# Ohne explizite Ausschluesse haengt der Inhalt des sdist vom Zustand des
+# Arbeitsverzeichnisses ab: nach `make coverage` wanderten .coverage und
+# htmlcov/ mit hinein. Ein vorgeschaltetes `make clean` waere Disziplin,
+# das hier ist eine Zusage.
+exclude = [
+    ".coverage",
+    ".coverage.*",
+    "htmlcov",
+    ".pytest_cache",
+    ".mypy_cache",
+    ".ruff_cache",
+    "**/__pycache__",
+    "**/*.py[cod]",
+    "build_env",
+    "min_env",
+    "dist",
+    ".venv",
+]
