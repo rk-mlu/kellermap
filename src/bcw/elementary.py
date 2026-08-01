@@ -24,7 +24,12 @@ import sympy as sp
 from sympy.polys.polyerrors import CoercionFailed
 from sympy.polys.rings import PolyElement, PolyRing
 
-from .polynomial_map import PolynomialMap, clone_ring, copy_polynomial
+from .polynomial_map import (
+    PolynomialMap,
+    clone_ring,
+    copy_polynomial,
+    validate_ring,
+)
 
 
 @dataclass(frozen=True, eq=False)
@@ -77,6 +82,8 @@ class ElementaryFactor:
             raise TypeError(
                 f"The index must be an integer, not {type(index).__name__}."
             )
+
+        validate_ring(ring)
 
         if not 0 <= index < ring.ngens:
             raise ValueError(

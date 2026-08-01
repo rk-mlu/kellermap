@@ -13,15 +13,16 @@ The implementation is intended as both
 - a research tool for experiments related to the Jacobian Conjecture,
 - and a faithful software implementation of the original mathematical proof.
 
-Unlike a simple symbolic manipulation package, every reduction step is
-represented explicitly as a mathematical object and can be verified, documented
-and exported.
+Unlike a simple symbolic manipulation package, every reduction step *will* be
+represented explicitly as a mathematical object and carry its own machine-checkable
+certificate. That is the goal of the project; `BCWStep` and `Reduction` arrive in
+0.2. Version 0.1 provides the algebraic objects they are built from.
 
 ---
 
 ## Project Status
 
-Current version: **0.1.0rc1**
+Current version: **0.1.0rc2**
 
 The first milestone covers the algebraic foundations:
 

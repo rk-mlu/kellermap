@@ -1,13 +1,13 @@
 [project]
 name = "bcw-reduction"
-version = "0.1.0rc1"
+version = "0.1.0rc2"
 description = "Implementation of the Bass–Connell–Wright reduction of polynomial Keller maps."
 readme = "README.md"
 requires-python = ">=3.10"
-license = { text = "MIT" }
+license = { file = "LICENSE" }
 
 authors = [
-    { name = "Raphael" }
+    { name = "Raphael Kruse" }
 ]
 
 keywords = [
@@ -23,12 +23,21 @@ classifiers = [
     "Intended Audience :: Science/Research",
     "License :: OSI Approved :: MIT License",
     "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
-    "Topic :: Scientific/Engineering :: Mathematics"
+    "Topic :: Scientific/Engineering :: Mathematics",
+    "Typing :: Typed"
 ]
 
 dependencies = [
-    "sympy>=1.13",
+    # Nicht 1.13: dort interniert PolyRing.__new__ seine Ringe in einem
+    # prozessweiten _ring_cache, zwei Konstruktionen mit gleichen Argumenten
+    # liefern dasselbe Objekt. Die Wertsemantik dieses Pakets -- kein
+    # veraenderliches Objekt wird mit einem Aufrufer geteilt -- ist damit
+    # nicht herstellbar, unabhaengig vom fehlenden PolyRing.is_element.
+    "sympy>=1.14",
 ]
 
 [dependency-groups]
@@ -90,20 +99,6 @@ skip_covered = true
 requires = ["hatchling"]
 build-backend = "hatchling.build"
 
-[project.optional-dependencies]
-docs = [
-    "sphinx",
-    "furo",
-]
-
-notebooks = [
-    "jupyterlab",
-    "matplotlib",
-]
-
-latex = [
-    "pylatex",
-]
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/bcw"]

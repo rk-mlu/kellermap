@@ -1,5 +1,5 @@
 .PHONY: all format lint typecheck test test-slow test-all coverage docs \
-        check check-full build-test release clean
+        check check-full build-test test-minimum lock-check release clean
 
 all: check
 
@@ -57,7 +57,7 @@ check-full: lint typecheck test-all
 # also loest `import bcw` in den Tests auf das installierte Wheel auf.
 build-test:
 	@echo "--> Raeume alte Builds auf..."
-	rm -rf dist build_env
+	rm -rf dist build_env min_env
 	@echo "--> Baue Wheel und sdist..."
 	uv build
 	@echo "--> Erstelle frische venv (build_env)..."
@@ -72,8 +72,39 @@ build-test:
 	build_env/bin/python -m pytest -q
 	@echo "Erfolg: Wheel gebaut, installiert und geprueft."
 
+# Aufloesung auf die kleinsten erlaubten Versionen statt auf die neuesten.
+# Ohne dieses Ziel bleibt die Untergrenze in pyproject.toml eine Behauptung:
+# entwickelt wird gegen aktuelle Pakete, und eine zu niedrige Angabe faellt
+# erst dem Anwender auf. sympy>=1.13 stand vier Releases lang unbemerkt drin.
+test-minimum:
+	@echo "--> Erstelle venv auf der aeltesten unterstuetzten Python-Version..."
+	rm -rf min_env
+	uv venv --python 3.10 min_env
+	@echo "--> Installiere die kleinsten erlaubten Abhaengigkeiten..."
+	# Bewusst ohne --locked: der Lockfile pinnt die aufgeloesten, nicht die
+	# kleinsten Versionen. Er wird hier gerade umgangen.
+	VIRTUAL_ENV=min_env uv pip install --resolution lowest-direct -e .
+	# pytest in einem zweiten Schritt und ohne die Regel: geprueft werden die
+	# Untergrenzen, die dieses Paket zusagt, nicht die des Testlaeufers. Auf
+	# derselben Zeile waere pytest eine direkte Abhaengigkeit, und
+	# --resolution lowest-direct zoege pytest 2.0.0 von 2011, das sich mit
+	# heutigem setuptools nicht mehr bauen laesst.
+	@echo "--> Installiere den Testlaeufer (normale Aufloesung)..."
+	VIRTUAL_ENV=min_env uv pip install pytest
+	@echo "--> Zeige die aufgeloesten Versionen..."
+	min_env/bin/python -c "import sympy; print(f'    sympy {sympy.__version__}')"
+	@echo "--> Fahre die Testsuite..."
+	min_env/bin/python -m pytest -q
+	@echo "Erfolg: die deklarierte Untergrenze traegt."
+
+# Prueft, ob uv.lock zu pyproject.toml passt, ohne ihn zu veraendern.
+# Ein veralteter Lockfile faellt sonst erst in der CI auf, wo `uv sync
+# --locked` fehlschlaegt.
+lock-check:
+	uv lock --check
+
 # Alle Freigabe-Gates vor einem Tag.
-release: check-full build-test
+release: lock-check check-full build-test test-minimum
 
 # --------------------------------------------------------------------------
 
@@ -85,4 +116,4 @@ clean:
 	rm -rf .ruff_cache
 	rm -rf htmlcov
 	rm -f .coverage
-	rm -rf dist build_env
+	rm -rf dist build_env min_env

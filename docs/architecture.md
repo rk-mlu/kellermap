@@ -565,6 +565,20 @@ integration with `DomainMatrix`.
 
 Verify complete reduction sequences and their certificates.
 
+### The SymPy lower bound is semantic, not just API
+
+`sympy>=1.14` is not a matter of a missing method. Up to 1.13, `PolyRing.__new__`
+interned its rings in a process-wide `_ring_cache`: two constructions with equal
+arguments returned *the same object*, so `clone_ring()` could not produce an
+isolated ring at all. The value semantics this project promises — no mutable
+object shared with a caller — is unreachable on 1.13, and a compatibility shim
+for the also-missing `PolyRing.is_element()` would only move the failure later.
+
+`make test-minimum` resolves to the lowest permitted versions and runs the suite
+against them. Without it a declared lower bound is a guess: development happens
+against current packages, and `sympy>=1.13` sat in `pyproject.toml` unnoticed
+even though test collection failed on it.
+
 ### Executable documentation
 
 `docs/api.md` is collected by pytest with `--doctest-glob=*.md`. Every example

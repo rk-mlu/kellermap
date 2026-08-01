@@ -83,6 +83,25 @@ def clone_ring(
     )
 
 
+def validate_ring(polynomial_ring: PolyRing) -> None:
+    """Reject a ring that cannot serve as the context of a polynomial map.
+
+    ``PolyRing`` accepts more than this project can work with: a composite
+    expression as a generator, or two generators printing identically. Both
+    surface far from their cause -- a composite generator only fails once
+    something converts back to expressions -- so every entry point checks the
+    ring here rather than each on its own.
+    """
+    if not polynomial_ring.ngens:
+        raise ValueError("A polynomial map needs at least one variable.")
+
+    if not all(isinstance(symbol, sp.Symbol) for symbol in polynomial_ring.symbols):
+        raise TypeError("Ring generators must be SymPy symbols.")
+
+    if not _names_are_distinct(polynomial_ring.symbols):
+        raise ValueError("Ring generators must be pairwise distinct.")
+
+
 def _names_are_distinct(symbols: Iterable[sp.Symbol]) -> bool:
     """Return whether no two symbols share a name.
 
@@ -153,14 +172,7 @@ class PolynomialMap:
         """
         components_tuple = tuple(components)
 
-        if not polynomial_ring.ngens:
-            raise ValueError("A polynomial map needs at least one variable.")
-
-        if not all(isinstance(symbol, sp.Symbol) for symbol in polynomial_ring.symbols):
-            raise TypeError("Ring generators must be SymPy symbols.")
-
-        if not _names_are_distinct(polynomial_ring.symbols):
-            raise ValueError("Ring generators must be pairwise distinct.")
+        validate_ring(polynomial_ring)
 
         if polynomial_ring.ngens != len(components_tuple):
             raise ValueError("Number of variables and components differ.")

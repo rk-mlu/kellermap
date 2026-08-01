@@ -425,3 +425,44 @@ def test_identity_lies_in_every_filtration_level() -> None:
 
     assert empty.filtration_degree() == float("inf")
     assert empty.is_in_EA(17)
+
+
+# --------------------------------------------------------------------------
+# Ringvalidierung
+#
+# Dieselbe Pruefung wie in PolynomialMap.from_ring, aus derselben Quelle.
+# Frueher fehlte sie hier: ein zusammengesetzter Generator wurde angenommen,
+# ``variable`` lieferte dann ein Mul statt eines Symbols, und erst
+# ``to_polynomial_map`` scheiterte -- weit entfernt von der Ursache.
+# --------------------------------------------------------------------------
+
+
+def test_composite_generators_are_rejected() -> None:
+    composite = ring([x1 * x2], QQ)[0]
+
+    with pytest.raises(TypeError, match="SymPy symbols"):
+        ElementaryFactor(composite, 0, composite.zero)
+
+
+def test_generators_sharing_a_name_are_rejected() -> None:
+    """Verschiedene Annahmen, gleicher Name: als Ausdruck ununterscheidbar."""
+    plain = sp.Symbol("z")
+    positive = sp.Symbol("z", positive=True)
+    ambiguous = ring([plain, positive], QQ)[0]
+
+    assert plain != positive
+
+    with pytest.raises(ValueError, match="pairwise distinct"):
+        ElementaryFactor(ambiguous, 0, ambiguous.zero)
+
+
+def test_a_ring_without_generators_is_rejected() -> None:
+    empty = ring("", QQ)[0]
+
+    with pytest.raises(ValueError, match="at least one variable"):
+        ElementaryFactor(empty, 0, empty.zero)
+
+
+def test_variable_is_always_a_symbol() -> None:
+    """Die Zusage, die vorher nur behauptet war."""
+    assert isinstance(BCW_G.variable, sp.Symbol)

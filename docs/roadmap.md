@@ -95,6 +95,15 @@ its requirements are built. It inherits the purity requirement: per-step
 naming means handing out a fresh pure factory per step, not carrying one that
 remembers.
 
+### Release engineering
+
+- a `LICENSE` file shipped in both wheel and sdist
+- Python classifiers covering the whole supported range, not just the newest
+- `make test-minimum` against the lowest permitted dependency versions
+- `make build-test` running the suite against the installed wheel, so that
+  packaging faults surface before a user meets them
+- a CI matrix over both ends of `requires-python`
+
 ### Quality
 
 - complete unit tests
