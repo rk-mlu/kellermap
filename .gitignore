@@ -1,13 +1,29 @@
-# Python-generated files
+# Python
 __pycache__/
-*.py[oc]
-build/
-dist/
-wheels/
-*.egg-info
+*.py[cod]
+*.egg-info/
 
-# Virtual environments
-.venv
+# Build- und Testumgebungen
+dist/
+build/
+.venv/
+build_env/
+min_env/
+wheels/
+
+# Werkzeug-Caches und Berichte
+.coverage
+.coverage.*
+htmlcov/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Editor
+.idea/
+.vscode/
+*.swp
 
 # local experiment files
 experiments/
+

@@ -13,9 +13,10 @@ keine verifizierte Reduktion.
 
 Herkunft
 --------
-Die Komponenten sind fixiert und nicht von dieser Bibliothek erzeugt. Sie sind
-das Ziel, das ein spaeterer ``BCWStep`` reproduzieren muss; bis dahin ist diese
-Datei eine Regression gegen ein extern gerechnetes Ergebnis.
+Die Komponenten sind fixiert und nicht von dieser Bibliothek erzeugt. Bis dahin
+ist diese Datei eine Regression gegen ein extern gerechnetes Ergebnis: ein
+``BCWStep`` kann in 0.2 eine vorgelegte Faktorisierung pruefen, sie zu suchen
+ist Sache von 0.3.
 
 Der Weg von Alpoege (Dimension 3, Grad 7, det = -2) hierher besteht aus zwei
 Teilen. Der erste ist die lineare Normalisierung aus BCW Paragraph 4,

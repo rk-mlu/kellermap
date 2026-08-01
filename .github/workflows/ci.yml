@@ -21,9 +21,10 @@
 #    in einer Git-Spiegelung identisch und gilt auf beiden Plattformen.
 #
 # 2. `runs-on` ist ein Runner-Label. Auf GitHub ist ubuntu-latest gesetzt,
-#    Forgejo-Runner tragen haeufig `docker`. Das ist der eine Wert, der beim
-#    Umzug anzupassen sein kann -- er steht deshalb nur an einer Stelle,
-#    im env-Block unten kommentiert.
+#    Forgejo-Runner tragen haeufig `docker`. Das ist der Wert, der beim Umzug
+#    anzupassen ist -- in jedem der vier Jobs einmal. GitHub Actions erlaubt
+#    an dieser Stelle keine env-Referenz, weshalb er sich nicht an einer
+#    Stelle buendeln laesst.
 
 name: CI
 

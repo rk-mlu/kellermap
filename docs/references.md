@@ -107,7 +107,7 @@ latter.
 
 ---
 
-## Other cubic Keller maps derived from the same map
+## Related cubic Keller-map benchmarks
 
 Useful as comparison and as benchmark targets for milestone 0.4. Note that
 these are *different* reductions, not alternative descriptions of the map in
@@ -137,8 +137,9 @@ certificates is the first target of 0.4; improving them is secondary.
 ## Provenance of the fixed test data
 
 `tests/test_bcw17.py` contains a 17-dimensional map that this library did not
-produce. It is external input until `BCWStep` can generate it. What the test
-suite establishes on its own:
+produce. It stays external input until this library can derive it: 0.2 lets a
+`BCWStep` verify a factorization that is supplied to it, 0.3 searches for one.
+What the test suite establishes on its own:
 
 - the map has degree 3, determinant 1, and an explicit three-point collision;
 - its collision points extend Alpöge's in their first three coordinates;
@@ -147,5 +148,5 @@ suite establishes on its own:
   in `MA^1`, the precondition of Proposition (3.1).
 
 Not established here: the stabilization to dimension 17 and the elementary
-factors that reduce the degree from 7 to 3. That is the content of milestone
-0.2.
+factors that reduce the degree from 7 to 3. Verifying such a factorization once
+it is written down is milestone 0.2; finding one is 0.3.

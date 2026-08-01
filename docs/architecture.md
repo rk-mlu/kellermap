@@ -643,7 +643,8 @@ explicit collision. The larger one is a cubic Keller map in dimension 17 that
 carries the same collision. It is a *candidate* for a BCW reduction of the
 small one: the tests recompute its degree, determinant and collision, but that
 it arises from such a reduction is asserted, not derived. Its components are
-fixed input, not output of this library, until `BCWStep` can reproduce them.
+fixed input, not output of this library. A `BCWStep` in 0.2 can verify a
+factorization presented to it; searching for one is 0.3.
 
 See `references.md` for sources and for what the fixed data rests on.
 
