@@ -3,7 +3,7 @@ import math
 import pytest
 import sympy as sp
 
-from bcw import PolynomialMap
+from kellermap import PolynomialMap
 
 
 @pytest.fixture
@@ -892,7 +892,7 @@ def test_clone_ring_is_not_sympys_memoised_clone() -> None:
     from sympy.polys.domains import QQ
     from sympy.polys.rings import ring
 
-    from bcw.polynomial_map import clone_ring
+    from kellermap.polynomial_map import clone_ring
 
     R = ring("a,b", QQ)[0]
     memoised = R.clone(symbols=R.symbols)

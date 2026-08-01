@@ -47,6 +47,26 @@ The implementation follows five guiding principles.
 
 ---
 
+## Package layout
+
+```
+kellermap/
+├── polynomial_map.py     PolynomialMap
+├── elementary.py         ElementaryFactor, ElementaryAutomorphism
+├── variables.py          VariableFactory
+└── bcw/                  (0.2) BCWStep, Reduction
+```
+
+The top level holds what any work on Keller maps needs: the maps themselves,
+the group `EA_n(k)` acting on them, and the naming of fresh generators. None of
+it is specific to one reduction method.
+
+The `bcw` subpackage is where Bass–Connell–Wright-specific machinery goes, from
+0.2 onwards. Keeping it one level down leaves room for a second method without
+the package name becoming a misnomer, and it removes an ambiguity the code
+carried while the package itself was called `bcw`: `BCW` now always means the
+1982 paper.
+
 ## Main Objects
 
 ```
@@ -110,7 +130,7 @@ covered by the cloning rule below.
 executed by the test suite.
 
 The package ships a `py.typed` marker. Without it the annotations stop at
-the project boundary: a consumer running mypy sees every member of `bcw`
+the project boundary: a consumer running mypy sees every member of `kellermap`
 as `Any`, however strictly the project checks itself. Members typed in
 terms of SymPy stay `Any` downstream regardless, since SymPy ships no
 type information.
@@ -425,7 +445,7 @@ Stable extensions introduce fresh generators and therefore create a new
 Existing coordinate polynomials are transferred into the enlarged ring without
 passing through general expressions.
 
-Naming those generators is isolated in `bcw.variables` as a
+Naming those generators is isolated in `kellermap.variables` as a
 
 ```
 VariableFactory
@@ -597,6 +617,8 @@ explicit collision. The larger one is a BCW reduction of that map to a cubic
 Keller map in dimension 17, with the collision carried along; its components
 are fixed input, not output of this library, until `BCWStep` can reproduce
 them.
+
+See `references.md` for sources and for what the fixed data rests on.
 
 A separate cubic Keller map in 19 variables is described at
 `https://rhicksrad.github.io/jacobian-degree3/`. It arises from a different

@@ -12,7 +12,7 @@ Seitenangaben beziehen sich auf Bass, Connell, Wright, Bull. AMS 1982.
 import pytest
 import sympy as sp
 
-from bcw import (
+from kellermap import (
     ElementaryAutomorphism,
     ElementaryFactor,
     IndexedVariableFactory,

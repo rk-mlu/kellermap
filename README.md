@@ -1,9 +1,16 @@
-# BCW Reduction
+# kellermap
 
-Implementation of the Bass–Connell–Wright reduction of polynomial Keller maps.
+A Python library for polynomial Keller maps — polynomial endomorphisms with a
+nonzero constant Jacobian determinant — and for certified transformations of
+them.
 
-This project aims to provide the first open-source implementation of the degree
-reduction algorithm introduced by
+Whether every Keller map is an automorphism was the Jacobian conjecture, open
+from 1939 (or 1884, see `docs/references.md`) until July 2026. It is now known
+to be false for every dimension `n >= 3`. The maps this library is built to
+handle are therefore exactly the ones that need not be invertible, which is why
+it is named after them rather than after automorphisms.
+
+The first goal is the degree reduction introduced by
 
 > H. Bass, E. H. Connell, D. Wright,
 > *The Jacobian Conjecture: Reduction of Degree and Formal Expansion of the Inverse*, Bull. Amer. Math. Soc., 1982.
@@ -50,6 +57,7 @@ Most important documents:
 ```
 api.md            public API, with examples the test suite executes
 architecture.md   design decisions and the reasons for them
+references.md     sources, and the provenance of the fixed test data
 roadmap.md        milestones
 ```
 

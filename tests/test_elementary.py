@@ -10,7 +10,7 @@ import sympy as sp
 from sympy.polys.domains import QQ, ZZ
 from sympy.polys.rings import ring
 
-from bcw import ElementaryAutomorphism, ElementaryFactor, PolynomialMap
+from kellermap import ElementaryAutomorphism, ElementaryFactor, PolynomialMap
 
 R, X1, X2, X3, X4 = ring("X1,X2,X3,X4", QQ)
 

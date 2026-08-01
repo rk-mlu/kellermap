@@ -558,7 +558,7 @@ class PolynomialMap:
         """Extend the map by ``number`` identity coordinates.
 
         ``factory`` names the new generators; see
-        :class:`~bcw.variables.VariableFactory` for the purity requirement it
+        :class:`~kellermap.variables.VariableFactory` for the purity requirement it
         must satisfy. Passing one explicitly is how an identity such as
 
             (F o G)^[m] = F^[m] o G^[m]

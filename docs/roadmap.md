@@ -71,7 +71,7 @@ reduction loops: `apply_to()` touches the single coordinate that moves.
 ### VariableFactory
 
 An injectable, collision-safe name generator for stable extensions, in
-`bcw.variables`. `PolynomialMap.extend()` takes one and falls back to
+`kellermap.variables`. `PolynomialMap.extend()` takes one and falls back to
 `DEFAULT_VARIABLE_FACTORY`.
 
 A factory must be a pure function of ring and count. The monoid-homomorphism
@@ -131,7 +131,7 @@ remembers.
 
 ## Verification framework
 
-Introduce
+Introduce, in the `kellermap.bcw` subpackage,
 
 - `BCWStep`
 - `Reduction`

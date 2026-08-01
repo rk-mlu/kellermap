@@ -4,15 +4,33 @@ Diese Abbildung hat Grad 3 und konstante Jacobi-Determinante 1, und sie erbt
 die Kollision der Alpoege-Abbildung. Sie ist damit selbst ein Gegenbeispiel
 zur Jacobi-Vermutung, nicht bloss eine Keller-Abbildung.
 
-Die Komponenten sind hier fixiert und nicht von dieser Bibliothek erzeugt: sie
-sind das Ziel, das ein spaeterer ``BCWStep`` reproduzieren muss. Bis dahin ist
-diese Datei eine Regression gegen ein extern gerechnetes Ergebnis.
+Herkunft
+--------
+Die Komponenten sind fixiert und nicht von dieser Bibliothek erzeugt. Sie sind
+das Ziel, das ein spaeterer ``BCWStep`` reproduzieren muss; bis dahin ist diese
+Datei eine Regression gegen ein extern gerechnetes Ergebnis.
+
+Der Weg von Alpoege (Dimension 3, Grad 7, det = -2) hierher besteht aus zwei
+Teilen. Der erste ist die lineare Normalisierung aus BCW Paragraph 4,
+F'' = F'_(1)^-1 o F'. Sie ist unten in ``test_normalization_...`` vollstaendig
+nachgerechnet und erklaert genau die Unterschiede, die zwischen beiden
+Abbildungen ins Auge fallen: die Determinante -2 wird 1, weil der Linearteil
+von Alpoege ebenfalls Determinante -2 hat, und das Kollisionsbild
+(-1/4, 0, 0) wird (0, 0, -1/4), weil dieser Linearteil die erste und dritte
+Koordinate vertauscht.
+
+Der zweite Teil -- Stabilisierung auf Dimension 17 und die elementaren
+Faktoren aus Proposition (3.1), die den Grad von 7 auf 3 druecken -- ist hier
+nicht nachgerechnet. Er ist der Inhalt von ``BCWStep`` in Version 0.2. Was
+davon heute schon geprueft ist: die Kollisionspunkte setzen in ihren ersten
+drei Koordinaten Alpoeges Punkte fort, und das Bild stimmt mit dem der
+normalisierten Abbildung ueberein.
 """
 
 import pytest
 import sympy as sp
 
-from bcw import PolynomialMap
+from kellermap import PolynomialMap
 
 X = sp.symbols("x1:18")
 _1, _2, _3, _4, _5, _6, _7, _8, _9, _10, _11, _12, _13, _14, _15, _16, _17 = X
@@ -233,3 +251,104 @@ def test_bcw17_determinant_strategies_agree(bcw17: PolynomialMap) -> None:
     reference = bcw17._determinant_by_domain_matrix(bcw17._jacobian_polynomials)
 
     assert reference.as_expr() == bcw17.determinant() == 1
+
+
+# --------------------------------------------------------------------------
+# Herkunft: was sich heute schon nachrechnen laesst
+# --------------------------------------------------------------------------
+
+ALPOEGE_VARIABLES = sp.symbols("x y z")
+
+ALPOEGE_COMPONENTS = (
+    (1 + ALPOEGE_VARIABLES[0] * ALPOEGE_VARIABLES[1]) ** 3 * ALPOEGE_VARIABLES[2]
+    + ALPOEGE_VARIABLES[1] ** 2
+    * (1 + ALPOEGE_VARIABLES[0] * ALPOEGE_VARIABLES[1])
+    * (4 + 3 * ALPOEGE_VARIABLES[0] * ALPOEGE_VARIABLES[1]),
+    ALPOEGE_VARIABLES[1]
+    + 3
+    * ALPOEGE_VARIABLES[0]
+    * (1 + ALPOEGE_VARIABLES[0] * ALPOEGE_VARIABLES[1]) ** 2
+    * ALPOEGE_VARIABLES[2]
+    + 3
+    * ALPOEGE_VARIABLES[0]
+    * ALPOEGE_VARIABLES[1] ** 2
+    * (4 + 3 * ALPOEGE_VARIABLES[0] * ALPOEGE_VARIABLES[1]),
+    2 * ALPOEGE_VARIABLES[0]
+    - 3 * ALPOEGE_VARIABLES[0] ** 2 * ALPOEGE_VARIABLES[1]
+    - ALPOEGE_VARIABLES[0] ** 3 * ALPOEGE_VARIABLES[2],
+)
+
+
+@pytest.fixture(scope="module")
+def normalized_alpoege() -> PolynomialMap:
+    """F'' = F'_(1)^-1 o F', die lineare Normalisierung aus BCW Paragraph 4."""
+    F = PolynomialMap(ALPOEGE_VARIABLES, ALPOEGE_COMPONENTS)
+    linear_part = sp.Matrix(
+        F.jacobian().xreplace({v: sp.Integer(0) for v in ALPOEGE_VARIABLES})
+    )
+
+    return PolynomialMap(
+        ALPOEGE_VARIABLES,
+        tuple(sp.expand(e) for e in linear_part.inv() * sp.Matrix(F.components)),
+    )
+
+
+def test_normalization_explains_the_determinant(
+    normalized_alpoege: PolynomialMap,
+) -> None:
+    """Warum BCW17 Determinante 1 hat, Alpoege aber -2.
+
+    Der Linearteil von Alpoege hat selbst Determinante -2. Die Normalisierung
+    teilt sie damit heraus; Stabilisierung und elementare Faktoren koennen die
+    Determinante danach nicht mehr aendern.
+    """
+    F = PolynomialMap(ALPOEGE_VARIABLES, ALPOEGE_COMPONENTS)
+
+    assert F.determinant() == -2
+    assert normalized_alpoege.determinant() == 1
+
+
+def test_normalization_reaches_MA1(  # noqa: N802
+    normalized_alpoege: PolynomialMap,
+) -> None:
+    """Die Voraussetzung von Proposition (3.1).
+
+    Alpoege liegt nur in MA^0; erst nach der Normalisierung ist der Linearteil
+    die Identitaet und die Abbildung liegt in MA^1.
+    """
+    assert not PolynomialMap(ALPOEGE_VARIABLES, ALPOEGE_COMPONENTS).is_in_MA(1)
+    assert normalized_alpoege.is_in_MA(1)
+
+
+def test_normalization_explains_the_image(
+    normalized_alpoege: PolynomialMap,
+) -> None:
+    """Warum das Kollisionsbild (0, 0, -1/4) lautet und nicht (-1/4, 0, 0).
+
+    Der Linearteil vertauscht die erste und dritte Koordinate, seine Inverse
+    also ebenso. Das Bild der normalisierten Abbildung stimmt genau mit den
+    ersten drei Koordinaten des BCW17-Bildes ueberein.
+    """
+    heads = [tuple(map(sp.nsimplify, p))[:3] for p in BCW17_COLLISION]
+    images = [sp.expand(normalized_alpoege(*head)) for head in heads]
+
+    assert len({tuple(image) for image in images}) == 1
+    assert list(images[0]) == list(BCW17_IMAGE)[:3]
+
+
+def test_the_collision_extends_alpoeges(bcw17: PolynomialMap) -> None:
+    """Die Kollisionspunkte setzen Alpoeges Punkte fort.
+
+    Der Zusammenhang zwischen beiden Abbildungen ist damit nicht nur
+    behauptet: dieselben drei Urbilder, um 14 Stabilisierungskoordinaten
+    ergaenzt.
+    """
+    alpoege_collision = {
+        (sp.Integer(0), sp.Integer(0), sp.Rational(-1, 4)),
+        (sp.Integer(1), sp.Rational(-3, 2), sp.Rational(13, 2)),
+        (sp.Integer(-1), sp.Rational(3, 2), sp.Rational(13, 2)),
+    }
+    heads = {tuple(map(sp.nsimplify, p))[:3] for p in BCW17_COLLISION}
+
+    assert heads == alpoege_collision
+    assert bcw17.dimension - 3 == 14

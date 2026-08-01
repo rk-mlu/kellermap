@@ -54,7 +54,7 @@ check-full: lint typecheck test-all
 # --------------------------------------------------------------------------
 
 # Geprueft wird das Paket, nicht der Arbeitsbaum: die venv sieht src/ nicht,
-# also loest `import bcw` in den Tests auf das installierte Wheel auf.
+# also loest `import kellermap` in den Tests auf das installierte Wheel auf.
 build-test:
 	@echo "--> Raeume alte Builds auf..."
 	rm -rf dist build_env min_env
@@ -67,7 +67,7 @@ build-test:
 	@echo "--> Installiere Wheel und pytest..."
 	VIRTUAL_ENV=build_env uv pip install dist/*.whl pytest
 	@echo "--> Pruefe PEP-561-Marker im installierten Paket..."
-	build_env/bin/python -c "import bcw, pathlib, sys; sys.exit(None if (pathlib.Path(bcw.__file__).parent / 'py.typed').exists() else 'py.typed fehlt im Wheel: bcw waere fuer Typpruefer stromabwaerts untypisiert')"
+	build_env/bin/python -c "import kellermap, pathlib, sys; sys.exit(None if (pathlib.Path(kellermap.__file__).parent / 'py.typed').exists() else 'py.typed fehlt im Wheel: kellermap waere fuer Typpruefer stromabwaerts untypisiert')"
 	@echo "--> Fahre die Testsuite gegen das installierte Paket..."
 	build_env/bin/python -m pytest -q
 	@echo "Erfolg: Wheel gebaut, installiert und geprueft."

@@ -9,7 +9,7 @@ import pytest
 import sympy as sp
 from sympy.polys.rings import PolyRing
 
-from bcw import (
+from kellermap import (
     DEFAULT_VARIABLE_FACTORY,
     IndexedVariableFactory,
     PolynomialMap,

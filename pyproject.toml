@@ -1,18 +1,20 @@
 [project]
-name = "bcw-reduction"
+name = "kellermap"
 version = "0.1.0rc2"
-description = "Implementation of the Bass–Connell–Wright reduction of polynomial Keller maps."
+description = "Polynomial Keller maps and certified transformations of them, including the Bass–Connell–Wright degree reduction."
 readme = "README.md"
 requires-python = ">=3.10"
 license = { file = "LICENSE" }
 
 authors = [
-    { name = "Raphael Kruse" }
+    { name = "Raphael" }
 ]
 
 keywords = [
+    "keller maps",
     "jacobian conjecture",
     "polynomial maps",
+    "polynomial automorphisms",
     "sympy",
     "computer algebra",
     "algebraic geometry"
@@ -89,7 +91,7 @@ module = ["sympy", "sympy.*"]
 ignore_missing_imports = true
 
 [tool.coverage.run]
-source = ["src/bcw"]
+source = ["src/kellermap"]
 
 [tool.coverage.report]
 show_missing = true
@@ -101,4 +103,4 @@ build-backend = "hatchling.build"
 
 
 [tool.hatch.build.targets.wheel]
-packages = ["src/bcw"]
+packages = ["src/kellermap"]

@@ -28,8 +28,8 @@ what they do.
 ## Public surface
 
 ```python
->>> import bcw
->>> bcw.__all__
+>>> import kellermap
+>>> kellermap.__all__
 ['DEFAULT_VARIABLE_FACTORY', 'ElementaryAutomorphism', 'ElementaryFactor', 'IndexedVariableFactory', 'PolynomialMap', 'VariableFactory', 'reserved_names']
 
 ```
@@ -48,7 +48,7 @@ From SymPy expressions:
 
 ```python
 >>> import sympy as sp
->>> from bcw import PolynomialMap
+>>> from kellermap import PolynomialMap
 >>> x, y = sp.symbols("x y")
 >>> F = PolynomialMap((x, y), (x + y**3, y))
 >>> F.dimension
@@ -219,7 +219,7 @@ True
 taking a ring and a count and returning that many symbols.
 
 ```python
->>> from bcw import IndexedVariableFactory
+>>> from kellermap import IndexedVariableFactory
 >>> F.extend(2, IndexedVariableFactory(prefix="u")).variables
 (x, y, u1, u2)
 
@@ -239,7 +239,7 @@ generators, so a numbered map stays numbered:
 coefficient-domain symbols alike:
 
 ```python
->>> from bcw import reserved_names
+>>> from kellermap import reserved_names
 >>> sorted(reserved_names(G.ring))
 ['T', 'x', 'y']
 
@@ -283,7 +283,7 @@ fixing every coordinate but one,
     X_j |-> X_j + P,       P free of X_j.
 
 ```python
->>> from bcw import ElementaryFactor
+>>> from kellermap import ElementaryFactor
 >>> R, X1, X2, X3, X4 = ring("X1,X2,X3,X4", QQ)
 >>> G = ElementaryFactor(R, index=0, polynomial=-X3 * X4)
 >>> G.to_polynomial_map().components
@@ -304,7 +304,7 @@ product of its factors. Proposition (3.1) needs this: its `G` is one factor,
 its `H` is two.
 
 ```python
->>> from bcw import ElementaryAutomorphism
+>>> from kellermap import ElementaryAutomorphism
 >>> H = ElementaryAutomorphism(
 ...     [ElementaryFactor(R, 2, X2**2), ElementaryFactor(R, 3, X2**2)]
 ... )
