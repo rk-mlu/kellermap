@@ -36,7 +36,7 @@ certificate. That is the goal of the project; `BCWStep` and `Reduction` arrive i
 
 ## Project Status
 
-Current version: **0.1.0rc3**
+Current version: **0.1.0rc4**
 
 The first milestone covers the algebraic foundations:
 

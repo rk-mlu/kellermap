@@ -72,6 +72,17 @@ def _copy_coefficient(coefficient: Any, domain: Any) -> Any:
     return coefficient
 
 
+# SymPys aeltere ``old_poly_ring``-Domains tragen ihre Koeffizienten als
+# ``DMP``-Objekte statt als ``PolyElement``. Sie liessen sich hier weder
+# zuverlaessig klonen noch verrechnen -- ``from_ring`` scheiterte an einer
+# ``CoercionFailed`` tief in SymPy. Besser frueh und lesbar ablehnen.
+_UNSUPPORTED_DOMAIN = (
+    "Coefficient domain {domain} is not supported: it is one of SymPy's "
+    "older dense domains. Use QQ[T] or QQ.frac_field(T) instead of "
+    "QQ.old_poly_ring(T)."
+)
+
+
 def clone_domain(domain: Any) -> Any:
     """Return a fresh, value-equal coefficient domain.
 
@@ -79,16 +90,26 @@ def clone_domain(domain: Any) -> Any:
     exactly like a ring does, and they nest: ``QQ[X3][S]`` carries mutable
     state at two levels. Ground domains such as ``ZZ`` and ``QQ`` are
     stateless singletons and are returned unchanged.
+
+    The monomial order is carried over at every level. Dropping it does not
+    merely lose a preference: a domain built with ``grlex`` came back as
+    ``lex``, so the clone did not compare equal to its original, and two maps
+    over genuinely different domains compared equal to each other.
     """
     if not domain.is_Composite:
         return domain
 
-    base = clone_domain(domain.dom)
-
     if domain.is_FractionField:
-        return base.frac_field(*domain.symbols)
+        field = getattr(domain, "field", None)
+        if field is None:
+            raise ValueError(_UNSUPPORTED_DOMAIN.format(domain=domain))
+        return clone_domain(domain.dom).frac_field(*domain.symbols, order=field.order)
 
-    return base.poly_ring(*domain.symbols)
+    sparse_ring = getattr(domain, "ring", None)
+    if sparse_ring is None:
+        raise ValueError(_UNSUPPORTED_DOMAIN.format(domain=domain))
+
+    return clone_domain(domain.dom).poly_ring(*domain.symbols, order=sparse_ring.order)
 
 
 def clone_ring(
@@ -191,6 +212,14 @@ class PolynomialMap:
             raise ValueError(
                 "Components must be polynomials in the specified variables."
             ) from exc
+
+        # sring darf ein Symbol, das bereits Generator ist, zusaetzlich in die
+        # Koeffizientendomain aufnehmen, wenn es mit anderen Annahmen auftritt
+        # -- gleicher Name, verschiedene Objekte. Ohne diese Pruefung entstuende
+        # eine Abbildung, die gueltig aussieht, deren ``components`` dasselbe
+        # Zeichen fuer zwei Dinge druckt und an der ``extend()`` spaeter
+        # scheitert.
+        validate_ring(polynomial_ring)
 
         object.__setattr__(self, "_ring", polynomial_ring)
         object.__setattr__(

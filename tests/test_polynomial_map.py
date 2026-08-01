@@ -1024,3 +1024,132 @@ def test_extend_rejects_non_integers(number: object) -> None:
 
     with pytest.raises(TypeError, match="must be an integer"):
         F.extend(number)  # type: ignore[arg-type]
+
+
+# --------------------------------------------------------------------------
+# Der Ausdruckskonstruktor validiert den Ring, den sring baut
+# --------------------------------------------------------------------------
+
+
+def test_a_coefficient_may_not_shadow_a_coordinate() -> None:
+    """Regression fuer einen echten Fehler.
+
+    ``sring`` nimmt ein Symbol, das bereits Generator ist, zusaetzlich in die
+    Koeffizientendomain auf, wenn es mit anderen Annahmen auftritt: gleicher
+    Name, verschiedene Objekte. Der Ausdruckskonstruktor pruefte das nicht,
+    ``from_ring`` schon -- die Abbildung sah gueltig aus, druckte in
+    ``components`` dasselbe Zeichen fuer zwei Dinge, und erst ``extend()``
+    scheiterte.
+    """
+    x, y = sp.Symbol("x"), sp.Symbol("y")
+    parameter = sp.Symbol("x", positive=True)
+
+    with pytest.raises(ValueError, match="coefficient indeterminate"):
+        PolynomialMap((x, y), (x + parameter * y, y))
+
+
+def test_a_genuine_parameter_is_still_accepted() -> None:
+    """Die Gegenprobe: ein Parameter mit eigenem Namen bleibt zulaessig."""
+    x, y, T = sp.symbols("x y T")
+
+    F = PolynomialMap((x, y), (T * x + y, x))
+
+    assert str(F.ring.domain) == "ZZ[T]"
+
+
+# --------------------------------------------------------------------------
+# Monomordnung ueberlebt das Klonen
+# --------------------------------------------------------------------------
+
+MONOMIAL_ORDERS = ["lex", "grlex", "grevlex"]
+
+
+@pytest.mark.parametrize("order", MONOMIAL_ORDERS)
+def test_cloning_keeps_the_polynomial_ring_order(order: str) -> None:
+    """Regression fuer einen echten Fehler.
+
+    ``clone_domain`` baute die Domain ohne ihre ``order`` nach. Eine mit
+    ``grlex`` gebaute Domain kam als ``lex`` zurueck -- der Klon war also
+    nicht wertgleich zum Original, entgegen der Zusage in ``docs/api.md``.
+    """
+    from sympy.polys.domains import QQ
+    from sympy.polys.rings import ring
+
+    T = sp.Symbol("T")
+    domain = QQ.poly_ring(T, order=order)
+    R = ring("u,v", domain)[0]
+
+    F = PolynomialMap.from_ring(R, R.gens)
+
+    assert F.ring.domain == domain
+    assert F.ring.domain is not domain
+
+
+@pytest.mark.parametrize("order", MONOMIAL_ORDERS)
+def test_cloning_keeps_the_fraction_field_order(order: str) -> None:
+    from sympy.polys.domains import QQ
+    from sympy.polys.rings import ring
+
+    T = sp.Symbol("T")
+    domain = QQ.frac_field(T, order=order)
+    R = ring("u,v", domain)[0]
+
+    assert PolynomialMap.from_ring(R, R.gens).ring.domain == domain
+
+
+def test_cloning_keeps_the_order_at_every_nesting_level() -> None:
+    from sympy.polys.domains import QQ
+    from sympy.polys.rings import ring
+
+    T, S = sp.symbols("T S")
+    domain = QQ.poly_ring(T, order="grlex").poly_ring(S, order="grevlex")
+    R = ring("u,v", domain)[0]
+
+    view = PolynomialMap.from_ring(R, R.gens).ring.domain
+
+    assert view == domain
+    assert view.ring.order == domain.ring.order
+    assert view.dom.ring.order == domain.dom.ring.order
+
+
+def test_maps_over_differently_ordered_domains_are_unequal() -> None:
+    """Was der verlorene Order sonst anrichtete: zwei Abbildungen ueber
+    verschiedenen Domains verglichen sich gleich."""
+    from sympy.polys.domains import QQ
+    from sympy.polys.rings import ring
+
+    T = sp.Symbol("T")
+    graded = ring("u,v", QQ.poly_ring(T, order="grlex"))[0]
+    lexical = ring("u,v", QQ.poly_ring(T))[0]
+
+    assert PolynomialMap.from_ring(graded, graded.gens) != PolynomialMap.from_ring(
+        lexical, lexical.gens
+    )
+
+
+def test_older_dense_fraction_fields_are_rejected_too() -> None:
+    """Dasselbe fuer ``old_frac_field``, den Bruchkoerper-Zwilling."""
+    from sympy.polys.domains import QQ
+
+    from kellermap.polynomial_map import clone_domain
+
+    T = sp.Symbol("T")
+
+    with pytest.raises(ValueError, match="older dense domains"):
+        clone_domain(QQ.old_frac_field(T))
+
+
+def test_older_dense_domains_are_rejected_with_a_readable_message() -> None:
+    """``old_poly_ring`` traegt DMP-Koeffizienten statt PolyElement.
+
+    Ohne diese Pruefung scheiterte ``from_ring`` an einer ``CoercionFailed``
+    tief in SymPy, die nichts darueber sagte, was zu tun ist.
+    """
+    from sympy.polys.domains import QQ
+    from sympy.polys.rings import ring
+
+    T = sp.Symbol("T")
+    R = ring("u,v", QQ.old_poly_ring(T))[0]
+
+    with pytest.raises(ValueError, match="older dense domains"):
+        PolynomialMap.from_ring(R, R.gens)

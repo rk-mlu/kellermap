@@ -107,7 +107,7 @@ latter.
 
 ---
 
-## Other reductions of the same map
+## Other cubic Keller maps derived from the same map
 
 Useful as comparison and as benchmark targets for milestone 0.4. Note that
 these are *different* reductions, not alternative descriptions of the map in
@@ -149,12 +149,3 @@ suite establishes on its own:
 Not established here: the stabilization to dimension 17 and the elementary
 factors that reduce the degree from 7 to 3. That is the content of milestone
 0.2.
-
----
-
-## A note on the local copy of the BCW paper
-
-A scanned copy of the 1982 paper has been used during development. It is not
-part of the repository and should not be committed: it is a 7.5 MB binary of
-page images, it is not searchable, and its distribution is not ours to make.
-Use the Project Euclid link above.

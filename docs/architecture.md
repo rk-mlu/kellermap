@@ -173,6 +173,12 @@ coordinate named `X3` and collapse it with the parameter. `validate_ring()`
 rejects that collision up front, which SymPy itself only does for the top
 level.
 
+Both constructors run that check. The expression constructor did not, and
+`sring` will place a symbol that is already a generator into the coefficient
+domain as well when it appears with different assumptions — same name,
+different objects. The result was a map that looked valid, printed one glyph
+for two things in `components`, and failed only later in `extend()`.
+
 Cloning must not go through `PolyRing.clone()`. That method is memoised by
 SymPy's `cacheit`, and cloning a ring that is *itself* a clone returns the
 same object. Isolation built on it does nothing for any map produced by
@@ -633,10 +639,11 @@ optimizations never change mathematical correctness.
 
 Two regression examples are kept. The small one checks a degree-seven map in
 dimension three by asserting both its constant Jacobian determinant and an
-explicit collision. The larger one is a BCW reduction of that map to a cubic
-Keller map in dimension 17, with the collision carried along; its components
-are fixed input, not output of this library, until `BCWStep` can reproduce
-them.
+explicit collision. The larger one is a cubic Keller map in dimension 17 that
+carries the same collision. It is a *candidate* for a BCW reduction of the
+small one: the tests recompute its degree, determinant and collision, but that
+it arises from such a reduction is asserted, not derived. Its components are
+fixed input, not output of this library, until `BCWStep` can reproduce them.
 
 See `references.md` for sources and for what the fixed data rests on.
 
