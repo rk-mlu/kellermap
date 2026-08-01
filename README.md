@@ -1,8 +1,12 @@
-# kellermap
+# KellerMap
 
 A Python library for polynomial Keller maps — polynomial endomorphisms with a
 nonzero constant Jacobian determinant — and for certified transformations of
 them.
+
+KellerMap is named after Ott-Heinrich Keller, whose work gave rise to the notion
+of Keller maps and who served as a professor at the Martin-Luther-Universität 
+Halle-Wittenberg—the present-day academic home of this project.
 
 Whether every Keller map is an automorphism was the Jacobian conjecture, open
 from 1939 (or 1884, see `docs/references.md`) until July 2026. It is now known
@@ -13,7 +17,8 @@ it is named after them rather than after automorphisms.
 The first goal is the degree reduction introduced by
 
 > H. Bass, E. H. Connell, D. Wright,
-> *The Jacobian Conjecture: Reduction of Degree and Formal Expansion of the Inverse*, Bull. Amer. Math. Soc., 1982.
+> *The Jacobian Conjecture: Reduction of Degree and Formal Expansion of the Inverse*,
+> Bull. Amer. Math. Soc., 1982.
 
 The implementation is intended as both
 
