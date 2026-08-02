@@ -20,6 +20,7 @@ what they do.
   - [Stable extension](#stable-extension)
 - [Variable factories](#variable-factories)
 - [Elementary automorphisms](#elementary-automorphisms)
+- [Linear automorphisms](#linear-automorphisms)
 - [Collisions](#collisions)
 - [Guarantees](#guarantees)
 - [Errors](#errors)
@@ -31,7 +32,7 @@ what they do.
 ```python
 >>> import kellermap
 >>> kellermap.__all__
-['DEFAULT_VARIABLE_FACTORY', 'Collision', 'ElementaryAutomorphism', 'ElementaryFactor', 'IndexedVariableFactory', 'PolynomialMap', 'VariableFactory', 'VerificationError', 'reserved_names']
+['DEFAULT_VARIABLE_FACTORY', 'Collision', 'Dilation', 'ElementaryAutomorphism', 'ElementaryFactor', 'IndexedVariableFactory', 'LinearAutomorphism', 'LinearFactor', 'PolynomialMap', 'Transposition', 'Transvection', 'VariableFactory', 'VerificationError', 'field_ring', 'over_field', 'reserved_names']
 
 ```
 
@@ -369,6 +370,82 @@ False
 
 ---
 
+## Linear automorphisms
+
+The transformation of BCW Section 4, as an ordered product of Gauss
+operations. Three generators, and which of them are elementary in the sense of
+the paper is the reason the module exists.
+
+A transvection is elementary and can be handed to `EA_n(k)` unchanged:
+
+```python
+>>> from kellermap import Transvection, Transposition, Dilation
+>>> shear = Transvection(R, 0, 1, 3)
+>>> shear.is_elementary
+True
+>>> shear.as_elementary_factor().polynomial
+3*X2
+>>> shear.as_elementary_factor().filtration_degree()
+0
+
+```
+
+A transposition and a dilation are not. A dilation displaces `X_i` by
+`(a - 1) X_i`, which involves `X_i`; a transposition moves two coordinates and
+has determinant `-1`:
+
+```python
+>>> Transposition(R, 0, 1).is_elementary, Transposition(R, 0, 1).determinant()
+(False, -1)
+>>> Dilation(R, 0, 2).is_elementary, Dilation(R, 0, 2).determinant()
+(False, 2)
+
+```
+
+`factorize()` runs Gauss-Jordan elimination and keeps the row operations. The
+product of the factors is the matrix again:
+
+```python
+>>> from kellermap import LinearAutomorphism
+>>> matrix = sp.diag(sp.Matrix([[0, 2], [1, 0]]), 1, 1)
+>>> L = LinearAutomorphism.factorize(R, matrix)
+>>> L.factors
+(Transposition(first=0, second=1), Dilation(index=1, coefficient=2))
+>>> sp.Matrix(L.matrix()) == matrix
+True
+>>> L.determinant()
+-2
+
+```
+
+The determinant is the product of the factor determinants, so no matrix is
+formed to obtain it. `apply_to()` composes on the left, which recombines the
+components without substituting anything:
+
+```python
+>>> square = PolynomialMap.from_ring(R, (X1 + X2**2, X2, X3, X4))
+>>> L.apply_to(square).components
+(2*X2, X1 + X2**2, X3, X4)
+
+```
+
+Dilations need their coefficient to be a unit, so a map read off a paper over
+`ZZ` has to be widened first. That is a deliberate step, not something the
+arithmetic does quietly:
+
+```python
+>>> from kellermap import over_field
+>>> integral = PolynomialMap((x, y), (x + y**2, y))
+>>> integral.ring.domain, over_field(integral).ring.domain
+(ZZ, QQ)
+
+```
+
+Two factorizations of one matrix are different objects, exactly as for
+`ElementaryAutomorphism`: the factorization is the certificate.
+
+---
+
 ## Collisions
 
 Several distinct points sharing one image. For a Keller map this is the whole
@@ -503,6 +580,9 @@ True
 | composing maps with different variables | `ValueError` |
 | a factory returning a colliding, duplicate or miscounted name | `ValueError` |
 | an elementary polynomial involving its own variable | `ValueError` |
+| a transvection or transposition on one coordinate | `ValueError` |
+| a dilation by zero or by a non-unit | `ValueError` |
+| factorizing a singular matrix, or one of the wrong shape | `ValueError` |
 | fewer than two collision points, or two equal ones | `ValueError` |
 | a collision whose points and image differ in length | `ValueError` |
 | an obligation of `contracts.md` failing | `VerificationError` |

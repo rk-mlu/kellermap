@@ -20,8 +20,8 @@ the implementation is required to guarantee.
 
 ## Contents
 
-- [Referenced types](#referenced-types)
 - [Collision](#collision)
+- [LinearAutomorphism](#linearautomorphism)
 - [The Step protocol](#the-step-protocol)
 - [ReductionContext](#reductioncontext)
 - [BCWStep](#bcwstep)
@@ -29,18 +29,6 @@ the implementation is required to guarantee.
 - [Reduction](#reduction)
 - [Errors](#errors)
 - [Deliberate non-obligations](#deliberate-non-obligations)
-
----
-
-## Referenced types
-
-One type is used in the signatures below and specified with its own work
-package. Only what the contracts here depend on is fixed:
-
-`LinearAutomorphism` — an element of `GL_n(k)`, kept as an ordered product of
-transvections, transpositions and dilations. Transvections are elementary in
-the sense of BCW; transpositions and dilations are not, and the type exists for
-exactly that reason.
 
 ---
 
@@ -90,6 +78,69 @@ takes the map as an argument.
 **COL-6 — Value semantics.** Immutable; `extended()` and `with_image()` return
 new objects. Equality treats the points as a set, since listing them in another
 order is the same certificate.
+---
+
+## LinearAutomorphism
+
+An element of `GL_n(k)`, as an ordered product of Gauss generators. Implemented
+in work package 2.
+
+```python
+class LinearFactor(ABC):
+    ring: PolyRing
+    dimension: int
+    is_elementary: bool
+
+    def matrix(self) -> sp.ImmutableMatrix: ...
+    def determinant(self) -> sp.Expr: ...
+    def inverse(self) -> LinearFactor: ...
+    def apply_to(self, F: PolynomialMap) -> PolynomialMap: ...
+
+
+@dataclass(frozen=True)
+class LinearAutomorphism:
+    factors: tuple[LinearFactor, ...]
+
+    @classmethod
+    def factorize(cls, ring, matrix) -> LinearAutomorphism: ...
+
+    def matrix(self, ring: PolyRing | None = None) -> sp.ImmutableMatrix: ...
+    def determinant(self) -> sp.Expr: ...
+    def inverse(self) -> LinearAutomorphism: ...
+    def apply_to(self, F: PolynomialMap) -> PolynomialMap: ...
+```
+
+The type carries no `verify()` and therefore no numbered obligations. It is an
+algebraic object like `ElementaryFactor`, not a certificate; what is verified
+about it is verified by `LinearStep`, in LIN-1 to LIN-4. What the type
+guarantees structurally:
+
+**Three generators, and only one of them elementary.** `Transvection`
+(`X_i |-> X_i + a X_j`, `i != j`) reports `is_elementary` as true and converts
+to an `ElementaryFactor` unchanged; it lies in `EA^0` and not in `EA^1`.
+`Transposition` and `Dilation` report false. A dilation displaces `X_i` by
+`(a - 1) X_i`, which involves `X_i`; a transposition moves two coordinates and
+has determinant `-1`.
+
+**`is_elementary` on a product is sufficient, not characteristic.** Two equal
+transpositions multiply to the identity, which lies in `EA_n(k)` although
+neither factor does. The property reports on the exhibited factorization, which
+is what a certificate can check without forming anything.
+
+**The determinant is structural.** It is the product of the factor
+determinants — `1`, `-1` and `a` respectively — and no matrix is formed to
+obtain it. Unlike in `EA_n(k)` it is not one in general, which is precisely
+why the linear part needs its own type and its own kind of step.
+
+**The factorization is kept.** `factorize()` runs Gauss-Jordan elimination and
+records the row operations; two factorizations of one matrix are different
+objects and compare unequal, as for `ElementaryAutomorphism`.
+
+**Widening the domain is explicit.** A dilation needs its coefficient to be a
+unit, so a map over `ZZ` has to pass through `over_field()` before it can be
+normalized. Two maps over different domains are different objects here, and
+the arithmetic does not widen one quietly.
+
 ---
 
 ## The Step protocol
@@ -301,9 +352,10 @@ class LinearStep:
 **LIN-1 — The identity.** `target == transformation ∘ source`, as a polynomial
 identity.
 
-**LIN-2 — The factorization is exhibited.** `transformation` is an ordered
-product of transvections, transpositions and dilations whose product is the
-declared matrix, and whose inverse composes with it to the identity.
+**LIN-2 — The factorization is exhibited.** `transformation.factors` is an
+ordered product of transvections, transpositions and dilations whose product is
+`transformation.matrix()`, and `transformation.inverse()` composes with it to
+the identity map.
 
 **LIN-3 — Determinant bookkeeping.** `target.determinant() ==
 transformation.determinant() * source.determinant()`. A linear step is the only
@@ -407,6 +459,8 @@ identifier also appears in `str(...)`, but a caller is expected to branch on
 | `index` outside `range(source.dimension)` | `ValueError` |
 | `variables` colliding with reserved names | `ValueError` |
 | an empty `steps` tuple | `ValueError` |
+| a dilation by zero or by a non-unit of the domain | `ValueError` |
+| factorizing a singular matrix | `ValueError` |
 | fewer than two collision points, or two equal ones | `ValueError` |
 | a collision whose points and image differ in length | `ValueError` |
 | a factory returning a miscounted or colliding name | `ValueError` |
