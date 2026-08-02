@@ -130,8 +130,14 @@ remembers.
 
 ## Verification framework
 
-Introduce, in the `kellermap.bcw` subpackage,
+Introduce, at the top level,
 
+- `Collision`
+- `kellermap.linear`: dilations, transpositions, `LinearAutomorphism`
+
+and, in the `kellermap.bcw` subpackage,
+
+- the `Step` protocol, `LinearStep`
 - `BCWStep`
 - `Reduction`
 - `ReductionContext` (building on the `VariableFactory` from 0.1)
@@ -155,6 +161,88 @@ Verification checks
 All verification arithmetic is carried out in one shared `PolyRing` whenever
 possible. At this point the project can produce machine-verifiable local proof
 certificates.
+
+`docs/contracts.md` states the obligations of `ReductionContext`, `BCWStep`
+and `Reduction` normatively, with a stable identifier per obligation. It is
+written before the implementation and binding on it, and is amended
+deliberately rather than incidentally.
+
+### The linear part is not elementary
+
+The derivation begins with the normalization of BCW §4, `F'' = F'_(1)^-1 ∘ F'`.
+Its transformation is a product of Gauss operations, and only some of them are
+elementary in the sense of the paper. A transvection `X_i |-> X_i + a X_j` is
+an `ElementaryFactor` already, in `EA^0`; a transposition and a dilation are
+not, since a dilation displaces `X_j` by `(a - 1) X_j` and a transposition
+moves two components and has determinant `-1`.
+
+The shortest argument needs no factorization at all: every element of
+`EA_n(k)` has determinant one, and the transformation normalizing Alpöge's map
+has determinant `-1/2`. Over a field the transvections generate `SL_n`, so the
+non-elementary content is exactly one dilation. This is why the linear part
+gets its own type and its own kind of step, and why `LinearStep` is the only
+step permitted to change the determinant.
+
+### Collision tracking
+
+The point of the project is a counterexample, so a step must move a collision,
+not merely preserve degrees. From `F' = G ∘ F^[m] ∘ H` and `F(a) = F(b) = c`,
+
+    a' = H^-1(a, u),  b' = H^-1(b, u),  F'(a') = F'(b') = G(c, u)
+
+for one shared `u`. For Proposition (3.1) with `u = 0` this is
+`a |-> (a, -P(a), -Q(a))` with the image unchanged. A `Collision` is a value
+object verified by evaluation alone, which makes a transported collision the
+cheapest certificate in the project and the one that carries its purpose.
+
+### Two generalizations of Proposition (3.1)
+
+The reference reduction of Alpöge's map to dimension 17 needs the step in a
+form slightly wider than the paper states it, and `BCWStep` is specified for
+that wider form in `contracts.md`.
+
+`P * Q` is not the factorization of a single leading monomial `aM`. Formula (2)
+holds for any subsum of the target component, and the reduction removes up to
+four monomials in one step. A monomial-by-monomial application of the paper
+reaches dimension 19 instead.
+
+The target component is not the first. Step seven acts on component 11, a
+coordinate that step four introduced.
+
+### Work packages
+
+Development of 0.2 is split into seven work packages. They carry internal
+version numbers 0.1.1 to 0.1.7 for orientation within the history; none of them
+is a release. `pyproject.toml` stays at `0.1.0` until the milestone is complete
+and is then set to `0.2.0` in one step. Git tags for work packages use the
+`wp/` prefix, so that the release namespace `v*` stays clean.
+
+| WP | Internal | Content |
+| --- | --- | --- |
+| 1 | 0.1.1 | `Collision` |
+| 2 | 0.1.2 | `kellermap.linear`: dilations, transpositions, `LinearAutomorphism` |
+| 3 | 0.1.3 | `Step` protocol, `LinearStep`, `Reduction` |
+| 4 | 0.1.4 | `BCWStep.verify()` |
+| 5 | 0.1.5 | `ReductionContext` |
+| 6 | 0.1.6 | Integration: the eight steps from Alpöge to dimension 17 |
+| 7 | 0.1.7 | Documentation and release |
+
+Every work package leaves the repository green.
+
+The order is not arbitrary. `Collision` and `kellermap.linear` depend on
+nothing and settle the evaluation path early. `LinearStep` implements the
+`Step` protocol before `BCWStep` does, so that the protocol is not shaped
+around Proposition (3.1) alone. `ReductionContext` comes after `BCWStep`,
+because only then is it known what the context has to guarantee — which is the
+placement 0.1 already anticipated.
+
+### Milestone target
+
+At the end of 0.2 the seventeen-dimensional map in `tests/test_bcw17.py` is
+derived rather than asserted: a `Reduction` of eight steps from Alpöge's map,
+verified step by step, transporting the three-point collision. The map then
+stops being a regression candidate. `scripts/reconstruct_bcw17.py` holds the
+factorization this has to reproduce.
 
 ---
 

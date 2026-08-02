@@ -92,6 +92,7 @@ Most important documents:
 ```
 api.md            public API, with examples the test suite executes
 architecture.md   design decisions and the reasons for them
+contracts.md      binding obligations of the verification surface
 references.md     sources, and the provenance of the fixed test data
 roadmap.md        milestones
 ```
