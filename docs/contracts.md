@@ -21,6 +21,7 @@ the implementation is required to guarantee.
 ## Contents
 
 - [Referenced types](#referenced-types)
+- [Collision](#collision)
 - [The Step protocol](#the-step-protocol)
 - [ReductionContext](#reductioncontext)
 - [BCWStep](#bcwstep)
@@ -33,19 +34,62 @@ the implementation is required to guarantee.
 
 ## Referenced types
 
-Two types are used in the signatures below and specified with their own work
-packages. Only what the contracts here depend on is fixed:
-
-`Collision` — a finite tuple of pairwise distinct points of `k^n` together with
-their common image. `Collision.verify(F)` evaluates `F` at every point and
-checks that the images agree with each other and with the recorded image. It is
-a value object; every operation returns a new one.
+One type is used in the signatures below and specified with its own work
+package. Only what the contracts here depend on is fixed:
 
 `LinearAutomorphism` — an element of `GL_n(k)`, kept as an ordered product of
 transvections, transpositions and dilations. Transvections are elementary in
 the sense of BCW; transpositions and dilations are not, and the type exists for
 exactly that reason.
 
+---
+
+## Collision
+
+Distinct points of `k^n` sharing one image. Implemented in work package 1.
+
+```python
+@dataclass(frozen=True)
+class Collision:
+    points: tuple[tuple[sp.Expr, ...], ...]
+    image: tuple[sp.Expr, ...]
+
+    @classmethod
+    def at(cls, F: PolynomialMap, points) -> Collision: ...
+
+    def verify(self, F: PolynomialMap) -> None: ...
+
+    def extended(self, coordinates, image) -> Collision: ...
+
+    def with_image(self, image) -> Collision: ...
+```
+
+**COL-1 — Dimensions agree.** `self.dimension == F.dimension`.
+
+**COL-2 — Coordinates are constant relative to the map.** No coordinate of a
+point involves a variable of `F`. A coordinate carrying one of the map's own
+variables would be substituted into itself by the evaluation, and the resulting
+identity would say nothing about any point. Symbols of the coefficient domain
+are permitted: a collision over `k(T)` is a collision.
+
+**COL-3 — The image is the image.** `F` sends every point to `image`, checked
+by evaluation and compared as values rather than as syntax.
+
+**COL-4 — Distinctness is a constructor invariant, not an obligation.** A
+`Collision` whose points coincide cannot be built; the constructor raises
+`ValueError`. This is deliberately stronger than reporting it in `verify()`: a
+certificate whose points coincide is not weaker evidence but no evidence at
+all, and it should not be possible to hold one. Equality of points is decided
+by value, so two spellings of one point are one point.
+
+**COL-5 — The collision holds no map.** The same points are a collision of
+every map that identifies them, and a reduction verifies them against each map
+of the chain in turn. `Collision` therefore stores points and image only, and
+takes the map as an argument.
+
+**COL-6 — Value semantics.** Immutable; `extended()` and `with_image()` return
+new objects. Equality treats the points as a set, since listing them in another
+order is the same certificate.
 ---
 
 ## The Step protocol
@@ -343,9 +387,18 @@ return new `Reduction` objects; nothing mutates.
 
 ```python
 class VerificationError(Exception):
-    obligation: str  # "BCW-1", "RED-2", ...
+    obligation: str  # "COL-3", "BCW-1", "RED-2", ...
+    message: str  # what went wrong, naming the offending object
     step: int | None  # index within the reduction, if applicable
+
+    def located_at(self, step: int) -> VerificationError: ...
 ```
+
+A step verifies itself without knowing where in a chain it sits, so the index
+is attached afterwards by the reduction that catches the failure.
+`located_at()` returns a new exception and leaves the original untouched. The
+identifier also appears in `str(...)`, but a caller is expected to branch on
+`obligation` rather than to parse the message.
 
 | Situation | Raised |
 | --- | --- |
@@ -354,6 +407,8 @@ class VerificationError(Exception):
 | `index` outside `range(source.dimension)` | `ValueError` |
 | `variables` colliding with reserved names | `ValueError` |
 | an empty `steps` tuple | `ValueError` |
+| fewer than two collision points, or two equal ones | `ValueError` |
+| a collision whose points and image differ in length | `ValueError` |
 | a factory returning a miscounted or colliding name | `ValueError` |
 | arguments of the wrong type | `TypeError` |
 

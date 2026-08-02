@@ -20,6 +20,7 @@ what they do.
   - [Stable extension](#stable-extension)
 - [Variable factories](#variable-factories)
 - [Elementary automorphisms](#elementary-automorphisms)
+- [Collisions](#collisions)
 - [Guarantees](#guarantees)
 - [Errors](#errors)
 
@@ -30,7 +31,7 @@ what they do.
 ```python
 >>> import kellermap
 >>> kellermap.__all__
-['DEFAULT_VARIABLE_FACTORY', 'ElementaryAutomorphism', 'ElementaryFactor', 'IndexedVariableFactory', 'PolynomialMap', 'VariableFactory', 'reserved_names']
+['DEFAULT_VARIABLE_FACTORY', 'Collision', 'ElementaryAutomorphism', 'ElementaryFactor', 'IndexedVariableFactory', 'PolynomialMap', 'VariableFactory', 'VerificationError', 'reserved_names']
 
 ```
 
@@ -368,6 +369,87 @@ False
 
 ---
 
+## Collisions
+
+Several distinct points sharing one image. For a Keller map this is the whole
+point: it is what makes the map a counterexample rather than merely a
+candidate.
+
+```python
+>>> from kellermap import Collision
+>>> square = PolynomialMap((x, y), (x**2, y))
+>>> collision = Collision.at(square, ((1, 0), (-1, 0)))
+>>> collision.image
+(1, 0)
+>>> len(collision), collision.dimension
+(2, 2)
+
+```
+
+`Collision.at()` evaluates the map at the first point and verifies the result
+before returning it, so it cannot manufacture a collision out of points that
+do not collide. Where the image is a claim rather than a consequence, state it
+and check it:
+
+```python
+>>> Collision(((1, 0), (-1, 0)), (1, 0)).verify(square) is None
+True
+
+```
+
+`verify()` returns nothing and raises `VerificationError` on failure, carrying
+the identifier of the obligation from `docs/contracts.md` that failed:
+
+```python
+>>> from kellermap import VerificationError
+>>> try:
+...     Collision(((1, 0), (-1, 0)), (0, 0)).verify(square)
+... except VerificationError as failure:
+...     failure.obligation
+'COL-3'
+
+```
+
+Distinct points are a constructor invariant rather than an obligation, and
+distinctness is decided by value:
+
+```python
+>>> Collision(((sp.Rational(1, 2), 0), (sp.Rational(2, 4), 0)), (0, 0))
+Traceback (most recent call last):
+    ...
+ValueError: Points 0 and 1 are equal; a collision needs distinct points.
+
+```
+
+A collision holds no map, because a reduction carries it from one map to the
+next. Two operations move it. Appending coordinates is what a stabilizing step
+needs:
+
+```python
+>>> collision.extended(((2, 3), (-2, 3)), (0, 0)).points[0]
+(1, 0, 2, 3)
+
+```
+
+Replacing the image is what composing a map on the left does, since left
+composition leaves every preimage where it was:
+
+```python
+>>> collision.with_image((4, 0)).verify(PolynomialMap((x, y), (4 * x**2, y)))
+
+```
+
+Equality treats the points as a set. Listing them in another order is the same
+certificate:
+
+```python
+>>> Collision(((-1, 0), (1, 0)), (1, 0)) == collision
+True
+
+```
+
+---
+
 ## Guarantees
 
 **Value semantics.** `PolynomialMap`, `ElementaryFactor` and
@@ -421,6 +503,9 @@ True
 | composing maps with different variables | `ValueError` |
 | a factory returning a colliding, duplicate or miscounted name | `ValueError` |
 | an elementary polynomial involving its own variable | `ValueError` |
+| fewer than two collision points, or two equal ones | `ValueError` |
+| a collision whose points and image differ in length | `ValueError` |
+| an obligation of `contracts.md` failing | `VerificationError` |
 | variables or components of the wrong type | `TypeError` |
 
 ```python
