@@ -204,9 +204,17 @@ class BCWStep:
         The draft exists only to reach the formula, which needs ``G`` and
         ``H`` and therefore an instance; its target is a placeholder and is
         never looked at.
+
+        ``variables`` is materialized once and then reused. Two constructions
+        happen here, and a one-shot iterable would be spent by the first --
+        the constructor takes the same parameter and consumes it once, so the
+        two entry points would otherwise disagree about what an ``Iterable``
+        is.
         """
-        draft = cls(source, source, index, P, Q, variables, filtration_level)
-        step = cls(source, draft._composite(), index, P, Q, variables, filtration_level)
+        fresh = tuple(variables)
+
+        draft = cls(source, source, index, P, Q, fresh, filtration_level)
+        step = cls(source, draft._composite(), index, P, Q, fresh, filtration_level)
         object.__setattr__(step, "_provenance", Provenance.CONSTRUCTED)
 
         return step
