@@ -554,6 +554,16 @@ lowest-dimensional, or that dimension 17 cannot be improved.
 **No search.** Neither `BCWStep` nor `Reduction` finds a factorization. They
 verify one that is presented to them. Searching is 0.3.
 
+**No reduction method other than this one.** BCW-2 fixes exactly two fresh
+variables per step, so a chain of `BCWStep`s cannot express a reduction that
+shares carrier variables across steps — where a step introduces one fresh
+variable and reuses an existing carrier as its second factor, which stays
+elementary and is therefore legitimate. The published 19-dimensional reduction
+of Alpöge's map is of that kind; `tests/test_alpoege19.py` holds it as fixed
+input for exactly this reason. Whether to widen BCW-2 to `m >= 1` fresh
+variables is a question for 0.3, and would be an amendment to this page rather
+than an extension around it.
+
 **No injectivity claim about `source`.** `transport()` moves a collision that
 is supplied. That a map *has* no collision is not something this framework
 establishes.

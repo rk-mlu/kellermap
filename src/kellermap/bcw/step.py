@@ -20,8 +20,9 @@ Alpoege's map to dimension 17 needs them and the identity holds for both:
 
 ``P * Q`` is any subsum of the target component, not the factorization of a
 single leading monomial. One step of that reduction removes four monomials of
-degrees 7, 6, 5 and 4 at once; applied monomial by monomial the paper reaches
-dimension 19 instead.
+degrees 7, 6, 5 and 4 at once, where a monomial-by-monomial application would
+need one step per monomial of degree at least four, and at least eight of
+them.
 
 The target component is any component, not the first. Step seven of that
 reduction acts on component 11, which step four introduced.

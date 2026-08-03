@@ -208,8 +208,13 @@ that wider form in `contracts.md`.
 
 `P * Q` is not the factorization of a single leading monomial `aM`. Formula (2)
 holds for any subsum of the target component, and the reduction removes up to
-four monomials in one step. A monomial-by-monomial application of the paper
-reaches dimension 19 instead.
+four monomials in one step. Alpöge's map carries eight monomials of degree at
+least four, so a monomial-by-monomial application needs at least eight steps
+and so at least dimension 19 — at *least*, because the terms a step introduces
+can themselves exceed degree three and call for further steps. That a published
+19-dimensional reduction exists is not evidence for this count: it reaches 19
+by sharing carrier variables, which is a different method (see
+`references.md`).
 
 The target component is not the first. Step seven acts on component 11, a
 coordinate that step four introduced.

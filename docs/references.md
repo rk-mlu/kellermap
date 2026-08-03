@@ -113,11 +113,11 @@ Useful as comparison and as benchmark targets for milestone 0.4. Note that
 these are *different* reductions, not alternative descriptions of the map in
 `tests/test_bcw17.py`.
 
-| Source | Dimension | Shape | Determinant |
-| --- | --- | --- | --- |
-| this project, `tests/test_bcw17.py` (candidate) | 17 | degree 3 | 1 |
-| <https://rhicksrad.github.io/jacobian-degree3/> | 19 | degree 3 | −2 |
-| <https://github.com/wtho704/explicit-cubic-homogeneous-jacobian-counterexample> | 24 | cubic homogeneous | 1 |
+| Source | Dimension | Shape | Determinant | In the suite |
+| --- | --- | --- | --- | --- |
+| this project, `tests/test_bcw17.py` (candidate) | 17 | degree 3 | 1 | yes |
+| <https://rhicksrad.github.io/jacobian-degree3/> | 19 | degree 3 | −2 | yes |
+| <https://github.com/wtho704/explicit-cubic-homogeneous-jacobian-counterexample> | 24 | cubic homogeneous | 1 | no |
 
 The first row is marked *candidate* on purpose: the map's own properties are
 recomputed by the test suite, but that it arises from a BCW reduction of
@@ -131,6 +131,59 @@ both, the other two only the first. The dimension-19 map keeps the determinant
 Comparing them meaningfully needs the certificates that milestone 0.2
 introduces. Reproducing published dimensions with machine-verifiable
 certificates is the first target of 0.4; improving them is secondary.
+
+### The dimension-19 map
+
+Retrieved 3 August 2026 from <https://rhicksrad.github.io/jacobian-degree3/>,
+a research note posted by the GitHub user *rhicksrad* and dated 20 July 2026.
+It is held in `tests/test_alpoege19.py`.
+
+The note carries no authority here, and says as much about itself: it is
+self-published, was worked out with an LLM, and states that it inherits the
+under-review status of the announcement it builds on, which at the time was one
+day old. What makes the data usable is that the test suite recomputes it.
+Established there, from the components alone:
+
+- dimension 19, degree 3, Jacobian determinant identically −2;
+- the map lies in `MA^0` and not in `MA^1`, and its linear part is Alpöge's
+  own bordered by the identity — so it has *not* been linearly normalized,
+  which is the structural difference from the 17-dimensional candidate;
+- three distinct points sharing one image, that image being Alpöge's
+  `(-1/4, 0, 0)` padded with zeros, and the points extending Alpöge's in their
+  first three coordinates.
+
+The collision points are not taken from the note's table. The carrier
+components have the form `w_j + P_j`, so a preimage satisfies `w_j = -P_j`; the
+suite solves that system, whose termination it checks rather than assumes, and
+compares the result with the published table afterwards. The two routes are
+independent and agree.
+
+The components in `tests/test_alpoege19.py` were transcribed from the note's
+rendered text, which loses exponents — `w32` is `w3^2`. On 3 August 2026 the
+transcription was checked against the machine-readable
+[degree3_map.json](https://rhicksrad.github.io/jacobian-degree3/degree3_map.json)
+the note links: all nineteen components agree as polynomials, as do the
+variable order and all three points in all nineteen coordinates. That file is
+deliberately *not* vendored here. Its coefficients are already held in the
+test, in this repository's own idiom, so a second copy in the source's format
+would add no check that is not closed-loop — it would compare the test against
+a copy rather than against the source — while adding a third-party file of
+unclear licence.
+
+Its reduction is *not* a chain of `BCWStep`s. The note describes seventeen
+elementary steps with sixteen carrier variables, so not two per step, and the
+carriers `x^2`, `xy`, `y^2`, `yz`, `xz`, `x^2 y`, `xy^2`, `y^2 z` are shared
+building blocks reused across steps. Such a step needs only one fresh variable
+and stays elementary, which BCW-2 does not admit. Whether to widen it is a
+question for 0.3. The `w`-numbering is also not the order of introduction —
+the component of `w2` reads `w9` and `w13` — so the factorization cannot be
+read off the way BCW17's can. The map is therefore fixed input, not a
+`Reduction`.
+
+The note arrives independently at the Schur-complement route this library uses
+for the determinant. On this map the difference is not a nicety: the carrier
+block reduces the 19×19 determinant to a 3×3 one in a fraction of a second,
+while `sp.Matrix(F.jacobian()).det()` did not finish in a quarter of an hour.
 
 ---
 
