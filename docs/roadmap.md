@@ -128,8 +128,10 @@ remembers.
 
 # Version 0.2
 
-**Status: complete, released as `0.2.0rc1`.** The final version number is held
-back for review; `pyproject.toml` moves to `0.2.0` when that review closes.
+**Status: complete, released as `0.2.0rc2`.** The first candidate went through
+an external audit; the five findings it raised are fixed in rc2 and none of
+them required new functionality. The final version number is held back for a
+second review; `pyproject.toml` moves to `0.2.0` when that closes.
 `docs/contracts.md` states every obligation the surface below is held to.
 
 ## Verification framework
@@ -230,7 +232,8 @@ coordinate that step four introduced.
 Development of 0.2 is split into seven work packages. They carry internal
 version numbers 0.1.1 to 0.1.7 for orientation within the history; none of them
 is a release. `pyproject.toml` stayed at `0.1.0` for the duration and moved to
-`0.2.0rc1` in one step at the end; the final `0.2.0` waits on review. Git tags for work packages use the
+`0.2.0rc1` in one step at the end; `0.2.0rc2` carries the audit fixes, and the
+final `0.2.0` waits on a second review. Git tags for work packages use the
 `wp/` prefix, so that the release namespace `v*` stays clean.
 
 | WP | Internal | Content | Done |
@@ -293,12 +296,33 @@ non-elementary type. It lies in no `EA^d` for `d ≥ 0` all the same, since
 `EA^d` is defined inside `MA^d` and a translation leaves `MA^0`; its filtration
 degree is `-1`.
 
-**Carrier sharing.** BCW-2 fixes two fresh variables per step, so a reduction
-that reuses an existing carrier as one of its factors — which stays elementary
-and is therefore legitimate — cannot be expressed as a chain of `BCWStep`s. The
-published 19-dimensional reduction is of that kind; see `references.md`.
-Widening BCW-2 to `m >= 1` would be an amendment to `contracts.md`, not an
-extension around it.
+**Carrier sharing.** After a step, the coordinate `X_u` carries `P` for good:
+its component stays `X_u + P`, and no later step changes that unless it targets
+`u`. A step whose factors are already carried therefore need not buy them
+again. With `X_u` carrying `P` and `X_w` carrying `Q`,
+
+    G = (…, X_i − X_u X_w, …),   F' = G ∘ F = (F_i − PQ) − X_u Q − P X_w − X_u X_w
+
+which is the expansion of Proposition (3.1) with `X_w` in place of the second
+fresh variable. `G` stays elementary, since `−X_u X_w` is free of `X_i` for
+`i ∉ {u, w}`, and lies in `EA^1`. Three cases follow: both factors carried
+costs no fresh variable, one costs one, neither costs two and is the paper's
+own step.
+
+This is how the published 19-dimensional reduction reaches its dimension —
+seventeen steps for sixteen variables — and three steps of its second component
+were checked against this description. It is not in the paper, and taking it up
+is a deliberate extension.
+
+The two cheap cases are not equally intrusive. `m = 0` is `F' = G ∘ F` with `G`
+elementary: no stabilization at all, hence not a `BCWStep` and no amendment to
+BCW-2, only a new and much simpler kind of step. Only the mixed case `m = 1`
+genuinely requires widening BCW-2, which would be an amendment to
+`contracts.md` rather than an extension around it.
+
+Beyond expressing such reductions, this is what would make the published
+19-dimensional map verifiable rather than merely fixed input, since undoing a
+carrier-sharing step is exactly the move a search would have to make.
 
 ## BCW reduction
 

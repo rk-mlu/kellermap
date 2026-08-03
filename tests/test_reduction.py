@@ -97,6 +97,11 @@ def test_the_source_must_be_a_map(swap: LinearAutomorphism) -> None:
         LinearStep(ALPOEGE.components, ALPOEGE, swap)
 
 
+def test_the_target_must_be_a_map(swap: LinearAutomorphism) -> None:
+    with pytest.raises(TypeError, match="target must be"):
+        LinearStep(ALPOEGE, ALPOEGE.components, swap)
+
+
 def test_the_transformation_must_be_linear() -> None:
     with pytest.raises(TypeError, match="LinearAutomorphism"):
         LinearStep(ALPOEGE, ALPOEGE, ALPOEGE)
@@ -349,6 +354,43 @@ def test_a_well_formed_chain_of_two_verifies(normalization: LinearStep) -> None:
 
     assert chain.verify() is None
     assert chain.target.determinant() == 3
+
+
+def test_LIN6_a_singular_linear_part_in_a_supplied_step() -> None:  # noqa: N802
+    """Ein vorgelegter Schritt darf behaupten, was normalize() ablehnt."""
+    degenerate = over_field(PolynomialMap((x1, x2, x3), (x1**2, x2, x3)))
+    identity = LinearAutomorphism([Transposition(degenerate.ring, 0, 1)])
+
+    with pytest.raises(VerificationError) as failure:
+        LinearStep(
+            degenerate, identity.apply_to(degenerate), identity, normalizing=True
+        ).verify()
+
+    assert failure.value.obligation == "LIN-6"
+    assert "singular" in str(failure.value)
+
+
+def test_RED5_a_transport_failure_names_its_step(
+    normalization: LinearStep, collision: Collision, swap: LinearAutomorphism
+) -> None:
+    """Der Transport lokalisiert genauso wie die Verifikation."""
+    detached = LinearStep.build(ALPOEGE, swap)
+
+    with pytest.raises(VerificationError) as failure:
+        Reduction([normalization, detached]).transport(collision)
+
+    assert failure.value.step == 1
+
+
+def test_a_reduction_does_not_concatenate_with_other_types(
+    normalization: LinearStep,
+) -> None:
+    with pytest.raises(TypeError):
+        Reduction([normalization]) + normalization  # type: ignore[operator]
+
+
+def test_a_step_compares_unequal_to_other_types(normalization: LinearStep) -> None:
+    assert normalization != object()
 
 
 def test_RED4_a_failure_names_its_step(normalization: LinearStep) -> None:  # noqa: N802

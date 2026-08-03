@@ -1,6 +1,6 @@
 [project]
 name = "kellermap"
-version = "0.2.0rc1"
+version = "0.2.0rc2"
 description = "Polynomial Keller maps and certified transformations of them, working towards the Bass–Connell–Wright degree reduction."
 readme = "README.md"
 requires-python = ">=3.10"
@@ -97,6 +97,11 @@ source = ["src/kellermap"]
 [tool.coverage.report]
 show_missing = true
 skip_covered = true
+# Vollstaendige Abdeckung ist Freigabestandard und wird deshalb erzwungen und
+# nicht bloss berichtet. Zweige, die sich nicht erreichen lassen, weil eine
+# frueher gepruefte Verpflichtung sie ausschliesst, tragen `# pragma: no
+# cover` mit Begruendung an Ort und Stelle.
+fail_under = 100
 
 [build-system]
 requires = ["hatchling"]

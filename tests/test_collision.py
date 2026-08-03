@@ -88,6 +88,26 @@ def test_a_point_must_be_iterable() -> None:
         Collision((sp.Integer(1), sp.Integer(-1)), IMAGE)
 
 
+def test_a_point_needs_a_coordinate() -> None:
+    with pytest.raises(ValueError, match="at least one coordinate"):
+        Collision(((), ()), ())
+
+
+def test_at_needs_points() -> None:
+    with pytest.raises(ValueError, match="got none"):
+        Collision.at(SQUARE, ())
+
+
+def test_repr_names_the_points(collision: Collision) -> None:
+    assert "Collision(points=" in repr(collision)
+    assert "image=" in repr(collision)
+
+
+def test_a_coordinate_that_cannot_be_sympified() -> None:
+    with pytest.raises(TypeError, match="not a SymPy expression"):
+        Collision(((1, 0), (-1, object())), IMAGE)
+
+
 def test_coordinates_must_be_expressions() -> None:
     with pytest.raises(TypeError, match="not a SymPy expression"):
         Collision(((1, 0), (-1, [])), IMAGE)

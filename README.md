@@ -38,7 +38,7 @@ along with it.
 
 ## Project Status
 
-Current version: **0.2.0rc1**
+Current version: **0.2.0rc2**
 
 The first milestone covered the algebraic foundations:
 

@@ -369,7 +369,10 @@ class BCWStep:
         """BCW-1."""
         try:
             composite = self._composite()
-        except ValueError as error:
+        except ValueError as error:  # pragma: no cover - constructor rules it out
+            # Erreichbar nur, wenn die Erweiterung scheitert, und deren
+            # Vorbedingungen -- Frische der Variablen, P und Q im Quellring --
+            # erzwingt schon der Konstruktor.
             raise VerificationError(
                 "BCW-1", f"The step does not compose: {error}"
             ) from error
@@ -393,7 +396,7 @@ class BCWStep:
 
         for name, automorphism in (("G", self.G), ("H", self.H)):
             undone = automorphism.inverse().apply_to(automorphism.to_polynomial_map())
-            if undone != identity:
+            if undone != identity:  # pragma: no cover - group law, not data
                 raise VerificationError(
                     "BCW-5",
                     f"The exhibited inverse of {name} does not undo it.",
@@ -408,7 +411,7 @@ class BCWStep:
                 f"EA^{self.H.filtration_degree()}.",
             )
 
-        if not self.G.is_in_EA(1):
+        if not self.G.is_in_EA(1):  # pragma: no cover - the formula fixes G
             raise VerificationError(
                 "BCW-6",
                 "G does not lie in EA^1, which the formula guarantees; "
@@ -425,7 +428,11 @@ class BCWStep:
         As in ``LinearStep``, the canonical comparison is defensive: both
         determinants come out of a ``PolyRing`` and are normalized already.
         """
-        if not agree(self._target.determinant(), self._source.determinant()):
+        # pragma-frei nicht erreichbar: BCW-1 laeuft vorher und setzt das Ziel
+        # auf G o F^[2] o H, dessen Determinante die der Quelle ist.
+        if not agree(  # pragma: no cover - implied by BCW-1
+            self._target.determinant(), self._source.determinant()
+        ):
             raise VerificationError(
                 "BCW-7",
                 f"The determinant changed from {self._source.determinant()} "

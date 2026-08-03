@@ -61,6 +61,19 @@ def test_a_step_satisfies_the_protocol(step: BCWStep) -> None:
     assert isinstance(step, Step)
 
 
+def test_the_source_and_target_must_be_maps() -> None:
+    with pytest.raises(TypeError, match="source must be"):
+        BCWStep(SIMPLE.components, over_field(SIMPLE_TARGET), 0, P, Q, FRESH)
+
+    with pytest.raises(TypeError, match="target must be"):
+        BCWStep(SIMPLE, SIMPLE_TARGET.components, 0, P, Q, FRESH)
+
+
+def test_the_fresh_variables_must_be_symbols() -> None:
+    with pytest.raises(TypeError, match="SymPy symbols"):
+        BCWStep(SIMPLE, over_field(SIMPLE_TARGET), 0, P, Q, (x4, sp.Integer(5)))
+
+
 def test_the_index_must_address_a_component() -> None:
     with pytest.raises(ValueError, match="out of range"):
         BCWStep(SIMPLE, over_field(SIMPLE_TARGET), 3, P, Q, FRESH)

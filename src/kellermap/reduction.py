@@ -314,7 +314,9 @@ class LinearStep:
         identity = PolynomialMap.from_ring(ring, ring.gens)
 
         inverse = self._transformation.inverse()
-        if inverse.apply_to(self._transformation.apply_to(identity)) != identity:
+        if (  # pragma: no cover - group law, not data
+            inverse.apply_to(self._transformation.apply_to(identity)) != identity
+        ):
             raise VerificationError(
                 "LIN-2",
                 "The exhibited inverse does not undo the transformation.",
@@ -335,7 +337,9 @@ class LinearStep:
         """
         expected = self._transformation.determinant() * self._source.determinant()
 
-        if not agree(self._target.determinant(), expected):
+        if not agree(  # pragma: no cover - implied by LIN-1
+            self._target.determinant(), expected
+        ):
             raise VerificationError(
                 "LIN-3",
                 f"The target has determinant {self._target.determinant()}, "
@@ -372,7 +376,10 @@ class LinearStep:
                 "the inverse of the linear part at the origin.",
             )
 
-        if not self._target.is_in_MA(1):
+        # Nicht erreichbar: LIN-1 laeuft vorher, die Quelle liegt in MA^0 und
+        # die Transformation ist die Inverse des Linearteils -- damit ist der
+        # Linearteil des Ziels die Identitaet.
+        if not self._target.is_in_MA(1):  # pragma: no cover - implied by LIN-1
             raise VerificationError(
                 "LIN-6",
                 "The step claims to normalize, but the target does not lie in MA^1.",

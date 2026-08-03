@@ -12,14 +12,21 @@ Error messages cite the identifier that failed, so that an independent review
 can address findings to a numbered obligation rather than to a line of code.
 Identifiers are never reused; a withdrawn obligation stays listed as withdrawn.
 
-**Status as of `0.2.0rc1`:** every obligation on this page is implemented and
-covered by the test suite. Where the implementation forced a change, this page
-was amended deliberately and the amendment is visible in the wording — the
-clearest cases are COL-4 and BCW-3, which moved from obligations of `verify()`
-to constructor invariants, and LIN-2, which was narrowed to what is actually
-checkable. Each type also states which of its obligations can fail on supplied
-data and which are self-checks of the library's own arithmetic; a review should
-weigh them differently.
+**Status as of `0.2.0rc2`:** every obligation on this page is implemented, and
+the test suite covers every statement of the package. Where the implementation
+forced a change, this page was amended deliberately and the amendment is
+visible in the wording — the clearest cases are COL-4 and BCW-3, which moved
+from obligations of `verify()` to constructor invariants, and LIN-2, which was
+narrowed to what is actually checkable.
+
+Full statement coverage is not full obligation coverage, and the difference is
+worth naming. Several of the raises here cannot be reached at all, because an
+obligation checked earlier in the same `verify()` rules them out — BCW-5,
+BCW-7, LIN-2, LIN-3 and the `MA^1` clause of LIN-6. They carry
+`# pragma: no cover` with the reason written beside them rather than a test
+that contorts the object into an impossible state. Each type states which of
+its obligations can fail on supplied data and which are self-checks of the
+library's own arithmetic; a review should weigh them differently.
 
 `architecture.md` explains why the design is what it is. `api.md` shows what
 the implemented surface does, with executed examples. This page states what

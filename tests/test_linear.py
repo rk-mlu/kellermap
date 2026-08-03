@@ -88,6 +88,47 @@ def test_a_dilation_is_rejected_by_ElementaryFactor(ring: object) -> None:  # no
 # --------------------------------------------------------------------------
 
 
+def test_a_transvection_reports_its_two_coordinates(ring: object) -> None:
+    shear = Transvection(ring, 0, 1, 3)
+
+    assert (shear.index, shear.source) == (0, 1)
+    assert "Transvection(index=0, source=1" in repr(shear)
+
+
+def test_transvections_compare_by_content(ring: object) -> None:
+    left = Transvection(ring, 0, 1, 3)
+
+    assert left == Transvection(ring, 0, 1, 3)
+    assert hash(left) == hash(Transvection(ring, 0, 1, 3))
+    assert left != Transvection(ring, 0, 1, 4)
+    assert left != object()
+
+
+def test_the_other_factors_reject_foreign_types(ring: object) -> None:
+    assert Transposition(ring, 0, 1) != object()
+    assert Dilation(ring, 0, 2) != object()
+
+
+def test_the_identity_carries_no_dimension() -> None:
+    with pytest.raises(ValueError, match="carries no dimension"):
+        _ = LinearAutomorphism.identity().dimension
+
+
+def test_composition_across_rings_is_refused(ring: object) -> None:
+    other = over_field(PolynomialMap(sp.symbols("u v w"), sp.symbols("u v w"))).ring
+    left = LinearAutomorphism([Transposition(ring, 0, 1)])
+    right = LinearAutomorphism([Transposition(other, 0, 1)])
+
+    with pytest.raises(ValueError, match="different rings"):
+        left.compose(right)
+
+
+def test_an_automorphism_names_its_factors(ring: object) -> None:
+    assert "LinearAutomorphism(factors=" in repr(
+        LinearAutomorphism([Dilation(ring, 0, 2)])
+    )
+
+
 def test_transvection_needs_two_coordinates(ring: object) -> None:
     with pytest.raises(ValueError, match="two distinct coordinates"):
         Transvection(ring, 1, 1, 1)

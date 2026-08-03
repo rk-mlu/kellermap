@@ -1,5 +1,6 @@
 .PHONY: all format lint typecheck test test-slow test-all coverage docs \
-        check check-full build-test test-minimum lock-check release clean
+        check check-full build-test test-minimum lock-check dist-check \
+        release clean
 
 all: check
 
@@ -31,6 +32,9 @@ test-slow:
 test-all:
 	uv run pytest -m ""
 
+# fail_under = 100 steht in pyproject.toml, das Ziel scheitert also, sobald
+# eine Anweisung ungeprueft bleibt. Unerreichbare Verteidigungszweige tragen
+# `# pragma: no cover` samt Begruendung; die Quote misst, was messbar ist.
 coverage:
 	uv run pytest --cov --cov-report=term-missing --cov-report=html
 
@@ -97,6 +101,14 @@ test-minimum:
 	min_env/bin/python -m pytest -q
 	@echo "Erfolg: die deklarierte Untergrenze traegt."
 
+# Prueft die Artefakte, die tatsaechlich hochgeladen wuerden. twine liest die
+# Metadaten so, wie PyPI sie liest; ein unvollstaendiges README oder eine
+# unlesbare Beschreibung faellt sonst erst beim Upload auf, wo die
+# Versionsnummer schon vergeben ist.
+dist-check:
+	@echo "--> Pruefe die gebauten Artefakte..."
+	uv run --with twine twine check dist/*
+
 # Prueft, ob uv.lock zu pyproject.toml passt, ohne ihn zu veraendern.
 # Ein veralteter Lockfile faellt sonst erst in der CI auf, wo `uv sync
 # --locked` fehlschlaegt.
@@ -104,7 +116,7 @@ lock-check:
 	uv lock --check
 
 # Alle Freigabe-Gates vor einem Tag.
-release: lock-check check-full build-test test-minimum
+release: lock-check check-full coverage build-test dist-check test-minimum
 
 # --------------------------------------------------------------------------
 
