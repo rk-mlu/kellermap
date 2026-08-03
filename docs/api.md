@@ -565,6 +565,17 @@ True
 
 ```
 
+The public constructor takes no `provenance` argument: a target reaching it
+came from outside, and `build()` is the only route to a constructed step. The
+label is therefore part of the value, and two steps that disagree about it are
+not equal even with the same target:
+
+```python
+>>> supplied == step
+False
+
+```
+
 `Reduction` verifies each step and each join, and a failure names the step it
 came from:
 

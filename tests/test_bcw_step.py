@@ -382,6 +382,29 @@ def test_equality_and_hash(step: BCWStep) -> None:
     assert step != object()
 
 
+def test_provenance_is_part_of_the_value(step: BCWStep) -> None:
+    """Zwei Schritte mit gleichem Ziel, aber nur einer belegt es."""
+    built = BCWStep.build(SIMPLE, 0, P, Q, FRESH)
+
+    assert step.target == built.target
+    assert step != built
+    assert Reduction([step]) != Reduction([built])
+
+
+def test_the_public_constructor_cannot_claim_construction() -> None:
+    """BCW-9 haengt daran, dass die Marke nicht frei setzbar ist."""
+    with pytest.raises(TypeError):
+        BCWStep(
+            SIMPLE,
+            over_field(SIMPLE_TARGET),
+            0,
+            P,
+            Q,
+            FRESH,
+            provenance=Provenance.CONSTRUCTED,  # type: ignore[call-arg]
+        )
+
+
 def test_repr_names_the_essentials(step: BCWStep) -> None:
     assert "index=0" in repr(step)
     assert "3->5" in repr(step)

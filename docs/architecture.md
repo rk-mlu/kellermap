@@ -505,6 +505,17 @@ against itself and cannot. That is a self-check, not evidence, and the
 distinction has to survive into any review — so `Reduction` propagates the
 weaker provenance of its steps rather than averaging it away.
 
+The label is recorded, not given: the public constructor takes no such
+argument and always writes `SUPPLIED`, because a target reaching it came from
+outside. `build()` is the only route to `CONSTRUCTED`. That guards against
+mislabelling by accident and not against deliberate forgery — Python has no
+privacy — and it is worth reading it as the former rather than the latter.
+
+Because the label is observable, it is part of the value. Leaving it out of
+equality would give equal objects a disagreeing attribute, and a set or cache
+could quietly replace a supplied step by a constructed one with the same
+target.
+
 The same honesty applies within a step. Some obligations cannot fail on
 supplied data at all: the determinant equality follows from the identity
 together with every element of `EA_n(k)` having determinant one, and the

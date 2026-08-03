@@ -224,7 +224,15 @@ distinct points. This is the property the whole project delivers: a
 counterexample stays a counterexample.
 
 **STEP-5 — Value semantics.** Steps are immutable, hashable, and compare by
-mathematical content, not by identity or construction history.
+mathematical content, not by object identity.
+
+`provenance` is part of that content. It is publicly observable, so excluding
+it would leave equal objects disagreeing about an attribute, and a set or a
+cache could then replace a supplied step by a constructed one with the same
+target without anything noticing. What equality ignores is construction
+history proper — which factory instance was involved, in what order the
+factors were listed — not what the certificate records about its own
+standing.
 
 ---
 
@@ -425,9 +433,18 @@ contract fixes zero, because a non-zero fill `(s, t)` moves the image component
 
 ### Supplied versus constructed
 
-**BCW-9 — Provenance is recorded.** `provenance` is `SUPPLIED` when `target`
-was given to the constructor and `CONSTRUCTED` when it came from
-`BCWStep.build(source, index, P, Q, context)`.
+**BCW-9 — Provenance is recorded, and not settable.** `provenance` is
+`SUPPLIED` when `target` was given to the constructor and `CONSTRUCTED` when it
+came from `BCWStep.build(source, index, P, Q, variables)`. The public
+constructor takes no such argument: a target that reaches it came from outside,
+and there is no way to say otherwise. `build()` is the only route to a
+`CONSTRUCTED` step.
+
+The guarantee is an integrity marker against mislabelling by accident, not a
+security boundary. Python has no privacy, and a caller determined to overwrite
+the attribute can. A review should read it as "this label was not set by hand
+somewhere in the call chain", which is what it is for, and not as a claim that
+the object could not be tampered with.
 
 This distinction is the point of milestone 0.2 and must survive into any audit.
 For a `SUPPLIED` step, BCW-1 compares an externally computed map against the
@@ -456,8 +473,13 @@ class LinearStep:
     source: PolynomialMap
     target: PolynomialMap
     transformation: LinearAutomorphism
+    normalizing: bool
     provenance: Provenance
 ```
+
+As for `BCWStep`, `provenance` is recorded rather than given: the public
+constructor always sets `SUPPLIED`, and `build()` and `normalize()` are the
+only routes to `CONSTRUCTED`.
 
 **LIN-1 — The identity.** `target == transformation ∘ source`, as a polynomial
 identity.

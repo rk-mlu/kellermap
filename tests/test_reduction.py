@@ -387,11 +387,40 @@ def test_equality_and_hash(normalization: LinearStep) -> None:
 
 
 def test_steps_compare_by_content(swap: LinearAutomorphism) -> None:
-    left = LinearStep.build(ALPOEGE, swap)
+    left = LinearStep(ALPOEGE, swap.apply_to(ALPOEGE), swap)
     right = LinearStep(ALPOEGE, swap.apply_to(ALPOEGE), swap)
 
     assert left == right
     assert hash(left) == hash(right)
+
+
+def test_provenance_is_part_of_the_value(swap: LinearAutomorphism) -> None:
+    """Sonst gaebe es gleiche Objekte mit verschiedenem Attribut.
+
+    Beide Schritte behaupten dieselbe Identitaet, aber nur der eine belegt
+    sie: beim anderen hat die Bibliothek das Ziel selbst gerechnet. Waeren
+    sie gleich, koennte eine Menge oder ein Cache den staerkeren durch den
+    schwaecheren ersetzen, ohne dass es auffiele.
+    """
+    supplied = LinearStep(ALPOEGE, swap.apply_to(ALPOEGE), swap)
+    constructed = LinearStep.build(ALPOEGE, swap)
+
+    assert supplied.target == constructed.target
+    assert supplied != constructed
+    assert Reduction([supplied]) != Reduction([constructed])
+
+
+def test_the_public_constructor_cannot_claim_construction(
+    swap: LinearAutomorphism,
+) -> None:
+    """Ein Ziel, das den Konstruktor erreicht, kam von aussen."""
+    with pytest.raises(TypeError):
+        LinearStep(
+            ALPOEGE,
+            swap.apply_to(ALPOEGE),
+            swap,
+            provenance=Provenance.CONSTRUCTED,  # type: ignore[call-arg]
+        )
 
 
 def test_repr_is_readable(normalization: LinearStep) -> None:

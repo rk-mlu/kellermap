@@ -118,7 +118,6 @@ class BCWStep:
         Q: sp.Expr,  # noqa: N803
         variables: Iterable[sp.Symbol],
         filtration_level: int = 1,
-        provenance: Provenance = Provenance.SUPPLIED,
     ) -> None:
         if not isinstance(source, PolynomialMap):
             raise TypeError("The source must be a PolynomialMap.")
@@ -177,7 +176,7 @@ class BCWStep:
         object.__setattr__(self, "_Q", factors[1])
         object.__setattr__(self, "_variables", (fresh[0], fresh[1]))
         object.__setattr__(self, "_filtration_level", int(filtration_level))
-        object.__setattr__(self, "_provenance", provenance)
+        object.__setattr__(self, "_provenance", Provenance.SUPPLIED)
         object.__setattr__(self, "_verified", False)
 
     @classmethod
@@ -195,28 +194,22 @@ class BCWStep:
         Convenient, and weaker evidence: BCW-1 then compares the
         implementation against itself rather than against a target that came
         from somewhere else.
-        """
-        draft = cls(
-            source,
-            source,
-            index,
-            P,
-            Q,
-            variables,
-            filtration_level,
-            provenance=Provenance.CONSTRUCTED,
-        )
 
-        return cls(
-            source,
-            draft._composite(),
-            index,
-            P,
-            Q,
-            variables,
-            filtration_level,
-            provenance=Provenance.CONSTRUCTED,
-        )
+        This is the only way to obtain a ``CONSTRUCTED`` step. The public
+        constructor always records ``SUPPLIED``, since a target reaching it
+        came from outside. The marker guards against mislabelling by accident,
+        not against a caller determined to forge one -- Python has no privacy,
+        and the attribute can be overwritten by anyone who wants to.
+
+        The draft exists only to reach the formula, which needs ``G`` and
+        ``H`` and therefore an instance; its target is a placeholder and is
+        never looked at.
+        """
+        draft = cls(source, source, index, P, Q, variables, filtration_level)
+        step = cls(source, draft._composite(), index, P, Q, variables, filtration_level)
+        object.__setattr__(step, "_provenance", Provenance.CONSTRUCTED)
+
+        return step
 
     # ----------------------------------------------------------------------
     # Inspection
@@ -258,7 +251,11 @@ class BCWStep:
 
     @property
     def provenance(self) -> Provenance:
-        """Return whether the target was supplied or constructed."""
+        """Return whether the target was supplied or constructed.
+
+        Part of the value of the step, not metadata beside it: it is publicly
+        observable, so two steps that disagree about it are not equal.
+        """
         return self._provenance
 
     @property
@@ -475,6 +472,7 @@ class BCWStep:
             and self._Q == other._Q
             and self._variables == other._variables
             and self._filtration_level == other._filtration_level
+            and self._provenance is other._provenance
         )
 
     def __hash__(self) -> int:
@@ -487,6 +485,7 @@ class BCWStep:
                 self._Q,
                 self._variables,
                 self._filtration_level,
+                self._provenance,
             )
         )
 

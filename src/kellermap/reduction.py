@@ -120,7 +120,6 @@ class LinearStep:
         target: PolynomialMap,
         transformation: LinearAutomorphism,
         normalizing: bool = False,
-        provenance: Provenance = Provenance.SUPPLIED,
     ) -> None:
         if not isinstance(source, PolynomialMap):
             raise TypeError("The source must be a PolynomialMap.")
@@ -139,7 +138,7 @@ class LinearStep:
         object.__setattr__(self, "_target", target)
         object.__setattr__(self, "_transformation", transformation)
         object.__setattr__(self, "_normalizing", bool(normalizing))
-        object.__setattr__(self, "_provenance", provenance)
+        object.__setattr__(self, "_provenance", Provenance.SUPPLIED)
         object.__setattr__(self, "_verified", False)
 
     @classmethod
@@ -153,14 +152,22 @@ class LinearStep:
 
         Convenient, and weaker evidence: LIN-1 then compares the
         implementation against itself.
+
+        This is the only way to obtain a ``CONSTRUCTED`` step. The public
+        constructor always records ``SUPPLIED``, since a target reaching it
+        came from outside. The marker guards against mislabelling by accident,
+        not against a caller determined to forge one -- Python has no privacy,
+        and the attribute can be overwritten by anyone who wants to.
         """
-        return cls(
+        step = cls(
             source,
             transformation.apply_to(source),
             transformation,
             normalizing=normalizing,
-            provenance=Provenance.CONSTRUCTED,
         )
+        object.__setattr__(step, "_provenance", Provenance.CONSTRUCTED)
+
+        return step
 
     @classmethod
     def normalize(cls, source: PolynomialMap) -> LinearStep:
@@ -208,7 +215,11 @@ class LinearStep:
 
     @property
     def provenance(self) -> Provenance:
-        """Return whether the target was supplied or constructed."""
+        """Return whether the target was supplied or constructed.
+
+        Part of the value of the step, not metadata beside it: it is publicly
+        observable, so two steps that disagree about it are not equal.
+        """
         return self._provenance
 
     @property
@@ -366,6 +377,7 @@ class LinearStep:
             and self._target == other._target
             and self._transformation == other._transformation
             and self._normalizing == other._normalizing
+            and self._provenance is other._provenance
         )
 
     def __hash__(self) -> int:
@@ -375,6 +387,7 @@ class LinearStep:
                 self._target,
                 self._transformation,
                 self._normalizing,
+                self._provenance,
             )
         )
 
