@@ -22,6 +22,7 @@ what they do.
 - [Elementary automorphisms](#elementary-automorphisms)
 - [Linear automorphisms](#linear-automorphisms)
 - [Collisions](#collisions)
+- [Steps and reductions](#steps-and-reductions)
 - [Guarantees](#guarantees)
 - [Errors](#errors)
 
@@ -32,7 +33,7 @@ what they do.
 ```python
 >>> import kellermap
 >>> kellermap.__all__
-['DEFAULT_VARIABLE_FACTORY', 'Collision', 'Dilation', 'ElementaryAutomorphism', 'ElementaryFactor', 'IndexedVariableFactory', 'LinearAutomorphism', 'LinearFactor', 'PolynomialMap', 'Transposition', 'Transvection', 'VariableFactory', 'VerificationError', 'field_ring', 'over_field', 'reserved_names']
+['DEFAULT_VARIABLE_FACTORY', 'Collision', 'Dilation', 'ElementaryAutomorphism', 'ElementaryFactor', 'IndexedVariableFactory', 'LinearAutomorphism', 'LinearFactor', 'LinearStep', 'PolynomialMap', 'Provenance', 'Reduction', 'Step', 'Transposition', 'Transvection', 'VariableFactory', 'VerificationError', 'field_ring', 'over_field', 'reserved_names']
 
 ```
 
@@ -527,6 +528,71 @@ True
 
 ---
 
+## Steps and reductions
+
+A step certifies one identity between two maps. `Reduction` chains steps and
+verifies the joins between them. `LinearStep` is the kind that composes an
+element of `GL_n(k)` on the left, which is what BCW Section 4 opens with.
+
+```python
+>>> from kellermap import LinearStep, Reduction, over_field
+>>> keller = over_field(PolynomialMap((x, y), (x + y**2, y)))
+>>> step = LinearStep.normalize(keller)
+>>> step.transformation.factors
+()
+>>> step.verify() is None
+True
+
+```
+
+`normalize()` builds the transformation from `J(F)(0)` and marks the step as
+claiming to be the normalization, which turns on LIN-6: the transformation has
+to be the inverse of the linear part, and the target has to reach `MA^1`.
+
+A step records where its target came from. When the step computed it, the
+identity check compares the implementation against itself and cannot fail,
+which is weaker evidence and is recorded as such:
+
+```python
+>>> from kellermap import Provenance
+>>> step.provenance is Provenance.CONSTRUCTED
+True
+>>> supplied = LinearStep(keller, step.target, step.transformation)
+>>> supplied.provenance is Provenance.SUPPLIED
+True
+
+```
+
+`Reduction` verifies each step and each join, and a failure names the step it
+came from:
+
+```python
+>>> chain = Reduction([step])
+>>> chain.verify() is None
+True
+>>> chain.dimensions(), chain.degrees()
+((2, 2), (2, 2))
+
+```
+
+A chain carries a collision from its source to its target, verifying it at
+every intermediate map rather than only at the ends:
+
+```python
+>>> from kellermap import Collision
+>>> square = over_field(PolynomialMap((x, y), (x**2, y)))
+>>> flip = LinearStep.build(
+...     square, LinearAutomorphism([Transposition(square.ring, 0, 1)])
+... )
+>>> Reduction([flip]).transport(Collision.at(square, ((1, 0), (-1, 0)))).image
+(0, 1)
+
+```
+
+Left composition leaves every preimage where it was and moves only the image.
+
+---
+
 ## Guarantees
 
 **Value semantics.** `PolynomialMap`, `ElementaryFactor` and
@@ -583,6 +649,8 @@ True
 | a transvection or transposition on one coordinate | `ValueError` |
 | a dilation by zero or by a non-unit | `ValueError` |
 | factorizing a singular matrix, or one of the wrong shape | `ValueError` |
+| a reduction with no steps, or with a non-step in it | `ValueError`, `TypeError` |
+| a linear step changing the dimension | `ValueError` |
 | fewer than two collision points, or two equal ones | `ValueError` |
 | a collision whose points and image differ in length | `ValueError` |
 | an obligation of `contracts.md` failing | `VerificationError` |

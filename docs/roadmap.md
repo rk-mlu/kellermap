@@ -132,15 +132,20 @@ remembers.
 
 Introduce, at the top level,
 
-- `Collision`
+- `Collision` and `VerificationError`
 - `kellermap.linear`: dilations, transpositions, `LinearAutomorphism`
+- `kellermap.reduction`: the `Step` protocol, `LinearStep`, `Reduction`
 
 and, in the `kellermap.bcw` subpackage,
 
-- the `Step` protocol, `LinearStep`
 - `BCWStep`
-- `Reduction`
 - `ReductionContext` (building on the `VariableFactory` from 0.1)
+
+Only `BCWStep` is specific to the paper. A chain of certified identities is
+not, and a second reduction method would reuse it, so `Reduction` stays at the
+top level rather than becoming the misnomer the subpackage exists to avoid.
+`LinearStep` composes an element of `GL_n(k)` on the left; that Section 4 opens
+by doing so does not make the operation theirs.
 
 Implement
 
@@ -221,7 +226,7 @@ and is then set to `0.2.0` in one step. Git tags for work packages use the
 | --- | --- | --- |
 | 1 | 0.1.1 | `Collision` |
 | 2 | 0.1.2 | `kellermap.linear`: dilations, transpositions, `LinearAutomorphism` |
-| 3 | 0.1.3 | `Step` protocol, `LinearStep`, `Reduction` |
+| 3 | 0.1.3 | `kellermap.reduction`: `Step`, `LinearStep`, `Reduction` |
 | 4 | 0.1.4 | `BCWStep.verify()` |
 | 5 | 0.1.5 | `ReductionContext` |
 | 6 | 0.1.6 | Integration: the eight steps from Alpöge to dimension 17 |

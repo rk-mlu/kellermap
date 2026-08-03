@@ -11,6 +11,12 @@ from .linear import (
     over_field,
 )
 from .polynomial_map import PolynomialMap
+from .reduction import (
+    LinearStep,
+    Provenance,
+    Reduction,
+    Step,
+)
 from .variables import (
     DEFAULT_VARIABLE_FACTORY,
     IndexedVariableFactory,
@@ -27,7 +33,11 @@ __all__ = [
     "IndexedVariableFactory",
     "LinearAutomorphism",
     "LinearFactor",
+    "LinearStep",
     "PolynomialMap",
+    "Provenance",
+    "Reduction",
+    "Step",
     "Transposition",
     "Transvection",
     "VariableFactory",

@@ -148,6 +148,7 @@ the arithmetic does not widen one quietly.
 `Reduction` is a sequence of steps. A step is anything satisfying:
 
 ```python
+@runtime_checkable
 class Step(Protocol):
     @property
     def source(self) -> PolynomialMap: ...
@@ -155,10 +156,26 @@ class Step(Protocol):
     @property
     def target(self) -> PolynomialMap: ...
 
+    @property
+    def provenance(self) -> Provenance: ...
+
+    @property
+    def filtration_level(self) -> int | float: ...
+
     def verify(self) -> None: ...
 
     def transport(self, collision: Collision) -> Collision: ...
 ```
+
+`Step`, `LinearStep` and `Reduction` live at the top level of the package, in
+`kellermap.reduction`; only `BCWStep` lives in `kellermap.bcw`. A chain of
+certified identities is not a notion of the 1982 paper, and a second reduction
+method would reuse it -- which is exactly the misnomer the subpackage exists to
+avoid. `LinearStep` composes an element of `GL_n(k)` on the left; that BCW
+Section 4 opens by doing so does not make the operation theirs.
+
+`filtration_level` reports `math.inf` where a step establishes no `EA` level,
+following `ElementaryAutomorphism.filtration_degree()` on the identity.
 
 **STEP-1 — Verification raises, it does not return a verdict.** `verify()`
 returns `None` on success and raises `VerificationError` otherwise. A boolean
@@ -352,14 +369,21 @@ class LinearStep:
 **LIN-1 — The identity.** `target == transformation ∘ source`, as a polynomial
 identity.
 
-**LIN-2 — The factorization is exhibited.** `transformation.factors` is an
-ordered product of transvections, transpositions and dilations whose product is
-`transformation.matrix()`, and `transformation.inverse()` composes with it to
-the identity map.
+**LIN-2 — The exhibited inverse undoes the transformation.**
+`transformation.inverse()` composes with `transformation` to the identity map.
+
+That the factors multiply to the declared matrix is *not* checked, because it
+is not checkable: `LinearAutomorphism.matrix()` is that product, and no second,
+independently declared matrix is stored to compare it against. That is
+deliberate, for the reason `BCWStep` derives `G` and `H` rather than storing
+them — two ways to say the same thing invite them to disagree.
 
 **LIN-3 — Determinant bookkeeping.** `target.determinant() ==
 transformation.determinant() * source.determinant()`. A linear step is the only
-kind that may change the determinant, and it must say by what factor.
+kind that may change the determinant, and it must say by what factor. Implied
+by LIN-1 and retained anyway: two multiplications on maps a reduction produces,
+which catch an error in a factor's determinant before it propagates through a
+chain.
 
 **LIN-4 — Not elementary.** `transformation` is not required to lie in
 `EA_n(k)`, and generally does not: every element of `EA_n(k)` has determinant
@@ -372,6 +396,14 @@ one. The normalization of Alpöge's map has determinant `-1/2`.
 itself a §4 normalization, `transformation` equals the inverse of `J(source)(0)`
 and `target` lies in `MA^1`. A `LinearStep` that is not so declared carries no
 such obligation.
+
+### Which of these can fail on supplied data
+
+LIN-1 and the first clause of LIN-6. LIN-2 and LIN-3 follow from LIN-1 and can
+only fail if the library is wrong about its own arithmetic; the second clause
+of LIN-6 follows from the first. They are retained as cheap self-checks, and a
+review should weigh them as such rather than as evidence about a supplied
+target.
 
 ---
 
