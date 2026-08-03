@@ -29,6 +29,18 @@ QUICKSTART_CLAIMS = {
     "variables": sp.symbols("x y X3 X4"),
 }
 
+# Ebenso fuer den Reduktionsblock.
+REDUCTION_CLAIMS = {
+    "dimensions": (3, 3, 5),
+    "point": (
+        sp.Integer(1),
+        sp.Rational(-3, 2),
+        sp.Rational(13, 2),
+        sp.Rational(13, 4),
+        sp.Integer(-1),
+    ),
+}
+
 
 def python_blocks(text: str) -> list[str]:
     """Return the fenced ``python`` blocks of a Markdown document."""
@@ -36,40 +48,49 @@ def python_blocks(text: str) -> list[str]:
 
 
 @pytest.fixture(scope="module")
-def quickstart() -> str:
+def blocks() -> list[str]:
     if not README.is_file():
         pytest.skip("README.md is not available in this layout")
 
-    blocks = python_blocks(README.read_text(encoding="utf-8"))
+    found = python_blocks(README.read_text(encoding="utf-8"))
 
-    assert len(blocks) == 1, (
-        "The README gained or lost a Python block; this test covers exactly one."
-    )
+    assert found, "The README has no Python block left to check."
 
-    return blocks[0]
+    return found
 
 
-def test_the_readme_quickstart_runs(quickstart: str) -> None:
-    """Der Block muss ohne Vorbereitung durchlaufen.
+@pytest.fixture(scope="module")
+def namespaces(blocks: list[str]) -> list[dict[str, Any]]:
+    """Jeden Block einzeln ausfuehren, in einem eigenen Namensraum.
+
+    Einzeln und nicht gemeinsam: ein Leser tippt einen Block ab, nicht die
+    Summe aller vorherigen, und ein Block, der stillschweigend auf einer
+    Zuweisung aus einem frueheren beruht, laeuft bei ihm nicht.
+    """
+    executed = []
+    for block in blocks:
+        namespace: dict[str, Any] = {}
+        exec(compile(block, str(README), "exec"), namespace)  # noqa: S102
+        executed.append(namespace)
+
+    return executed
+
+
+def test_every_readme_block_runs(namespaces: list[dict[str, Any]]) -> None:
+    """Jeder Block muss ohne Vorbereitung durchlaufen.
 
     Faengt den Fall, dass eine Signatur sich aendert und das README es nicht
     mitbekommt -- der haeufigere Fehler, weil er niemandem auffaellt, der die
     Bibliothek schon kennt.
     """
-    namespace: dict[str, Any] = {}
-
-    exec(compile(quickstart, str(README), "exec"), namespace)  # noqa: S102
-
-    assert "F" in namespace
+    assert all(namespace for namespace in namespaces)
 
 
-def test_the_readme_quickstart_says_the_truth(quickstart: str) -> None:
-    """Und die Werte muessen stimmen, die er in den Kommentaren nennt."""
-    namespace: dict[str, Any] = {}
-
-    exec(compile(quickstart, str(README), "exec"), namespace)  # noqa: S102
-
-    F = namespace["F"]
+def test_the_readme_quickstart_says_the_truth(
+    namespaces: list[dict[str, Any]],
+) -> None:
+    """Und die Werte muessen stimmen, die der erste Block behauptet."""
+    F = namespaces[0]["F"]
 
     assert F.determinant() == QUICKSTART_CLAIMS["determinant"]
     assert F.degree() == QUICKSTART_CLAIMS["degree"]
@@ -77,12 +98,31 @@ def test_the_readme_quickstart_says_the_truth(quickstart: str) -> None:
     assert F.extend(2).variables == QUICKSTART_CLAIMS["variables"]
 
 
-def test_the_quickstart_imports_the_installed_package(quickstart: str) -> None:
-    """Der Block darf sich nicht auf das Repository stuetzen.
+def test_the_readme_reduction_says_the_truth(
+    namespaces: list[dict[str, Any]],
+) -> None:
+    """Ebenso der zweite: eine Kette, die wirklich verifiziert."""
+    if len(namespaces) < 2:
+        pytest.skip("The README carries no reduction block")
+
+    namespace = namespaces[1]
+    reduction = namespace["reduction"]
+
+    assert reduction.verify() is None
+    assert reduction.dimensions() == REDUCTION_CLAIMS["dimensions"]
+
+    carried = reduction.transport(namespace["collision"])
+
+    assert carried.points[1] == REDUCTION_CLAIMS["point"]
+
+
+def test_the_blocks_import_the_installed_package(blocks: list[str]) -> None:
+    """Kein Block darf sich auf das Repository stuetzen.
 
     Ein Leser installiert das Paket und tippt ab; ein relativer Import oder
     ein Pfad aus dem Arbeitsbaum wuerde bei ihm scheitern und hier nicht.
     """
-    assert "from kellermap import" in quickstart
-    assert "src" not in quickstart
-    assert "sys.path" not in quickstart
+    for block in blocks:
+        assert "kellermap" in block
+        assert "src" not in block
+        assert "sys.path" not in block

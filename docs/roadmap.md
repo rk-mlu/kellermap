@@ -128,6 +128,10 @@ remembers.
 
 # Version 0.2
 
+**Status: complete, released as `0.2.0rc1`.** The final version number is held
+back for review; `pyproject.toml` moves to `0.2.0` when that review closes.
+`docs/contracts.md` states every obligation the surface below is held to.
+
 ## Verification framework
 
 Introduce, at the top level,
@@ -224,19 +228,25 @@ coordinate that step four introduced.
 
 Development of 0.2 is split into seven work packages. They carry internal
 version numbers 0.1.1 to 0.1.7 for orientation within the history; none of them
-is a release. `pyproject.toml` stays at `0.1.0` until the milestone is complete
-and is then set to `0.2.0` in one step. Git tags for work packages use the
+is a release. `pyproject.toml` stayed at `0.1.0` for the duration and moved to
+`0.2.0rc1` in one step at the end; the final `0.2.0` waits on review. Git tags for work packages use the
 `wp/` prefix, so that the release namespace `v*` stays clean.
 
-| WP | Internal | Content |
-| --- | --- | --- |
-| 1 | 0.1.1 | `Collision` |
-| 2 | 0.1.2 | `kellermap.linear`: dilations, transpositions, `LinearAutomorphism` |
-| 3 | 0.1.3 | `kellermap.reduction`: `Step`, `LinearStep`, `Reduction` |
-| 4 | 0.1.4 | `BCWStep.verify()` |
-| 5 | 0.1.5 | `kellermap.context`: `ReductionContext` |
-| 6 | 0.1.6 | Integration: the eight steps from Alpöge to dimension 17 |
-| 7 | 0.1.7 | Documentation and release |
+| WP | Internal | Content | Done |
+| --- | --- | --- | --- |
+| 1 | 0.1.1 | `Collision`, `VerificationError` | yes |
+| 2 | 0.1.2 | `kellermap.linear`: dilations, transpositions, `LinearAutomorphism` | yes |
+| 3 | 0.1.3 | `kellermap.reduction`: `Step`, `LinearStep`, `Reduction` | yes |
+| 4 | 0.1.4 | `BCWStep.verify()` | yes |
+| 5 | 0.1.5 | `kellermap.context`: `ReductionContext` | yes |
+| 6 | 0.1.6 | Integration: the eight steps from Alpöge to dimension 17 | yes |
+| 7 | 0.1.7 | Documentation and release | yes |
+
+Between 4 and 5 a further commit added the published 19-dimensional cubic
+reduction as fixed input; see `references.md`. It is not a work package, and it
+produced the one open question 0.2 leaves behind: BCW-2 fixes two fresh
+variables per step, so a reduction that shares carrier variables across steps
+cannot be expressed as a chain of `BCWStep`s at all.
 
 Every work package leaves the repository green.
 
@@ -247,13 +257,21 @@ around Proposition (3.1) alone. `ReductionContext` comes after `BCWStep`,
 because only then is it known what the context has to guarantee — which is the
 placement 0.1 already anticipated.
 
-### Milestone target
+### Milestone target, and what was reached
 
-At the end of 0.2 the seventeen-dimensional map in `tests/test_bcw17.py` is
-derived rather than asserted: a `Reduction` of eight steps from Alpöge's map,
-verified step by step, transporting the three-point collision. The map then
-stops being a regression candidate. `scripts/reconstruct_bcw17.py` holds the
-factorization this has to reproduce.
+The seventeen-dimensional map in `tests/test_bcw17.py` is derived rather than
+asserted: a `Reduction` of eight steps from Alpöge's map, verified step by
+step, transporting the three-point collision from `k^3` to `k^17`.
+
+What that does and does not establish is worth stating precisely, since the
+distinction is the point of the milestone. The intermediate maps in dimensions
+5 to 15 are published nowhere and therefore cannot be supplied; their steps
+compare the implementation against itself, and the chain carries the weaker
+provenance by RED-7. The external fact is the endpoint, where the last step is
+given the fixed components as its target, and a negative control perturbs one
+component to show that the check there bites. `scripts/reconstruct_bcw17.py`
+carries the same chain in plain SymPy, as an independent second implementation
+of formula (1).
 
 ---
 

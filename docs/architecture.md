@@ -13,6 +13,10 @@ independent local transformations. Each transformation is verified by checking
 explicit polynomial identities. The correctness of a complete reduction follows
 immediately by induction over the sequence of verified steps.
 
+This page explains why the design is what it is. What the verification surface
+is *required* to guarantee is stated normatively in `contracts.md`, one
+numbered obligation at a time; where the two disagree, `contracts.md` governs.
+
 ---
 
 ## Design Principles
@@ -53,38 +57,58 @@ The implementation follows five guiding principles.
 kellermap/
 ├── polynomial_map.py     PolynomialMap
 ├── elementary.py         ElementaryFactor, ElementaryAutomorphism
-├── variables.py          VariableFactory
-└── bcw/                  (0.2) BCWStep, Reduction
+├── linear.py             Transvection, Transposition, Dilation,
+│                         LinearAutomorphism, over_field
+├── collision.py          Collision
+├── reduction.py          Step, LinearStep, Reduction, Provenance
+├── context.py            ReductionContext
+├── variables.py          VariableFactory, IndexedVariableFactory,
+│                         FixedVariableFactory
+├── errors.py             VerificationError
+└── bcw/                  BCWStep
 ```
 
 The top level holds what any work on Keller maps needs: the maps themselves,
-the group `EA_n(k)` acting on them, and the naming of fresh generators. None of
-it is specific to one reduction method.
+the group `EA_n(k)` acting on them, the group `GL_n(k)` beside it, collisions,
+chains of certified identities, and the naming of fresh generators. None of it
+is specific to one reduction method.
 
-The `bcw` subpackage is where Bass–Connell–Wright-specific machinery goes, from
-0.2 onwards. Keeping it one level down leaves room for a second method without
-the package name becoming a misnomer, and it removes an ambiguity the code
+Only `BCWStep` is. A chain of certified identities is not a notion of the 1982
+paper, and a second reduction method would reuse `Reduction`, `Collision` and
+`ReductionContext` unchanged — which is exactly the misnomer the subpackage
+exists to avoid. `LinearStep` composes an element of `GL_n(k)` on the left;
+that §4 of the paper opens by doing so does not make the operation theirs.
+
+Keeping the subpackage one level down also removes an ambiguity the code
 carried while the package itself was called `bcw`: `BCW` now always means the
 1982 paper.
 
 ## Main Objects
 
 ```
-PolynomialMap  ←──uses──  VariableFactory
+PolynomialMap  ←──uses──  VariableFactory  ←──holds──  ReductionContext
         │
-        │
-ElementaryFactor ──► ElementaryAutomorphism
-        │
-        │
-      BCWStep
-        │
-        │
-     Reduction
+        ├── ElementaryFactor ──► ElementaryAutomorphism ──┐
+        │                                                 │
+        └── LinearFactor ──► LinearAutomorphism ──┐       │
+                                                  │       │
+                                            LinearStep  BCWStep
+                                                  │       │
+                                                  └───┬───┘
+                                                      │
+                                                   Step (protocol)
+                                                      │
+                                                  Reduction  ←──carries──  Collision
 ```
 
 `VariableFactory` sits beside the tower rather than in it: it is a naming
 policy, not a mathematical object, and every level that extends a map passes
-one down.
+one down. `ReductionContext` is the thing that holds one factory to its word
+across a whole chain.
+
+`Collision` also sits beside the tower. It holds no map, because the same
+points are a collision of every map that identifies them and a reduction
+verifies them against each map of a chain in turn.
 
 ---
 
@@ -407,60 +431,114 @@ every `MA^d`.
 
 ---
 
-## BCWStep
+## The linear part
 
-The fundamental certificate object of the project.
+The normalization of §4, `F'' = F'_(1)^-1 ∘ F'`, needs an element of `GL_n(k)`,
+and only some Gauss operations are elementary in the sense of the paper. A
+transvection `X_i ↦ X_i + a X_j` is: `a X_j` is free of `X_i`, and
+`Transvection.as_elementary_factor()` hands it to `elementary.py` unchanged, in
+`EA^0` rather than `EA^1`. A transposition and a dilation are not — a dilation
+displaces `X_i` by `(a - 1) X_i`, which involves `X_i`, and a transposition
+moves two coordinates and has determinant `-1`.
 
-A BCW step stores
+The shortest argument needs no factorization at all: every element of
+`EA_n(k)` has determinant one, and the transformation normalizing Alpöge's map
+has determinant `-1/2`. That is why the linear part gets its own type rather
+than a scaling parameter on `ElementaryFactor`, and why `LinearStep` is the
+only kind of step permitted to change the Jacobian determinant.
 
-- the original map,
-- the transformed map,
-- the left elementary automorphism,
-- the right elementary automorphism,
-- the number of stabilization variables,
-- the required filtration levels.
+`LinearAutomorphism` mirrors `ElementaryAutomorphism` throughout: ordered
+product, factorization kept rather than multiplied out, composition by
+concatenation, inversion by reversal, determinant as a product of factor
+determinants without forming a matrix.
 
-It certifies the identity
+`is_elementary` on a product is sufficient, not characteristic. Two equal
+transpositions multiply to the identity, which lies in `EA_n(k)` although
+neither factor does. The property reports on the exhibited factorization, which
+is what a certificate can check without forming anything.
 
-    F' = G ∘ F[m] ∘ H.
+Dilations need their coefficient to be a unit, so a map read off a paper over
+`ZZ` passes through `over_field()` first. That stays a visible step: two maps
+over different coefficient domains are different objects here, and the
+arithmetic must not widen one quietly.
 
-The method
+---
 
-```
-verify()
-```
+## Certificates
 
-checks
+A step certifies one identity between two maps. `Step` is a protocol rather
+than a base class — a step is anything that can say what it starts from, what
+it reaches, how it got there, and how to carry a collision across, and nothing
+has to inherit to qualify.
 
-- the polynomial identity in the common `PolyRing`,
-- invertibility of `G` and `H`,
-- the required filtration levels,
-- equality of Jacobian determinants as a consistency check.
+Two kinds exist. `LinearStep` composes an element of `GL_n(k)` on the left.
+`BCWStep` is one application of Proposition (3.1): with `H = (…, X_u + P,
+X_v + Q)` and `G = (…, X_i - X_u X_v, …)`,
 
-The determinant equality is not an independent proof obligation: elementary
-automorphisms have determinant one. It is retained because it catches
-implementation errors early when it is computationally cheap -- which the
-unipotent-block strategy makes it, precisely for the maps a reduction
-produces.
+    F' = G ∘ F^[2] ∘ H.
 
-A verified `BCWStep` is a complete proof certificate for one local
-transformation.
+`G` and `H` are *derived* from `(index, P, Q, variables)` by that formula and
+never stored beside them. Two ways to say the same thing invite them to
+disagree, and the identity check would then be comparing one of them against
+the other.
+
+Two things are wider than the paper states them, because the reduction of
+Alpöge's map to dimension 17 needs both and the identity holds for both. `P·Q`
+is any subsum of the target component rather than the factorization of a single
+leading monomial — one step removes four monomials of degrees 7, 6, 5 and 4 at
+once. And the target component is any component: step seven acts on component
+11, which step four introduced.
+
+### Verification raises, and says which obligation failed
+
+`verify()` returns nothing and raises `VerificationError`, carrying the stable
+identifier of the obligation from `contracts.md` and, inside a chain, the index
+of the step. A boolean would collapse six distinct obligations into one bit,
+and the first question anyone asks of a failed certificate is which one failed.
+
+### Provenance
+
+A step records whether its target was supplied or computed by `build()`. For a
+supplied target the identity check compares an externally computed map against
+the formula and can fail; for a constructed one it compares the implementation
+against itself and cannot. That is a self-check, not evidence, and the
+distinction has to survive into any review — so `Reduction` propagates the
+weaker provenance of its steps rather than averaging it away.
+
+The same honesty applies within a step. Some obligations cannot fail on
+supplied data at all: the determinant equality follows from the identity
+together with every element of `EA_n(k)` having determinant one, and the
+exhibited inverses come from the definition. They are retained because they are
+cheap on the maps a reduction produces and localize an error to the step that
+made it. `contracts.md` says per type which obligations are load-bearing.
 
 ---
 
 ## Reduction
 
-Represents a complete BCW reduction.
-
-Internally
+A chain of steps, and the induction over them.
 
 ```
-steps: list[BCWStep]
+steps: tuple[Step, ...]
 ```
 
 Verification consists of checking every step and the adjacency of consecutive
-maps. The mathematical correctness of the whole reduction follows by induction
-from the local certificates.
+maps, and stops there. That the target is a Keller map, or has degree three,
+follows from the local certificates; recomputing it would be a second and
+independent argument, which is not what a certificate is for. What the chain
+reports — degrees, dimensions, filtration level — it reports rather than
+constrains.
+
+Nothing requires a step to make progress. Two steps of the reference reduction
+leave the degree at seven, because they remove top-degree terms from a
+component that is not the deepest one. A certificate certifies correctness;
+whether a step makes progress is a question for the search in 0.4.
+
+Transport is the point of the whole structure. Each step carries a collision
+from its source to its target, verifying it on both sides, so a chain that
+completes has checked the counterexample at every intermediate map rather than
+only at the ends. A degree reduction that loses the collision it started from
+has reduced the wrong thing.
 
 ---
 
@@ -548,9 +626,24 @@ denote the same generator.
 
 ### Scope
 
-`VariableFactory` covers naming and nothing else. `ReductionContext`, which
-keeps names reproducible across a complete reduction sequence, belongs to 0.2,
-where the objects that determine its requirements are built.
+`VariableFactory` covers naming and nothing else. `ReductionContext` keeps
+names reproducible across a complete reduction sequence, and is deliberately
+thin: it names generators, extends rings and maps, and knows nothing about
+steps. Which step to take is 0.4, and a context that knew would be the wrong
+object to ask.
+
+What the context adds is distrust. Both properties a factory promises are cheap
+to check and are checked on every call — purity by asking twice and comparing,
+composition by allocating `count` names at once and then one at a time. The
+reason is the one this section already gives twice: neither failure raises
+anywhere downstream. A counting factory and one naming its output after the
+size of the ring it was handed both produce perfectly valid polynomial maps,
+just not the ones the identity needs.
+
+A step takes its two variables as data rather than taking a context. That is
+not only separation of concerns: a supplied certificate has to record the
+generators it used, or it could not be checked at all, so the variables belong
+to the certificate whether a context produced them or not.
 
 ---
 
@@ -637,14 +730,26 @@ surface a reader meets first, not the edge cases.
 Known examples from the literature are preserved to guarantee that future
 optimizations never change mathematical correctness.
 
-Two regression examples are kept. The small one checks a degree-seven map in
-dimension three by asserting both its constant Jacobian determinant and an
-explicit collision. The larger one is a cubic Keller map in dimension 17 that
-carries the same collision. It is a *candidate* for a BCW reduction of the
-small one: the tests recompute its degree, determinant and collision, but that
-it arises from such a reduction is asserted, not derived. Its components are
-fixed input, not output of this library. A `BCWStep` in 0.2 can verify a
-factorization presented to it; searching for one is 0.3.
+Three regression examples are kept. The small one checks Alpöge's degree-seven
+map in dimension three by asserting both its constant Jacobian determinant and
+an explicit collision.
+
+The second is a cubic Keller map in dimension 17 carrying the same collision.
+Since 0.2 it is *derived*: the suite verifies a chain of eight steps from the
+small one to it and transports the collision along. Only the last step is
+supplied, because the intermediate maps in dimensions 5 to 15 are published
+nowhere and writing them out ourselves would put this library's own output
+behind a `SUPPLIED` label. The external fact is the endpoint, and a negative
+control perturbs one component to show that the check there bites.
+
+The third is a published cubic map in dimension 19, kept as fixed input. Its
+reduction shares carrier variables across steps, so it introduces one fresh
+variable where `BCWStep` requires two, and a chain of `BCWStep`s cannot express
+it at all. It is in the suite as an independent second instance and as a target
+for the search in 0.3, not as a reduction.
+
+Searching for a factorization rather than verifying a presented one is 0.3
+throughout.
 
 See `references.md` for sources and for what the fixed data rests on.
 
