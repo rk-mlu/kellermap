@@ -274,12 +274,24 @@ class BCWStep:
     filtration_level: int
     provenance: Provenance
 
+    @classmethod
+    def build(cls, source, index, P, Q, variables, filtration_level=1): ...
+
     @property
     def G(self) -> ElementaryAutomorphism: ...
 
     @property
     def H(self) -> ElementaryAutomorphism: ...
+
+    @property
+    def stabilized(self) -> PolynomialMap: ...
+
+    @property
+    def attained_filtration_level(self) -> int | float: ...
 ```
+
+`variables` is the two *fresh* generators, not the variables of either map;
+those are `source.variables` and `target.variables`.
 
 `index` is zero-based. `G` and `H` are derived from `index`, `P`, `Q` and
 `variables` by formula (1) and are never supplied independently: two ways to
@@ -301,6 +313,13 @@ involves `u` or `v`. Two consequences depend on this: the two factors of `H`
 commute, so their order is immaterial, and `H^-1` is the componentwise
 negation, which is what `transport()` uses.
 
+Enforced at construction, and more strongly than stated: `P` and `Q` must be
+polynomials in the variables of `source`, of which the fresh two are none. So
+is the freshness of `variables` itself. Both raise `ValueError` rather than
+failing verification, for the reason given at COL-4 — a colliding name would
+leave two coordinates denoting one generator, and that is not a weaker
+certificate but an incoherent object.
+
 **BCW-4 — The target component may be any component.** `0 <= index <
 source.dimension`. BCW state the proposition for the first component; a
 reduction reaches components that an earlier step introduced. In the reference
@@ -320,6 +339,11 @@ when the factorization must be linear, and whether a step leaves `MA^1` is a
 fact the certificate has to record. In the reference reduction exactly two of
 seven steps declare `EA^0`, and those two are why the resulting map lies in
 `MA^0` and not in `MA^1`.
+
+Declaring `EA^0` where `EA^1` holds is a true statement and is accepted. The
+step reports what it actually reaches as `attained_filtration_level`, and a
+reduction that understates its level merely reports a weaker bound than it
+could.
 
 **BCW-7 — The determinant is unchanged.** `target.determinant() ==
 source.determinant()`. Redundant in principle, since every element of `EA_n(k)`
@@ -349,6 +373,14 @@ For a `SUPPLIED` step, BCW-1 compares an externally computed map against the
 formula and can fail. For a `CONSTRUCTED` step it compares the implementation
 against itself and cannot: it is a self-check, not evidence. `Reduction`
 propagates the weaker provenance of its steps.
+
+### Which of these can fail on supplied data
+
+BCW-1, BCW-2 and BCW-6. BCW-3 and the freshness half of BCW-2 are constructor
+invariants and cannot be reached by `verify()` at all. BCW-5 and BCW-7 follow
+from BCW-1 — every element of `EA_n(k)` has determinant one, and the exhibited
+inverses come from the definition — and are retained as cheap self-checks that
+localize an error to the step that made it. A review should weigh them as such.
 
 ---
 
@@ -489,6 +521,8 @@ identifier also appears in `str(...)`, but a caller is expected to branch on
 | an obligation on this page fails | `VerificationError` |
 | `filtration_level` outside `{0, 1}` | `ValueError` |
 | `index` outside `range(source.dimension)` | `ValueError` |
+| `P` or `Q` involving anything but the source's variables | `ValueError` |
+| two fresh variables that are equal, or already in use | `ValueError` |
 | `variables` colliding with reserved names | `ValueError` |
 | an empty `steps` tuple | `ValueError` |
 | a dilation by zero or by a non-unit of the domain | `ValueError` |

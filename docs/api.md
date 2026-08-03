@@ -23,6 +23,7 @@ what they do.
 - [Linear automorphisms](#linear-automorphisms)
 - [Collisions](#collisions)
 - [Steps and reductions](#steps-and-reductions)
+- [The BCW step](#the-bcw-step)
 - [Guarantees](#guarantees)
 - [Errors](#errors)
 
@@ -593,6 +594,66 @@ Left composition leaves every preimage where it was and moves only the image.
 
 ---
 
+## The BCW step
+
+Proposition (3.1): two dimensions bought, one factorization removed. It lives
+in the subpackage, since it is the one object here that is specific to the
+paper.
+
+```python
+>>> from kellermap.bcw import BCWStep
+>>> x1, x2, x3, x4, x5 = sp.symbols("x1 x2 x3 x4 x5")
+>>> quartic = over_field(
+...     PolynomialMap((x1, x2, x3), (x1 + x2**2 * x3**2, x2, x3))
+... )
+>>> step = BCWStep.build(quartic, 0, x2**2, x3**2, (x4, x5))
+>>> step.target.components
+(x1 - x2**2*x5 - x3**2*x4 - x4*x5, x2, x3, x2**2 + x4, x3**2 + x5)
+>>> step.verify() is None
+True
+
+```
+
+`G` and `H` are derived from the index, the two factors and the two fresh
+variables. They are never supplied alongside them, because two ways to say the
+same thing invite them to disagree:
+
+```python
+>>> step.H.factors[0].polynomial, step.H.factors[1].polynomial
+(x2**2, x3**2)
+>>> step.G.factors[0].polynomial
+-x4*x5
+
+```
+
+The declared filtration level is checked rather than inferred. Proposition
+(3.1) admits `EA^0` where the factorization has to be linear, and whether a
+step leaves `MA^1` is a fact the certificate records:
+
+```python
+>>> linear = over_field(PolynomialMap((x1, x2, x3), (x1 + x2 * x3, x2, x3)))
+>>> BCWStep.build(linear, 0, x2, x3, (x4, x5), filtration_level=1).verify()
+Traceback (most recent call last):
+    ...
+kellermap.errors.VerificationError: [BCW-6] H does not lie in EA^1; it reaches EA^0.
+
+```
+
+A step carries a collision by filling the fresh coordinates with `-P(a)` and
+`-Q(a)`, leaving the image padded with zeros:
+
+```python
+>>> square = over_field(PolynomialMap((x1, x2, x3), (x1**2, x2, x3)))
+>>> carried = BCWStep.build(square, 0, x2**2, x3**2, (x4, x5)).transport(
+...     Collision.at(square, ((1, 2, 3), (-1, 2, 3)))
+... )
+>>> carried.points[0], carried.image
+((1, 2, 3, -4, -9), (1, 2, 3, 0, 0))
+
+```
+
+---
+
 ## Guarantees
 
 **Value semantics.** `PolynomialMap`, `ElementaryFactor` and
@@ -651,6 +712,8 @@ True
 | factorizing a singular matrix, or one of the wrong shape | `ValueError` |
 | a reduction with no steps, or with a non-step in it | `ValueError`, `TypeError` |
 | a linear step changing the dimension | `ValueError` |
+| a BCW step whose fresh variables are equal or already in use | `ValueError` |
+| `P` or `Q` involving anything but the source's variables | `ValueError` |
 | fewer than two collision points, or two equal ones | `ValueError` |
 | a collision whose points and image differ in length | `ValueError` |
 | an obligation of `contracts.md` failing | `VerificationError` |
