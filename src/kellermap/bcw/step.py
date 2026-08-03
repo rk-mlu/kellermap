@@ -34,9 +34,10 @@ from __future__ import annotations
 
 from collections.abc import Iterable
 from dataclasses import dataclass
+from typing import cast
 
 import sympy as sp
-from sympy.polys.rings import PolyRing
+from sympy.polys.rings import PolyElement, PolyRing
 
 from ..canonical import agree
 from ..collision import Collision
@@ -44,7 +45,34 @@ from ..elementary import ElementaryAutomorphism, ElementaryFactor
 from ..errors import VerificationError
 from ..polynomial_map import PolynomialMap
 from ..reduction import Provenance
-from ..variables import FixedVariableFactory
+from ..variables import FixedVariableFactory, reserved_names
+
+
+def _coerce_factor(
+    source: PolynomialMap,
+    name: str,
+    factor: sp.Expr,
+) -> PolyElement:
+    """Convert a factor into the source's ring, or explain why it will not go.
+
+    One conversion answers three questions that name-based checks answered
+    badly or not at all: whether the factor is a polynomial rather than
+    ``1/x``, whether every symbol in it is either a coordinate or a parameter
+    of the coefficient domain, and what its canonical form is. It also settles
+    BCW-3, since the fresh variables are not generators of this ring.
+
+    Coefficient parameters are admitted deliberately. A collision over
+    ``k(T)`` is a collision -- COL-2 says so -- and a step over ``k[T]`` whose
+    factor is ``T x`` should not be turned away for mentioning ``T``.
+    """
+    try:
+        return cast(PolyElement, source.ring.from_expr(sp.sympify(factor)))
+    except (ValueError, TypeError, sp.SympifyError) as error:
+        raise ValueError(
+            f"{name} must be a polynomial over the coefficient domain "
+            f"{source.ring.domain} in the variables "
+            f"{tuple(str(v) for v in source.variables)}; got {factor}."
+        ) from error
 
 
 @dataclass(frozen=True, eq=False)
@@ -74,8 +102,8 @@ class BCWStep:
     _source: PolynomialMap
     _target: PolynomialMap
     _index: int
-    _P: sp.Expr
-    _Q: sp.Expr
+    _P: PolyElement
+    _Q: PolyElement
     _variables: tuple[sp.Symbol, sp.Symbol]
     _filtration_level: int
     _provenance: Provenance
@@ -119,30 +147,28 @@ class BCWStep:
             )
         if not all(isinstance(symbol, sp.Symbol) for symbol in fresh):
             raise TypeError("The fresh variables must be SymPy symbols.")
-        if fresh[0] == fresh[1]:
+        # Nach dem Namen und nicht nach Symbol.__eq__: Symbol("v") und
+        # Symbol("v", positive=True) sind fuer SymPy verschieden und fuer
+        # einen PolyRing derselbe Generator.
+        if fresh[0].name == fresh[1].name:
             raise ValueError("The two fresh variables must be distinct.")
 
         # Frueh und nicht erst in verify(): ein kollidierender Name laesst
         # sich hinterher nicht mehr von einem falschen Ziel unterscheiden,
         # weil die Erweiterung dann zwei Koordinaten denselben Generator
         # bezeichnen liesse.
-        taken = {symbol.name for symbol in fresh} & {
-            symbol.name for symbol in source.variables
-        }
+        # Gegen die reservierten Namen und nicht nur gegen die Koordinaten:
+        # ein Parameter des Koeffizientenbereichs ist ebenso vergeben.
+        taken = {symbol.name for symbol in fresh} & reserved_names(source.ring)
         if taken:
             raise ValueError(
                 f"The variables {sorted(taken)} are already in use by the source."
             )
 
-        factors = tuple(sp.sympify(factor) for factor in (P, Q))
-        foreign = {
-            symbol.name for factor in factors for symbol in factor.free_symbols
-        } - {symbol.name for symbol in source.variables}
-        if foreign:
-            raise ValueError(
-                "P and Q must be polynomials in the variables of the source; "
-                f"they also involve {sorted(foreign)}."
-            )
+        factors = tuple(
+            _coerce_factor(source, name, factor)
+            for name, factor in (("P", P), ("Q", Q))
+        )
 
         object.__setattr__(self, "_source", source)
         object.__setattr__(self, "_target", target)
@@ -213,13 +239,13 @@ class BCWStep:
 
     @property
     def P(self) -> sp.Expr:  # noqa: N802
-        """Return the left factor."""
-        return self._P
+        """Return the left factor, as an expression."""
+        return cast(sp.Expr, self._P.as_expr())
 
     @property
     def Q(self) -> sp.Expr:  # noqa: N802
-        """Return the right factor."""
-        return self._Q
+        """Return the right factor, as an expression."""
+        return cast(sp.Expr, self._Q.as_expr())
 
     @property
     def variables(self) -> tuple[sp.Symbol, sp.Symbol]:
@@ -279,8 +305,8 @@ class BCWStep:
 
         return ElementaryAutomorphism(
             [
-                ElementaryFactor(ring, offset, ring.from_expr(self._P)),
-                ElementaryFactor(ring, offset + 1, ring.from_expr(self._Q)),
+                ElementaryFactor(ring, offset, self._P.set_ring(ring)),
+                ElementaryFactor(ring, offset + 1, self._Q.set_ring(ring)),
             ]
         )
 
@@ -320,7 +346,13 @@ class BCWStep:
         object.__setattr__(self, "_verified", True)
 
     def _verify_generators(self) -> None:
-        """BCW-2 and BCW-3."""
+        """BCW-2.
+
+        BCW-3 does not appear here. ``P`` and ``Q`` are stored as elements of
+        the source's ring, whose generators are the source's variables, so a
+        factor mentioning a fresh variable cannot be built in the first place
+        -- the same reasoning as COL-4, and stronger than reporting it later.
+        """
         if self._target.dimension != self._source.dimension + 2:
             raise VerificationError(
                 "BCW-2",
@@ -335,17 +367,6 @@ class BCWStep:
                 "The target does not carry the variables of the source "
                 "followed by the two fresh ones.",
             )
-
-        # BCW-3 wird schon im Konstruktor erzwungen: P und Q duerfen nur
-        # Variablen der Quelle enthalten, und die frischen sind keine. Hier
-        # steht die Gegenprobe gegen den erweiterten Ring, in dem sie es
-        # koennten.
-        for name, factor in (("P", self._P), ("Q", self._Q)):
-            if factor.free_symbols & set(self._variables):
-                raise VerificationError(
-                    "BCW-3",
-                    f"{name} involves one of the fresh variables {self._variables}.",
-                )
 
     def _verify_identity(self) -> None:
         """BCW-1."""
@@ -431,8 +452,8 @@ class BCWStep:
             substitution = dict(zip(self._source.variables, point, strict=True))
             appended.append(
                 (
-                    -sp.expand(self._P.xreplace(substitution)),
-                    -sp.expand(self._Q.xreplace(substitution)),
+                    -sp.expand(self.P.xreplace(substitution)),
+                    -sp.expand(self.Q.xreplace(substitution)),
                 )
             )
 

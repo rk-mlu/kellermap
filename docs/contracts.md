@@ -361,12 +361,25 @@ involves `u` or `v`. Two consequences depend on this: the two factors of `H`
 commute, so their order is immaterial, and `H^-1` is the componentwise
 negation, which is what `transport()` uses.
 
-Enforced at construction, and more strongly than stated: `P` and `Q` must be
-polynomials in the variables of `source`, of which the fresh two are none. So
-is the freshness of `variables` itself. Both raise `ValueError` rather than
-failing verification, for the reason given at COL-4 — a colliding name would
-leave two coordinates denoting one generator, and that is not a weaker
-certificate but an incoherent object.
+Enforced at construction, and by conversion rather than by inspection: `P` and
+`Q` are converted into `source.ring` and stored as elements of it. Since the
+fresh variables are not generators of that ring, a factor mentioning one cannot
+be built at all, and BCW-3 has no verify-time code — the same shape as COL-4.
+
+The conversion settles three questions at once that a check on symbol names
+answered badly or not at all. A factor must be a polynomial, so `1/x` is
+refused at construction rather than failing somewhere downstream. Its
+coefficients must lie in the domain, so `x/2` is refused over `ZZ[T]` and
+admitted over `ZZ(T)`. And every symbol in it must be a generator *or a
+parameter of the coefficient domain*, so `T x` over `k[T]` is admitted — which
+a name-based check refused, putting `BCWStep` at odds with COL-2, where the
+same `T` is explicitly allowed.
+
+Freshness of `variables` is likewise a constructor invariant, checked against
+`reserved_names(source.ring)` rather than against the coordinates alone: a
+parameter of the coefficient domain is taken too. Distinctness of the two is
+decided by `symbol.name`, because `Symbol("v")` and `Symbol("v", positive=True)`
+are two symbols for SymPy and one generator for a `PolyRing`.
 
 **BCW-4 — The target component may be any component.** `0 <= index <
 source.dimension`. BCW state the proposition for the first component; a
@@ -425,7 +438,7 @@ propagates the weaker provenance of its steps.
 ### Which of these can fail on supplied data
 
 BCW-1, BCW-2 and BCW-6. BCW-3 and the freshness half of BCW-2 are constructor
-invariants and cannot be reached by `verify()` at all. BCW-5 and BCW-7 follow
+invariants and are not reachable by `verify()` at all. BCW-5 and BCW-7 follow
 from BCW-1 — every element of `EA_n(k)` has determinant one, and the exhibited
 inverses come from the definition — and are retained as cheap self-checks that
 localize an error to the step that made it. A review should weigh them as such.
@@ -569,8 +582,8 @@ identifier also appears in `str(...)`, but a caller is expected to branch on
 | an obligation on this page fails | `VerificationError` |
 | `filtration_level` outside `{0, 1}` | `ValueError` |
 | `index` outside `range(source.dimension)` | `ValueError` |
-| `P` or `Q` involving anything but the source's variables | `ValueError` |
-| two fresh variables that are equal, or already in use | `ValueError` |
+| `P` or `Q` that is not a polynomial over the source's ring | `ValueError` |
+| two fresh variables of one name, or a name already reserved | `ValueError` |
 | `variables` colliding with reserved names | `ValueError` |
 | an empty `steps` tuple | `ValueError` |
 | a dilation by zero or by a non-unit of the domain | `ValueError` |

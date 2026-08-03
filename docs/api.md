@@ -640,6 +640,25 @@ kellermap.errors.VerificationError: [BCW-6] H does not lie in EA^1; it reaches E
 
 ```
 
+`P` and `Q` are converted into the source's ring and stored there, so a factor
+that is not a polynomial over it is refused at construction rather than failing
+later. Parameters of the coefficient domain are not coordinates and are
+admitted:
+
+```python
+>>> T = sp.Symbol("T")
+>>> parametric = PolynomialMap((x1, x2, x3), (x1 + T * x2**2 * x3**2, x2, x3))
+>>> parametric.ring.domain
+ZZ[T]
+>>> BCWStep.build(parametric, 0, T * x2**2, x3**2, (x4, x5)).P
+T*x2**2
+>>> BCWStep.build(parametric, 0, 1 / x2, x3**2, (x4, x5))
+Traceback (most recent call last):
+    ...
+ValueError: P must be a polynomial over the coefficient domain ZZ[T] in the variables ('x1', 'x2', 'x3'); got 1/x2.
+
+```
+
 A step carries a collision by filling the fresh coordinates with `-P(a)` and
 `-Q(a)`, leaving the image padded with zeros:
 
@@ -778,8 +797,8 @@ True
 | a reduction with no steps, or with a non-step in it | `ValueError`, `TypeError` |
 | a factory that is impure, miscounts, collides or does not compose | `ValueError` |
 | a linear step changing the dimension | `ValueError` |
-| a BCW step whose fresh variables are equal or already in use | `ValueError` |
-| `P` or `Q` involving anything but the source's variables | `ValueError` |
+| a BCW step whose fresh variables share a name, or take a reserved one | `ValueError` |
+| `P` or `Q` that is not a polynomial over the source's ring | `ValueError` |
 | fewer than two collision points, or two equal ones | `ValueError` |
 | a collision whose points and image differ in length | `ValueError` |
 | an obligation of `contracts.md` failing | `VerificationError` |

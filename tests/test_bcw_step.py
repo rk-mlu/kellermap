@@ -83,8 +83,98 @@ def test_the_filtration_level_is_zero_or_one() -> None:
 
 def test_BCW3_P_and_Q_live_over_the_source() -> None:  # noqa: N802
     """Ein Faktor, der die frischen Variablen traegt, ist gar nicht erst baubar."""
-    with pytest.raises(ValueError, match="polynomials in the variables"):
+    with pytest.raises(ValueError, match="must be a polynomial"):
         BCWStep(SIMPLE, over_field(SIMPLE_TARGET), 0, x4 * x2, Q, FRESH)
+
+
+# --------------------------------------------------------------------------
+# P und Q leben im Ring der Quelle
+# --------------------------------------------------------------------------
+
+T, S = sp.symbols("T S")
+
+# Eine Abbildung ueber ZZ[T]: T ist Parameter des Koeffizientenbereichs, keine
+# Koordinate. Der Befund aus dem Audit von rc1 war, dass BCWStep beides am
+# Namen unterschied und T deshalb verwarf.
+PARAMETRIC = PolynomialMap((x1, x2, x3), (x1 + T * x2**2 * x3**2, x2, x3))
+
+
+def test_a_coefficient_parameter_is_allowed() -> None:
+    """COL-2 erlaubt ihn in einer Kollision; hier galt bisher das Gegenteil."""
+    step = BCWStep.build(PARAMETRIC, 0, T * x2**2, x3**2, FRESH)
+
+    assert PARAMETRIC.ring.domain == sp.ZZ[T]
+    assert step.verify() is None
+    assert step.P == T * x2**2
+
+
+def test_a_nested_coefficient_domain_is_allowed() -> None:
+    nested = PolynomialMap((x1, x2, x3), (x1 + T * S * x2**2 * x3**2, x2, x3))
+    step = BCWStep.build(nested, 0, T * S * x2**2, x3**2, FRESH)
+
+    assert step.verify() is None
+    assert step.P == T * S * x2**2
+
+
+def test_a_non_polynomial_factor_is_refused() -> None:
+    """1/x ist kein Element des Rings und fiel bisher erst viel spaeter auf."""
+    with pytest.raises(ValueError, match="must be a polynomial"):
+        BCWStep(SIMPLE, over_field(SIMPLE_TARGET), 0, 1 / x1, Q, FRESH)
+
+
+def test_a_foreign_symbol_is_refused() -> None:
+    with pytest.raises(ValueError, match="must be a polynomial"):
+        BCWStep(SIMPLE, over_field(SIMPLE_TARGET), 0, sp.Symbol("q") * x1, Q, FRESH)
+
+
+def test_a_coefficient_outside_the_domain_is_refused() -> None:
+    """Ueber ZZ[T] ist x/2 kein Polynom; ueber ZZ(T) ist es eines."""
+    with pytest.raises(ValueError, match="must be a polynomial"):
+        BCWStep(PARAMETRIC, PARAMETRIC, 0, x2**2 / 2, x3**2, FRESH)
+
+    widened = over_field(PARAMETRIC)
+    step = BCWStep.build(widened, 0, x2**2 / 2, x3**2, FRESH)
+
+    assert step.verify() is None
+    assert step.P == x2**2 / 2
+
+
+def test_the_factors_are_stored_canonically() -> None:
+    """Der Ring normalisiert, also vergleichen zwei Schreibweisen gleich."""
+    expanded = BCWStep.build(SIMPLE, 0, x2**2 + 2 * x2 + 1, x3**2, FRESH)
+    folded = BCWStep.build(SIMPLE, 0, (x2 + 1) ** 2, x3**2, FRESH)
+
+    assert expanded.P == folded.P
+    assert expanded == folded
+    assert hash(expanded) == hash(folded)
+
+
+# --------------------------------------------------------------------------
+# Frische Variablen
+# --------------------------------------------------------------------------
+
+
+def test_a_coefficient_parameter_is_not_a_fresh_name() -> None:
+    """T ist keine Koordinate und trotzdem vergeben."""
+    with pytest.raises(ValueError, match="already in use"):
+        BCWStep(PARAMETRIC, PARAMETRIC, 0, x2**2, x3**2, (T, x5))
+
+
+def test_two_symbols_of_one_name_are_not_two_variables() -> None:
+    """Symbol("v") und Symbol("v", positive=True) sind ein Generator.
+
+    Fuer SymPy sind sie verschieden, fuer einen ``PolyRing`` nicht; die
+    Pruefung geht daher ueber den Namen und nicht ueber ``Symbol.__eq__``.
+    """
+    with pytest.raises(ValueError, match="must be distinct"):
+        BCWStep(
+            SIMPLE,
+            over_field(SIMPLE_TARGET),
+            0,
+            P,
+            Q,
+            (sp.Symbol("w"), sp.Symbol("w", positive=True)),
+        )
 
 
 # --------------------------------------------------------------------------
