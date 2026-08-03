@@ -212,8 +212,14 @@ class ReductionContext:
 
     def variables(self, ring: PolyRing, count: int) -> tuple[sp.Symbol, ...]: ...
 
+    def extended_ring(self, ring: PolyRing, count: int) -> PolyRing: ...
+
     def extend(self, F: PolynomialMap, count: int) -> PolynomialMap: ...
 ```
+
+It lives in `kellermap.context`, at the top level. Naming the generators of a
+chain of stabilizations is not a notion of the 1982 paper — the same argument
+that puts `Reduction` there, and the one this page already makes above.
 
 **RC-1 — Determinism.** `variables(ring, count)` is a pure function of its two
 arguments. Two calls with value-equal arguments return equal names, whether
@@ -232,7 +238,7 @@ does so *silently*, since both sides remain valid maps.
 allocates, in the same order:
 
 ```
-variables(R, m) + variables(R.extended_by(m), l) == variables(R, m + l)
+variables(R, m) + variables(extended_ring(R, m), l) == variables(R, m + l)
 ```
 
 A reduction stabilizes step by step and must land where a single stabilization
@@ -243,18 +249,33 @@ pairwise distinct by *name*, and disjoint from `reserved_names(ring)` —
 generators of the ring and indeterminates of the coefficient domain at every
 level of nesting.
 
-**RC-5 — The context rechecks the factory.** RC-4 is verified on the factory's
-output rather than assumed. `PolyRing` accepts a duplicated generator name
-without complaint and yields a ring in which two coordinates denote the same
-generator.
+**RC-5 — The context rechecks the factory.** RC-1, RC-3 and RC-4 are verified
+on the factory's output rather than assumed, on every call. None of the three
+failures raises anywhere downstream: `PolyRing` accepts a duplicated generator
+name without complaint and yields a ring in which two coordinates denote one
+generator, and an impure or non-composing factory produces perfectly valid maps
+that are simply not the ones the identity needs.
+
+RC-1 is checked by asking twice and comparing, which catches a factory holding
+a counter. RC-3 is checked by allocating `count` names at once and then one at
+a time, which catches a factory naming its output after the size of the ring it
+was handed — pure, collision-free and still wrong.
+
+The cost is a constant number of extra factory calls and ring clones per
+allocation, on an operation a reduction performs a handful of times.
 
 **RC-6 — Arithmetic context is preserved.** Every map produced by `extend()`
 has the coefficient domain and the monomial order of its argument. A reduction
 runs in one arithmetic context from beginning to end.
 
-**RC-7 — Scope.** The context names generators and extends maps. It does not
-choose steps, does not verify anything, does not hold the reduction, and does
-not know which step is being taken. Selection is milestone 0.4.
+**RC-7 — Scope.** The context names generators and extends rings and maps. It
+does not choose steps, does not verify anything, does not hold the reduction,
+and does not know which step is being taken. Selection is milestone 0.4.
+
+A step therefore takes its two variables as data rather than taking a context.
+That is not only separation of concerns: a supplied certificate has to record
+the generators it used, or it could not be checked at all, so the variables are
+part of the certificate whether a context produced them or not.
 
 ---
 

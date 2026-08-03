@@ -160,4 +160,32 @@ class IndexedVariableFactory:
         return FALLBACK_PREFIX, ring.ngens + 1
 
 
+@dataclass(frozen=True)
+class FixedVariableFactory:
+    """Return names decided in advance, ignoring the ring.
+
+    Constant, so purity holds trivially: it cannot count, and it cannot depend
+    on what it is handed. It exists so that an extension can be pinned to names
+    that are already fixed elsewhere -- a supplied certificate names the
+    generators it used, and those have to be honoured rather than reinvented.
+
+    It does *not* satisfy the composition requirement of ``VariableFactory``:
+    asked for a count it was not built for, it raises rather than walking a
+    sequence. That is deliberate. A factory for one extension of a known size
+    belongs in ``PolynomialMap.extend``; a chain of extensions needs one that
+    composes, which is what ``ReductionContext`` requires of its own.
+    """
+
+    names: tuple[sp.Symbol, ...]
+
+    def __call__(self, ring: PolyRing, count: int) -> tuple[sp.Symbol, ...]:
+        """Return the fixed names, if that is the number asked for."""
+        if count != len(self.names):
+            raise ValueError(
+                f"This factory names {len(self.names)} generators, asked for {count}."
+            )
+
+        return self.names
+
+
 DEFAULT_VARIABLE_FACTORY: VariableFactory = IndexedVariableFactory()

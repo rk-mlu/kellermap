@@ -24,6 +24,7 @@ what they do.
 - [Collisions](#collisions)
 - [Steps and reductions](#steps-and-reductions)
 - [The BCW step](#the-bcw-step)
+- [Naming across a reduction](#naming-across-a-reduction)
 - [Guarantees](#guarantees)
 - [Errors](#errors)
 
@@ -34,7 +35,7 @@ what they do.
 ```python
 >>> import kellermap
 >>> kellermap.__all__
-['DEFAULT_VARIABLE_FACTORY', 'Collision', 'Dilation', 'ElementaryAutomorphism', 'ElementaryFactor', 'IndexedVariableFactory', 'LinearAutomorphism', 'LinearFactor', 'LinearStep', 'PolynomialMap', 'Provenance', 'Reduction', 'Step', 'Transposition', 'Transvection', 'VariableFactory', 'VerificationError', 'field_ring', 'over_field', 'reserved_names']
+['DEFAULT_VARIABLE_FACTORY', 'Collision', 'Dilation', 'ElementaryAutomorphism', 'ElementaryFactor', 'FixedVariableFactory', 'IndexedVariableFactory', 'LinearAutomorphism', 'LinearFactor', 'LinearStep', 'PolynomialMap', 'Provenance', 'Reduction', 'ReductionContext', 'Step', 'Transposition', 'Transvection', 'VariableFactory', 'VerificationError', 'field_ring', 'over_field', 'reserved_names']
 
 ```
 
@@ -654,6 +655,70 @@ A step carries a collision by filling the fresh coordinates with `-P(a)` and
 
 ---
 
+## Naming across a reduction
+
+A reduction extends its ring many times, and the answers have to fit together.
+`ReductionContext` holds a `VariableFactory` to that, and is otherwise thin: it
+names generators, extends rings and maps, and knows nothing about steps.
+
+```python
+>>> from kellermap import ReductionContext
+>>> context = ReductionContext()
+>>> identity = PolynomialMap((x1, x2, x3), (x1, x2, x3))
+>>> context.variables(identity.ring, 2)
+(x4, x5)
+>>> context.extend(identity, 2).variables
+(x1, x2, x3, x4, x5)
+
+```
+
+Extending twice lands where extending once lands, with the same names:
+
+```python
+>>> context.extend(context.extend(identity, 2), 2) == context.extend(identity, 4)
+True
+
+```
+
+Both properties a factory promises are rechecked on every call, because
+neither failure raises anywhere downstream — each produces a perfectly valid
+map that is simply not the one the identity needs. A factory that counts:
+
+```python
+>>> class Counting:
+...     def __init__(self):
+...         self.calls = 0
+...     def __call__(self, ring, count):
+...         self.calls += 1
+...         return tuple(sp.Symbol(f"g{self.calls}_{i}") for i in range(count))
+>>> ReductionContext(factory=Counting()).variables(identity.ring, 2)
+Traceback (most recent call last):
+    ...
+ValueError: The variable factory is not a pure function of its arguments: it returned (g1_0, g1_1) and then (g2_0, g2_1).
+
+```
+
+And one that names its output after the size of the ring it was handed, which
+is pure and never collides and still breaks `(F^[2])^[2] = F^[4]`:
+
+```python
+>>> class Sized:
+...     def __call__(self, ring, count):
+...         return tuple(sp.Symbol(f"g{ring.ngens}_{i}") for i in range(count))
+>>> ReductionContext(factory=Sized()).variables(identity.ring, 2)
+Traceback (most recent call last):
+    ...
+ValueError: The variable factory does not compose: allocating 2 names at once gave (g3_0, g3_1), one at a time (g3_0, g4_0).
+
+```
+
+`FixedVariableFactory` pins an extension to names decided elsewhere — what a
+supplied certificate needs, since it records the generators it used. It answers
+only one count and therefore does not compose, so it belongs in
+`PolynomialMap.extend` rather than in a context.
+
+---
+
 ## Guarantees
 
 **Value semantics.** `PolynomialMap`, `ElementaryFactor` and
@@ -711,6 +776,7 @@ True
 | a dilation by zero or by a non-unit | `ValueError` |
 | factorizing a singular matrix, or one of the wrong shape | `ValueError` |
 | a reduction with no steps, or with a non-step in it | `ValueError`, `TypeError` |
+| a factory that is impure, miscounts, collides or does not compose | `ValueError` |
 | a linear step changing the dimension | `ValueError` |
 | a BCW step whose fresh variables are equal or already in use | `ValueError` |
 | `P` or `Q` involving anything but the source's variables | `ValueError` |

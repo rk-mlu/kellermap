@@ -1,4 +1,5 @@
 from .collision import Collision
+from .context import ReductionContext
 from .elementary import ElementaryAutomorphism, ElementaryFactor
 from .errors import VerificationError
 from .linear import (
@@ -19,6 +20,7 @@ from .reduction import (
 )
 from .variables import (
     DEFAULT_VARIABLE_FACTORY,
+    FixedVariableFactory,
     IndexedVariableFactory,
     VariableFactory,
     reserved_names,
@@ -30,6 +32,7 @@ __all__ = [
     "Dilation",
     "ElementaryAutomorphism",
     "ElementaryFactor",
+    "FixedVariableFactory",
     "IndexedVariableFactory",
     "LinearAutomorphism",
     "LinearFactor",
@@ -37,6 +40,7 @@ __all__ = [
     "PolynomialMap",
     "Provenance",
     "Reduction",
+    "ReductionContext",
     "Step",
     "Transposition",
     "Transvection",

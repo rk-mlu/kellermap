@@ -135,11 +135,12 @@ Introduce, at the top level,
 - `Collision` and `VerificationError`
 - `kellermap.linear`: dilations, transpositions, `LinearAutomorphism`
 - `kellermap.reduction`: the `Step` protocol, `LinearStep`, `Reduction`
+- `kellermap.context`: `ReductionContext` (building on the `VariableFactory`
+  from 0.1)
 
 and, in the `kellermap.bcw` subpackage,
 
 - `BCWStep`
-- `ReductionContext` (building on the `VariableFactory` from 0.1)
 
 Only `BCWStep` is specific to the paper. A chain of certified identities is
 not, and a second reduction method would reuse it, so `Reduction` stays at the
@@ -233,7 +234,7 @@ and is then set to `0.2.0` in one step. Git tags for work packages use the
 | 2 | 0.1.2 | `kellermap.linear`: dilations, transpositions, `LinearAutomorphism` |
 | 3 | 0.1.3 | `kellermap.reduction`: `Step`, `LinearStep`, `Reduction` |
 | 4 | 0.1.4 | `BCWStep.verify()` |
-| 5 | 0.1.5 | `ReductionContext` |
+| 5 | 0.1.5 | `kellermap.context`: `ReductionContext` |
 | 6 | 0.1.6 | Integration: the eight steps from Alpöge to dimension 17 |
 | 7 | 0.1.7 | Documentation and release |
 

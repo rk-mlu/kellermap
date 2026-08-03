@@ -43,29 +43,7 @@ from ..elementary import ElementaryAutomorphism, ElementaryFactor
 from ..errors import VerificationError
 from ..polynomial_map import PolynomialMap
 from ..reduction import Provenance
-
-
-@dataclass(frozen=True)
-class _FixedNames:
-    """A pure factory returning names decided in advance.
-
-    Constant, so it satisfies the purity requirement of ``VariableFactory``
-    trivially: it cannot count, and it cannot depend on the ring it is handed.
-    Until ``ReductionContext`` arrives in work package 5, this is how a step
-    says which two generators it used -- and that has to be said either way,
-    since a supplied step whose variables were unknown could not be checked at
-    all.
-    """
-
-    names: tuple[sp.Symbol, ...]
-
-    def __call__(self, ring: PolyRing, count: int) -> tuple[sp.Symbol, ...]:
-        if count != len(self.names):
-            raise ValueError(
-                f"Expected {len(self.names)} fresh names, asked for {count}."
-            )
-
-        return self.names
+from ..variables import FixedVariableFactory
 
 
 @dataclass(frozen=True, eq=False)
@@ -273,8 +251,15 @@ class BCWStep:
 
     @property
     def stabilized(self) -> PolynomialMap:
-        """Return ``F^[2]``, the source with two identity coordinates."""
-        return self._source.extend(2, factory=_FixedNames(self._variables))
+        """Return ``F^[2]``, the source with two identity coordinates.
+
+        The two generators are pinned to the ones the step records. A supplied
+        certificate names the variables it used, and those are honoured rather
+        than reinvented -- a step whose variables were unknown could not be
+        checked at all. Where the names come from in the first place is the
+        business of ``ReductionContext``.
+        """
+        return self._source.extend(2, factory=FixedVariableFactory(self._variables))
 
     @property
     def ring(self) -> PolyRing:
