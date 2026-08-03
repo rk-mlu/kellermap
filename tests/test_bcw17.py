@@ -1,44 +1,54 @@
-"""Regression: kubische Keller-Abbildung in Dimension 17, Kandidat.
+"""Kubische Keller-Abbildung in Dimension 17, abgeleitet aus Alpoeges.
 
 Diese Abbildung hat Grad 3 und konstante Jacobi-Determinante 1, und sie erbt
 die Kollision der Alpoege-Abbildung. Sie ist damit selbst ein Gegenbeispiel
 zur Jacobi-Vermutung, nicht bloss eine Keller-Abbildung. All das rechnen die
 Tests unten selbst nach.
 
-"Kandidat" bezieht sich auf etwas anderes: dass sie *durch eine
-BCW-Reduktion* aus der Alpoege-Abbildung hervorgeht, ist hier nicht bewiesen.
-Der Titel hat das frueher behauptet. Was nachgerechnet ist, steht unter
-"Herkunft"; solange die Faktoren fehlen, ist sie ein Regressionskandidat und
-keine verifizierte Reduktion.
+Bis Version 0.2 war sie ein Regressionskandidat: dass sie *durch eine
+BCW-Reduktion* aus der Alpoege-Abbildung hervorgeht, war behauptet und nicht
+gezeigt. Der Abschnitt "Ableitung" unten zeigt es jetzt -- eine ``Reduction``
+aus acht Schritten, Schritt fuer Schritt verifiziert, die die Kollision
+mittraegt.
 
-Herkunft
---------
-Die Komponenten sind fixiert und nicht von dieser Bibliothek erzeugt. Bis dahin
-ist diese Datei eine Regression gegen ein extern gerechnetes Ergebnis: ein
-``BCWStep`` kann in 0.2 eine vorgelegte Faktorisierung pruefen, sie zu suchen
-ist Sache von 0.3.
+Was daran Beleg ist und was nicht
+---------------------------------
+Die Zwischenabbildungen in den Dimensionen 5 bis 15 sind nirgends
+veroeffentlicht. Sie *koennen* darum nicht vorgelegt werden, und ihre Schritte
+sind ``CONSTRUCTED``: BCW-1 vergleicht dort die Implementierung mit sich
+selbst. Die ganze Kette traegt deshalb nach RED-7 die schwaechere Provenienz.
 
-Der Weg von Alpoege (Dimension 3, Grad 7, det = -2) hierher besteht aus zwei
-Teilen. Der erste ist die lineare Normalisierung aus BCW Paragraph 4,
-F'' = F'_(1)^-1 o F'. Sie ist unten in ``test_normalization_...`` vollstaendig
-nachgerechnet und erklaert genau die Unterschiede, die zwischen beiden
-Abbildungen ins Auge fallen: die Determinante -2 wird 1, weil der Linearteil
-von Alpoege ebenfalls Determinante -2 hat, und das Kollisionsbild
-(-1/4, 0, 0) wird (0, 0, -1/4), weil dieser Linearteil die erste und dritte
-Koordinate vertauscht.
+Die aeussere Tatsache ist der Endpunkt, und dort beisst die Pruefung: der
+letzte Schritt bekommt die fixierten Komponenten als Ziel vorgelegt, also
+vergleicht sein BCW-1 eine extern gerechnete Abbildung mit
+``G o F^[2] o H``. Ebenso die Kollision, die am Ende der Kette gegen
+``BCW17_COLLISION`` gehalten wird, und die Variablennamen, die der
+``ReductionContext`` erzeugt und nicht die Tabelle vorgibt -- benennt er
+anders als x4 ... x17, faellt der letzte Schritt.
 
-Der zweite Teil -- Stabilisierung auf Dimension 17 und die elementaren
-Faktoren aus Proposition (3.1), die den Grad von 7 auf 3 druecken -- ist hier
-nicht nachgerechnet. Er ist der Inhalt von ``BCWStep`` in Version 0.2. Was
-davon heute schon geprueft ist: die Kollisionspunkte setzen in ihren ersten
-drei Koordinaten Alpoeges Punkte fort, und das Bild stimmt mit dem der
-normalisierten Abbildung ueberein.
+Die Faktorisierung selbst ist nicht gesucht, sondern aus den fixierten
+Komponenten abgelesen: die Komponenten 4 bis 17 haben die Form ``X_j + P``,
+und diese ``P`` sind die Faktoren. Sie zu finden ist Sache von 0.3. Eine von
+dieser Bibliothek unabhaengige Nachrechnung derselben Kette in reinem SymPy
+steht in ``scripts/reconstruct_bcw17.py``.
 """
+
+import math
 
 import pytest
 import sympy as sp
 
-from kellermap import PolynomialMap
+from kellermap import (
+    Collision,
+    PolynomialMap,
+    Provenance,
+    Reduction,
+    ReductionContext,
+    VerificationError,
+    over_field,
+)
+from kellermap.bcw import BCWStep
+from kellermap.reduction import LinearStep
 
 X = sp.symbols("x1:18")
 _1, _2, _3, _4, _5, _6, _7, _8, _9, _10, _11, _12, _13, _14, _15, _16, _17 = X
@@ -262,47 +272,199 @@ def test_bcw17_determinant_strategies_agree(bcw17: PolynomialMap) -> None:
 
 
 # --------------------------------------------------------------------------
-# Herkunft: was sich heute schon nachrechnen laesst
+# Ableitung: die Kette von Alpoege hierher
 # --------------------------------------------------------------------------
 
-ALPOEGE_VARIABLES = sp.symbols("x y z")
+ALPOEGE_VARIABLES = (_1, _2, _3)
 
 ALPOEGE_COMPONENTS = (
-    (1 + ALPOEGE_VARIABLES[0] * ALPOEGE_VARIABLES[1]) ** 3 * ALPOEGE_VARIABLES[2]
-    + ALPOEGE_VARIABLES[1] ** 2
-    * (1 + ALPOEGE_VARIABLES[0] * ALPOEGE_VARIABLES[1])
-    * (4 + 3 * ALPOEGE_VARIABLES[0] * ALPOEGE_VARIABLES[1]),
-    ALPOEGE_VARIABLES[1]
-    + 3
-    * ALPOEGE_VARIABLES[0]
-    * (1 + ALPOEGE_VARIABLES[0] * ALPOEGE_VARIABLES[1]) ** 2
-    * ALPOEGE_VARIABLES[2]
-    + 3
-    * ALPOEGE_VARIABLES[0]
-    * ALPOEGE_VARIABLES[1] ** 2
-    * (4 + 3 * ALPOEGE_VARIABLES[0] * ALPOEGE_VARIABLES[1]),
-    2 * ALPOEGE_VARIABLES[0]
-    - 3 * ALPOEGE_VARIABLES[0] ** 2 * ALPOEGE_VARIABLES[1]
-    - ALPOEGE_VARIABLES[0] ** 3 * ALPOEGE_VARIABLES[2],
+    (1 + _1 * _2) ** 3 * _3 + _2**2 * (1 + _1 * _2) * (4 + 3 * _1 * _2),
+    _2 + 3 * _1 * (1 + _1 * _2) ** 2 * _3 + 3 * _1 * _2**2 * (4 + 3 * _1 * _2),
+    2 * _1 - 3 * _1**2 * _2 - _1**3 * _3,
+)
+
+ALPOEGE_COLLISION = (
+    (0, 0, R(-1, 4)),
+    (1, R(-3, 2), R(13, 2)),
+    (-1, R(3, 2), R(13, 2)),
+)
+
+# Die sieben Anwendungen von Proposition (3.1): Zielkomponente (nullbasiert),
+# die beiden Faktoren, und die EA-Stufe, die H erreicht. Die frischen
+# Variablen stehen hier bewusst nicht -- die vergibt der ReductionContext, und
+# dass er dabei x4 ... x17 in dieser Reihenfolge trifft, ist Teil dessen, was
+# der letzte Schritt prueft.
+STEPS = (
+    (0, -_1 * _3 / 2, _1**2, 1),
+    (1, 3 * _1**2 * _2, _1 * _2 * _3 + 3 * _2**2, 1),
+    (1, _1 * _2, 6 * _1 * _3 - 3 * _1 * _7 - _3 * _6, 1),
+    (2, _1 * _2**2, _1**2 * _2 * _3 + 3 * _1 * _2**2 + 3 * _1 * _3 + 7 * _2, 0),
+    (2, _1 * _2 * _10, -_1 * _3 - 3 * _2, 0),
+    (2, _1 * _2, -_10 * _13 - _2 * _11, 1),
+    (10, _2 * _3, _1**2, 1),
 )
 
 
 @pytest.fixture(scope="module")
-def normalized_alpoege() -> PolynomialMap:
+def alpoege() -> PolynomialMap:
+    """Ueber QQ, weil die Normalisierung sofort einen Kehrwert braucht."""
+    return over_field(PolynomialMap(ALPOEGE_VARIABLES, ALPOEGE_COMPONENTS))
+
+
+@pytest.fixture(scope="module")
+def normalization(alpoege: PolynomialMap) -> LinearStep:
     """F'' = F'_(1)^-1 o F', die lineare Normalisierung aus BCW Paragraph 4."""
-    F = PolynomialMap(ALPOEGE_VARIABLES, ALPOEGE_COMPONENTS)
-    linear_part = sp.Matrix(
-        F.jacobian().xreplace({v: sp.Integer(0) for v in ALPOEGE_VARIABLES})
+    return LinearStep.normalize(alpoege)
+
+
+@pytest.fixture(scope="module")
+def reduction(
+    alpoege: PolynomialMap, normalization: LinearStep, bcw17: PolynomialMap
+) -> Reduction:
+    """Die vollstaendige Kette, mit vorgelegtem Ziel im letzten Schritt."""
+    context = ReductionContext()
+    steps: list[LinearStep | BCWStep] = [normalization]
+    current = normalization.target
+
+    for position, (index, P, Q, level) in enumerate(STEPS):
+        fresh = context.variables(current.ring, 2)
+        last = position == len(STEPS) - 1
+        step = (
+            BCWStep(current, bcw17, index, P, Q, fresh, level)
+            if last
+            else BCWStep.build(current, index, P, Q, fresh, level)
+        )
+        steps.append(step)
+        current = step.target
+
+    return Reduction(steps)
+
+
+def test_the_reduction_verifies(reduction: Reduction) -> None:
+    """Acht Schritte, jeder einzeln geprueft, und jede Naht dazwischen."""
+    assert reduction.verify() is None
+    assert len(reduction) == 8
+
+
+def test_the_reduction_reaches_bcw17(
+    reduction: Reduction, bcw17: PolynomialMap
+) -> None:
+    """Der Endpunkt ist die fixierte Abbildung, nicht nur eine wie sie."""
+    assert reduction.target == bcw17
+
+
+def test_the_last_step_is_the_one_that_can_fail(reduction: Reduction) -> None:
+    """Nur dort steht eine extern gerechnete Abbildung auf einer Seite.
+
+    Die Zwischenabbildungen sind nirgends veroeffentlicht, koennen also nicht
+    vorgelegt werden; ihre Schritte pruefen die Implementierung gegen sich
+    selbst.
+    """
+    assert reduction[-1].provenance is Provenance.SUPPLIED
+    assert reduction.provenance is Provenance.CONSTRUCTED
+
+
+def test_a_perturbed_target_would_be_caught(
+    reduction: Reduction, bcw17: PolynomialMap
+) -> None:
+    """Gegenprobe: die Pruefung im letzten Schritt beisst wirklich.
+
+    Ein Vorzeichen in der ersten Komponente daneben, und BCW-1 faellt. Ohne
+    diesen Test waere nicht zu sehen, ob der letzte Schritt etwas prueft oder
+    nur zufaellig durchgeht.
+    """
+    last = reduction[-1]
+    perturbed = PolynomialMap(
+        X, (bcw17.components[0] + _4 * _5,) + bcw17.components[1:]
+    )
+    broken = BCWStep(last.source, perturbed, last.index, last.P, last.Q, last.variables)
+
+    with pytest.raises(VerificationError) as failure:
+        Reduction(list(reduction[:-1]) + [broken]).verify()
+
+    assert failure.value.obligation == "BCW-1"
+    assert failure.value.step == 7
+
+
+def test_the_dimensions_and_degrees(reduction: Reduction) -> None:
+    """3 auf 17 in sieben Schritten zu je zwei, Grad 7 auf 3."""
+    assert reduction.dimensions() == (3, 3, 5, 7, 9, 11, 13, 15, 17)
+    assert reduction.degrees() == (7, 7, 7, 7, 7, 5, 4, 4, 3)
+
+
+def test_the_context_names_x4_to_x17(reduction: Reduction) -> None:
+    """Die Namen kommen aus dem Kontext, nicht aus der Tabelle."""
+    allocated = tuple(
+        variable
+        for step in reduction
+        if isinstance(step, BCWStep)
+        for variable in step.variables
     )
 
-    return PolynomialMap(
-        ALPOEGE_VARIABLES,
-        tuple(sp.expand(e) for e in linear_part.inv() * sp.Matrix(F.components)),
+    assert allocated == X[3:]
+
+
+def test_the_collision_is_transported(
+    reduction: Reduction, alpoege: PolynomialMap
+) -> None:
+    """Der eigentliche Zweck: aus drei Punkten in k^3 werden drei in k^17."""
+    carried = reduction.transport(Collision.at(alpoege, ALPOEGE_COLLISION))
+
+    assert carried == Collision(
+        tuple(tuple(map(sp.nsimplify, point)) for point in BCW17_COLLISION),
+        tuple(BCW17_IMAGE),
     )
+
+
+def test_the_determinant_is_settled_by_the_linear_step(
+    reduction: Reduction, alpoege: PolynomialMap
+) -> None:
+    """Nach LIN-3 die einzige Stelle, an der sie sich aendern darf."""
+    assert alpoege.determinant() == -2
+    assert reduction[0].transformation.determinant() == R(-1, 2)
+    assert all(
+        step.target.determinant() == 1
+        for step in reduction
+        if isinstance(step, BCWStep)
+    )
+
+
+def test_the_filtration_explains_MA0(reduction: Reduction) -> None:  # noqa: N802
+    """Warum BCW17 in MA^0 liegt und nicht in MA^1.
+
+    Genau zwei der sieben Schritte erreichen nur EA^0, weil ihr Q einen
+    Linearterm traegt: 7*x2 und -3*x2. Das sind genau die beiden Linearterme,
+    die in den Komponenten 11 und 13 stehen.
+    """
+    levels = [step.filtration_level for step in reduction if isinstance(step, BCWStep)]
+
+    assert levels == [1, 1, 1, 0, 0, 1, 1]
+    assert reduction.filtration_level() == 0
+    assert reduction[0].filtration_level == math.inf
+
+
+def test_the_two_EA0_steps_are_the_linear_terms(  # noqa: N802
+    reduction: Reduction, bcw17: PolynomialMap
+) -> None:
+    """Die Verbindung zwischen Zertifikat und fixierter Abbildung."""
+    modest = [
+        step
+        for step in reduction
+        if isinstance(step, BCWStep) and step.filtration_level == 0
+    ]
+
+    assert [step.variables for step in modest] == [(_10, _11), (_12, _13)]
+    assert 7 * _2 in bcw17.components[10].args
+    assert -3 * _2 in bcw17.components[12].args
+
+
+# --------------------------------------------------------------------------
+# Der lineare Schritt einzeln
+# --------------------------------------------------------------------------
 
 
 def test_normalization_explains_the_determinant(
-    normalized_alpoege: PolynomialMap,
+    alpoege: PolynomialMap, normalization: LinearStep
 ) -> None:
     """Warum BCW17 Determinante 1 hat, Alpoege aber -2.
 
@@ -310,38 +472,42 @@ def test_normalization_explains_the_determinant(
     teilt sie damit heraus; Stabilisierung und elementare Faktoren koennen die
     Determinante danach nicht mehr aendern.
     """
-    F = PolynomialMap(ALPOEGE_VARIABLES, ALPOEGE_COMPONENTS)
-
-    assert F.determinant() == -2
-    assert normalized_alpoege.determinant() == 1
+    assert alpoege.determinant() == -2
+    assert normalization.target.determinant() == 1
 
 
 def test_normalization_reaches_MA1(  # noqa: N802
-    normalized_alpoege: PolynomialMap,
+    alpoege: PolynomialMap, normalization: LinearStep
 ) -> None:
     """Die Voraussetzung von Proposition (3.1).
 
     Alpoege liegt nur in MA^0; erst nach der Normalisierung ist der Linearteil
     die Identitaet und die Abbildung liegt in MA^1.
     """
-    assert not PolynomialMap(ALPOEGE_VARIABLES, ALPOEGE_COMPONENTS).is_in_MA(1)
-    assert normalized_alpoege.is_in_MA(1)
+    assert not alpoege.is_in_MA(1)
+    assert normalization.target.is_in_MA(1)
+
+
+def test_normalization_is_a_transposition_and_a_dilation(
+    normalization: LinearStep,
+) -> None:
+    """Und damit nicht elementar: EA_n(k) hat nur Determinante 1."""
+    assert len(normalization.transformation) == 2
+    assert not normalization.transformation.is_elementary
 
 
 def test_normalization_explains_the_image(
-    normalized_alpoege: PolynomialMap,
+    alpoege: PolynomialMap, normalization: LinearStep
 ) -> None:
     """Warum das Kollisionsbild (0, 0, -1/4) lautet und nicht (-1/4, 0, 0).
 
     Der Linearteil vertauscht die erste und dritte Koordinate, seine Inverse
-    also ebenso. Das Bild der normalisierten Abbildung stimmt genau mit den
-    ersten drei Koordinaten des BCW17-Bildes ueberein.
+    also ebenso. Linkskomposition laesst dabei jedes Urbild, wo es war.
     """
-    heads = [tuple(map(sp.nsimplify, p))[:3] for p in BCW17_COLLISION]
-    images = [sp.expand(normalized_alpoege(*head)) for head in heads]
+    moved = normalization.transport(Collision.at(alpoege, ALPOEGE_COLLISION))
 
-    assert len({tuple(image) for image in images}) == 1
-    assert list(images[0]) == list(BCW17_IMAGE)[:3]
+    assert moved.points == Collision.at(alpoege, ALPOEGE_COLLISION).points
+    assert moved.image == tuple(BCW17_IMAGE)[:3]
 
 
 def test_the_collision_extends_alpoeges(bcw17: PolynomialMap) -> None:
@@ -351,12 +517,8 @@ def test_the_collision_extends_alpoeges(bcw17: PolynomialMap) -> None:
     behauptet: dieselben drei Urbilder, um 14 Stabilisierungskoordinaten
     ergaenzt.
     """
-    alpoege_collision = {
-        (sp.Integer(0), sp.Integer(0), sp.Rational(-1, 4)),
-        (sp.Integer(1), sp.Rational(-3, 2), sp.Rational(13, 2)),
-        (sp.Integer(-1), sp.Rational(3, 2), sp.Rational(13, 2)),
-    }
     heads = {tuple(map(sp.nsimplify, p))[:3] for p in BCW17_COLLISION}
+    alpoege_points = {tuple(map(sp.nsimplify, point)) for point in ALPOEGE_COLLISION}
 
-    assert heads == alpoege_collision
+    assert heads == alpoege_points
     assert bcw17.dimension - 3 == 14

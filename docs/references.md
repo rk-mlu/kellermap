@@ -73,7 +73,7 @@ dimension `n >= 3` — append identity coordinates — while `n = 2` remains ope
   <https://isa-afp.org/entries/Jacobian_Counterexample.html>
   An independent machine-checked verification of the three-dimensional map in
   Isabelle/HOL. It covers the published counterexample, not the
-  seventeen-dimensional candidate used here.
+  seventeen-dimensional reduction of it used here.
 
 ### Historical note
 
@@ -115,13 +115,14 @@ these are *different* reductions, not alternative descriptions of the map in
 
 | Source | Dimension | Shape | Determinant | In the suite |
 | --- | --- | --- | --- | --- |
-| this project, `tests/test_bcw17.py` (candidate) | 17 | degree 3 | 1 | yes |
+| this project, `tests/test_bcw17.py` (derived) | 17 | degree 3 | 1 | yes |
 | <https://rhicksrad.github.io/jacobian-degree3/> | 19 | degree 3 | −2 | yes |
 | <https://github.com/wtho704/explicit-cubic-homogeneous-jacobian-counterexample> | 24 | cubic homogeneous | 1 | no |
 
-The first row is marked *candidate* on purpose: the map's own properties are
-recomputed by the test suite, but that it arises from a BCW reduction of
-Alpöge's map is asserted, not derived. See the provenance section below.
+The first row is marked *derived* since version 0.2: the suite verifies a
+chain of eight steps from Alpöge's map to it, and transports the collision
+along. See the provenance section below for what in that is evidence and what
+is a self-check.
 
 The three are not directly comparable. BCW reduce in two stages, first to
 degree 3 and then to cubic homogeneous form; the 24-variable map has completed
@@ -147,7 +148,7 @@ Established there, from the components alone:
 - dimension 19, degree 3, Jacobian determinant identically −2;
 - the map lies in `MA^0` and not in `MA^1`, and its linear part is Alpöge's
   own bordered by the identity — so it has *not* been linearly normalized,
-  which is the structural difference from the 17-dimensional candidate;
+  which is the structural difference from the 17-dimensional map;
 - three distinct points sharing one image, that image being Alpöge's
   `(-1/4, 0, 0)` padded with zeros, and the points extending Alpöge's in their
   first three coordinates.
@@ -189,17 +190,33 @@ while `sp.Matrix(F.jacobian()).det()` did not finish in a quarter of an hour.
 
 ## Provenance of the fixed test data
 
-`tests/test_bcw17.py` contains a 17-dimensional map that this library did not
-produce. It stays external input until this library can derive it: 0.2 lets a
-`BCWStep` verify a factorization that is supplied to it, 0.3 searches for one.
-What the test suite establishes on its own:
+`tests/test_bcw17.py` contains a 17-dimensional map whose components this
+library did not produce. Since version 0.2 the suite derives it: a `Reduction`
+of eight steps from Alpöge's map — the linear normalization of §4, then seven
+applications of Proposition (3.1) — verified step by step, carrying the
+three-point collision from `k^3` to `k^17`.
 
-- the map has degree 3, determinant 1, and an explicit three-point collision;
-- its collision points extend Alpöge's in their first three coordinates;
-- the linear normalization of §4 turns Alpöge's determinant −2 into 1, moves
-  the collision image from `(-1/4, 0, 0)` to `(0, 0, -1/4)`, and lands the map
-  in `MA^1`, the precondition of Proposition (3.1).
+What in that is evidence, and what is a self-check:
 
-Not established here: the stabilization to dimension 17 and the elementary
-factors that reduce the degree from 7 to 3. Verifying such a factorization once
-it is written down is milestone 0.2; finding one is 0.3.
+- The intermediate maps in dimensions 5 to 15 are published nowhere. They
+  therefore *cannot* be supplied, and their steps are `CONSTRUCTED`: BCW-1
+  compares the implementation against itself there. By RED-7 the whole chain
+  carries the weaker provenance.
+- The external fact is the endpoint. The last step is given the fixed
+  components as its target, so its BCW-1 compares an externally computed map
+  against `G ∘ F^[2] ∘ H` and can fail — a test perturbs one component to show
+  that it does. The transported collision is likewise held against the fixed
+  one, and the fresh variable names come from a `ReductionContext` rather than
+  from the table, so a different naming would fail the last step too.
+- The factorization is not searched for. It was read off the fixed components,
+  whose entries 4 to 17 have the form `X_j + P`; those `P` are the factors.
+  Searching is 0.3.
+
+`scripts/reconstruct_bcw17.py` carries the same chain in plain SymPy, without
+this library. The duplication is deliberate: two independent implementations of
+formula (1) agreeing on all seventeen components and all three collision points
+is worth more than one implementation checked against itself.
+
+Recomputed independently of the chain, as cross-checks rather than as part of
+the certificate: degree 3, determinant 1, the unipotent carrier block, and the
+three images.

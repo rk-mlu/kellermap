@@ -1,8 +1,10 @@
 """Reconstruction of the reduction from Alpoege's map to BCW17, in plain SymPy.
 
-This file does not depend on ``kellermap``. It is the reference for version
-0.2: it records the factorization that ``BCWStep`` is to verify, and checks
-that the factorization is correct.
+This file does not depend on ``kellermap``. Since version 0.2 the test suite
+derives the same map through ``Reduction`` and ``BCWStep``, and this script
+stays as the independent second implementation: two separate renderings of
+formula (1) agreeing on all seventeen components and all three collision points
+say more than one implementation checked against itself.
 
 The reduction has two parts.
 
