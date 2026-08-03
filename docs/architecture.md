@@ -649,6 +649,29 @@ to the certificate whether a context produced them or not.
 
 ## Polynomial Arithmetic Strategy
 
+### One answer to what zero means
+
+Comparisons inside a `PolyRing` need no zero test: the domain canonicalizes on
+the way in, so `(T^2 - 1)/(T - 1)` is already `T + 1` before anything looks at
+it, and two equal elements are the same object in the same normal form.
+
+`Collision` is the one surface where that does not hold, and it does not hold
+on purpose. Its coordinates are points of the coefficient field rather than
+polynomials, and pushing them through a domain would tie a collision to one
+map — which is precisely what `Collision` avoids by holding no map at all. They
+therefore arrive as `Expr` and are compared as `Expr`, and `expand` is the
+wrong tool there because it does not clear a denominator.
+
+`kellermap.canonical` holds the one answer: `cancel(together(...))`, a decision
+procedure for rational functions, which is exactly the class the coefficient
+domains of this project fall into. Coordinates are put into that form as they
+enter, so equality and hashing stay consistent with each other. The remaining
+`Expr`-level comparisons in the package — the two determinant checks and the
+pivot tests in `factorize` — use the same function, defensively rather than out
+of need: their values come out of a ring and are normalized already. Having a
+second, cheaper answer to the same question is how the original defect arose.
+
+
 `PolyRing` is the canonical polynomial representation of the project.
 `Expr` is not an alternative computational backend; it is an interchange and
 presentation format.

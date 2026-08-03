@@ -26,6 +26,7 @@ from typing import Protocol, overload, runtime_checkable
 
 import sympy as sp
 
+from .canonical import agree, is_zero
 from .collision import Collision
 from .errors import VerificationError
 from .linear import LinearAutomorphism
@@ -294,12 +295,16 @@ class LinearStep:
         Implied by LIN-1 and retained anyway: it is two multiplications on
         maps a reduction produces, and it catches an error in a factor's
         determinant before that error propagates through a whole chain.
-        """
-        expected = sp.expand(
-            self._transformation.determinant() * self._source.determinant()
-        )
 
-        if sp.expand(self._target.determinant() - expected) != 0:
+        The canonical comparison is defensive here rather than load-bearing.
+        Both determinants come out of a ``PolyRing``, where the domain has
+        already normalized them; no non-canonical value could reach this
+        point. It is used anyway so that the package has one answer to what
+        equality of values means.
+        """
+        expected = self._transformation.determinant() * self._source.determinant()
+
+        if not agree(self._target.determinant(), expected):
             raise VerificationError(
                 "LIN-3",
                 f"The target has determinant {self._target.determinant()}, "
@@ -320,7 +325,8 @@ class LinearStep:
             )
 
         declared = sp.Matrix(self._transformation.matrix(self._source.ring))
-        if sp.simplify(declared - linear_part.inv()) != sp.zeros(*declared.shape):
+        deviation = declared - linear_part.inv()
+        if not all(is_zero(entry) for entry in deviation):
             raise VerificationError(
                 "LIN-6",
                 "The step claims to normalize, but the transformation is not "

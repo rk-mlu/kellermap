@@ -19,6 +19,7 @@ from dataclasses import dataclass
 
 import sympy as sp
 
+from .canonical import agree, canonical
 from .errors import VerificationError
 from .polynomial_map import PolynomialMap
 
@@ -26,11 +27,6 @@ from .polynomial_map import PolynomialMap
 # und nicht Zahlen, weil ueber k(T) auch ein Parameter auftreten darf; was ein
 # Punkt nicht enthalten darf, sind die Variablen der Abbildung selbst.
 Point = tuple[sp.Expr, ...]
-
-
-def _vanishes(left: sp.Expr, right: sp.Expr) -> bool:
-    """Return whether two coordinates are equal as values, not as syntax."""
-    return bool(sp.expand(left - right) == 0)
 
 
 @dataclass(frozen=True, eq=False)
@@ -164,7 +160,7 @@ class Collision:
                 for index, (left, right) in enumerate(
                     zip(value, self._image, strict=True)
                 )
-                if not _vanishes(left, right)
+                if not agree(left, right)
             ]
             if deviating:
                 raise VerificationError(
@@ -225,9 +221,16 @@ class Collision:
         """Compare as a set of points plus an image.
 
         A collision is a set: listing the same points in another order is the
-        same certificate. Coordinates are compared as SymPy expressions, so
-        exact input is expected -- ``Rational(1, 4)`` and ``Float(0.25)`` are
-        different objects here, as they are everywhere else in SymPy.
+        same certificate.
+
+        Coordinates were put into normal form on the way in, so ``==`` decides
+        this soundly and agrees with ``__hash__``. Canonicalizing at
+        construction rather than comparing canonically here is what makes the
+        two consistent: equal objects must hash equal, and
+        ``(T**2 - 1)/(T - 1)`` and ``T + 1`` do not.
+
+        Normal form is not conversion. ``Rational(1, 4)`` and ``Float(0.25)``
+        remain different objects here, as they are everywhere else in SymPy.
         """
         if not isinstance(other, Collision):
             return NotImplemented
@@ -245,7 +248,13 @@ class Collision:
 
 
 def _coerce_point(point: Iterable[sp.Expr]) -> Point:
-    """Sympify a point, rejecting anything that is not an expression."""
+    """Sympify a point and put every coordinate into normal form.
+
+    Normalizing here rather than at each comparison is deliberate. It gives
+    the class one representation to store, which is what lets ``__eq__`` and
+    ``__hash__`` agree; comparing canonically while storing whatever arrived
+    would leave equal collisions hashing differently.
+    """
     if isinstance(point, sp.Basic) or isinstance(point, str):
         raise TypeError(
             f"A point must be an iterable of coordinates, not {type(point).__name__}."
@@ -263,7 +272,7 @@ def _coerce_point(point: Iterable[sp.Expr]) -> Point:
         if not isinstance(value, sp.Expr):
             raise TypeError(f"Coordinate {coordinate!r} is not a SymPy expression.")
 
-        coordinates.append(value)
+        coordinates.append(canonical(value))
 
     return tuple(coordinates)
 
@@ -271,15 +280,15 @@ def _coerce_point(point: Iterable[sp.Expr]) -> Point:
 def _reject_repeated_points(points: tuple[Point, ...]) -> None:
     """Raise if two points are equal as values.
 
-    Compared coordinate by coordinate rather than by tuple equality: two
-    points may be written differently and still be the same point, and a
-    collision of a map with itself proves nothing.
+    Compared coordinate by coordinate and by value rather than by tuple
+    equality: two points may be written differently and still be the same
+    point, and a collision of a map with itself proves nothing. Over ``k(T)``
+    the difference bites -- ``(T**2 - 1)/(T - 1)`` and ``T + 1`` are one point.
     """
     for left in range(len(points)):
         for right in range(left + 1, len(points)):
             if all(
-                _vanishes(a, b)
-                for a, b in zip(points[left], points[right], strict=True)
+                agree(a, b) for a, b in zip(points[left], points[right], strict=True)
             ):
                 raise ValueError(
                     f"Points {left} and {right} are equal; a collision needs "

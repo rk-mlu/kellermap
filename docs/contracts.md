@@ -70,14 +70,19 @@ identity would say nothing about any point. Symbols of the coefficient domain
 are permitted: a collision over `k(T)` is a collision.
 
 **COL-3 — The image is the image.** `F` sends every point to `image`, checked
-by evaluation and compared as values rather than as syntax.
+by evaluation and compared as values rather than as syntax. "As values" means
+in the normal form of `kellermap.canonical`: over `k(T)` a correct image
+coordinate may arrive written as `(T^2 - 1)/(T - 1)`, and rejecting it would be
+a false negative.
 
 **COL-4 — Distinctness is a constructor invariant, not an obligation.** A
 `Collision` whose points coincide cannot be built; the constructor raises
 `ValueError`. This is deliberately stronger than reporting it in `verify()`: a
 certificate whose points coincide is not weaker evidence but no evidence at
 all, and it should not be possible to hold one. Equality of points is decided
-by value, so two spellings of one point are one point.
+by value, so two spellings of one point are one point — over `k(T)`,
+`(T^2 - 1)/(T - 1)` and `T + 1` are the same coordinate and the pair is
+refused.
 
 **COL-5 — The collision holds no map.** The same points are a collision of
 every map that identifies them, and a reduction verifies them against each map
@@ -87,6 +92,19 @@ takes the map as an argument.
 **COL-6 — Value semantics.** Immutable; `extended()` and `with_image()` return
 new objects. Equality treats the points as a set, since listing them in another
 order is the same certificate.
+
+Coordinates are put into normal form as they enter, so `__eq__` decides
+soundly by `==` and agrees with `__hash__`. That order matters: canonicalizing
+at construction is what makes the two consistent, whereas comparing
+canonically while storing whatever arrived would leave equal collisions hashing
+differently. Normal form is not conversion — `Rational(1, 4)` and `Float(0.25)`
+remain different, as everywhere else in SymPy.
+
+Everything else in the package is compared inside a `PolyRing`, where the
+domain canonicalizes on the way in and the question does not arise. `Collision`
+is the exception because its coordinates belong to the coefficient field rather
+than to the ring; forcing them through a domain would tie a collision to one
+map, which COL-5 exists to prevent.
 ---
 
 ## LinearAutomorphism

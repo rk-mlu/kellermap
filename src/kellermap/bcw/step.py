@@ -38,6 +38,7 @@ from dataclasses import dataclass
 import sympy as sp
 from sympy.polys.rings import PolyRing
 
+from ..canonical import agree
 from ..collision import Collision
 from ..elementary import ElementaryAutomorphism, ElementaryFactor
 from ..errors import VerificationError
@@ -402,10 +403,11 @@ class BCWStep:
         Implied by BCW-1 together with every element of ``EA_n(k)`` having
         determinant one, and retained because it is cheap on the maps a
         reduction produces and localizes an error to the step that made it.
-        """
-        difference = sp.expand(self._target.determinant() - self._source.determinant())
 
-        if difference != 0:
+        As in ``LinearStep``, the canonical comparison is defensive: both
+        determinants come out of a ``PolyRing`` and are normalized already.
+        """
+        if not agree(self._target.determinant(), self._source.determinant()):
             raise VerificationError(
                 "BCW-7",
                 f"The determinant changed from {self._source.determinant()} "
