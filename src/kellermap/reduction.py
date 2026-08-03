@@ -7,8 +7,8 @@ degree, follows from the local certificates rather than from a second,
 independent computation.
 
 Nothing here is specific to Bass-Connell-Wright. ``LinearStep`` composes an
-element of ``GL_n(k)`` on the left, which is what Section 4 of the paper opens
-with but is not a notion of that paper; ``Reduction`` chains anything
+element of ``GL_n(k)`` on the left, which is what Chapter II, Proposition
+(1.1) of the paper does but is not a notion of that paper; ``Reduction`` chains anything
 satisfying ``Step``. The Proposition (3.1) step lives in ``kellermap.bcw``,
 where the paper-specific machinery belongs.
 
@@ -87,7 +87,8 @@ class Step(Protocol):
 class LinearStep:
     """``target = transformation o source`` for an element of ``GL_n(k)``.
 
-    The normalization of BCW Section 4 is the case that matters here, and it
+    The normalization of BCW Chapter II, Proposition (1.1) is the case that
+    matters here, and it
     is declared rather than inferred: ``normalizing`` turns on LIN-6, which
     demands that the transformation be the inverse of ``J(source)(0)`` and the
     target land in ``MA^1``. A linear step that makes no such claim carries no
@@ -104,7 +105,7 @@ class LinearStep:
     transformation
         The element of ``GL_n(k)``, as an exhibited factorization.
     normalizing
-        Whether the step claims to be the normalization of Section 4.
+        Whether the step claims to be the normalization of Proposition (1.1).
     """
 
     _source: PolynomialMap
@@ -171,11 +172,30 @@ class LinearStep:
 
     @classmethod
     def normalize(cls, source: PolynomialMap) -> LinearStep:
-        """Build the normalization of BCW Section 4 for ``source``.
+        """Build the linear normalization of ``source``.
 
-        ``F'' = F'_(1)^-1 o F'``. The coefficient domain has to be a field for
-        the inverse to exist; ``over_field`` first, otherwise.
+        BCW Chapter II, Proposition (1.1) splits a map with invertible linear
+        part as ``F = (X + F(0)) o F_(1) o F'`` with ``F' in MA^1``. This
+        builds the second factor, ``F' = F_(1)^-1 o F``, and therefore
+        presupposes the first: ``source`` must already satisfy ``F(0) = 0``.
+
+        The translation is not implemented. It is a legitimate step and an
+        elementary one -- ``X_i |-> X_i - c_i`` displaces ``X_i`` by a
+        constant, which is free of ``X_i`` -- but it belongs to no ``EA^d``
+        for ``d >= 0``, since ``EA^d`` is defined inside ``MA^d`` and a
+        translation leaves ``MA^0``. It is a milestone 0.3 item.
+
+        The coefficient domain has to be a field for the inverse to exist;
+        ``over_field`` first, otherwise.
         """
+        if not source.is_in_MA(0):
+            raise ValueError(
+                "The map does not fix the origin, so the linear normalization "
+                "is not the first step: Proposition (1.1) splits F as "
+                "(X + F(0)) o F_(1) o F', and the translation (X - F(0)) has "
+                "to come off first. That step is not implemented."
+            )
+
         linear_part = sp.Matrix(
             source.jacobian().xreplace(
                 {variable: sp.Integer(0) for variable in source.variables}
@@ -185,7 +205,7 @@ class LinearStep:
         if linear_part.det() == 0:
             raise ValueError(
                 "The linear part at the origin is singular; the map is not "
-                "invertible there and Section 4 does not apply."
+                "invertible there and Proposition (1.1) does not apply."
             )
 
         return cls.build(
@@ -323,6 +343,14 @@ class LinearStep:
             )
 
     def _verify_normalization(self) -> None:
+        if not self._source.is_in_MA(0):
+            raise VerificationError(
+                "LIN-6",
+                "The step claims to normalize, but the source does not fix "
+                "the origin; Proposition (1.1) puts a translation before the "
+                "linear part.",
+            )
+
         linear_part = sp.Matrix(
             self._source.jacobian().xreplace(
                 {variable: sp.Integer(0) for variable in self._source.variables}

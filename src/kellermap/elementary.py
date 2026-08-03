@@ -55,7 +55,7 @@ class ElementaryFactor:
     other than one into ``EA_n(k)``, and the argument that a reduction step
     preserves the Jacobian determinant rests on every element of ``EA_n(k)``
     having determinant one. Scalings belong to the linear part, which
-    Section 4 handles separately.
+    Proposition (1.1) handles separately.
 
     Parameters
     ----------

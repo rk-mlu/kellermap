@@ -18,6 +18,8 @@ import sympy as sp
 from kellermap import (
     Collision,
     Dilation,
+    ElementaryAutomorphism,
+    ElementaryFactor,
     LinearAutomorphism,
     PolynomialMap,
     Transposition,
@@ -101,11 +103,69 @@ def test_the_transformation_must_be_linear() -> None:
 
 
 def test_normalize_needs_an_invertible_linear_part() -> None:
-    """Ohne J(F)(0) in GL_n(k) greift Paragraph 4 nicht."""
+    """Ohne J(F)(0) in GL_n(k) greift Proposition (1.1) nicht."""
     degenerate = over_field(PolynomialMap((x1, x2, x3), (x1**2, x2, x3)))
 
     with pytest.raises(ValueError, match="singular"):
         LinearStep.normalize(degenerate)
+
+
+def test_normalize_needs_the_origin_to_be_fixed() -> None:
+    """Vor der Linearisierung steht die Translation.
+
+    Proposition (1.1) zerlegt F als (X + F(0)) o F_(1) o F'. ``normalize``
+    baut den letzten Faktor und setzt die ersten beiden voraus; ohne
+    F(0) = 0 lieferte es bisher einen Schritt, der an seiner eigenen
+    Verifikation scheiterte.
+    """
+    affine = over_field(PolynomialMap((x1, x2, x3), (x1 + 1, x2, x3)))
+
+    assert not affine.is_in_MA(0)
+
+    with pytest.raises(ValueError, match="translation"):
+        LinearStep.normalize(affine)
+
+
+def test_LIN6_a_normalizing_claim_over_a_shifted_source() -> None:  # noqa: N802
+    """Und ein vorgelegter Schritt sagt, woran es liegt.
+
+    Bisher meldete LIN-6 nur, dass das Ziel nicht in MA^1 liegt -- richtig,
+    aber die Ursache steht eine Stufe frueher.
+    """
+    affine = over_field(PolynomialMap((x1, x2, x3), (x1 + 1, x2, x3)))
+    identity = LinearAutomorphism([Transposition(affine.ring, 0, 1)])
+
+    with pytest.raises(VerificationError) as failure:
+        LinearStep(
+            affine, identity.apply_to(affine), identity, normalizing=True
+        ).verify()
+
+    assert failure.value.obligation == "LIN-6"
+    assert "translation" in str(failure.value)
+
+
+def test_a_translation_is_elementary() -> None:
+    """Anders als die Streckung braucht sie keinen eigenen Typ.
+
+    ``X_i |-> X_i - c_i`` verschiebt ``X_i`` um eine Konstante, und die ist
+    frei von ``X_i`` -- BCW nennt genau das elementar. Sie liegt aber in
+    keinem ``EA^d`` mit ``d >= 0``, denn ``EA^d`` ist innerhalb von ``MA^d``
+    erklaert und eine Translation verlaesst ``MA^0``.
+    """
+    affine = over_field(PolynomialMap((x1, x2, x3), (x1 + 1, x2, x3 + 2)))
+    translation = ElementaryAutomorphism(
+        [
+            ElementaryFactor(affine.ring, index, -value)
+            for index, value in enumerate(affine(0, 0, 0))
+        ]
+    )
+    shifted = translation.apply_to(affine)
+
+    assert translation.filtration_degree() == -1
+    assert not translation.is_in_EA(0)
+    assert shifted.is_in_MA(0)
+    assert shifted.determinant() == affine.determinant()
+    assert LinearStep.normalize(shifted).verify() is None
 
 
 # --------------------------------------------------------------------------

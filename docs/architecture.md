@@ -77,7 +77,8 @@ Only `BCWStep` is. A chain of certified identities is not a notion of the 1982
 paper, and a second reduction method would reuse `Reduction`, `Collision` and
 `ReductionContext` unchanged — which is exactly the misnomer the subpackage
 exists to avoid. `LinearStep` composes an element of `GL_n(k)` on the left;
-that §4 of the paper opens by doing so does not make the operation theirs.
+that Chapter II, Proposition (1.1) of the paper does so does not make the
+operation theirs.
 
 Keeping the subpackage one level down also removes an ambiguity the code
 carried while the package itself was called `bcw`: `BCW` now always means the
@@ -345,7 +346,7 @@ not an elementary one: its displacement `(a - 1) X_j` depends on `X_j`.
 Admitting it would put elements of determinant other than one into
 `EA_n(k)` — and the argument that a reduction step preserves the Jacobian
 determinant rests on every element of `EA_n(k)` having determinant one.
-Scalings belong to the linear part, which Section 4 normalizes separately; if
+Scalings belong to the linear part, which Proposition (1.1) separates; if
 they are needed they get their own type rather than a parameter here.
 
 `ElementaryAutomorphism` is an element of `EA_n(k)`, stored as the ordered
@@ -433,7 +434,8 @@ every `MA^d`.
 
 ## The linear part
 
-The normalization of §4, `F'' = F'_(1)^-1 ∘ F'`, needs an element of `GL_n(k)`,
+The normalization of Chapter II, Proposition (1.1) needs an element of
+`GL_n(k)`,
 and only some Gauss operations are elementary in the sense of the paper. A
 transvection `X_i ↦ X_i + a X_j` is: `a X_j` is free of `X_i`, and
 `Transvection.as_elementary_factor()` hands it to `elementary.py` unchanged, in

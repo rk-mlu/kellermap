@@ -8,7 +8,8 @@ say more than one implementation checked against itself.
 
 The reduction has two parts.
 
-1. The linear normalization of BCW Section 4, ``N = L^-1 o F`` with ``L = J(F)(0)``.
+1. The linear normalization of BCW Chapter II, Proposition (1.1),
+   ``N = L^-1 o F`` with ``L = J(F)(0)``.
    Here ``L^-1`` transposes the first and third coordinate and then scales the
    result coordinate by 1/2. Its determinant is -1/2, so it does *not* lie in
    ``EA_3(k)``.
@@ -69,7 +70,7 @@ def linear_part(components: tuple[sp.Expr, ...]) -> sp.Matrix:
 
 
 def normalize(components: tuple[sp.Expr, ...]) -> tuple[sp.Expr, ...]:
-    """Return F'' = F'_(1)^-1 o F', the normalization of BCW Section 4."""
+    """Return F_(1)^-1 o F, the normalization of BCW II, Proposition (1.1)."""
     inverse = linear_part(components).inv()
 
     return tuple(sp.expand(e) for e in inverse * sp.Matrix(components))

@@ -1,6 +1,8 @@
 """The linear part of a reduction, and why it is not elementary.
 
-BCW Section 4 begins by replacing ``F'`` with ``F'' = F'_(1)^-1 o F'``. The
+BCW Chapter II, Proposition (1.1) splits a map with invertible linear part as
+``F = (X + F(0)) o F_(1) o F'``. Building the last factor means composing
+``F_(1)^-1`` on the left. The
 transformation is an element of ``GL_n(k)``, and only some of the Gauss
 operations it decomposes into are elementary in the sense of the paper.
 
@@ -62,7 +64,7 @@ def field_ring(ring: PolyRing) -> PolyRing:
     """Return the same ring over the field of fractions of its domain.
 
     A Keller map read off a paper usually lands over ``ZZ``, and the
-    normalization of Section 4 immediately needs a reciprocal: the linear part
+    normalization immediately needs a reciprocal: the linear part
     of Alpoege's map has determinant ``-2``. Widening the domain is a
     deliberate step rather than something the arithmetic does silently, since
     two maps over different domains are different objects here.

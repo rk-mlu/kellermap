@@ -199,7 +199,7 @@ class Step(Protocol):
 certified identities is not a notion of the 1982 paper, and a second reduction
 method would reuse it -- which is exactly the misnomer the subpackage exists to
 avoid. `LinearStep` composes an element of `GL_n(k)` on the left; that BCW
-Section 4 opens by doing so does not make the operation theirs.
+Chapter II, Proposition (1.1) does so does not make the operation theirs.
 
 `filtration_level` reports `math.inf` where a step establishes no `EA` level,
 following `ElementaryAutomorphism.filtration_degree()` on the identity.
@@ -464,7 +464,8 @@ localize an error to the step that made it. A review should weigh them as such.
 
 ## LinearStep
 
-The normalization of BCW §4, `F'' = F'_(1)^-1 ∘ F'`. A `Step`, so that a
+The linear normalization of BCW Chapter II, Proposition (1.1). A `Step`, so
+that a
 `Reduction` can span the whole derivation rather than only its BCW part.
 
 ```python
@@ -508,9 +509,15 @@ one. The normalization of Alpöge's map has determinant `-1/2`.
 `transformation(c)`. Left composition does not move preimages.
 
 **LIN-6 — Normalization is a claim, not a definition.** If the step declares
-itself a §4 normalization, `transformation` equals the inverse of `J(source)(0)`
-and `target` lies in `MA^1`. A `LinearStep` that is not so declared carries no
-such obligation.
+itself the normalization, `source` lies in `MA^0`, `transformation` equals the
+inverse of `J(source)(0)`, and `target` lies in `MA^1`. A `LinearStep` that is
+not so declared carries no such obligation.
+
+The `MA^0` clause is not decoration. Proposition (1.1) splits `F` as
+`(X + F(0)) ∘ F_(1) ∘ F'`, so the linear normalization is the *second* factor
+and presupposes the first. Without it the target simply fails to reach `MA^1`,
+which is true but points one stage past the cause; `normalize()` refuses such a
+source outright rather than building a step that fails its own verification.
 
 ### Which of these can fail on supplied data
 

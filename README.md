@@ -118,7 +118,7 @@ collision = Collision.at(
     ),
 )
 
-normalization = LinearStep.normalize(alpoege)  # F'' = F'_(1)^-1 o F', BCW §4
+normalization = LinearStep.normalize(alpoege)  # F_(1)^-1 o F, BCW II (1.1)
 first = BCWStep.build(  # Proposition (3.1): two dimensions bought
     normalization.target,
     0,

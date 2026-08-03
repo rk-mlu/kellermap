@@ -62,7 +62,7 @@ element of the group, kept as the ordered product of its factors.
 Every generator has determinant one, hence so does every element. Admitting a
 scaling `a X_j + P` would put elements of other determinant into `EA_n(k)` and
 break the argument that a reduction step preserves the Jacobian determinant;
-scalings belong to the linear part that Section 4 handles separately, and if
+scalings belong to the linear part that Proposition (1.1) separates, and if
 they are ever needed they get their own type.
 
 Both operate in an existing ring and avoid expression conversions inside
@@ -149,8 +149,8 @@ and, in the `kellermap.bcw` subpackage,
 Only `BCWStep` is specific to the paper. A chain of certified identities is
 not, and a second reduction method would reuse it, so `Reduction` stays at the
 top level rather than becoming the misnomer the subpackage exists to avoid.
-`LinearStep` composes an element of `GL_n(k)` on the left; that Section 4 opens
-by doing so does not make the operation theirs.
+`LinearStep` composes an element of `GL_n(k)` on the left; that Chapter II,
+Proposition (1.1) does so does not make the operation theirs.
 
 Implement
 
@@ -179,7 +179,8 @@ deliberately rather than incidentally.
 
 ### The linear part is not elementary
 
-The derivation begins with the normalization of BCW §4, `F'' = F'_(1)^-1 ∘ F'`.
+The derivation begins with the linear normalization of BCW Chapter II,
+Proposition (1.1).
 Its transformation is a product of Gauss operations, and only some of them are
 elementary in the sense of the paper. A transvection `X_i |-> X_i + a X_j` is
 an `ElementaryFactor` already, in `EA^0`; a transposition and a dilation are
@@ -276,6 +277,28 @@ of formula (1).
 ---
 
 # Version 0.3
+
+## Open from 0.2
+
+Two gaps the milestone leaves behind, both recorded rather than worked around.
+
+**The translation.** BCW Chapter II, Proposition (1.1) splits a map with
+invertible linear part as `F = (X + F(0)) ∘ F_(1) ∘ F'` with `F' ∈ MA^1`.
+`LinearStep.normalize` builds the last factor and therefore requires
+`F(0) = 0`; a map that does not fix the origin is refused, naming the missing
+step. The step itself is small, and worth noting: unlike the dilation, a
+translation *is* elementary in the sense of the paper — `X_i ↦ X_i - c_i`
+displaces `X_i` by a constant, which is free of `X_i` — so it needs no new
+non-elementary type. It lies in no `EA^d` for `d ≥ 0` all the same, since
+`EA^d` is defined inside `MA^d` and a translation leaves `MA^0`; its filtration
+degree is `-1`.
+
+**Carrier sharing.** BCW-2 fixes two fresh variables per step, so a reduction
+that reuses an existing carrier as one of its factors — which stays elementary
+and is therefore legitimate — cannot be expressed as a chain of `BCWStep`s. The
+published 19-dimensional reduction is of that kind; see `references.md`.
+Widening BCW-2 to `m >= 1` would be an amendment to `contracts.md`, not an
+extension around it.
 
 ## BCW reduction
 

@@ -209,7 +209,7 @@ class Collision:
 
         A map composed on the left moves the image and leaves every preimage
         where it was. That is the whole effect of the linear normalization of
-        BCW Section 4 on a collision.
+        BCW Chapter II, Proposition (1.1) on a collision.
         """
         return Collision(self._points, image)
 

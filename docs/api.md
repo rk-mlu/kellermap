@@ -375,7 +375,8 @@ False
 
 ## Linear automorphisms
 
-The transformation of BCW Section 4, as an ordered product of Gauss
+The transformation of BCW Chapter II, Proposition (1.1), as an ordered product
+of Gauss
 operations. Three generators, and which of them are elementary in the sense of
 the paper is the reason the module exists.
 
@@ -534,7 +535,8 @@ True
 
 A step certifies one identity between two maps. `Reduction` chains steps and
 verifies the joins between them. `LinearStep` is the kind that composes an
-element of `GL_n(k)` on the left, which is what BCW Section 4 opens with.
+element of `GL_n(k)` on the left, which is what BCW Chapter II, Proposition
+(1.1) does.
 
 ```python
 >>> from kellermap import LinearStep, Reduction, over_field

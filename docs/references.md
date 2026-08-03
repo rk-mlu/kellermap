@@ -26,7 +26,8 @@ numbers from it:
 | --- | --- |
 | p. 304 | `MA_n(k)`, `EA_n(k)`, the filtration by `ord(F - X)`, stable extension |
 | Proposition (3.1) | degree reduction to 3 by stabilization and two elementary automorphisms |
-| §4 | linear normalization `F'' = F'_(1)^-1 o F'`, homogenization |
+| Chapter II, Proposition (1.1), p. 303 | `F = (X + F(0)) o F_(1) o F'` with `F' in MA^1`: translation, then linear normalization |
+| Chapter II, §4, p. 306 | proof of the Reduction Theorem; homogenization over `k[T]` |
 
 ---
 
@@ -192,7 +193,8 @@ while `sp.Matrix(F.jacobian()).det()` did not finish in a quarter of an hour.
 
 `tests/test_bcw17.py` contains a 17-dimensional map whose components this
 library did not produce. Since version 0.2 the suite derives it: a `Reduction`
-of eight steps from Alpöge's map — the linear normalization of §4, then seven
+of eight steps from Alpöge's map — the linear normalization of Chapter II,
+Proposition (1.1), then seven
 applications of Proposition (3.1) — verified step by step, carrying the
 three-point collision from `k^3` to `k^17`.
 

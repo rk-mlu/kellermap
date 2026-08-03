@@ -17,11 +17,13 @@ Die Kollision wird nicht aus der Tabelle der Quelle uebernommen, sondern aus
 ``w_j = -P_j`` rekonstruiert und danach mit der Tabelle verglichen. Beide Wege
 sind unabhaengig.
 
-Die Komponenten unten wurden am 3. August 2026 gegen den maschinenlesbaren Abzug
-geprueft, den die Quelle verlinkt: alle neunzehn Komponenten stimmen als
-Polynome ueberein, die Variablenreihenfolge ebenso, und alle drei Punkte in
-allen neunzehn Koordinaten. Der Abzug selbst liegt bewusst nicht im Repository;
-die Gruende stehen in ``docs/references.md``.
+Die Komponenten unten sind aus der gerenderten Textfassung abgeschrieben, in
+der die Exponenten verlorengegangen sind -- ``w32`` ist ``w3^2``. Die Abschrift
+wurde am 3. August 2026 gegen den maschinenlesbaren Abzug geprueft, den die
+Quelle verlinkt: alle neunzehn Komponenten stimmen als Polynome ueberein, die
+Variablenreihenfolge ebenso, und alle drei Punkte in allen neunzehn
+Koordinaten. Der Abzug selbst liegt bewusst nicht im Repository; die Gruende
+stehen in ``docs/references.md``.
 
 Beilaeufig ist das hier die Messung, die die Entwurfsentscheidung zum
 Schur-Komplement traegt: ``determinant()`` braucht ueber den Traegerblock
@@ -205,7 +207,7 @@ def test_dimension_and_degree() -> None:
 def test_the_determinant_is_minus_two() -> None:
     """Konstant, also eine Keller-Abbildung -- und nicht normalisiert.
 
-    BCW17 hat Determinante 1, weil dort der Schritt aus Paragraph 4
+    BCW17 hat Determinante 1, weil dort der Schritt aus Proposition (1.1)
     vorangeht. Hier fehlt er.
     """
     assert ALPOEGE19.determinant() == -2
@@ -291,7 +293,7 @@ def test_the_collision_verifies() -> None:
 
 
 def test_the_image_is_alpoeges_own_padded_with_zeros() -> None:
-    """Kein Paragraph 4, also wandert das Bild auch nicht."""
+    """Keine Normalisierung, also wandert das Bild auch nicht."""
     collision = Collision.at(ALPOEGE19, [lift(point) for point in ALPOEGE_POINTS])
 
     assert (
