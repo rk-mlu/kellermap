@@ -121,10 +121,13 @@ these are *different* reductions, not alternative descriptions of the map in
 | <https://rhicksrad.github.io/jacobian-degree3/> | 19 | degree 3 | −2 | yes |
 | <https://github.com/wtho704/explicit-cubic-homogeneous-jacobian-counterexample> | 24 | cubic homogeneous | 1 | no |
 
-The first row is marked *derived* since version 0.2: the suite verifies a
-chain of eight steps from Alpöge's map to it, and transports the collision
-along. See the provenance section below for what in that is evidence and what
-is a self-check.
+The two rows belonging to this project carry different standing, and the label
+in the first column says which. The seventeen-dimensional map is *derived*
+since version 0.2: the suite verifies a chain of eight steps from Alpöge's map
+to it and transports the collision along; the provenance section below says
+what in that is evidence and what is a self-check. The fifteen-dimensional one
+is *not yet certified* — its chain is known but not expressible until milestone
+0.3, and the section on it below gives the reason.
 
 The rows are not directly comparable. BCW reduce in two stages, first to
 degree 3 and then to cubic homogeneous form; the 24-variable map has completed
@@ -143,6 +146,10 @@ by letting two steps of the seventeen-dimensional chain share carrier variables
 that earlier steps had already bought — `x1²` and `x1x2`, each of which BCW17
 buys twice. Degree 3, Jacobian determinant 1, the same three-point collision,
 with the first thirteen coordinates of each point identical to BCW17's.
+
+It is held in `tests/test_alpoege15.py`, with a second and independent
+rendering of the same chain in `scripts/reconstruct_alpoege15.py`, as
+`reconstruct_bcw17.py` does for the seventeen-dimensional map.
 
 Listed as *not yet certified* on purpose. The map exists as a hand computation
 in plain SymPy; `Reduction` cannot express its chain, because both shared steps
