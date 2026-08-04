@@ -128,11 +128,10 @@ remembers.
 
 # Version 0.2
 
-**Status: complete, released as `0.2.0rc3`.** The milestone went through two
-external audits. The first raised five findings, fixed in rc2; the second
-raised one, fixed in rc3. None of the six required new functionality. The final
-version number is held back until the release chain runs green against this
-tree; `pyproject.toml` then moves to `0.2.0`.
+**Status: released as `0.2.0`.** The milestone went through two external
+audits between `0.2.0rc1` and the release. The first raised five findings, the
+second one; none of the six required new functionality, and each is recorded in
+`CHANGELOG.md` with what it changed.
 `docs/contracts.md` states every obligation the surface below is held to.
 
 ## Verification framework
@@ -233,8 +232,8 @@ coordinate that step four introduced.
 Development of 0.2 is split into seven work packages. They carry internal
 version numbers 0.1.1 to 0.1.7 for orientation within the history; none of them
 is a release. `pyproject.toml` stayed at `0.1.0` for the duration and moved to
-`0.2.0rc1` in one step at the end; `0.2.0rc2` and `0.2.0rc3` carry the audit
-fixes, and the final `0.2.0` follows once the release chain is green. Git tags for work packages use the
+`0.2.0rc1` in one step at the end; `0.2.0rc2` and `0.2.0rc3` carried the audit
+fixes, and `0.2.0` followed once the release chain ran green. Git tags for work packages use the
 `wp/` prefix, so that the release namespace `v*` stays clean.
 
 | WP | Internal | Content | Done |

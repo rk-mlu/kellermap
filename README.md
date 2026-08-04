@@ -38,7 +38,7 @@ along with it.
 
 ## Project Status
 
-Current version: **0.2.0rc3**
+Current version: **0.2.0**
 
 The first milestone covered the algebraic foundations:
 
@@ -60,6 +60,7 @@ The second adds the verification framework:
   identifier at a time, and cited by the exception when it fails
 
 Searching for a reduction rather than verifying a presented one is 0.3.
+`CHANGELOG.md` lists what each release changed.
 
 ---
 
@@ -158,6 +159,8 @@ contracts.md      binding obligations of the verification surface
 references.md     sources, and the provenance of the fixed test data
 roadmap.md        milestones
 ```
+
+`CHANGELOG.md` sits at the repository root.
 
 ---
 
