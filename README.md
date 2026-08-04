@@ -59,7 +59,9 @@ The second adds the verification framework:
 - Every obligation stated normatively in `docs/contracts.md`, one numbered
   identifier at a time, and cited by the exception when it fails
 
-Searching for a reduction rather than verifying a presented one is 0.3.
+Sharing carrier variables across steps, and with it the fifteen-dimensional
+reduction `alpoege15`, is 0.3. Searching for a reduction rather than verifying
+a presented one is 0.4.
 `CHANGELOG.md` lists what each release changed.
 
 ---

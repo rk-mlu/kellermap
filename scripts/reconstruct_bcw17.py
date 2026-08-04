@@ -20,7 +20,7 @@ The reduction has two parts.
 The data in ``STEPS`` are read off the fixed BCW17 components: components
 4..17 all have the shape ``X_j + P``, and those ``P`` are exactly the factors
 of the seven steps. This is therefore a reconstruction from the result, not a
-search. Searching for such a factorization is milestone 0.3.
+search. Searching for such a factorization is milestone 0.4.
 
 Run with::
 

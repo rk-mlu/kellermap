@@ -183,7 +183,8 @@ class LinearStep:
         elementary one -- ``X_i |-> X_i - c_i`` displaces ``X_i`` by a
         constant, which is free of ``X_i`` -- but it belongs to no ``EA^d``
         for ``d >= 0``, since ``EA^d`` is defined inside ``MA^d`` and a
-        translation leaves ``MA^0``. It is a milestone 0.3 item.
+        translation leaves ``MA^0``. Neither driving example needs it, since
+        Alpoege's map fixes the origin; it is a milestone 0.4 item.
 
         The coefficient domain has to be a field for the inverse to exist;
         ``over_field`` first, otherwise.

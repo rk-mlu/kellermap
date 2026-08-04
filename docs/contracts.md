@@ -312,7 +312,7 @@ runs in one arithmetic context from beginning to end.
 
 **RC-7 — Scope.** The context names generators and extends rings and maps. It
 does not choose steps, does not verify anything, does not hold the reduction,
-and does not know which step is being taken. Selection is milestone 0.4.
+and does not know which step is being taken. Selection is milestone 0.5.
 
 A step therefore takes its two variables as data rather than taking a context.
 That is not only separation of concerns: a supplied certificate has to record
@@ -642,14 +642,14 @@ Listed so that their absence is not read as an oversight.
 **No progress measure.** Nothing requires a `BCWStep` to lower the degree or
 the number of top-degree monomials. Steps two and three of the reference
 reduction leave the degree at seven. A certificate certifies correctness;
-whether a step makes progress is a question for the heuristics of 0.4, and
+whether a step makes progress is a question for the heuristics of 0.5, and
 `Reduction` reports degrees rather than constraining them.
 
 **No minimality.** Nothing claims a reduction is the shortest, or the
 lowest-dimensional, or that dimension 17 cannot be improved.
 
 **No search.** Neither `BCWStep` nor `Reduction` finds a factorization. They
-verify one that is presented to them. Searching is 0.3.
+verify one that is presented to them. Searching is 0.4.
 
 **No reduction method other than this one.** BCW-2 fixes exactly two fresh
 variables per step, so a chain of `BCWStep`s cannot express a reduction that
@@ -658,8 +658,8 @@ variable and reuses an existing carrier as its second factor, which stays
 elementary and is therefore legitimate. The published 19-dimensional reduction
 of Alpöge's map is of that kind; `tests/test_alpoege19.py` holds it as fixed
 input for exactly this reason. Whether to widen BCW-2 to `m >= 1` fresh
-variables is a question for 0.3, and would be an amendment to this page rather
-than an extension around it.
+variables is milestone 0.3, and is an amendment to this page rather than an
+extension around it.
 
 **No injectivity claim about `source`.** `transport()` moves a collision that
 is supplied. That a map *has* no collision is not something this framework

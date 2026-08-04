@@ -281,9 +281,99 @@ of formula (1).
 
 # Version 0.3
 
-## Open from 0.2
+## Carrier sharing, and `alpoege15`
 
-Two gaps the milestone leaves behind, both recorded rather than worked around.
+A milestone of its own, and the line it falls on is the project's own: 0.2
+verifies a factorization that is presented to it, and finding one is the
+milestone after this. Carrier sharing is a *verification* capability — it
+widens what a certificate can express and searches for nothing. What belongs
+here is therefore everything needed to *check* a factorization of `alpoege15`
+or of the published 19-dimensional map; producing one for the latter does not.
+
+### The technique
+
+After a step, the coordinate `X_u` carries `P` for good: its component stays
+`X_u + P`, and no later step changes that unless it targets `u`. A step whose
+factors are already carried therefore need not buy them again. With `X_u`
+carrying `P` and `X_w` carrying `Q`,
+
+    G = (…, X_i − X_u X_w, …),   F' = G ∘ F = (F_i − PQ) − X_u Q − P X_w − X_u X_w
+
+which is the expansion of Proposition (3.1) with `X_w` in place of the second
+fresh variable. `G` stays elementary, since `−X_u X_w` is free of `X_i` for
+`i ∉ {u, w}`, and lies in `EA^1`. Three cases follow:
+
+| carriers available | fresh variables | shape |
+| --- | --- | --- |
+| both | 0 | `F' = G ∘ F` |
+| one | 1 | `F' = G ∘ F^[1] ∘ H` |
+| neither | 2 | `F' = G ∘ F^[2] ∘ H`, the paper's own step |
+
+None of this is in the paper, and taking it up is a deliberate extension.
+
+### `alpoege15`
+
+BCW17 carries two duplicated values: `x1²` in both `x5` and `x17`, and `x1x2`
+in both `x8` and `x14`. That is not an accident of bookkeeping — steps 6 and 7
+of the reference reduction each factor through a value an earlier step had
+already bought. Each therefore needs one fresh variable instead of two, and the
+chain lands in dimension 15:
+
+- degree 3, Jacobian determinant 1, in `MA^0` and not in `MA^1`;
+- the same three-point collision, with the first thirteen coordinates of each
+  point identical to BCW17's, since the first five steps are unchanged;
+- image `(0, 0, -1/4)` followed by twelve zeros.
+
+Verified by hand computation in plain SymPy, not by this library — which is
+what the milestone is for. Until then `alpoege15` is fixed input like the other
+two examples, and both of its shared steps are the `m = 1` case, so it cannot
+be expressed as a `Reduction` at all today.
+
+No claim of minimality attaches to the number. The comparable published
+reduction is the 19-dimensional one; the 24-variable map is cubic *homogeneous*
+and a stricter normal form, and the 79-variable one is a conservative route.
+Whether something smaller has appeared since should be rechecked before the
+number is used anywhere outside this repository, and the customary disclaimer
+of priority and global minimality applies.
+
+### To build
+
+- **A step for `m = 0`.** `F' = G ∘ F` with `G` elementary: no stabilization,
+  hence not a `BCWStep` and no amendment to BCW-2, only a new and simpler kind
+  of step. This is what the 19-dimensional reduction uses; three signatures in
+  its second component were checked against the description above.
+- **`m = 1` in `BCWStep`.** One factor supplied by an existing coordinate, the
+  other by a fresh variable. This is what `alpoege15` needs, and it is the one
+  part that amends a binding obligation rather than adding beside it.
+- **Collision transport for both shapes.** `m = 0` appends no coordinate,
+  `m = 1` appends one. The obligations of BCW-8 carry over unchanged in
+  substance.
+- **`alpoege15` as a verified `Reduction`**, replacing the hand computation,
+  with the honest provenance: this library produced the target, so the chain is
+  `CONSTRUCTED` throughout and says so.
+- **A second independent implementation**, as `scripts/` already holds for
+  BCW17. Two renderings agreeing is worth more than one checked against itself.
+
+### Contract amendments
+
+BCW-2 fixes `target.dimension == source.dimension + 2`. Widening it to a
+declared `m ∈ {1, 2}` is an amendment to `docs/contracts.md`, made deliberately
+and visible in the wording, not an extension around it. The `m = 0` step needs
+no amendment but its own numbered block.
+
+### Not here
+
+Finding a factorization. The published 19-dimensional map stays fixed input
+after this milestone: carrier sharing gives the language in which its reduction
+could be written down, but its step sequence is unpublished, and recovering it
+is search. `alpoege15` is different only because we produced its sequence
+ourselves.
+
+---
+
+# Version 0.4
+
+## Open from 0.2 and 0.3
 
 **The translation.** BCW Chapter II, Proposition (1.1) splits a map with
 invertible linear part as `F = (X + F(0)) ∘ F_(1) ∘ F'` with `F' ∈ MA^1`.
@@ -296,33 +386,9 @@ non-elementary type. It lies in no `EA^d` for `d ≥ 0` all the same, since
 `EA^d` is defined inside `MA^d` and a translation leaves `MA^0`; its filtration
 degree is `-1`.
 
-**Carrier sharing.** After a step, the coordinate `X_u` carries `P` for good:
-its component stays `X_u + P`, and no later step changes that unless it targets
-`u`. A step whose factors are already carried therefore need not buy them
-again. With `X_u` carrying `P` and `X_w` carrying `Q`,
-
-    G = (…, X_i − X_u X_w, …),   F' = G ∘ F = (F_i − PQ) − X_u Q − P X_w − X_u X_w
-
-which is the expansion of Proposition (3.1) with `X_w` in place of the second
-fresh variable. `G` stays elementary, since `−X_u X_w` is free of `X_i` for
-`i ∉ {u, w}`, and lies in `EA^1`. Three cases follow: both factors carried
-costs no fresh variable, one costs one, neither costs two and is the paper's
-own step.
-
-This is how the published 19-dimensional reduction reaches its dimension —
-seventeen steps for sixteen variables — and three steps of its second component
-were checked against this description. It is not in the paper, and taking it up
-is a deliberate extension.
-
-The two cheap cases are not equally intrusive. `m = 0` is `F' = G ∘ F` with `G`
-elementary: no stabilization at all, hence not a `BCWStep` and no amendment to
-BCW-2, only a new and much simpler kind of step. Only the mixed case `m = 1`
-genuinely requires widening BCW-2, which would be an amendment to
-`contracts.md` rather than an extension around it.
-
-Beyond expressing such reductions, this is what would make the published
-19-dimensional map verifiable rather than merely fixed input, since undoing a
-carrier-sharing step is exactly the move a search would have to make.
+It is not required for either driving example: Alpöge's map fixes the origin,
+so neither `alpoege15` nor the 19-dimensional reduction ever needs it. That is
+why it waits here rather than travelling with 0.3.
 
 ## BCW reduction
 
@@ -337,11 +403,13 @@ Implement
 Goal:
 
 Produce fully verified reductions for examples from the literature without
-recomputing global invariants that follow from the certified local steps.
+recomputing global invariants that follow from the certified local steps. The
+first target is the published 19-dimensional map, whose step sequence 0.3
+leaves unrecovered.
 
 ---
 
-# Version 0.4
+# Version 0.5
 
 ## Selection heuristics and scientific benchmarks
 
@@ -354,7 +422,9 @@ Tasks:
 - search strategies,
 - pruning,
 - term-growth prediction,
-- dimension-growth tracking.
+- dimension-growth tracking,
+- duplicated carrier values as a cheap first criterion, since they are readable
+  straight off the components and were what produced `alpoege15`.
 
 Benchmark against published reductions of the current reference examples.
 Reproducing known dimensions with machine-verifiable certificates is the first
@@ -364,7 +434,7 @@ This milestone targets research results rather than user-interface features.
 
 ---
 
-# Version 0.5
+# Version 0.6
 
 ## Performance engineering
 
@@ -386,7 +456,7 @@ semantics and certificate format.
 
 ---
 
-# Version 0.6
+# Version 0.7
 
 ## Complete verification and benchmark framework
 
@@ -399,7 +469,7 @@ semantics and certificate format.
 
 ---
 
-# Version 0.7
+# Version 0.8
 
 ## User experience
 

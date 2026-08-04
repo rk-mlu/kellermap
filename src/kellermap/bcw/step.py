@@ -13,7 +13,7 @@ and the component ``i`` of ``F'`` is ``(F_i - P Q) - X_u Q - P X_v - X_u X_v``.
 the map stays invertible with an inverse one can write down.
 
 The class verifies such a step; it does not look for one. Searching is
-milestone 0.3.
+milestone 0.4.
 
 Two things are wider here than in the paper, because the reduction of
 Alpoege's map to dimension 17 needs them and the identity holds for both:

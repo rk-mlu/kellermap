@@ -545,7 +545,8 @@ constrains.
 Nothing requires a step to make progress. Two steps of the reference reduction
 leave the degree at seven, because they remove top-degree terms from a
 component that is not the deepest one. A certificate certifies correctness;
-whether a step makes progress is a question for the search in 0.4.
+whether a step makes progress is a question for the search in 0.4 and the
+heuristics of 0.5.
 
 Transport is the point of the whole structure. Each step carries a collision
 from its source to its target, verifying it on both sides, so a chain that
@@ -642,7 +643,7 @@ denote the same generator.
 `VariableFactory` covers naming and nothing else. `ReductionContext` keeps
 names reproducible across a complete reduction sequence, and is deliberately
 thin: it names generators, extends rings and maps, and knows nothing about
-steps. Which step to take is 0.4, and a context that knew would be the wrong
+steps. Which step to take is 0.5, and a context that knew would be the wrong
 object to ask.
 
 What the context adds is distrust. Both properties a factory promises are cheap
@@ -782,10 +783,12 @@ The third is a published cubic map in dimension 19, kept as fixed input. Its
 reduction shares carrier variables across steps, so it introduces one fresh
 variable where `BCWStep` requires two, and a chain of `BCWStep`s cannot express
 it at all. It is in the suite as an independent second instance and as a target
-for the search in 0.3, not as a reduction.
+for the search in 0.4, not as a reduction.
 
-Searching for a factorization rather than verifying a presented one is 0.3
-throughout.
+Searching for a factorization rather than verifying a presented one is 0.4
+throughout. Expressing a reduction that shares carrier variables — which is
+what the third example needs, and what takes our own reduction of Alpöge's map
+down to dimension 15 — is 0.3.
 
 See `references.md` for sources and for what the fixed data rests on.
 

@@ -110,12 +110,13 @@ latter.
 
 ## Related cubic Keller-map benchmarks
 
-Useful as comparison and as benchmark targets for milestone 0.4. Note that
+Useful as comparison and as benchmark targets for milestone 0.5. Note that
 these are *different* reductions, not alternative descriptions of the map in
 `tests/test_bcw17.py`.
 
 | Source | Dimension | Shape | Determinant | In the suite |
 | --- | --- | --- | --- | --- |
+| this project, `alpoege15` (not yet certified) | 15 | degree 3 | 1 | no |
 | this project, `tests/test_bcw17.py` (derived) | 17 | degree 3 | 1 | yes |
 | <https://rhicksrad.github.io/jacobian-degree3/> | 19 | degree 3 | −2 | yes |
 | <https://github.com/wtho704/explicit-cubic-homogeneous-jacobian-counterexample> | 24 | cubic homogeneous | 1 | no |
@@ -125,14 +126,34 @@ chain of eight steps from Alpöge's map to it, and transports the collision
 along. See the provenance section below for what in that is evidence and what
 is a self-check.
 
-The three are not directly comparable. BCW reduce in two stages, first to
+The rows are not directly comparable. BCW reduce in two stages, first to
 degree 3 and then to cubic homogeneous form; the 24-variable map has completed
-both, the other two only the first. The dimension-19 map keeps the determinant
-−2, so it has not been linearly normalized.
+both, the others only the first. A conservative Bass–Connell–Wright route on
+the same source is reported at 79 variables. The dimension-19 map keeps the
+determinant −2, so it has not been linearly normalized.
 
 Comparing them meaningfully needs the certificates that milestone 0.2
 introduces. Reproducing published dimensions with machine-verifiable
-certificates is the first target of 0.4; improving them is secondary.
+certificates is the first target of 0.5; improving them is secondary.
+
+### `alpoege15`
+
+Not an external source: this project's own reduction of Alpöge's map, obtained
+by letting two steps of the seventeen-dimensional chain share carrier variables
+that earlier steps had already bought — `x1²` and `x1x2`, each of which BCW17
+buys twice. Degree 3, Jacobian determinant 1, the same three-point collision,
+with the first thirteen coordinates of each point identical to BCW17's.
+
+Listed as *not yet certified* on purpose. The map exists as a hand computation
+in plain SymPy; `Reduction` cannot express its chain, because both shared steps
+are the `m = 1` case and BCW-2 fixes two fresh variables. That is milestone
+0.3, and until it lands the number is a computation rather than a result of
+this library.
+
+No claim of minimality attaches to it, following the practice of the sources
+above — the author of the 24-variable map states plainly that he claims neither
+priority nor global minimality. Whether something smaller has appeared should
+be rechecked before the number is used outside this repository.
 
 ### The dimension-19 map
 
@@ -212,7 +233,7 @@ What in that is evidence, and what is a self-check:
   from the table, so a different naming would fail the last step too.
 - The factorization is not searched for. It was read off the fixed components,
   whose entries 4 to 17 have the form `X_j + P`; those `P` are the factors.
-  Searching is 0.3.
+  Searching is 0.4.
 
 `scripts/reconstruct_bcw17.py` carries the same chain in plain SymPy, without
 this library. The duplication is deliberate: two independent implementations of
