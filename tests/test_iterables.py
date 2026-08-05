@@ -11,6 +11,7 @@ schreibt, sagt zu, mit einem einmal durchlaufbaren Objekt auszukommen; die
 Zusage gilt fuer die ganze Oberflaeche oder fuer keine.
 """
 
+import inspect
 from collections.abc import Callable
 
 import pytest
@@ -57,15 +58,6 @@ CASES: dict[str, Callable[[], object]] = {
     ),
     "LinearAutomorphism": lambda: LinearAutomorphism(once(Transposition(RING, 0, 1))),
     "Reduction": lambda: Reduction(once(LinearStep.build(SHEAR, SWAP))),
-    "BCWStep": lambda: BCWStep(
-        QUARTIC,
-        BCWStep.build(QUARTIC, 0, x2**2, x3**2, (x4, x5)).target,
-        0,
-        x2**2,
-        x3**2,
-        once(x4, x5),
-    ),
-    "BCWStep.build": lambda: BCWStep.build(QUARTIC, 0, x2**2, x3**2, once(x4, x5)),
 }
 
 
@@ -74,24 +66,16 @@ def test_a_one_shot_iterable_is_enough(case: str) -> None:
     assert CASES[case]() is not None
 
 
-def test_build_and_the_constructor_agree_on_a_generator() -> None:
-    """Der Befund in seiner urspruenglichen Form.
+def test_bcw_step_no_longer_takes_an_iterable() -> None:
+    """Die Stelle des urspruenglichen Befundes gibt es nicht mehr.
 
-    ``build`` konstruiert zweimal -- einmal fuer den Entwurf, der die Formel
-    traegt, und einmal fuer das Ergebnis. Der Generator war nach dem ersten
-    Aufruf leer, und die Meldung sprach dann von null Variablen.
+    ``BCWStep`` nahm die frischen Variablen als ``Iterable`` entgegen und
+    reichte sie an zwei Konstruktoraufrufe weiter; ein Generator war nach dem
+    ersten leer. Seit den Faktorplaetzen traegt jeder Platz seine eigene
+    Variable, und der Parameter existiert nicht mehr. Der Test haelt fest,
+    dass die Signatur nicht dorthin zurueckkehrt.
     """
-    built = BCWStep.build(QUARTIC, 0, x2**2, x3**2, (variable for variable in (x4, x5)))
-    supplied = BCWStep(
-        QUARTIC,
-        built.target,
-        0,
-        x2**2,
-        x3**2,
-        (variable for variable in (x4, x5)),
-    )
+    names = list(inspect.signature(BCWStep.__init__).parameters)
 
-    assert built.variables == (x4, x5)
-    assert supplied.variables == built.variables
-    assert built.verify() is None
-    assert supplied.verify() is None
+    assert "variables" not in names
+    assert names[4:6] == ["left", "right"]

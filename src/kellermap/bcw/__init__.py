@@ -5,8 +5,11 @@ the group ``EA_n(k)``, collisions, and chains of certified identities -- lives
 at the top level of the package.
 """
 
-from .step import BCWStep
+from .step import BCWStep, Carried, Factor, Fresh
 
 __all__ = [
     "BCWStep",
+    "Carried",
+    "Factor",
+    "Fresh",
 ]

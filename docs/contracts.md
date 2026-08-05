@@ -359,9 +359,6 @@ class BCWStep:
     @classmethod
     def build(cls, source, index, left, right, filtration_level=1): ...
 
-    @classmethod
-    def classic(cls, source, target, index, P, Q, variables, level=1): ...
-
     @property
     def P(self) -> sp.Expr: ...
 
@@ -394,6 +391,14 @@ one of the two factors, in one of two ways:
   `u + P`, so the new coordinate carries `P`.
 - `Carried(j)` reuses coordinate `j` of the source. That component already has
   the form `X_j + P`, so the factor `P` is available without a new generator.
+
+An earlier draft of this page also listed a `classic()` constructor that kept
+the call form of 0.2, taking `P`, `Q` and a pair of variables. It was dropped
+during implementation. `Fresh(P, u), Fresh(Q, v)` is no longer than the old
+form and shows which factor goes with which variable, so the second entry point
+earned nothing. Dropping it also removed the last parameter typed `Iterable`
+on `BCWStep`, and with it the one place where a one-shot iterable could be
+consumed twice.
 
 `m` is the number of `Fresh` slots, so `m ∈ {0, 1, 2}`. `variables` is the
 fresh generators in slot order. These are the new generators only, not the

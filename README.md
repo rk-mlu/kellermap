@@ -97,7 +97,7 @@ counterexample to the Jacobian conjecture, on its way down to degree three:
 import sympy as sp
 from kellermap import Collision, PolynomialMap, Reduction, ReductionContext
 from kellermap import over_field
-from kellermap.bcw import BCWStep
+from kellermap.bcw import BCWStep, Fresh
 from kellermap.reduction import LinearStep
 
 x1, x2, x3 = sp.symbols("x1 x2 x3")
@@ -123,12 +123,12 @@ collision = Collision.at(
 )
 
 normalization = LinearStep.normalize(alpoege)  # F_(1)^-1 o F, BCW II (1.1)
-first = BCWStep.build(  # Proposition (3.1): two dimensions bought
+u, v = ReductionContext().variables(normalization.target.ring, 2)
+first = BCWStep.build(  # Proposition (3.1): two new dimensions
     normalization.target,
     0,
-    -x1 * x3 / 2,
-    x1**2,
-    ReductionContext().variables(normalization.target.ring, 2),
+    Fresh(-x1 * x3 / 2, u),
+    Fresh(x1**2, v),
 )
 reduction = Reduction([normalization, first])
 

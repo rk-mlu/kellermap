@@ -257,11 +257,11 @@ def test_a_context_names_the_variables_of_a_step(
 ) -> None:
     """RC-7: der Kontext benennt, er waehlt keinen Schritt aus."""
     from kellermap import over_field
-    from kellermap.bcw import BCWStep
+    from kellermap.bcw import BCWStep, Fresh
 
     source = over_field(PolynomialMap((x1, x2, x3), (x1 + x2**2 * x3**2, x2, x3)))
     fresh = context.variables(source.ring, 2)
-    step = BCWStep.build(source, 0, x2**2, x3**2, fresh)
+    step = BCWStep.build(source, 0, Fresh(x2**2, fresh[0]), Fresh(x3**2, fresh[1]))
 
     assert fresh == sp.symbols("x4 x5")
     assert step.variables == fresh

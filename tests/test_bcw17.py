@@ -47,7 +47,7 @@ from kellermap import (
     VerificationError,
     over_field,
 )
-from kellermap.bcw import BCWStep
+from kellermap.bcw import BCWStep, Fresh
 from kellermap.reduction import LinearStep
 
 X = sp.symbols("x1:18")
@@ -329,10 +329,11 @@ def reduction(
     for position, (index, P, Q, level) in enumerate(STEPS):
         fresh = context.variables(current.ring, 2)
         last = position == len(STEPS) - 1
+        slots = (Fresh(P, fresh[0]), Fresh(Q, fresh[1]))
         step = (
-            BCWStep(current, bcw17, index, P, Q, fresh, level)
+            BCWStep(current, bcw17, index, *slots, level)
             if last
-            else BCWStep.build(current, index, P, Q, fresh, level)
+            else BCWStep.build(current, index, *slots, level)
         )
         steps.append(step)
         current = step.target
@@ -377,7 +378,13 @@ def test_a_perturbed_target_would_be_caught(
     perturbed = PolynomialMap(
         X, (bcw17.components[0] + _4 * _5,) + bcw17.components[1:]
     )
-    broken = BCWStep(last.source, perturbed, last.index, last.P, last.Q, last.variables)
+    broken = BCWStep(
+        last.source,
+        perturbed,
+        last.index,
+        Fresh(last.P, last.variables[0]),
+        Fresh(last.Q, last.variables[1]),
+    )
 
     with pytest.raises(VerificationError) as failure:
         Reduction(list(reduction[:-1]) + [broken]).verify()

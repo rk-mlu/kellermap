@@ -21,7 +21,7 @@ from kellermap import (
     VerificationError,
     over_field,
 )
-from kellermap.bcw import BCWStep
+from kellermap.bcw import BCWStep, Carried, Fresh
 from kellermap.reduction import LinearStep
 
 x1, x2, x3, x4, x5 = sp.symbols("x1 x2 x3 x4 x5")
@@ -32,7 +32,7 @@ SIMPLE = over_field(PolynomialMap((x1, x2, x3), (x1 + x2**2 * x3**2, x2, x3)))
 
 P = x2**2
 Q = x3**2
-FRESH = (x4, x5)
+FRESH = (Fresh(P, x4), Fresh(Q, x5))
 
 # G o F^[2] o H, von Hand: (F_1 - P Q) - x4 Q - P x5 - x4 x5.
 SIMPLE_TARGET = PolynomialMap(
@@ -49,7 +49,7 @@ SIMPLE_TARGET = PolynomialMap(
 
 @pytest.fixture
 def step() -> BCWStep:
-    return BCWStep(SIMPLE, over_field(SIMPLE_TARGET), 0, P, Q, FRESH)
+    return BCWStep(SIMPLE, over_field(SIMPLE_TARGET), 0, *FRESH)
 
 
 # --------------------------------------------------------------------------
@@ -63,41 +63,77 @@ def test_a_step_satisfies_the_protocol(step: BCWStep) -> None:
 
 def test_the_source_and_target_must_be_maps() -> None:
     with pytest.raises(TypeError, match="source must be"):
-        BCWStep(SIMPLE.components, over_field(SIMPLE_TARGET), 0, P, Q, FRESH)
+        BCWStep(SIMPLE.components, over_field(SIMPLE_TARGET), 0, *FRESH)
 
     with pytest.raises(TypeError, match="target must be"):
-        BCWStep(SIMPLE, SIMPLE_TARGET.components, 0, P, Q, FRESH)
+        BCWStep(SIMPLE, SIMPLE_TARGET.components, 0, *FRESH)
 
 
 def test_the_fresh_variables_must_be_symbols() -> None:
-    with pytest.raises(TypeError, match="SymPy symbols"):
-        BCWStep(SIMPLE, over_field(SIMPLE_TARGET), 0, P, Q, (x4, sp.Integer(5)))
+    with pytest.raises(TypeError, match="SymPy symbol"):
+        BCWStep(
+            SIMPLE, over_field(SIMPLE_TARGET), 0, Fresh(P, x4), Fresh(Q, sp.Integer(5))
+        )
 
 
 def test_the_index_must_address_a_component() -> None:
     with pytest.raises(ValueError, match="out of range"):
-        BCWStep(SIMPLE, over_field(SIMPLE_TARGET), 3, P, Q, FRESH)
+        BCWStep(SIMPLE, over_field(SIMPLE_TARGET), 3, *FRESH)
 
 
 def test_the_index_must_be_an_integer() -> None:
     with pytest.raises(TypeError, match="must be an integer"):
-        BCWStep(SIMPLE, over_field(SIMPLE_TARGET), True, P, Q, FRESH)
+        BCWStep(SIMPLE, over_field(SIMPLE_TARGET), True, *FRESH)
 
 
-def test_exactly_two_fresh_variables() -> None:
-    with pytest.raises(ValueError, match="exactly two variables"):
-        BCWStep(SIMPLE, over_field(SIMPLE_TARGET), 0, P, Q, (x4,))
+def test_a_step_needs_two_slots() -> None:
+    with pytest.raises(TypeError):
+        BCWStep(SIMPLE, over_field(SIMPLE_TARGET), 0, Fresh(P, x4))  # type: ignore[call-arg]
+
+
+def test_a_slot_must_be_a_factor() -> None:
+    with pytest.raises(TypeError, match="Fresh or a Carried"):
+        BCWStep(SIMPLE, over_field(SIMPLE_TARGET), 0, P, Fresh(Q, x5))  # type: ignore[arg-type]
+
+
+def test_a_carried_slot_is_refused_for_now() -> None:
+    """Der Fall kommt in Arbeitspaket 2; der Typ steht schon."""
+    with pytest.raises(NotImplementedError, match="work package 2"):
+        BCWStep(SIMPLE, over_field(SIMPLE_TARGET), 0, Carried(7), Fresh(Q, x5))
+
+
+def test_a_carried_index_must_be_a_non_negative_integer() -> None:
+    with pytest.raises(TypeError, match="must be an integer"):
+        Carried(True)
+
+    with pytest.raises(ValueError, match="must not be negative"):
+        Carried(-1)
+
+
+def test_a_fresh_polynomial_must_be_an_expression() -> None:
+    with pytest.raises(TypeError, match="not a SymPy expression"):
+        Fresh([], x4)
+
+    with pytest.raises(TypeError, match="not a SymPy expression"):
+        Fresh(object(), x4)
+
+
+def test_the_slots_are_readable(step: BCWStep) -> None:
+    """Ein Zertifikat nennt, woher jeder Faktor kommt."""
+    assert step.left == Fresh(P, x4)
+    assert step.right == Fresh(Q, x5)
+    assert step.m == 2
 
 
 def test_the_filtration_level_is_zero_or_one() -> None:
     with pytest.raises(ValueError, match="must be 0 or 1"):
-        BCWStep(SIMPLE, over_field(SIMPLE_TARGET), 0, P, Q, FRESH, 2)
+        BCWStep(SIMPLE, over_field(SIMPLE_TARGET), 0, *FRESH, 2)
 
 
 def test_BCW3_P_and_Q_live_over_the_source() -> None:  # noqa: N802
     """Ein Faktor, der die frischen Variablen traegt, ist gar nicht erst baubar."""
     with pytest.raises(ValueError, match="must be a polynomial"):
-        BCWStep(SIMPLE, over_field(SIMPLE_TARGET), 0, x4 * x2, Q, FRESH)
+        BCWStep(SIMPLE, over_field(SIMPLE_TARGET), 0, Fresh(x4 * x2, x4), Fresh(Q, x5))
 
 
 # --------------------------------------------------------------------------
@@ -114,7 +150,7 @@ PARAMETRIC = PolynomialMap((x1, x2, x3), (x1 + T * x2**2 * x3**2, x2, x3))
 
 def test_a_coefficient_parameter_is_allowed() -> None:
     """COL-2 erlaubt ihn in einer Kollision; hier galt bisher das Gegenteil."""
-    step = BCWStep.build(PARAMETRIC, 0, T * x2**2, x3**2, FRESH)
+    step = BCWStep.build(PARAMETRIC, 0, Fresh(T * x2**2, x4), Fresh(x3**2, x5))
 
     assert PARAMETRIC.ring.domain == sp.ZZ[T]
     assert step.verify() is None
@@ -123,7 +159,7 @@ def test_a_coefficient_parameter_is_allowed() -> None:
 
 def test_a_nested_coefficient_domain_is_allowed() -> None:
     nested = PolynomialMap((x1, x2, x3), (x1 + T * S * x2**2 * x3**2, x2, x3))
-    step = BCWStep.build(nested, 0, T * S * x2**2, x3**2, FRESH)
+    step = BCWStep.build(nested, 0, Fresh(T * S * x2**2, x4), Fresh(x3**2, x5))
 
     assert step.verify() is None
     assert step.P == T * S * x2**2
@@ -132,21 +168,27 @@ def test_a_nested_coefficient_domain_is_allowed() -> None:
 def test_a_non_polynomial_factor_is_refused() -> None:
     """1/x ist kein Element des Rings und fiel bisher erst viel spaeter auf."""
     with pytest.raises(ValueError, match="must be a polynomial"):
-        BCWStep(SIMPLE, over_field(SIMPLE_TARGET), 0, 1 / x1, Q, FRESH)
+        BCWStep(SIMPLE, over_field(SIMPLE_TARGET), 0, Fresh(1 / x1, x4), Fresh(Q, x5))
 
 
 def test_a_foreign_symbol_is_refused() -> None:
     with pytest.raises(ValueError, match="must be a polynomial"):
-        BCWStep(SIMPLE, over_field(SIMPLE_TARGET), 0, sp.Symbol("q") * x1, Q, FRESH)
+        BCWStep(
+            SIMPLE,
+            over_field(SIMPLE_TARGET),
+            0,
+            Fresh(sp.Symbol("q") * x1, x4),
+            Fresh(Q, x5),
+        )
 
 
 def test_a_coefficient_outside_the_domain_is_refused() -> None:
     """Ueber ZZ[T] ist x/2 kein Polynom; ueber ZZ(T) ist es eines."""
     with pytest.raises(ValueError, match="must be a polynomial"):
-        BCWStep(PARAMETRIC, PARAMETRIC, 0, x2**2 / 2, x3**2, FRESH)
+        BCWStep(PARAMETRIC, PARAMETRIC, 0, Fresh(x2**2 / 2, x4), Fresh(x3**2, x5))
 
     widened = over_field(PARAMETRIC)
-    step = BCWStep.build(widened, 0, x2**2 / 2, x3**2, FRESH)
+    step = BCWStep.build(widened, 0, Fresh(x2**2 / 2, x4), Fresh(x3**2, x5))
 
     assert step.verify() is None
     assert step.P == x2**2 / 2
@@ -154,8 +196,8 @@ def test_a_coefficient_outside_the_domain_is_refused() -> None:
 
 def test_the_factors_are_stored_canonically() -> None:
     """Der Ring normalisiert, also vergleichen zwei Schreibweisen gleich."""
-    expanded = BCWStep.build(SIMPLE, 0, x2**2 + 2 * x2 + 1, x3**2, FRESH)
-    folded = BCWStep.build(SIMPLE, 0, (x2 + 1) ** 2, x3**2, FRESH)
+    expanded = BCWStep.build(SIMPLE, 0, Fresh(x2**2 + 2 * x2 + 1, x4), Fresh(x3**2, x5))
+    folded = BCWStep.build(SIMPLE, 0, Fresh((x2 + 1) ** 2, x4), Fresh(x3**2, x5))
 
     assert expanded.P == folded.P
     assert expanded == folded
@@ -170,7 +212,7 @@ def test_the_factors_are_stored_canonically() -> None:
 def test_a_coefficient_parameter_is_not_a_fresh_name() -> None:
     """T ist keine Koordinate und trotzdem vergeben."""
     with pytest.raises(ValueError, match="already in use"):
-        BCWStep(PARAMETRIC, PARAMETRIC, 0, x2**2, x3**2, (T, x5))
+        BCWStep(PARAMETRIC, PARAMETRIC, 0, Fresh(x2**2, T), Fresh(x3**2, x5))
 
 
 def test_two_symbols_of_one_name_are_not_two_variables() -> None:
@@ -184,9 +226,8 @@ def test_two_symbols_of_one_name_are_not_two_variables() -> None:
             SIMPLE,
             over_field(SIMPLE_TARGET),
             0,
-            P,
-            Q,
-            (sp.Symbol("w"), sp.Symbol("w", positive=True)),
+            Fresh(P, sp.Symbol("w")),
+            Fresh(Q, sp.Symbol("w", positive=True)),
         )
 
 
@@ -196,7 +237,7 @@ def test_two_symbols_of_one_name_are_not_two_variables() -> None:
 
 
 def test_the_factors_are_derived_not_stored(step: BCWStep) -> None:
-    """G und H folgen aus (index, P, Q, variables), Formel (1)."""
+    """G und H folgen aus index und den beiden Plaetzen, Formel (1)."""
     assert len(step.G) == 1
     assert len(step.H) == 2
     assert step.G.factors[0].variable == x1
@@ -247,7 +288,7 @@ def test_BCW1_a_target_that_is_not_the_composite() -> None:  # noqa: N802
     )
 
     with pytest.raises(VerificationError) as failure:
-        BCWStep(SIMPLE, over_field(wrong), 0, P, Q, FRESH).verify()
+        BCWStep(SIMPLE, over_field(wrong), 0, *FRESH).verify()
 
     assert failure.value.obligation == "BCW-1"
 
@@ -255,14 +296,16 @@ def test_BCW1_a_target_that_is_not_the_composite() -> None:  # noqa: N802
 def test_BCW1_the_wrong_factorization() -> None:  # noqa: N802
     """P * Q muss der entfernte Teil sein, nicht irgendein Produkt."""
     with pytest.raises(VerificationError) as failure:
-        BCWStep(SIMPLE, over_field(SIMPLE_TARGET), 0, x2, x3, FRESH).verify()
+        BCWStep(
+            SIMPLE, over_field(SIMPLE_TARGET), 0, Fresh(x2, x4), Fresh(x3, x5)
+        ).verify()
 
     assert failure.value.obligation == "BCW-1"
 
 
 def test_BCW2_a_target_of_the_wrong_dimension() -> None:  # noqa: N802
     with pytest.raises(VerificationError) as failure:
-        BCWStep(SIMPLE, SIMPLE, 0, P, Q, FRESH).verify()
+        BCWStep(SIMPLE, SIMPLE, 0, *FRESH).verify()
 
     assert failure.value.obligation == "BCW-2"
 
@@ -274,7 +317,7 @@ def test_BCW2_a_target_with_other_variables() -> None:  # noqa: N802
     )
 
     with pytest.raises(VerificationError) as failure:
-        BCWStep(SIMPLE, over_field(renamed), 0, P, Q, FRESH).verify()
+        BCWStep(SIMPLE, over_field(renamed), 0, *FRESH).verify()
 
     assert failure.value.obligation == "BCW-2"
 
@@ -282,18 +325,18 @@ def test_BCW2_a_target_with_other_variables() -> None:  # noqa: N802
 def test_a_fresh_variable_that_is_not_fresh() -> None:
     """Frueh abgelehnt: sonst bezeichneten zwei Koordinaten einen Generator."""
     with pytest.raises(ValueError, match="already in use"):
-        BCWStep(SIMPLE, over_field(SIMPLE_TARGET), 0, P, Q, (x2, x5))
+        BCWStep(SIMPLE, over_field(SIMPLE_TARGET), 0, Fresh(P, x2), Fresh(Q, x5))
 
 
 def test_the_two_fresh_variables_must_differ() -> None:
     with pytest.raises(ValueError, match="must be distinct"):
-        BCWStep(SIMPLE, over_field(SIMPLE_TARGET), 0, P, Q, (x4, x4))
+        BCWStep(SIMPLE, over_field(SIMPLE_TARGET), 0, Fresh(P, x4), Fresh(Q, x4))
 
 
 def test_BCW4_the_component_need_not_be_the_first() -> None:  # noqa: N802
     """Eine Reduktion erreicht Komponenten, die ein frueherer Schritt anlegte."""
     source = over_field(PolynomialMap((x1, x2, x3), (x1, x2 + x1**2 * x3**2, x3)))
-    built = BCWStep.build(source, 1, x1**2, x3**2, FRESH)
+    built = BCWStep.build(source, 1, Fresh(x1**2, x4), Fresh(x3**2, x5))
 
     assert built.verify() is None
     assert built.index == 1
@@ -304,16 +347,16 @@ def test_BCW6_a_level_that_is_not_reached() -> None:  # noqa: N802
     source = over_field(PolynomialMap((x1, x2, x3), (x1 + x2 * x3, x2, x3)))
 
     with pytest.raises(VerificationError) as failure:
-        BCWStep.build(source, 0, x2, x3, FRESH, filtration_level=1).verify()
+        BCWStep.build(
+            source, 0, Fresh(x2, x4), Fresh(x3, x5), filtration_level=1
+        ).verify()
 
     assert failure.value.obligation == "BCW-6"
 
 
 def test_BCW6_the_weaker_claim_is_accepted() -> None:  # noqa: N802
     """EA^0 zu behaupten, wo EA^1 gilt, ist wahr und wird angenommen."""
-    modest = BCWStep(
-        SIMPLE, over_field(SIMPLE_TARGET), 0, P, Q, FRESH, filtration_level=0
-    )
+    modest = BCWStep(SIMPLE, over_field(SIMPLE_TARGET), 0, *FRESH, filtration_level=0)
 
     assert modest.verify() is None
     assert modest.filtration_level == 0
@@ -332,7 +375,7 @@ def test_BCW7_the_determinant_is_unchanged(step: BCWStep) -> None:  # noqa: N802
 
 def test_BCW8_the_fresh_coordinates_become_minus_P_and_minus_Q() -> None:  # noqa: N802
     source = over_field(PolynomialMap((x1, x2, x3), (x1**2, x2, x3)))
-    built = BCWStep.build(source, 0, x2**2, x3**2, FRESH)
+    built = BCWStep.build(source, 0, Fresh(x2**2, x4), Fresh(x3**2, x5))
     collision = Collision.at(source, ((1, 2, 3), (-1, 2, 3)))
 
     carried = built.transport(collision)
@@ -344,7 +387,7 @@ def test_BCW8_the_fresh_coordinates_become_minus_P_and_minus_Q() -> None:  # noq
 
 def test_BCW8_the_number_of_points_is_preserved() -> None:  # noqa: N802
     source = over_field(PolynomialMap((x1, x2, x3), (x1**2, x2, x3)))
-    built = BCWStep.build(source, 0, x2**2, x3**2, FRESH)
+    built = BCWStep.build(source, 0, Fresh(x2**2, x4), Fresh(x3**2, x5))
     collision = Collision.at(source, ((1, 2, 3), (-1, 2, 3)))
 
     assert len(built.transport(collision)) == len(collision)
@@ -367,7 +410,7 @@ def test_a_supplied_target_is_recorded_as_such(step: BCWStep) -> None:
 
 
 def test_build_records_the_target_as_constructed() -> None:
-    built = BCWStep.build(SIMPLE, 0, P, Q, FRESH)
+    built = BCWStep.build(SIMPLE, 0, *FRESH)
 
     assert built.provenance is Provenance.CONSTRUCTED
     assert built.target == over_field(SIMPLE_TARGET)
@@ -377,7 +420,7 @@ def test_build_records_the_target_as_constructed() -> None:
 def test_a_reduction_takes_the_weaker_provenance(step: BCWStep) -> None:
     assert Reduction([step]).provenance is Provenance.SUPPLIED
     assert (
-        Reduction([BCWStep.build(SIMPLE, 0, P, Q, FRESH)]).provenance
+        Reduction([BCWStep.build(SIMPLE, 0, *FRESH)]).provenance
         is Provenance.CONSTRUCTED
     )
 
@@ -388,7 +431,7 @@ def test_a_reduction_takes_the_weaker_provenance(step: BCWStep) -> None:
 
 
 def test_equality_and_hash(step: BCWStep) -> None:
-    twin = BCWStep(SIMPLE, over_field(SIMPLE_TARGET), 0, P, Q, FRESH)
+    twin = BCWStep(SIMPLE, over_field(SIMPLE_TARGET), 0, *FRESH)
 
     assert step == twin
     assert hash(step) == hash(twin)
@@ -397,7 +440,7 @@ def test_equality_and_hash(step: BCWStep) -> None:
 
 def test_provenance_is_part_of_the_value(step: BCWStep) -> None:
     """Zwei Schritte mit gleichem Ziel, aber nur einer belegt es."""
-    built = BCWStep.build(SIMPLE, 0, P, Q, FRESH)
+    built = BCWStep.build(SIMPLE, 0, *FRESH)
 
     assert step.target == built.target
     assert step != built
@@ -411,9 +454,7 @@ def test_the_public_constructor_cannot_claim_construction() -> None:
             SIMPLE,
             over_field(SIMPLE_TARGET),
             0,
-            P,
-            Q,
-            FRESH,
+            *FRESH,
             provenance=Provenance.CONSTRUCTED,  # type: ignore[call-arg]
         )
 
@@ -470,9 +511,8 @@ def first_step() -> BCWStep:
         normalization.target,
         over_field(FIRST_TARGET),
         0,
-        -x1 * x3 / 2,
-        x1**2,
-        (x4, x5),
+        Fresh(-x1 * x3 / 2, x4),
+        Fresh(x1**2, x5),
         filtration_level=1,
     )
 

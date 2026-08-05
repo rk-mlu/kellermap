@@ -27,12 +27,17 @@ them.
 The target component is any component, not the first. Step seven of that
 reduction acts on component 11, which step four introduced.
 
-See ``docs/contracts.md``, BCW-1 to BCW-9.
+A step is given two *factor slots*. Each slot supplies one factor. ``Fresh``
+introduces a new generator that carries the factor; ``Carried`` reuses a
+coordinate of the source that already carries it. Two ``Fresh`` slots are the
+step of the paper. The other cases arrive in work package 2 and are rejected
+here.
+
+See ``docs/contracts.md``, BCW-1 to BCW-10.
 """
 
 from __future__ import annotations
 
-from collections.abc import Iterable
 from dataclasses import dataclass
 from typing import cast
 
@@ -46,6 +51,60 @@ from ..errors import VerificationError
 from ..polynomial_map import PolynomialMap
 from ..reduction import Provenance
 from ..variables import FixedVariableFactory, reserved_names
+
+
+@dataclass(frozen=True)
+class Fresh:
+    """A factor supplied by a new generator.
+
+    The generator ``variable`` is added by the step, and its component in the
+    target is ``variable + polynomial``. The new coordinate therefore carries
+    the factor, and a later step can reuse it with ``Carried``.
+    """
+
+    polynomial: sp.Expr
+    variable: sp.Symbol
+
+    def __post_init__(self) -> None:
+        if not isinstance(self.variable, sp.Symbol):
+            raise TypeError("A fresh variable must be a SymPy symbol.")
+
+        try:
+            value = sp.sympify(self.polynomial)
+        except (sp.SympifyError, TypeError) as error:
+            raise TypeError(
+                f"The factor {self.polynomial!r} is not a SymPy expression."
+            ) from error
+
+        if not isinstance(value, sp.Expr):
+            raise TypeError(
+                f"The factor {self.polynomial!r} is not a SymPy expression."
+            )
+
+        object.__setattr__(self, "polynomial", value)
+
+
+@dataclass(frozen=True)
+class Carried:
+    """A factor supplied by a coordinate that already carries it.
+
+    Component ``index`` of the source has the form ``X_index + P``, so the
+    factor ``P`` is available without a new generator. The checks that make
+    this true belong to BCW-10 and arrive in work package 2.
+    """
+
+    index: int
+
+    def __post_init__(self) -> None:
+        if isinstance(self.index, bool) or not isinstance(self.index, int):
+            raise TypeError(
+                f"A carried index must be an integer, not {type(self.index).__name__}."
+            )
+        if self.index < 0:
+            raise ValueError("A carried index must not be negative.")
+
+
+Factor = Fresh | Carried
 
 
 def _coerce_factor(
@@ -79,22 +138,22 @@ def _coerce_factor(
 class BCWStep:
     """One application of Proposition (3.1).
 
-    ``G`` and ``H`` are derived from ``index``, ``P``, ``Q`` and ``variables``
-    by the formula, never supplied alongside them: two ways to say the same
-    thing invite them to disagree.
+    ``G`` and ``H`` are derived from ``index`` and the two slots by the
+    formula, and are never supplied alongside them. Storing both a
+    factorization and the automorphisms built from it would allow the two to
+    disagree.
 
     Parameters
     ----------
     source, target
-        The maps before and after. ``target`` supplied here is what makes
+        The maps before and after. A ``target`` supplied here is what makes
         BCW-1 a real check; ``build`` computes it instead and records the
         weaker provenance.
     index
         The component from which ``P * Q`` is removed, zero-based.
-    P, Q
-        Polynomials in the variables of ``source``, free of the fresh two.
-    variables
-        The two generators the step introduces, in order.
+    left, right
+        The two factor slots. Each is a ``Fresh`` or a ``Carried``. Only two
+        ``Fresh`` slots are accepted for now; see work package 2.
     filtration_level
         The ``EA`` level ``H`` is claimed to reach, 0 or 1.
     """
@@ -102,9 +161,8 @@ class BCWStep:
     _source: PolynomialMap
     _target: PolynomialMap
     _index: int
-    _P: PolyElement
-    _Q: PolyElement
-    _variables: tuple[sp.Symbol, sp.Symbol]
+    _slots: tuple[Factor, Factor]
+    _values: tuple[PolyElement, ...]
     _filtration_level: int
     _provenance: Provenance
     _verified: bool
@@ -114,9 +172,8 @@ class BCWStep:
         source: PolynomialMap,
         target: PolynomialMap,
         index: int,
-        P: sp.Expr,  # noqa: N803
-        Q: sp.Expr,  # noqa: N803
-        variables: Iterable[sp.Symbol],
+        left: Factor,
+        right: Factor,
         filtration_level: int = 1,
     ) -> None:
         if not isinstance(source, PolynomialMap):
@@ -139,18 +196,26 @@ class BCWStep:
                 f"The filtration level must be 0 or 1, not {filtration_level!r}."
             )
 
-        fresh = tuple(variables)
-        if len(fresh) != 2:
-            raise ValueError(
-                f"A step introduces exactly two variables, got {len(fresh)}."
-            )
-        if not all(isinstance(symbol, sp.Symbol) for symbol in fresh):
-            raise TypeError("The fresh variables must be SymPy symbols.")
+        slots = (left, right)
+        for position, slot in enumerate(slots):
+            if not isinstance(slot, Fresh | Carried):
+                raise TypeError(
+                    f"Slot {position} must be a Fresh or a Carried, "
+                    f"not {type(slot).__name__}."
+                )
+            if isinstance(slot, Carried):
+                raise NotImplementedError(
+                    "Carried slots arrive in work package 2 of milestone 0.3; "
+                    "see docs/contracts.md, BCW-10."
+                )
+
+        fresh = tuple(slot.variable for slot in slots if isinstance(slot, Fresh))
+
         # Nach dem Namen und nicht nach Symbol.__eq__: Symbol("v") und
         # Symbol("v", positive=True) sind fuer SymPy verschieden und fuer
         # einen PolyRing derselbe Generator.
-        if fresh[0].name == fresh[1].name:
-            raise ValueError("The two fresh variables must be distinct.")
+        if len({symbol.name for symbol in fresh}) != len(fresh):
+            raise ValueError("The fresh variables must be distinct.")
 
         # Frueh und nicht erst in verify(): ein kollidierender Name laesst
         # sich hinterher nicht mehr von einem falschen Ziel unterscheiden,
@@ -164,17 +229,20 @@ class BCWStep:
                 f"The variables {sorted(taken)} are already in use by the source."
             )
 
-        factors = tuple(
-            _coerce_factor(source, name, factor)
-            for name, factor in (("P", P), ("Q", Q))
+        # Nur Fresh-Plaetze kommen hier vor; Carried ist oben abgelehnt. Ab
+        # Arbeitspaket 2 liefert ein Carried-Platz seinen Wert aus der
+        # Komponente der Quelle.
+        values = tuple(
+            _coerce_factor(source, name, slot.polynomial)
+            for name, slot in (("P", slots[0]), ("Q", slots[1]))
+            if isinstance(slot, Fresh)
         )
 
         object.__setattr__(self, "_source", source)
         object.__setattr__(self, "_target", target)
         object.__setattr__(self, "_index", index)
-        object.__setattr__(self, "_P", factors[0])
-        object.__setattr__(self, "_Q", factors[1])
-        object.__setattr__(self, "_variables", (fresh[0], fresh[1]))
+        object.__setattr__(self, "_slots", slots)
+        object.__setattr__(self, "_values", values)
         object.__setattr__(self, "_filtration_level", int(filtration_level))
         object.__setattr__(self, "_provenance", Provenance.SUPPLIED)
         object.__setattr__(self, "_verified", False)
@@ -184,9 +252,8 @@ class BCWStep:
         cls,
         source: PolynomialMap,
         index: int,
-        P: sp.Expr,  # noqa: N803
-        Q: sp.Expr,  # noqa: N803
-        variables: Iterable[sp.Symbol],
+        left: Factor,
+        right: Factor,
         filtration_level: int = 1,
     ) -> BCWStep:
         """Apply the formula and record the result as constructed.
@@ -204,17 +271,9 @@ class BCWStep:
         The draft exists only to reach the formula, which needs ``G`` and
         ``H`` and therefore an instance; its target is a placeholder and is
         never looked at.
-
-        ``variables`` is materialized once and then reused. Two constructions
-        happen here, and a one-shot iterable would be spent by the first --
-        the constructor takes the same parameter and consumes it once, so the
-        two entry points would otherwise disagree about what an ``Iterable``
-        is.
         """
-        fresh = tuple(variables)
-
-        draft = cls(source, source, index, P, Q, fresh, filtration_level)
-        step = cls(source, draft._composite(), index, P, Q, fresh, filtration_level)
+        draft = cls(source, source, index, left, right, filtration_level)
+        step = cls(source, draft._composite(), index, left, right, filtration_level)
         object.__setattr__(step, "_provenance", Provenance.CONSTRUCTED)
 
         return step
@@ -239,23 +298,38 @@ class BCWStep:
         return self._index
 
     @property
+    def left(self) -> Factor:
+        """Return the slot supplying the left factor."""
+        return self._slots[0]
+
+    @property
+    def right(self) -> Factor:
+        """Return the slot supplying the right factor."""
+        return self._slots[1]
+
+    @property
     def P(self) -> sp.Expr:  # noqa: N802
         """Return the left factor, as an expression."""
-        return cast(sp.Expr, self._P.as_expr())
+        return cast(sp.Expr, self._values[0].as_expr())
 
     @property
     def Q(self) -> sp.Expr:  # noqa: N802
         """Return the right factor, as an expression."""
-        return cast(sp.Expr, self._Q.as_expr())
+        return cast(sp.Expr, self._values[1].as_expr())
 
     @property
-    def variables(self) -> tuple[sp.Symbol, sp.Symbol]:
-        """Return the two generators the step introduces, in order.
+    def variables(self) -> tuple[sp.Symbol, ...]:
+        """Return the generators the step introduces, in slot order.
 
-        The two *fresh* ones, not the variables of either map; those are
+        The new generators only, not the variables of either map; those are
         ``source.variables`` and ``target.variables``.
         """
-        return self._variables
+        return tuple(slot.variable for slot in self._slots if isinstance(slot, Fresh))
+
+    @property
+    def m(self) -> int:
+        """Return the number of generators the step introduces."""
+        return len(self.variables)
 
     @property
     def provenance(self) -> Provenance:
@@ -283,15 +357,19 @@ class BCWStep:
 
     @property
     def stabilized(self) -> PolynomialMap:
-        """Return ``F^[2]``, the source with two identity coordinates.
+        """Return ``F^[m]``, the source with ``m`` identity coordinates.
 
-        The two generators are pinned to the ones the step records. A supplied
+        The generators are pinned to the ones the step records. A supplied
         certificate names the variables it used, and those are honoured rather
-        than reinvented -- a step whose variables were unknown could not be
+        than reinvented. A step whose variables were unknown could not be
         checked at all. Where the names come from in the first place is the
         business of ``ReductionContext``.
         """
-        return self._source.extend(2, factory=FixedVariableFactory(self._variables))
+        fresh = self.variables
+        if not fresh:  # pragma: no cover - needs a Carried slot, work package 2
+            return self._source
+
+        return self._source.extend(len(fresh), factory=FixedVariableFactory(fresh))
 
     @property
     def ring(self) -> PolyRing:
@@ -300,34 +378,64 @@ class BCWStep:
 
     @property
     def H(self) -> ElementaryAutomorphism:  # noqa: N802
-        """Return ``(X_u + P, X_v + Q)``, the right factor.
+        """Return one elementary factor per ``Fresh`` slot, in slot order.
 
-        Its two factors commute, since neither ``P`` nor ``Q`` involves the
-        fresh variables, so the order they are listed in does not matter.
+        The factors commute, since no factor polynomial involves a fresh
+        variable, so the order they are listed in does not matter. With no
+        ``Fresh`` slot this is the identity.
         """
         ring = self.ring
-        offset = self._source.dimension
 
         return ElementaryAutomorphism(
             [
-                ElementaryFactor(ring, offset, self._P.set_ring(ring)),
-                ElementaryFactor(ring, offset + 1, self._Q.set_ring(ring)),
+                ElementaryFactor(ring, position, value.set_ring(ring))
+                for position, value in zip(
+                    self._fresh_positions(), self._fresh_values(), strict=True
+                )
             ]
         )
 
     @property
     def G(self) -> ElementaryAutomorphism:  # noqa: N802
-        """Return ``X_index |-> X_index - X_u X_v``, the left factor."""
+        """Return ``X_index |-> X_index - A * B``, the left factor.
+
+        ``A`` and ``B`` are the coordinates of the two slots: the fresh
+        generator for a ``Fresh`` slot, and ``X_j`` for a ``Carried(j)`` slot.
+        """
         ring = self.ring
-        offset = self._source.dimension
+        left, right = self._slot_coordinates()
 
         return ElementaryAutomorphism(
-            [
-                ElementaryFactor(
-                    ring, self._index, -ring.gens[offset] * ring.gens[offset + 1]
-                )
-            ]
+            [ElementaryFactor(ring, self._index, -ring.gens[left] * ring.gens[right])]
         )
+
+    def _fresh_positions(self) -> tuple[int, ...]:
+        """Return the coordinate index of each fresh generator, in slot order."""
+        offset = self._source.dimension
+
+        return tuple(offset + position for position in range(len(self.variables)))
+
+    def _fresh_values(self) -> tuple[PolyElement, ...]:
+        """Return the factor of each ``Fresh`` slot, in slot order."""
+        return tuple(
+            value
+            for slot, value in zip(self._slots, self._values, strict=True)
+            if isinstance(slot, Fresh)
+        )
+
+    def _slot_coordinates(self) -> tuple[int, int]:
+        """Return the coordinate index each slot contributes to ``G``."""
+        offset = self._source.dimension
+        indices = []
+        fresh_seen = 0
+        for slot in self._slots:
+            if isinstance(slot, Fresh):
+                indices.append(offset + fresh_seen)
+                fresh_seen += 1
+            else:  # pragma: no cover - needs a Carried slot, work package 2
+                indices.append(slot.index)
+
+        return (indices[0], indices[1])
 
     def _composite(self) -> PolynomialMap:
         """Return ``G o F^[2] o H``."""
@@ -358,19 +466,20 @@ class BCWStep:
         factor mentioning a fresh variable cannot be built in the first place
         -- the same reasoning as COL-4, and stronger than reporting it later.
         """
-        if self._target.dimension != self._source.dimension + 2:
+        if self._target.dimension != self._source.dimension + self.m:
             raise VerificationError(
                 "BCW-2",
                 f"The source has dimension {self._source.dimension}, the "
-                f"target {self._target.dimension}; a step adds two.",
+                f"target {self._target.dimension}; a step with m = {self.m} "
+                f"adds {self.m}.",
             )
 
-        expected = self._source.variables + self._variables
+        expected = self._source.variables + self.variables
         if self._target.variables != expected:
             raise VerificationError(
                 "BCW-2",
                 "The target does not carry the variables of the source "
-                "followed by the two fresh ones.",
+                "followed by the fresh ones, in slot order.",
             )
 
     def _verify_identity(self) -> None:
@@ -476,37 +585,42 @@ class BCWStep:
 
     # ----------------------------------------------------------------------
 
+    def _key(self) -> tuple[object, ...]:
+        """Return what equality compares.
+
+        The slots are reduced to their content rather than compared directly.
+        A ``Fresh`` slot holds the expression it was given, so two spellings
+        of one polynomial would compare unequal; the converted value in
+        ``_values`` is in normal form and does not have that problem.
+        """
+        slots = tuple(
+            ("fresh", value, slot.variable.name)
+            if isinstance(slot, Fresh)
+            else ("carried", slot.index)
+            for slot, value in zip(self._slots, self._values, strict=True)
+        )
+
+        return (
+            self._source,
+            self._target,
+            self._index,
+            slots,
+            self._filtration_level,
+            self._provenance,
+        )
+
     def __eq__(self, other: object) -> bool:
         if not isinstance(other, BCWStep):
             return NotImplemented
-        return (
-            self._source == other._source
-            and self._target == other._target
-            and self._index == other._index
-            and self._P == other._P
-            and self._Q == other._Q
-            and self._variables == other._variables
-            and self._filtration_level == other._filtration_level
-            and self._provenance is other._provenance
-        )
+        return self._key() == other._key()
 
     def __hash__(self) -> int:
-        return hash(
-            (
-                self._source,
-                self._target,
-                self._index,
-                self._P,
-                self._Q,
-                self._variables,
-                self._filtration_level,
-                self._provenance,
-            )
-        )
+        return hash(self._key())
 
     def __repr__(self) -> str:
         return (
-            f"BCWStep(index={self._index}, variables={self._variables}, "
+            f"BCWStep(index={self._index}, m={self.m}, "
+            f"variables={self.variables}, "
             f"EA^{self._filtration_level}, "
             f"dimension={self._source.dimension}->{self._target.dimension}, "
             f"provenance={self._provenance.value})"

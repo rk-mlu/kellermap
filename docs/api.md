@@ -615,12 +615,12 @@ the subpackage, because it is the one object here that is specific to the
 paper.
 
 ```python
->>> from kellermap.bcw import BCWStep
+>>> from kellermap.bcw import BCWStep, Fresh
 >>> x1, x2, x3, x4, x5 = sp.symbols("x1 x2 x3 x4 x5")
 >>> quartic = over_field(
 ...     PolynomialMap((x1, x2, x3), (x1 + x2**2 * x3**2, x2, x3))
 ... )
->>> step = BCWStep.build(quartic, 0, x2**2, x3**2, (x4, x5))
+>>> step = BCWStep.build(quartic, 0, Fresh(x2**2, x4), Fresh(x3**2, x5))
 >>> step.target.components
 (x1 - x2**2*x5 - x3**2*x4 - x4*x5, x2, x3, x2**2 + x4, x3**2 + x5)
 >>> step.verify() is None
@@ -646,7 +646,9 @@ step leaves `MA^1` is a fact the certificate records:
 
 ```python
 >>> linear = over_field(PolynomialMap((x1, x2, x3), (x1 + x2 * x3, x2, x3)))
->>> BCWStep.build(linear, 0, x2, x3, (x4, x5), filtration_level=1).verify()
+>>> BCWStep.build(
+...     linear, 0, Fresh(x2, x4), Fresh(x3, x5), filtration_level=1
+... ).verify()
 Traceback (most recent call last):
     ...
 kellermap.errors.VerificationError: [BCW-6] H does not lie in EA^1; it reaches EA^0.
@@ -663,9 +665,9 @@ admitted:
 >>> parametric = PolynomialMap((x1, x2, x3), (x1 + T * x2**2 * x3**2, x2, x3))
 >>> parametric.ring.domain
 ZZ[T]
->>> BCWStep.build(parametric, 0, T * x2**2, x3**2, (x4, x5)).P
+>>> BCWStep.build(parametric, 0, Fresh(T * x2**2, x4), Fresh(x3**2, x5)).P
 T*x2**2
->>> BCWStep.build(parametric, 0, 1 / x2, x3**2, (x4, x5))
+>>> BCWStep.build(parametric, 0, Fresh(1 / x2, x4), Fresh(x3**2, x5))
 Traceback (most recent call last):
     ...
 ValueError: P must be a polynomial over the coefficient domain ZZ[T] in the variables ('x1', 'x2', 'x3'); got 1/x2.
@@ -677,7 +679,9 @@ A step carries a collision by filling the fresh coordinates with `-P(a)` and
 
 ```python
 >>> square = over_field(PolynomialMap((x1, x2, x3), (x1**2, x2, x3)))
->>> carried = BCWStep.build(square, 0, x2**2, x3**2, (x4, x5)).transport(
+>>> carried = BCWStep.build(
+...     square, 0, Fresh(x2**2, x4), Fresh(x3**2, x5)
+... ).transport(
 ...     Collision.at(square, ((1, 2, 3), (-1, 2, 3)))
 ... )
 >>> carried.points[0], carried.image
