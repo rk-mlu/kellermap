@@ -26,7 +26,7 @@ from kellermap import (
 from kellermap.bcw import BCWStep, Carried, Fresh
 from kellermap.reduction import LinearStep
 
-x1, x2, x3, x4, x5 = sp.symbols("x1 x2 x3 x4 x5")
+x1, x2, x3, x4, x5, x6, x7 = sp.symbols("x1 x2 x3 x4 x5 x6 x7")
 
 # F = (x1 + x2^2 x3^2, x2, x3). Der Spitzenterm x2^2 x3^2 der ersten
 # Komponente faktorisiert als P * Q mit P = x2^2 und Q = x3^2.
@@ -334,12 +334,80 @@ def test_BCW10_a_reused_coordinate_must_carry_something() -> None:  # noqa: N802
     assert failure.value.obligation == "BCW-10"
 
 
-def test_transport_for_other_m_is_still_open() -> None:
-    """Arbeitspaket 3; bis dahin wird der Fall abgelehnt statt geraten."""
-    step = BCWStep.build(CARRYING, 0, Carried(3), Fresh(x3**2, x5))
+# --------------------------------------------------------------------------
+# BCW-8 fuer jedes m
+# --------------------------------------------------------------------------
 
-    with pytest.raises(NotImplementedError, match="work package 3"):
-        step.transport(Collision(((1, 2, 3, 4), (-1, 2, 3, 4)), (0, 0, 0, 0)))
+# F(x1, x2, x3, x4, x5) = (x1^2, x2, x3, x2^2 + x4, x3^2 + x5).
+# (1, 2, 3, 0, 0) und (-1, 2, 3, 0, 0) haben dasselbe Bild (1, 2, 3, 4, 9).
+SQUARE_WITH_CARRIERS = over_field(
+    PolynomialMap(
+        (x1, x2, x3, x4, x5),
+        (x1**2, x2, x3, x2**2 + x4, x3**2 + x5),
+    )
+)
+
+SQUARE_COLLISION = Collision(((1, 2, 3, 0, 0), (-1, 2, 3, 0, 0)), (1, 2, 3, 4, 9))
+
+
+def test_BCW8_at_m_one_one_coordinate_is_appended() -> None:  # noqa: N802
+    """Ein gekaufter Traeger, also eine neue Koordinate je Punkt."""
+    step = BCWStep.build(SQUARE_WITH_CARRIERS, 0, Carried(3), Fresh(x3**2, x6))
+    carried = step.transport(SQUARE_COLLISION)
+
+    assert carried.dimension == 6
+    assert carried.points[0] == (1, 2, 3, 0, 0, -9)
+    assert carried.points[1] == (-1, 2, 3, 0, 0, -9)
+
+
+def test_BCW8_at_m_one_the_image_only_gains_a_zero() -> None:  # noqa: N802
+    """Der frische Platz traegt am Bild eine Null, das Produkt verschwindet."""
+    step = BCWStep.build(SQUARE_WITH_CARRIERS, 0, Carried(3), Fresh(x3**2, x6))
+
+    assert step.transport(SQUARE_COLLISION).image == (1, 2, 3, 4, 9, 0)
+
+
+def test_BCW8_at_m_zero_nothing_is_appended() -> None:  # noqa: N802
+    step = BCWStep.build(SQUARE_WITH_CARRIERS, 0, Carried(3), Carried(4))
+    carried = step.transport(SQUARE_COLLISION)
+
+    assert carried.dimension == 5
+    assert carried.points == SQUARE_COLLISION.points
+
+
+def test_BCW8_at_m_zero_the_image_moves() -> None:  # noqa: N802
+    """Die einzige Stelle, an der ein Schritt das Bild wirklich verschiebt.
+
+    Beide Traeger haben am Bild von Null verschiedene Werte, 4 und 9, also
+    wird die Zielkomponente um 36 kleiner: 1 - 4 * 9 = -35.
+    """
+    step = BCWStep.build(SQUARE_WITH_CARRIERS, 0, Carried(3), Carried(4))
+    carried = step.transport(SQUARE_COLLISION)
+
+    assert SQUARE_COLLISION.image == (1, 2, 3, 4, 9)
+    assert carried.image == (-35, 2, 3, 4, 9)
+
+
+def test_BCW8_the_number_of_points_survives_every_m() -> None:  # noqa: N802
+    """STEP-4: ein Gegenbeispiel bleibt eines, gleich wie viel gekauft wird."""
+    steps = (
+        BCWStep.build(SQUARE_WITH_CARRIERS, 0, Fresh(x2**2, x6), Fresh(x3**2, x7)),
+        BCWStep.build(SQUARE_WITH_CARRIERS, 0, Carried(3), Fresh(x3**2, x6)),
+        BCWStep.build(SQUARE_WITH_CARRIERS, 0, Carried(3), Carried(4)),
+    )
+
+    assert [step.m for step in steps] == [2, 1, 0]
+    assert all(
+        len(step.transport(SQUARE_COLLISION)) == len(SQUARE_COLLISION) for step in steps
+    )
+
+
+def test_BCW8_the_result_is_verified_against_the_target() -> None:  # noqa: N802
+    """STEP-3: was herauskommt, wird geprueft und nicht behauptet."""
+    step = BCWStep.build(SQUARE_WITH_CARRIERS, 0, Carried(3), Carried(4))
+    carried = step.transport(SQUARE_COLLISION)
+
+    assert carried.verify(step.target) is None
 
 
 # --------------------------------------------------------------------------

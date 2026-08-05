@@ -615,35 +615,57 @@ class BCWStep:
     def transport(self, collision: Collision) -> Collision:
         """Pull a collision back through ``H`` and push its image through ``G``.
 
-        With the fresh coordinates filled with zero, ``H^-1`` sends ``(a, 0, 0)``
-        to ``(a, -P(a), -Q(a))``, and ``G`` leaves the padded image alone
-        because ``X_u X_v`` vanishes there. Any constant fill would do, as
-        long as the points share it; zero is fixed by the contract because a
-        fill ``(s, t)`` merely moves the image component ``index`` to
-        ``c_index - s t``.
-        """
-        if self.m != 2:
-            raise NotImplementedError(
-                "Transport for m != 2 arrives in work package 3 of milestone "
-                "0.3; see docs/contracts.md, BCW-8."
-            )
+        A point gains one coordinate per ``Fresh`` slot, in slot order. With
+        the fresh coordinates filled with zero, ``H^-1`` sends ``(a, 0, 0)``
+        to ``(a, -P(a), -Q(a))``. A ``Carried`` slot adds no coordinate,
+        because the step adds no generator for it.
 
+        The image gains a zero per ``Fresh`` slot, and ``G`` then reduces its
+        component ``index`` by the product of the two slot values at that
+        image. A ``Fresh`` slot contributes ``0`` there, so for ``m >= 1``
+        the product vanishes and the image is unchanged apart from padding.
+        Only at ``m = 0`` does the image move, to ``c_index - c_u * c_w``.
+
+        Any constant fill would do, as long as the points share it; zero is
+        fixed by the contract, because a fill ``(s, t)`` merely moves the
+        image component ``index`` to ``c_index - s t``.
+        """
         collision.verify(self._source)
 
-        appended = []
-        for point in collision.points:
-            substitution = dict(zip(self._source.variables, point, strict=True))
-            appended.append(
-                (
-                    -sp.expand(self.P.xreplace(substitution)),
-                    -sp.expand(self.Q.xreplace(substitution)),
-                )
-            )
+        appended = [self._appended_coordinates(point) for point in collision.points]
 
-        moved = collision.extended(appended, (0, 0))
+        moved = collision.extended(appended, (sp.Integer(0),) * self.m)
+        moved = moved.with_image(self._moved_image(moved.image))
         moved.verify(self._target)
 
         return moved
+
+    def _appended_coordinates(self, point: tuple[sp.Expr, ...]) -> tuple[sp.Expr, ...]:
+        """Return the coordinates a point gains, one per ``Fresh`` slot."""
+        substitution = dict(zip(self._source.variables, point, strict=True))
+
+        return tuple(
+            -sp.expand(value.as_expr().xreplace(substitution))
+            for slot, value in zip(self._slots, self._values, strict=True)
+            if isinstance(slot, Fresh)
+        )
+
+    def _moved_image(self, padded: tuple[sp.Expr, ...]) -> tuple[sp.Expr, ...]:
+        """Apply ``G`` to the padded image.
+
+        The coordinate a slot contributes is ``0`` for a ``Fresh`` slot, since
+        the fill is zero, and the image's own coordinate ``j`` for
+        ``Carried(j)``.
+        """
+        left, right = (
+            sp.Integer(0) if isinstance(slot, Fresh) else padded[slot.index]
+            for slot in self._slots
+        )
+
+        image = list(padded)
+        image[self._index] = sp.expand(image[self._index] - left * right)
+
+        return tuple(image)
 
     # ----------------------------------------------------------------------
 

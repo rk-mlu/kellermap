@@ -722,6 +722,26 @@ A step carries a collision by filling the fresh coordinates with `-P(a)` and
 
 ```
 
+A reused slot appends no coordinate, since the step adds no generator for it.
+It does affect the image: `G` reduces the target component by the product of
+the two slot values there, and a fresh slot contributes zero. So the image
+moves only when both slots are reused:
+
+```python
+>>> both = over_field(PolynomialMap(
+...     (x1, x2, x3, x4, x5), (x1**2, x2, x3, x2**2 + x4, x3**2 + x5)
+... ))
+>>> pair = Collision(((1, 2, 3, 0, 0), (-1, 2, 3, 0, 0)), (1, 2, 3, 4, 9))
+>>> moved = BCWStep.build(both, 0, Carried(3), Carried(4)).transport(pair)
+>>> moved.points == pair.points
+True
+>>> moved.image
+(-35, 2, 3, 4, 9)
+
+```
+
+The first coordinate moved from `1` to `1 - 4 * 9`.
+
 ---
 
 ## Naming across a reduction
