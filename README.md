@@ -32,13 +32,13 @@ represented explicitly as a mathematical object and carries its own
 machine-checkable certificate. Since 0.2 that is no longer a promise: the
 seventeen-dimensional cubic counterexample in the test suite is *derived* from
 Alpöge's map by a chain of eight verified steps, which carries the collision
-along with it.
+along with it. Since 0.3 the same holds for a fifteen-dimensional one.
 
 ---
 
 ## Project Status
 
-Current version: **0.2.0**
+Current version: **0.3.0rc1**
 
 The first milestone covered the algebraic foundations:
 
@@ -60,9 +60,17 @@ The second adds the verification framework:
 - Every obligation stated normatively in `docs/contracts.md`, one numbered
   identifier at a time, and cited by the exception when it fails
 
-Sharing carrier variables across steps, and with it the fifteen-dimensional
-reduction `alpoege15`, is 0.3. Searching for a reduction rather than verifying
-a presented one is 0.4.
+The third milestone adds steps that reuse a carrier an earlier step
+introduced:
+
+- A step is given two factor slots. `Fresh` introduces a new generator that
+  carries the factor; `Carried` reuses a coordinate that already carries it.
+- A step therefore introduces two, one or no generators, and a reduction that
+  reuses carriers reaches a lower dimension.
+- `alpoege15`, this project's own reduction of Alpöge's map to dimension 15,
+  is derived and verified.
+
+Searching for a reduction rather than verifying a presented one is 0.4.
 `CHANGELOG.md` lists what each release changed.
 
 ---

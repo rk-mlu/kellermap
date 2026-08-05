@@ -12,24 +12,19 @@ Error messages cite the identifier that failed, so that an independent review
 can address findings to a numbered obligation rather than to a line of code.
 Identifiers are never reused; a withdrawn obligation stays listed as withdrawn.
 
-**Status as of `0.2.0`:** every obligation on this page is implemented, and
+**Status as of `0.3.0`:** every obligation on this page is implemented, and
 the test suite covers every statement of the package. Where the implementation
 forced a change, this page was amended deliberately and the amendment is
 visible in the wording — the clearest cases are COL-4 and BCW-3, which moved
 from obligations of `verify()` to constructor invariants, and LIN-2, which was
 narrowed to what is actually checkable.
 
-Obligations marked **[0.3]** are specified but not yet implemented. They are
-written here first for the reason the whole page exists: deciding what a
-certificate must guarantee is easier before there is code to accommodate. A
-review of the released library should not look for them.
-
 Full statement coverage is not full obligation coverage, and the difference is
 worth naming. Several of the raises here cannot be reached at all, because an
 obligation checked earlier in the same `verify()` rules them out — BCW-5,
 BCW-7, LIN-2, LIN-3 and the `MA^1` clause of LIN-6. They carry
-`# pragma: no cover` with the reason written beside them rather than a test
-that contorts the object into an impossible state. Each type states which of
+`# pragma: no cover` with the reason written beside them. Writing a test for
+them would mean forcing the object into a state it cannot reach. Each type states which of
 its obligations can fail on supplied data and which are self-checks of the
 library's own arithmetic; a review should weigh them differently.
 
@@ -163,8 +158,8 @@ has determinant `-1`.
 
 **`is_elementary` on a product is sufficient, not characteristic.** Two equal
 transpositions multiply to the identity, which lies in `EA_n(k)` although
-neither factor does. The property reports on the exhibited factorization, which
-is what a certificate can check without forming anything.
+neither factor does. The property reports on the factorization that was
+supplied. A certificate can check that without forming any matrix.
 
 **The determinant is structural.** It is the product of the factor
 determinants — `1`, `-1` and `a` respectively — and no matrix is formed to
@@ -328,8 +323,8 @@ part of the certificate whether a context produced them or not.
 
 ## BCWStep
 
-One application of Bass–Connell–Wright, Proposition (3.1), and **[0.3]** its
-extension to steps that reuse a factor an earlier step already bought.
+One application of Bass–Connell–Wright, Proposition (3.1), and its extension
+to steps that reuse a factor an earlier step already introduced.
 
 ```python
 @dataclass(frozen=True)
@@ -359,9 +354,6 @@ class BCWStep:
     @classmethod
     def build(cls, source, index, left, right, filtration_level=1): ...
 
-    @classmethod
-    def classic(cls, source, target, index, P, Q, variables, level=1): ...
-
     @property
     def P(self) -> sp.Expr: ...
 
@@ -387,66 +379,79 @@ class BCWStep:
     def attained_filtration_level(self) -> int | float: ...
 ```
 
-`index` is zero-based. A step is given two *factor slots*, and each is either
-bought or borrowed. `Fresh(P, u)` buys a carrier: a new generator `u` whose
-component becomes `u + P`. `Carried(j)` borrows one: coordinate `j` of the
-source already has the shape `X_j + P`, and the step reuses that `P` without
-paying for it again.
+`index` is zero-based. A step is given two *factor slots*. Each slot supplies
+one of the two factors, in one of two ways:
 
-`m` is the number of `Fresh` slots, so `m ∈ {0, 1, 2}`, and `variables` is the
-fresh generators in slot order — the *fresh* ones, not the variables of either
-map, which are `source.variables` and `target.variables`. `P` and `Q` are the
-values of the two slots and are read off rather than stored: a `Fresh` slot
-carries its polynomial, a `Carried(j)` slot yields `source.components[j] - X_j`.
+- `Fresh(P, u)` introduces a new generator `u`. Its component in the target is
+  `u + P`, so the new coordinate carries `P`.
+- `Carried(j)` reuses coordinate `j` of the source. That component already has
+  the form `X_j + P`, so the factor `P` is available without a new generator.
 
-`G` and `H` are derived from the slots and are never supplied independently:
-two ways to say the same thing invite them to disagree. Writing `A` and `B` for
-the *coordinates* of the two slots — the fresh generator, or `X_j` for a
-borrowed one —
+An earlier draft of this page also listed a `classic()` constructor that kept
+the call form of 0.2, taking `P`, `Q` and a pair of variables. It was dropped
+during implementation. `Fresh(P, u), Fresh(Q, v)` is no longer than the old
+form and shows which factor goes with which variable, so the second entry point
+earned nothing. Dropping it also removed the last parameter typed `Iterable`
+on `BCWStep`, and with it the one place where a one-shot iterable could be
+consumed twice.
+
+`m` is the number of `Fresh` slots, so `m ∈ {0, 1, 2}`. `variables` is the
+fresh generators in slot order. These are the new generators only, not the
+variables of either map; those are `source.variables` and `target.variables`.
+
+`P` and `Q` are the values of the two slots. They are derived, not stored: a
+`Fresh` slot supplies its own polynomial, and a `Carried(j)` slot supplies
+`source.components[j] - X_j`.
+
+`G` and `H` are also derived from the slots, and are never supplied separately.
+If both a factorization and the automorphisms built from it were stored, the
+two could disagree. Write `A` and `B` for the *coordinates* of the two slots:
+the fresh generator for a `Fresh` slot, and `X_j` for a `Carried(j)` slot.
+Then
 
     G:  X_index  |-->  X_index - A*B
     H:  one factor per Fresh slot,  u |--> u + P
 
-so that `H` is the identity when `m = 0`.
+and `H` is the identity when `m = 0`.
 
 ### Why one type and not two
 
-The roadmap for 0.3 described the borrowed cases as a separate and simpler kind
-of step, on the grounds that `m = 0` performs no stabilization and is therefore
-not Proposition (3.1). Writing the contract changed that reading. A step
-`F' = G ∘ F` with `G` elementary is indeed a weaker and more general thing, but
-it is *too* general to be the certificate wanted here: it records that some
-elementary automorphism was composed on the left, and not which product was
-removed from which component through which two carriers. The slot form records
-exactly that, and it degenerates to `F' = G ∘ F` on its own when both slots are
-borrowed.
+The roadmap for 0.3 planned a separate and simpler step type for the case
+`m = 0`, because that case performs no stabilization and is therefore not
+Proposition (3.1). Writing this contract led to a different conclusion.
 
-The price is that `BCWStep` at `m = 0` no longer names an application of
-Proposition (3.1). It names the identity that proposition is built on, which
-holds for every `m`. `m` is reported so that a reader can tell the cases apart.
+A step `F' = G ∘ F` with `G` elementary is more general, but it is too general
+to serve as this certificate. It records that some elementary automorphism was
+composed on the left. It does not record which product was removed, from which
+component, or through which two carriers. The slot form records all three, and
+it reduces to `F' = G ∘ F` by itself when both slots are `Carried`.
+
+The consequence is that `BCWStep` at `m = 0` is no longer an application of
+Proposition (3.1). It is the identity on which that proposition rests, which
+holds for every `m`. `m` is reported so that a reader can tell the cases
+apart.
 
 **BCW-1 — The identity.** `target == G ∘ source^[m] ∘ H`, checked as a
 polynomial identity in one shared `PolyRing`, not by comparing printed
-expressions. **[0.3]** amends this only in replacing the fixed `2` by `m`; at
-`m = 0` the stabilization and `H` are both trivial and it reads
+expressions. Version 0.3 amended this only in replacing the fixed `2` by `m`.
+At `m = 0` the stabilization and `H` are both trivial and it reads
 `target == G ∘ source`.
 
 **BCW-2 — Dimension and generators.** `target.dimension == source.dimension + m`;
 the generators of `target` are those of `source` followed by `variables`, in
 slot order; each fresh variable satisfies RC-4 against `source.ring`.
 
-**[0.3]** amends this: until 0.3 the step bought two carriers unconditionally
-and `m` was fixed at 2. The amendment is the one place in this milestone where
-a binding obligation is loosened rather than added to, which is why it is a
-minor release and not a patch. Nothing that verified before stops verifying:
-a step with two `Fresh` slots is the old step exactly.
+Version 0.3 amended this. Until then the step always introduced two new
+generators, and `m` was fixed at 2. This is the only place in that milestone
+where a binding obligation was weakened rather than extended, and it is the
+reason 0.3 is a minor release and not a patch. Nothing that verified before
+stopped verifying: a step with two `Fresh` slots is exactly the earlier step.
 
 **BCW-3 — The factors are free of the fresh variables.** No polynomial of a
 `Fresh` slot involves any of the fresh variables. Two consequences depend on
 this: the factors of `H` commute, so their order is immaterial, and `H^-1` is
-the componentwise negation, which is what `transport()` uses. A `Carried` slot
-satisfies it for free, since its value comes out of the source's own
-components.
+the componentwise negation, which is what `transport()` uses. A `Carried` slot satisfies this automatically, because its value comes from a
+component of the source.
 
 Enforced at construction, and by conversion rather than by inspection: `P` and
 `Q` are converted into `source.ring` and stored as elements of it. Since the
@@ -459,8 +464,8 @@ refused at construction rather than failing somewhere downstream. Its
 coefficients must lie in the domain, so `x/2` is refused over `ZZ[T]` and
 admitted over `ZZ(T)`. And every symbol in it must be a generator *or a
 parameter of the coefficient domain*, so `T x` over `k[T]` is admitted — which
-a name-based check refused, putting `BCWStep` at odds with COL-2, where the
-same `T` is explicitly allowed.
+a name-based check refused. That put `BCWStep` in conflict with COL-2, which
+allows the same `T` explicitly.
 
 Freshness of `variables` is likewise a constructor invariant, checked against
 `reserved_names(source.ring)` rather than against the coordinates alone: a
@@ -478,20 +483,20 @@ created.
 to be products of elementary factors whose polynomials do not involve their own
 variable, and `G.inverse() ∘ G` and `H.inverse() ∘ H` are checked to be the
 identity map. The factorization is kept rather than multiplied out, because
-that factorization is the proof.
+the factorization is what a reader checks.
 
-**[0.3]** `G` remains elementary in every case: its displacement `-A*B` is free
-of `X_index` exactly when neither slot names `index`, which BCW-10 requires. At
-`m = 0` the check on `H` is a check on the identity and says nothing.
+`G` is elementary in every case. Its displacement `-A*B` is free of
+`X_index` exactly when neither slot names `index`, which BCW-10 requires. At
+`m = 0`, `H` is the identity, so the check on `H` establishes nothing.
 
 **BCW-6 — The declared filtration level is attained.** `filtration_level ∈
 {0, 1}`, `H.is_in_EA(filtration_level)` holds, and `G.is_in_EA(1)` holds.
 
-**[0.3]** At `m = 0`, `H` is the identity, which lies in every `EA^d`, so the
-declared level constrains nothing and `attained_filtration_level` is infinite.
-The obligation then rests on `G` alone. A step that borrows both factors cannot
-leave `MA^1`, which is worth knowing when choosing between two ways of removing
-the same product. The
+At `m = 0`, `H` is the identity. The identity lies in every `EA^d`,
+so the declared level constrains nothing and `attained_filtration_level` is
+infinite; the obligation then rests on `G` alone. A step that reuses both
+factors cannot leave `MA^1`. That is useful to know when choosing between two
+ways of removing the same product. The
 level is declared and checked, not inferred: Proposition (3.1) admits `EA^0`
 when the factorization must be linear, and whether a step leaves `MA^1` is a
 fact the certificate has to record. In the reference reduction exactly two of
@@ -521,14 +526,14 @@ image. Any constant fill would do — the points must merely share it — and th
 contract fixes zero, because a non-zero fill `(s, t)` moves the image component
 `index` to `c_index - s*t` and buys nothing.
 
-**[0.3]** A `Carried` slot appends nothing to a point, since it buys no
-coordinate. It does contribute to the image: `G` reduces component `index` of
-the padded image by the product of the two slot values there, which is `0` for
-a `Fresh` slot and `c_j` for `Carried(j)`. For `m ≥ 1` one factor is therefore
-zero and the image is unchanged apart from padding, as before. Only at `m = 0`
-can the image actually move, and then it moves by `c_index - c_u * c_w`. This
-is the one place where borrowing is not merely a cheaper way of doing the same
-thing.
+A `Carried` slot appends nothing to a point, because it adds no
+coordinate. It does affect the image. `G` reduces component `index` of the
+padded image by the product of the two slot values at that image: `0` for a
+`Fresh` slot, and `c_j` for `Carried(j)`. So for `m ≥ 1` at least one of the
+two factors is zero and the image is unchanged apart from padding, as before.
+Only at `m = 0` can the image move, and it then moves to
+`c_index - c_u * c_w`. This is the only respect in which reusing a coordinate
+differs from introducing one, beyond the saved dimension.
 
 ### Supplied versus constructed
 
@@ -545,29 +550,38 @@ the attribute can. A review should read it as "this label was not set by hand
 somewhere in the call chain", which is what it is for, and not as a claim that
 the object could not be tampered with.
 
-This distinction is the point of milestone 0.2 and must survive into any audit.
+`SUPPLIED` states that the target was not produced by this library in this
+run. It says nothing about who computed it, and a review should not read more
+into it. A target may come from a published source, from a second
+implementation in this repository, or from a hand computation; the label is the
+same in all three cases, and where it came from belongs in the test that holds
+it.
+
+This distinction is the central result of milestone 0.2 and has to remain
+visible to any audit.
 For a `SUPPLIED` step, BCW-1 compares an externally computed map against the
 formula and can fail. For a `CONSTRUCTED` step it compares the implementation
 against itself and cannot: it is a self-check, not evidence. `Reduction`
 propagates the weaker provenance of its steps.
 
-**BCW-10 — [0.3] A borrowed slot names a carrier.** For `Carried(j)`:
+**BCW-10 — A reused slot names a carrier.** For `Carried(j)`:
 `0 <= j < source.dimension`, `j != index`, and `source.components[j] - X_j` is
 free of `X_j`.
 
-The first two clauses are what keeps `G` elementary. The third is what makes
-the step *readable*: without it, `P` would be an arbitrary component minus a
-variable rather than a value some coordinate carries, and the sentence "this
-step removes `P·Q`" would describe nothing. The identity of BCW-1 holds either
-way, which is precisely why this has to be stated separately — it is an
-obligation about meaning, not about arithmetic.
+The first two clauses are constructor invariants and raise `ValueError`; they
+keep `G` elementary. The third clause is checked by `verify()` and gives the
+step its meaning. Without it, `P` would be an arbitrary component minus a
+variable, rather than a value that some coordinate carries, and the statement
+"this step removes `P·Q`" would describe nothing. The identity of BCW-1 holds
+in either case. That is why this clause has to be stated separately: it
+constrains what the step means, not what it computes.
 
-Both slots may name the same coordinate. `G` is then `X_index - X_j^2` and the
-step removes a square, which is a legitimate reading and needs no exception.
+Both slots may name the same coordinate. `G` is then `X_index - X_j^2`, and the
+step removes a square. This is a valid case and needs no exception.
 
 ### Which of these can fail on supplied data
 
-BCW-1, BCW-2, BCW-6 and **[0.3]** the third clause of BCW-10. BCW-3, the
+BCW-1, BCW-2, BCW-6 and the third clause of BCW-10. BCW-3, the
 freshness half of BCW-2 and the first two clauses of BCW-10 are constructor
 invariants and are not reachable by `verify()` at all. BCW-5 and BCW-7 follow
 from BCW-1 — every element of `EA_n(k)` has determinant one, and the exhibited
@@ -606,7 +620,8 @@ That the factors multiply to the declared matrix is *not* checked, because it
 is not checkable: `LinearAutomorphism.matrix()` is that product, and no second,
 independently declared matrix is stored to compare it against. That is
 deliberate, for the reason `BCWStep` derives `G` and `H` rather than storing
-them — two ways to say the same thing invite them to disagree.
+them — storing both a factorization and the automorphisms built from it would allow
+the two to disagree.
 
 **LIN-3 — Determinant bookkeeping.** `target.determinant() ==
 transformation.determinant() * source.determinant()`. A linear step is the only
@@ -671,15 +686,16 @@ class Reduction:
 **RED-1 — Non-empty.** A reduction has at least one step, so that `source` and
 `target` are defined without a separate carrier for the identity case.
 
-**[0.3]** A chain's dimensions no longer grow by two at every BCW step: with
+A chain's dimensions do not grow by two at every BCW step: with
 `m ∈ {0, 1, 2}` they may grow by nothing at all. `dimensions()` reports what
 happened rather than constraining it, and RED-2 is unaffected — adjacency is
 equality of maps, not of shapes.
 
 **RED-2 — Adjacency.** `steps[i].target == steps[i + 1].source` for every `i`,
 by value equality of `PolynomialMap` — variables, coefficient domain and
-components. Adjacency is the glue of the induction and is checked in its own
-right, not inferred from the steps verifying individually.
+components. Adjacency is what turns the individual certificates into a proof
+about the whole chain, so it is checked separately and not inferred from the
+steps.
 
 **RED-3 — Verification is local plus adjacency, and nothing else.**
 `verify()` calls `verify()` on every step and checks RED-2. It does not
@@ -730,8 +746,8 @@ identifier also appears in `str(...)`, but a caller is expected to branch on
 | an obligation on this page fails | `VerificationError` |
 | `filtration_level` outside `{0, 1}` | `ValueError` |
 | `index` outside `range(source.dimension)` | `ValueError` |
-| **[0.3]** a borrowed slot naming `index`, or an index out of range | `ValueError` |
-| **[0.3]** a borrowed slot naming a component that is not a carrier | `VerificationError` |
+| a reused slot naming `index`, or an index out of range | `ValueError` |
+| a reused slot naming a component that is not a carrier | `VerificationError` |
 | `P` or `Q` that is not a polynomial over the source's ring | `ValueError` |
 | two fresh variables of one name, or a name already reserved | `ValueError` |
 | `variables` colliding with reserved names | `ValueError` |
@@ -767,17 +783,15 @@ verify one that is presented to them. Searching is 0.4.
 
 **No reduction method other than this one.** *Withdrawn in 0.3.* Until then,
 BCW-2 fixed exactly two fresh variables per step, so a chain of `BCWStep`s
-could not express a reduction that shares carrier variables across steps. The
-amendment above admits `m ∈ {0, 1, 2}` and the limitation is gone; what remains
-of it is narrower and worth keeping in view.
+could not express a reduction that reuses carrier variables across steps. The
+amendment above admits `m ∈ {0, 1, 2}`, and that limitation is gone. A narrower
+one remains.
 
-A borrowed factor must be carried by a coordinate of the *source* of that step.
-A reduction that wanted to reuse a value carried further back, in a map two
-steps earlier, would have to arrange for the carrier to survive — which it does
-automatically, since no step touches a component it does not target, but the
-obligation is stated against the immediate source and not against the chain.
-`Reduction` therefore still cannot express a step that reaches past its own
-source, and nothing in 0.3 needs it to.
+A reused factor must be carried by a coordinate of the *source* of that step.
+BCW-10 is stated against the immediate source, not against the chain. In
+practice a carrier does survive, because no step changes a component it does
+not target, but `Reduction` still cannot express a step that refers to a map
+earlier in the chain. Nothing in 0.3 requires that.
 
 **No injectivity claim about `source`.** `transport()` moves a collision that
 is supplied. That a map *has* no collision is not something this framework

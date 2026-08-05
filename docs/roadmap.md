@@ -282,6 +282,9 @@ of formula (1).
 
 # Version 0.3
 
+**Status: complete, released as `0.3.0rc1`.** The final version number is held
+back until an external audit and the release chain have run against this tree.
+
 ## Carrier sharing, and `alpoege15`
 
 A milestone of its own, and the line it falls on is the project's own: 0.2
@@ -325,10 +328,10 @@ chain lands in dimension 15:
   point identical to BCW17's, since the first five steps are unchanged;
 - image `(0, 0, -1/4)` followed by twelve zeros.
 
-Verified by hand computation in plain SymPy, not by this library — which is
-what the milestone is for. Until then `alpoege15` is fixed input like the other
-two examples, and both of its shared steps are the `m = 1` case, so it cannot
-be expressed as a `Reduction` at all today.
+Derived since this milestone: a `Reduction` of eight steps, verified one at a
+time, carrying the collision. Both of its reusing steps are the `m = 1` case.
+The last step is given the fixed components as its target, and those come from
+`scripts/reconstruct_alpoege15.py`, which does not use this library.
 
 No claim of minimality attaches to the number. The comparable published
 reduction is the 19-dimensional one; the 24-variable map is cubic *homogeneous*
@@ -359,16 +362,16 @@ two" in `contracts.md`.
 ### Work packages
 
 Five work packages, with internal version numbers `0.2.1` to `0.2.5` and tags
-`wp/0.2.n`. None of them is a release. `pyproject.toml` stays at `0.2.0` until
-the milestone is complete.
+`wp/0.2.n`. None of them is a release. `pyproject.toml` stayed at `0.2.0` for
+the duration and moved to `0.3.0rc1` at the end.
 
-| WP | Internal | Content |
-| --- | --- | --- |
-| 1 | 0.2.1 | `Fresh`, `Carried`, and `BCWStep` restated in terms of factor slots |
-| 2 | 0.2.2 | `m ∈ {0, 1, 2}` in the derivation and in `verify()`, and BCW-10 |
-| 3 | 0.2.3 | Collision transport for every `m` (BCW-8) |
-| 4 | 0.2.4 | `alpoege15` as a verified `Reduction` |
-| 5 | 0.2.5 | Documentation and release |
+| WP | Internal | Content | Done |
+| --- | --- | --- | --- |
+| 1 | 0.2.1 | `Fresh`, `Carried`, and `BCWStep` restated in terms of factor slots | yes |
+| 2 | 0.2.2 | `m ∈ {0, 1, 2}` in the derivation and in `verify()`, and BCW-10 | yes |
+| 3 | 0.2.3 | Collision transport for every `m` (BCW-8) | yes |
+| 4 | 0.2.4 | `alpoege15` as a verified `Reduction` | yes |
+| 5 | 0.2.5 | Documentation and release | yes |
 
 Every work package leaves the repository green.
 

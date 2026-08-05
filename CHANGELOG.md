@@ -4,6 +4,52 @@ Notable changes per release. Dates are release dates; the milestone plan and
 its reasoning live in `docs/roadmap.md`, the binding obligations of the
 verification surface in `docs/contracts.md`.
 
+## 0.3.0
+
+Steps that reuse a carrier. A step no longer always introduces two new
+generators, and a reduction that reuses them reaches a lower dimension:
+`alpoege15`, this project's own reduction of Alpöge's map to dimension 15, is
+derived and verified.
+
+### Added
+
+- `Fresh` and `Carried` — the two kinds of factor slot. `Fresh(P, u)`
+  introduces a new generator whose component becomes `u + P`. `Carried(j)`
+  reuses coordinate `j` of the source, which already has the form `X_j + P`.
+- `BCWStep.m` — the number of generators the step introduces, which is 2, 1
+  or 0.
+- `BCW-10` — a reused slot must name a carrier. Its first two clauses are
+  constructor invariants; the third is checked by `verify()` and gives the
+  step its meaning, since the identity holds without it.
+- `tests/test_alpoege15.py` and `scripts/reconstruct_alpoege15.py` — the
+  fifteen-dimensional map, derived by the library and computed independently
+  in plain SymPy.
+
+### Changed
+
+- `BCWStep` takes two factor slots instead of `P`, `Q` and a pair of
+  variables. `Fresh(P, u), Fresh(Q, v)` is the earlier step exactly.
+- `BCW-2` allows `target.dimension == source.dimension + m`. This is the only
+  binding obligation the milestone weakens rather than extends, and the reason
+  0.3 is a minor release.
+- `BCW-8` covers every `m`. A point gains one coordinate per `Fresh` slot. For
+  `m ≥ 1` the image is unchanged apart from padding; at `m = 0` it moves to
+  `c_index - c_u * c_w`.
+- `BCW-9` states what `SUPPLIED` claims: the target was not produced by this
+  library in this run, and nothing about who computed it.
+- Documentation uses plainer language throughout. Metaphors for technical
+  facts, rhetorical constructions and long sentences were removed, so that the
+  text is easier for readers who do not have English as a first language.
+
+### Known limitations
+
+- The translation `(X − F(0))` is still not implemented, so a map must already
+  fix the origin. Neither driving example needs it.
+- A reused factor must be carried by a coordinate of the source of that step,
+  not by an earlier map in the chain.
+- Searching for a factorization rather than verifying one that is presented is
+  the next milestone.
+
 ## 0.2.0
 
 The verification framework. A reduction is now a chain of certified

@@ -173,8 +173,7 @@ class BCWStep:
     index
         The component from which ``P * Q`` is removed, zero-based.
     left, right
-        The two factor slots. Each is a ``Fresh`` or a ``Carried``. Only two
-        ``Fresh`` slots are accepted for now; see work package 2.
+        The two factor slots. Each is a ``Fresh`` or a ``Carried``.
     filtration_level
         The ``EA`` level ``H`` is claimed to reach, 0 or 1.
     """

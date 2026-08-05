@@ -477,12 +477,37 @@ Two kinds exist. `LinearStep` composes an element of `GL_n(k)` on the left.
 `BCWStep` is one application of Proposition (3.1): with `H = (…, X_u + P,
 X_v + Q)` and `G = (…, X_i - X_u X_v, …)`,
 
-    F' = G ∘ F^[2] ∘ H.
+    F' = G ∘ F^[m] ∘ H.
 
-`G` and `H` are *derived* from `(index, P, Q, variables)` by that formula and
-never stored beside them. Two ways to say the same thing invite them to
-disagree, and the identity check would then be comparing one of them against
-the other.
+`G` and `H` are *derived* from the index and the two factor slots by that
+formula, and are never stored beside them. Storing both a factorization and
+the automorphisms built from it would allow the two to disagree, and the
+identity check would then compare one of them against the other.
+
+### Factor slots
+
+A step is given two slots, and each supplies one factor. `Fresh(P, u)`
+introduces a new generator `u`, whose component in the target is `u + P`.
+`Carried(j)` reuses coordinate `j` of the source, which already has the form
+`X_j + P`. `m` is the number of `Fresh` slots, so a step introduces two, one
+or no generators.
+
+Reusing a coordinate is not in the paper. It is admitted because the identity
+holds for every `m`, and because a reduction that reuses carriers reaches a
+lower dimension. The seventeen-dimensional reduction of Alpöge's map
+introduces `x1²` twice and `x1x2` twice; avoiding both duplications takes it
+to dimension 15.
+
+At `m = 0` the step performs no stabilization and `H` is the identity, so it
+is not an application of Proposition (3.1). It is the identity that
+proposition rests on, which holds for every `m`. An earlier plan gave that
+case its own simpler type. The slot form was chosen instead, because
+`F' = G ∘ F` alone does not record which product was removed, from which
+component, or through which two carriers.
+
+Transport differs in one respect. For `m ≥ 1` at least one slot contributes a
+zero at the padded image, so the image is unchanged apart from padding. At
+`m = 0` both contributions are real values and the image moves.
 
 Two things are wider than the paper states them, because the reduction of
 Alpöge's map to dimension 17 needs both and the identity holds for both. `P·Q`
@@ -767,7 +792,7 @@ surface a reader meets first, not the edge cases.
 Known examples from the literature are preserved to guarantee that future
 optimizations never change mathematical correctness.
 
-Three regression examples are kept. The small one checks Alpöge's degree-seven
+Four regression examples are kept. The small one checks Alpöge's degree-seven
 map in dimension three by asserting both its constant Jacobian determinant and
 an explicit collision.
 
@@ -780,7 +805,14 @@ behind a `SUPPLIED` label. The external fact is the endpoint, and a negative
 control changes one component, so that the test fails if the check does not
 work.
 
-The third is a published cubic map in dimension 19, kept as fixed input. Its
+The third is `alpoege15`, this project's own reduction of the same source. It
+reuses the two carrier values that the seventeen-dimensional chain introduces
+twice, and is derived since 0.3. Its target is supplied by an implementation
+that does not use this library, so the check can fail; what the agreement
+shows is that two implementations of the same formulas compute the same thing,
+not that the result matches a published map.
+
+The fourth is a published cubic map in dimension 19, kept as fixed input. Its
 reduction shares carrier variables across steps, so it introduces one fresh
 variable where `BCWStep` requires two, and a chain of `BCWStep`s cannot express
 it at all. It is in the suite as an independent second instance and as a target
