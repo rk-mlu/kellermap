@@ -2,26 +2,44 @@
 
 Kein fremdes Beispiel, sondern die eigene Reduktion dieses Projekts. Sie
 entsteht aus der siebzehndimensionalen, indem zwei Schritte einen Traeger
-mitbenutzen, den ein frueherer Schritt schon gekauft hat: BCW17 legt ``x1**2``
+mitbenutzen, den ein frueherer Schritt schon angelegt hat: BCW17 legt ``x1**2``
 zweimal an (in ``x5`` und ``x17``) und ``x1*x2`` ebenfalls zweimal (in ``x8``
 und ``x14``). Wer die Doppelung vermeidet, spart je eine Variable.
 
-Feste Eingabe, wie ``test_alpoege19.py`` -- und aus dem entgegengesetzten
-Grund. Dort ist die Schrittfolge unbekannt; hier ist sie bekannt, aber
-``Reduction`` kann sie nicht ausdruecken: beide geteilten Schritte sind der
-Fall ``m = 1``, und BCW-2 legt zwei frische Variablen je Schritt fest. Das ist
-Meilenstein 0.3. Bis dahin ist die Abbildung eine Handrechnung und keine
-Aussage dieser Bibliothek, und die Tests unten rechnen genau das nach, was sich
-ohne Zertifikat nachrechnen laesst.
+Seit Meilenstein 0.3 wird die Abbildung abgeleitet und nicht mehr behauptet:
+eine ``Reduction`` aus acht Schritten, Schritt fuer Schritt verifiziert, die
+die Kollision mittraegt. Zwei der sieben BCW-Schritte haben ``m = 1``.
 
-Die zweite, von ``kellermap`` unabhaengige Rechnung steht in
-``scripts/reconstruct_alpoege15.py``. Zur Herkunft und zu der Frage, was die
-Zahl 15 bedeutet und was nicht, siehe ``docs/references.md``.
+Was daran Beleg ist und was nicht
+---------------------------------
+Anders als bei BCW17 ist der Endpunkt hier keine aeussere Tatsache. Die
+fixierten Komponenten weiter unten stammen aus derselben Handrechnung, die
+auch die Kette erzeugt hat; ``scripts/reconstruct_alpoege15.py`` fuehrt sie in
+reinem SymPy aus. Dass der letzte Schritt sein Ziel vorgelegt bekommt, zeigt
+also die Uebereinstimmung zweier Umsetzungen derselben Formeln, nicht die
+Uebereinstimmung mit einer veroeffentlichten Abbildung.
+
+Die Zwischenabbildungen sind ``CONSTRUCTED``, und die Kette traegt nach RED-7
+die schwaechere Provenienz.
+
+Zur Herkunft und zu der Frage, was die Zahl 15 bedeutet und was nicht, siehe
+``docs/references.md``.
 """
 
+import pytest
 import sympy as sp
 
-from kellermap import Collision, PolynomialMap
+from kellermap import (
+    Collision,
+    PolynomialMap,
+    Provenance,
+    Reduction,
+    ReductionContext,
+    VerificationError,
+    over_field,
+)
+from kellermap.bcw import BCWStep, Carried, Fresh
+from kellermap.reduction import LinearStep
 from tests.test_bcw17 import BCW17_COLLISION
 from tests.test_bcw17 import COMPONENTS as BCW17_COMPONENTS
 
@@ -227,23 +245,160 @@ def test_two_dimensions_below_bcw17() -> None:
 
 
 # --------------------------------------------------------------------------
-# Was hier noch nicht steht
+# Ableitung: die Kette von Alpoege hierher
 # --------------------------------------------------------------------------
 
+ALPOEGE_VARIABLES = (_1, _2, _3)
 
-def test_the_chain_is_not_yet_expressible() -> None:
-    """Die Einschraenkung, die 0.3 aufhebt, als ausgefuehrte Aussage.
+ALPOEGE_COMPONENTS = (
+    (1 + _1 * _2) ** 3 * _3 + _2**2 * (1 + _1 * _2) * (4 + 3 * _1 * _2),
+    _2 + 3 * _1 * (1 + _1 * _2) ** 2 * _3 + 3 * _1 * _2**2 * (4 + 3 * _1 * _2),
+    2 * _1 - 3 * _1**2 * _2 - _1**3 * _3,
+)
 
-    Beide geteilten Schritte heben die Dimension um eins. BCW-2 verlangt zwei,
-    also laesst sich diese Kette heute nicht als ``Reduction`` hinschreiben --
-    weshalb die Abbildung hier feste Eingabe ist und nicht abgeleitet wie
-    BCW17.
-    """
-    dimensions = (3, 3, 5, 7, 9, 11, 13, 14, 15)
-    increments = [
-        second - first
-        for first, second in zip(dimensions, dimensions[1:], strict=False)
+ALPOEGE_COLLISION = (
+    (0, 0, R(-1, 4)),
+    (1, R(-3, 2), R(13, 2)),
+    (-1, R(3, 2), R(13, 2)),
+)
+
+# Die sieben Anwendungen von Proposition (3.1): Zielkomponente (nullbasiert),
+# die beiden Faktorplaetze, und die EA-Stufe. Ein Platz ist entweder
+# ("fresh", P) -- die Variable dazu vergibt der ReductionContext -- oder
+# ("carried", j) fuer die Koordinate j, die den Faktor schon traegt.
+STEPS = (
+    (0, ("fresh", -_1 * _3 / 2), ("fresh", _1**2), 1),
+    (1, ("fresh", 3 * _1**2 * _2), ("fresh", _1 * _2 * _3 + 3 * _2**2), 1),
+    (1, ("fresh", _1 * _2), ("fresh", 6 * _1 * _3 - 3 * _1 * _7 - _3 * _6), 1),
+    (
+        2,
+        ("fresh", _1 * _2**2),
+        ("fresh", _1**2 * _2 * _3 + 3 * _1 * _2**2 + 3 * _1 * _3 + 7 * _2),
+        0,
+    ),
+    (2, ("fresh", _1 * _2 * _10), ("fresh", -_1 * _3 - 3 * _2), 0),
+    # x1*x2 liegt seit Schritt 3 als Komponente 8 vor, also Index 7.
+    (2, ("carried", 7), ("fresh", -_10 * _13 - _2 * _11), 1),
+    # x1**2 liegt seit Schritt 1 als Komponente 5 vor, also Index 4.
+    (10, ("carried", 4), ("fresh", _2 * _3), 1),
+)
+
+
+@pytest.fixture(scope="module")
+def alpoege() -> PolynomialMap:
+    """Ueber QQ, weil die Normalisierung sofort einen Kehrwert braucht."""
+    return over_field(PolynomialMap(ALPOEGE_VARIABLES, ALPOEGE_COMPONENTS))
+
+
+@pytest.fixture(scope="module")
+def reduction(alpoege: PolynomialMap) -> Reduction:
+    """Die vollstaendige Kette, mit vorgelegtem Ziel im letzten Schritt."""
+    context = ReductionContext()
+    normalization = LinearStep.normalize(alpoege)
+    steps: list[LinearStep | BCWStep] = [normalization]
+    current = normalization.target
+
+    for position, (index, left, right, level) in enumerate(STEPS):
+        specs = (left, right)
+        fresh = context.variables(
+            current.ring, sum(kind == "fresh" for kind, _ in specs)
+        )
+        allocated = iter(fresh)
+        slots = tuple(
+            Fresh(value, next(allocated)) if kind == "fresh" else Carried(int(value))
+            for kind, value in specs
+        )
+        last = position == len(STEPS) - 1
+        step = (
+            BCWStep(current, ALPOEGE15, index, *slots, level)
+            if last
+            else BCWStep.build(current, index, *slots, level)
+        )
+        steps.append(step)
+        current = step.target
+
+    return Reduction(steps)
+
+
+def test_the_reduction_verifies(reduction: Reduction) -> None:
+    """Acht Schritte, jeder einzeln geprueft, und jede Naht dazwischen."""
+    assert reduction.verify() is None
+    assert len(reduction) == 8
+
+
+def test_the_reduction_reaches_alpoege15(reduction: Reduction) -> None:
+    assert reduction.target == ALPOEGE15
+
+
+def test_two_steps_reuse_a_carrier(reduction: Reduction) -> None:
+    """Der Grund fuer die Dimension: zweimal m = 1 statt zweimal m = 2."""
+    levels = [step.m for step in reduction if isinstance(step, BCWStep)]
+
+    assert levels == [2, 2, 2, 2, 2, 1, 1]
+    assert sum(levels) == 12
+
+
+def test_the_dimensions_and_degrees(reduction: Reduction) -> None:
+    """3 auf 15 statt auf 17, Grad 7 auf 3."""
+    assert reduction.dimensions() == (3, 3, 5, 7, 9, 11, 13, 14, 15)
+    assert reduction.degrees() == (7, 7, 7, 7, 7, 5, 4, 4, 3)
+
+
+def test_the_context_names_x4_to_x15(reduction: Reduction) -> None:
+    allocated = tuple(
+        variable
+        for step in reduction
+        if isinstance(step, BCWStep)
+        for variable in step.variables
+    )
+
+    assert allocated == X[3:]
+
+
+def test_the_reused_coordinates_are_the_ones_bcw17_duplicates(
+    reduction: Reduction,
+) -> None:
+    """Genau die beiden Werte, die BCW17 zweimal anlegt."""
+    reused = [
+        (step.left, step.P)
+        for step in reduction
+        if isinstance(step, BCWStep) and isinstance(step.left, Carried)
     ]
 
-    assert increments == [0, 2, 2, 2, 2, 2, 1, 1]
-    assert increments.count(1) == 2
+    assert reused == [(Carried(7), _1 * _2), (Carried(4), _1**2)]
+
+
+def test_the_collision_is_transported(
+    reduction: Reduction, alpoege: PolynomialMap
+) -> None:
+    """Drei Punkte in k^3 werden drei Punkte in k^15."""
+    carried = reduction.transport(Collision.at(alpoege, ALPOEGE_COLLISION))
+
+    assert carried == Collision(COLLISION, IMAGE)
+
+
+def test_the_image_does_not_move(reduction: Reduction, alpoege: PolynomialMap) -> None:
+    """Kein Schritt hat m = 0, also bleibt das Bild bis auf Nullen stehen."""
+    carried = reduction.transport(Collision.at(alpoege, ALPOEGE_COLLISION))
+
+    assert carried.image[:3] == (0, 0, R(-1, 4))
+    assert set(carried.image[3:]) == {sp.Integer(0)}
+
+
+def test_the_provenance_is_constructed(reduction: Reduction) -> None:
+    """Der Endpunkt ist keine aeussere Tatsache, anders als bei BCW17."""
+    assert reduction.provenance is Provenance.CONSTRUCTED
+    assert reduction[-1].provenance is Provenance.SUPPLIED
+
+
+def test_a_perturbed_target_would_be_caught(reduction: Reduction) -> None:
+    """Gegenprobe: der letzte Schritt prueft wirklich etwas."""
+    last = reduction[-1]
+    perturbed = PolynomialMap(X, (COMPONENTS[0] + _4 * _5,) + COMPONENTS[1:])
+    broken = BCWStep(last.source, perturbed, last.index, last.left, last.right)
+
+    with pytest.raises(VerificationError) as failure:
+        Reduction([*list(reduction[:-1]), broken]).verify()
+
+    assert failure.value.obligation == "BCW-1"
+    assert failure.value.step == 7

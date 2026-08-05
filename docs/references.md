@@ -116,7 +116,7 @@ these are *different* reductions, not alternative descriptions of the map in
 
 | Source | Dimension | Shape | Determinant | In the suite |
 | --- | --- | --- | --- | --- |
-| this project, `alpoege15` (not yet certified) | 15 | degree 3 | 1 | no |
+| this project, `alpoege15` (derived) | 15 | degree 3 | 1 | yes |
 | this project, `tests/test_bcw17.py` (derived) | 17 | degree 3 | 1 | yes |
 | <https://rhicksrad.github.io/jacobian-degree3/> | 19 | degree 3 | −2 | yes |
 | <https://github.com/wtho704/explicit-cubic-homogeneous-jacobian-counterexample> | 24 | cubic homogeneous | 1 | no |
@@ -126,8 +126,9 @@ in the first column says which. The seventeen-dimensional map is *derived*
 since version 0.2: the suite verifies a chain of eight steps from Alpöge's map
 to it and transports the collision along; the provenance section below says
 what in that is evidence and what is a self-check. The fifteen-dimensional one
-is *not yet certified* — its chain is known but not expressible until milestone
-0.3, and the section on it below gives the reason.
+is *derived* since 0.3, when steps that reuse a carrier became expressible.
+What that does and does not establish differs from the case above, and the
+section on it below says how.
 
 The rows are not directly comparable. BCW reduce in two stages, first to
 degree 3 and then to cubic homogeneous form; the 24-variable map has completed
@@ -151,11 +152,14 @@ It is held in `tests/test_alpoege15.py`, with a second and independent
 rendering of the same chain in `scripts/reconstruct_alpoege15.py`, as
 `reconstruct_bcw17.py` does for the seventeen-dimensional map.
 
-Listed as *not yet certified* on purpose. The map exists as a hand computation
-in plain SymPy; `Reduction` cannot express its chain, because both shared steps
-are the `m = 1` case and BCW-2 fixes two fresh variables. That is milestone
-0.3, and until it lands the number is a computation rather than a result of
-this library.
+Since 0.3 the suite derives it: a `Reduction` of eight steps, two of which
+reuse a carrier and therefore introduce one generator instead of two.
+
+The endpoint is not an external fact, which is the difference from the
+seventeen-dimensional case. The fixed components come from the same hand
+computation that produced the chain, so supplying them to the last step shows
+that two implementations of the same formulas agree. It does not show
+agreement with a published map, because there is none to agree with.
 
 No claim of minimality attaches to it, following the practice of the sources
 above — the author of the 24-variable map states plainly that he claims neither
