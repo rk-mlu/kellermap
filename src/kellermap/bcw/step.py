@@ -29,9 +29,13 @@ reduction acts on component 11, which step four introduced.
 
 A step is given two *factor slots*. Each slot supplies one factor. ``Fresh``
 introduces a new generator that carries the factor; ``Carried`` reuses a
-coordinate of the source that already carries it. Two ``Fresh`` slots are the
-step of the paper. The other cases arrive in work package 2 and are rejected
-here.
+coordinate of the source that already carries it. ``m`` is the number of
+``Fresh`` slots, so ``m`` is 0, 1 or 2.
+
+Two ``Fresh`` slots are the step of the paper. Reusing a coordinate is not in
+the paper. It is admitted here because the identity above holds for every
+``m``, and because a reduction that reuses carriers reaches a lower dimension:
+the fifteen-dimensional reduction of Alpoege's map does so twice.
 
 See ``docs/contracts.md``, BCW-1 to BCW-10.
 """
@@ -89,8 +93,8 @@ class Carried:
     """A factor supplied by a coordinate that already carries it.
 
     Component ``index`` of the source has the form ``X_index + P``, so the
-    factor ``P`` is available without a new generator. The checks that make
-    this true belong to BCW-10 and arrive in work package 2.
+    factor ``P`` is available without a new generator. BCW-10 states what has
+    to hold for that reading to be correct.
     """
 
     index: int
@@ -132,6 +136,23 @@ def _coerce_factor(
             f"{source.ring.domain} in the variables "
             f"{tuple(str(v) for v in source.variables)}; got {factor}."
         ) from error
+
+
+def _slot_value(source: PolynomialMap, name: str, slot: Factor) -> PolyElement:
+    """Return the factor a slot supplies, as an element of the source's ring.
+
+    A ``Fresh`` slot supplies the polynomial it was given. A ``Carried(j)``
+    slot supplies ``source.components[j] - X_j``, which needs no conversion:
+    it is built from the source's own components.
+    """
+    if isinstance(slot, Fresh):
+        return _coerce_factor(source, name, slot.polynomial)
+
+    ring = source.ring
+
+    return cast(
+        PolyElement, source.to_polynomials()[slot.index] - ring.gens[slot.index]
+    )
 
 
 @dataclass(frozen=True, eq=False)
@@ -203,11 +224,21 @@ class BCWStep:
                     f"Slot {position} must be a Fresh or a Carried, "
                     f"not {type(slot).__name__}."
                 )
+            # BCW-10, erste beide Klauseln. Konstruktorinvariante, weil ein
+            # Platz ausserhalb des Bereichs oder auf der Zielkomponente die
+            # Verschiebung von G nicht mehr frei von X_index liesse.
             if isinstance(slot, Carried):
-                raise NotImplementedError(
-                    "Carried slots arrive in work package 2 of milestone 0.3; "
-                    "see docs/contracts.md, BCW-10."
-                )
+                if not 0 <= slot.index < source.dimension:
+                    raise ValueError(
+                        f"Slot {position} reuses coordinate {slot.index}, "
+                        f"which is out of range for {source.dimension} "
+                        "components of the source."
+                    )
+                if slot.index == index:
+                    raise ValueError(
+                        f"Slot {position} reuses coordinate {slot.index}, "
+                        "which is the component the step acts on."
+                    )
 
         fresh = tuple(slot.variable for slot in slots if isinstance(slot, Fresh))
 
@@ -229,13 +260,9 @@ class BCWStep:
                 f"The variables {sorted(taken)} are already in use by the source."
             )
 
-        # Nur Fresh-Plaetze kommen hier vor; Carried ist oben abgelehnt. Ab
-        # Arbeitspaket 2 liefert ein Carried-Platz seinen Wert aus der
-        # Komponente der Quelle.
         values = tuple(
-            _coerce_factor(source, name, slot.polynomial)
+            _slot_value(source, name, slot)
             for name, slot in (("P", slots[0]), ("Q", slots[1]))
-            if isinstance(slot, Fresh)
         )
 
         object.__setattr__(self, "_source", source)
@@ -366,7 +393,7 @@ class BCWStep:
         business of ``ReductionContext``.
         """
         fresh = self.variables
-        if not fresh:  # pragma: no cover - needs a Carried slot, work package 2
+        if not fresh:
             return self._source
 
         return self._source.extend(len(fresh), factory=FixedVariableFactory(fresh))
@@ -432,14 +459,16 @@ class BCWStep:
             if isinstance(slot, Fresh):
                 indices.append(offset + fresh_seen)
                 fresh_seen += 1
-            else:  # pragma: no cover - needs a Carried slot, work package 2
+            else:
                 indices.append(slot.index)
 
         return (indices[0], indices[1])
 
     def _composite(self) -> PolynomialMap:
         """Return ``G o F^[2] o H``."""
-        return self.G.apply_to(self.stabilized.compose(self.H.to_polynomial_map()))
+        return self.G.apply_to(
+            self.stabilized.compose(self.H.to_polynomial_map(self.ring))
+        )
 
     # ----------------------------------------------------------------------
     # Verification
@@ -451,6 +480,7 @@ class BCWStep:
             return
 
         self._verify_generators()
+        self._verify_carriers()
         self._verify_identity()
         self._verify_invertibility()
         self._verify_filtration()
@@ -482,6 +512,30 @@ class BCWStep:
                 "followed by the fresh ones, in slot order.",
             )
 
+    def _verify_carriers(self) -> None:
+        """BCW-10, third clause.
+
+        A reused coordinate has to be a carrier: ``source.components[j] - X_j``
+        must be free of ``X_j``. The identity of BCW-1 holds without this, so
+        it has to be checked separately. What it secures is the reading of the
+        step -- that ``P`` is a value some coordinate carries, and not an
+        arbitrary component minus a variable.
+        """
+        ring = self._source.ring
+
+        for position, slot in enumerate(self._slots):
+            if not isinstance(slot, Carried):
+                continue
+
+            value = self._values[position]
+            if any(monomial[slot.index] for monomial in value.monoms()):
+                raise VerificationError(
+                    "BCW-10",
+                    f"Slot {position} reuses coordinate {slot.index}, but "
+                    f"component {slot.index} of the source is not "
+                    f"{ring.gens[slot.index]} plus something free of it.",
+                )
+
     def _verify_identity(self) -> None:
         """BCW-1."""
         try:
@@ -512,7 +566,9 @@ class BCWStep:
         identity = PolynomialMap.from_ring(self.ring, self.ring.gens)
 
         for name, automorphism in (("G", self.G), ("H", self.H)):
-            undone = automorphism.inverse().apply_to(automorphism.to_polynomial_map())
+            undone = automorphism.inverse().apply_to(
+                automorphism.to_polynomial_map(self.ring)
+            )
             if undone != identity:  # pragma: no cover - group law, not data
                 raise VerificationError(
                     "BCW-5",
@@ -566,6 +622,12 @@ class BCWStep:
         fill ``(s, t)`` merely moves the image component ``index`` to
         ``c_index - s t``.
         """
+        if self.m != 2:
+            raise NotImplementedError(
+                "Transport for m != 2 arrives in work package 3 of milestone "
+                "0.3; see docs/contracts.md, BCW-8."
+            )
+
         collision.verify(self._source)
 
         appended = []

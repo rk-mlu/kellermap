@@ -9,6 +9,8 @@ Ziel. Seine erste Komponente ist bereits die erste Komponente von BCW17, weil
 kein spaeterer Schritt sie mehr anfasst.
 """
 
+import math
+
 import pytest
 import sympy as sp
 
@@ -96,10 +98,15 @@ def test_a_slot_must_be_a_factor() -> None:
         BCWStep(SIMPLE, over_field(SIMPLE_TARGET), 0, P, Fresh(Q, x5))  # type: ignore[arg-type]
 
 
-def test_a_carried_slot_is_refused_for_now() -> None:
-    """Der Fall kommt in Arbeitspaket 2; der Typ steht schon."""
-    with pytest.raises(NotImplementedError, match="work package 2"):
+def test_BCW10_a_carried_slot_must_be_in_range() -> None:  # noqa: N802
+    with pytest.raises(ValueError, match="out of range"):
         BCWStep(SIMPLE, over_field(SIMPLE_TARGET), 0, Carried(7), Fresh(Q, x5))
+
+
+def test_BCW10_a_carried_slot_may_not_be_the_target() -> None:  # noqa: N802
+    """Sonst waere die Verschiebung von G nicht mehr frei von X_index."""
+    with pytest.raises(ValueError, match="the component the step acts on"):
+        BCWStep(SIMPLE, over_field(SIMPLE_TARGET), 0, Carried(0), Fresh(Q, x5))
 
 
 def test_a_carried_index_must_be_a_non_negative_integer() -> None:
@@ -229,6 +236,110 @@ def test_two_symbols_of_one_name_are_not_two_variables() -> None:
             Fresh(P, sp.Symbol("w")),
             Fresh(Q, sp.Symbol("w", positive=True)),
         )
+
+
+# --------------------------------------------------------------------------
+# Wiederverwendete Traeger: m = 1 und m = 0
+# --------------------------------------------------------------------------
+
+# Eine Quelle, deren vierte Komponente x2**2 traegt: x4 + x2**2.
+CARRYING = over_field(
+    PolynomialMap(
+        (x1, x2, x3, x4),
+        (x1 + x2**2 * x3**2, x2, x3, x2**2 + x4),
+    )
+)
+
+# Und eine, die zwei Werte traegt: x2**2 in x4 und x3**2 in x5.
+CARRYING_TWICE = over_field(
+    PolynomialMap(
+        (x1, x2, x3, x4, x5),
+        (x1 + x2**2 * x3**2, x2, x3, x2**2 + x4, x3**2 + x5),
+    )
+)
+
+
+def test_m_is_one_when_one_slot_is_reused() -> None:
+    """Ein Faktor liegt vor, der andere wird gekauft."""
+    step = BCWStep.build(CARRYING, 0, Carried(3), Fresh(x3**2, x5))
+
+    assert step.m == 1
+    assert step.P == x2**2
+    assert step.Q == x3**2
+    assert step.variables == (x5,)
+    assert step.verify() is None
+    assert step.target.dimension == CARRYING.dimension + 1
+
+
+def test_m_is_zero_when_both_slots_are_reused() -> None:
+    """Kein neuer Generator: der Schritt ist F' = G o F."""
+    step = BCWStep.build(CARRYING_TWICE, 0, Carried(3), Carried(4))
+
+    assert step.m == 0
+    assert step.variables == ()
+    assert step.verify() is None
+    assert step.target.dimension == CARRYING_TWICE.dimension
+    assert step.target.variables == CARRYING_TWICE.variables
+
+
+def test_at_m_zero_the_step_is_a_left_composition() -> None:
+    """H ist die Identitaet, und das Ziel ist G o F."""
+    step = BCWStep.build(CARRYING_TWICE, 0, Carried(3), Carried(4))
+
+    assert len(step.H) == 0
+    assert step.stabilized == CARRYING_TWICE
+    assert step.target == step.G.apply_to(CARRYING_TWICE)
+
+
+def test_at_m_zero_the_filtration_level_constrains_nothing() -> None:
+    """H ist die Identitaet und liegt in jedem EA^d."""
+    step = BCWStep.build(CARRYING_TWICE, 0, Carried(3), Carried(4), 1)
+
+    assert step.attained_filtration_level == math.inf
+    assert step.verify() is None
+    assert step.G.is_in_EA(1)
+
+
+def test_the_removed_product_is_the_product_of_the_two_carriers() -> None:
+    """Beim Rueckwaertsgehen taucht x2**2 * x3**2 wieder auf."""
+    step = BCWStep.build(CARRYING_TWICE, 0, Carried(3), Carried(4))
+    removed = sp.expand(CARRYING_TWICE.components[0] - step.target.components[0])
+
+    assert sp.expand(removed - (x2**2 + x4) * (x3**2 + x5)) == 0
+
+
+def test_both_slots_may_reuse_the_same_coordinate() -> None:
+    """Dann entfernt der Schritt ein Quadrat; das ist zulaessig."""
+    step = BCWStep.build(CARRYING, 0, Carried(3), Carried(3))
+
+    assert step.m == 0
+    assert step.P == step.Q == x2**2
+    assert step.verify() is None
+
+
+def test_BCW10_a_reused_coordinate_must_carry_something() -> None:  # noqa: N802
+    """Die dritte Klausel: sie kann an vorgelegten Daten scheitern.
+
+    Komponente 2 der Quelle ist ``x3``, nicht ``x3 + etwas ohne x3``; der
+    Wert ``F_2 - x3`` ist null, aber Komponente 1 ist ``x2`` und traegt
+    nichts. Hier wird eine Komponente benannt, die ihre eigene Variable im
+    Rest fuehrt.
+    """
+    twisted = over_field(PolynomialMap((x1, x2, x3, x4), (x1, x2, x3, x4 * x2 + x4)))
+    step = BCWStep.build(twisted, 0, Carried(3), Fresh(x3, x5))
+
+    with pytest.raises(VerificationError) as failure:
+        step.verify()
+
+    assert failure.value.obligation == "BCW-10"
+
+
+def test_transport_for_other_m_is_still_open() -> None:
+    """Arbeitspaket 3; bis dahin wird der Fall abgelehnt statt geraten."""
+    step = BCWStep.build(CARRYING, 0, Carried(3), Fresh(x3**2, x5))
+
+    with pytest.raises(NotImplementedError, match="work package 3"):
+        step.transport(Collision(((1, 2, 3, 4), (-1, 2, 3, 4)), (0, 0, 0, 0)))
 
 
 # --------------------------------------------------------------------------

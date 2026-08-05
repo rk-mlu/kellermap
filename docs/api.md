@@ -674,6 +674,39 @@ ValueError: P must be a polynomial over the coefficient domain ZZ[T] in the vari
 
 ```
 
+A slot may also reuse a coordinate that already carries the factor. The step
+then introduces fewer generators, and `m` reports how many:
+
+```python
+>>> from kellermap.bcw import Carried
+>>> carrying = over_field(
+...     PolynomialMap((x1, x2, x3, x4), (x1 + x2**2 * x3**2, x2, x3, x2**2 + x4))
+... )
+>>> reused = BCWStep.build(carrying, 0, Carried(3), Fresh(x3**2, x5))
+>>> reused.m, reused.P, reused.Q
+(1, x2**2, x3**2)
+>>> reused.target.dimension
+5
+>>> reused.verify() is None
+True
+
+```
+
+With both slots reused the step introduces nothing at all, `H` is the identity,
+and the step is `F' = G ∘ F`. The coordinate a slot reuses must actually carry
+its factor, which is BCW-10:
+
+```python
+>>> twisted = over_field(
+...     PolynomialMap((x1, x2, x3, x4), (x1, x2, x3, x4 * x2 + x4))
+... )
+>>> BCWStep.build(twisted, 0, Carried(3), Fresh(x3, x5)).verify()
+Traceback (most recent call last):
+    ...
+kellermap.errors.VerificationError: [BCW-10] Slot 0 reuses coordinate 3, but component 3 of the source is not x4 plus something free of it.
+
+```
+
 A step carries a collision by filling the fresh coordinates with `-P(a)` and
 `-Q(a)`, leaving the image padded with zeros:
 

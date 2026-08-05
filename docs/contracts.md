@@ -562,11 +562,12 @@ formula and can fail. For a `CONSTRUCTED` step it compares the implementation
 against itself and cannot: it is a self-check, not evidence. `Reduction`
 propagates the weaker provenance of its steps.
 
-**BCW-10 — [0.3] A borrowed slot names a carrier.** For `Carried(j)`:
+**BCW-10 — [0.3] A reused slot names a carrier.** For `Carried(j)`:
 `0 <= j < source.dimension`, `j != index`, and `source.components[j] - X_j` is
 free of `X_j`.
 
-The first two clauses keep `G` elementary. The third clause is what gives the
+The first two clauses are constructor invariants and raise `ValueError`; they
+keep `G` elementary. The third clause is checked by `verify()` and gives the
 step its meaning. Without it, `P` would be an arbitrary component minus a
 variable, rather than a value that some coordinate carries, and the statement
 "this step removes `P·Q`" would describe nothing. The identity of BCW-1 holds
