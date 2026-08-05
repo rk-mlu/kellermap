@@ -282,10 +282,10 @@ of formula (1).
 
 # Version 0.3
 
-**Status: complete, released as `0.3.0rc2`.** An external audit of `0.3.0rc1`
-found no functional, algebraic or packaging blocker; rc2 carries its four text
-corrections. The final version number is held back until the release chain has
-run against this tree.
+**Status: released as `0.3.0`.** The milestone went through two external
+audits. The first found no functional, algebraic or packaging blocker and four
+text corrections, which `0.3.0rc2` carries; the second found two further
+documentation corrections and recommended release.
 
 ## Carrier sharing, and `alpoege15`
 
@@ -373,7 +373,8 @@ two" in `contracts.md`.
 
 Five work packages, with internal version numbers `0.2.1` to `0.2.5` and tags
 `wp/0.2.n`. None of them is a release. `pyproject.toml` stayed at `0.2.0` for
-the duration and moved to `0.3.0rc1` at the end.
+the duration, moved to `0.3.0rc1` at the end, and reached `0.3.0` after two
+audits.
 
 | WP | Internal | Content | Done |
 | --- | --- | --- | --- |

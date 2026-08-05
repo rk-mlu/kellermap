@@ -12,9 +12,10 @@ built to handle are therefore precisely those that need not be invertible,
 which is why it is named after them rather than after automorphisms.
 
 There is a local coincidence in that name. Keller held the second chair of
-mathematics at the Martin-Luther-Universität Halle-Wittenberg from 1952 until
-his retirement in 1971, succeeding Heinrich W. E. Jung, and he lectured there
-into the 1980s — the present-day academic home of this project.
+mathematics at the Martin-Luther-Universität Halle-Wittenberg from 1951 until
+his emeritation in 1971, succeeding Heinrich W. E. Jung, and he lectured there
+into the 1980s — the present-day academic home of this project. Sources differ
+on the year; `docs/references.md` says which and why.
 
 The first goal is the degree reduction introduced by
 
@@ -38,7 +39,7 @@ along with it. Since 0.3 the same holds for a fifteen-dimensional one.
 
 ## Project Status
 
-Current version: **0.3.0rc2**
+Current version: **0.3.0**
 
 The first milestone covered the algebraic foundations:
 

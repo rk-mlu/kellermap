@@ -12,7 +12,7 @@ Error messages cite the identifier that failed, so that an independent review
 can address findings to a numbered obligation rather than to a line of code.
 Identifiers are never reused; a withdrawn obligation stays listed as withdrawn.
 
-**Status as of `0.3.0rc2`:** every obligation on this page is implemented, and
+**Status as of `0.3.0`:** every obligation on this page is implemented, and
 the test suite covers every statement of the package. Where the implementation
 forced a change, this page was amended deliberately and the amendment is
 visible in the wording — the clearest cases are COL-4 and BCW-3, which moved

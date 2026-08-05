@@ -628,9 +628,9 @@ True
 
 ```
 
-`G` and `H` are derived from the index, the two factors and the two fresh
-variables. They are never supplied alongside them, because two ways to say the
-storing both would allow the two to disagree:
+`G` and `H` are derived from the index and the two factor slots. They are never
+supplied separately, because storing both descriptions would allow them to
+disagree:
 
 ```python
 >>> step.H.factors[0].polynomial, step.H.factors[1].polynomial

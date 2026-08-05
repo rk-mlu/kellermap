@@ -91,8 +91,8 @@ gap in his attempted proof — so "87-year-old problem" understates it.
 Frankfurt, 1929; habilitation on Cremona transformations under Georg Hamel at
 the TH Berlin, 1933 — the thread that leads to the 1939 paper. Professor in
 Dresden from 1947, then holder of the second chair of mathematics at the
-Martin-Luther-Universität Halle-Wittenberg from 1952, succeeding Heinrich W. E.
-Jung, until his retirement in 1971; he continued to lecture there into the
+Martin-Luther-Universität Halle-Wittenberg from 1951, succeeding Heinrich W. E.
+Jung, until his emeritation in 1971; he continued to lecture there into the
 1980s and died in Halle.
 
 - MacTutor: <https://mathshistory.st-andrews.ac.uk/Biographies/Keller/>
@@ -101,10 +101,16 @@ Jung, until his retirement in 1971; he continued to lecture there into the
 - Chair succession at Halle:
   <https://disk.mathematik.uni-halle.de/history/allgemein/prof_hal_wb_45_69.html>
 
-Sources differ on the year of the Halle appointment: MacTutor gives 1951, while
-Halle's own faculty history, the German Wikipedia and the anniversary article
-in *Beiträge zur Algebra und Geometrie* give 1952. This file follows the
-latter.
+Sources differ on the year of the Halle appointment, and they differ within
+Halle. The university archive's Catalogus Professorum states that Keller was
+appointed on 1 November 1951, citing his personnel file, and that he held a
+second appointment from 1 September 1969 until his emeritation in 1971.
+MacTutor also gives 1951. The chair succession page of the mathematics
+institute lists 1952–1971, as do the German Wikipedia and the anniversary
+article in *Beiträge zur Algebra und Geometrie*.
+
+The text above follows the archive, since it gives a precise date and names the
+file it rests on. Nothing in this project depends on the year.
 
 ---
 
@@ -160,7 +166,7 @@ normalized map needs at most 18 steps, hence `3 + 2·18 = 39` variables at
 degree 3. The author calls the resulting figure a transparent upper bound and
 not an optimization.
 
-Set beside each other, in the same normal form of degree 3:
+Set beside each other, at the same degree-≤3 stage:
 
 | route | variables |
 | --- | --- |
