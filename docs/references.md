@@ -140,6 +140,60 @@ Comparing them meaningfully needs the certificates that milestone 0.2
 introduces. Reproducing published dimensions with machine-verifiable
 certificates is the first target of 0.5; improving them is secondary.
 
+### Where the counts come from
+
+The published counts follow the same elementary step and differ in how it is
+applied.
+
+**Campbell, L. A.**, *Reduction theorems for the strong real Jacobian
+conjecture*, arXiv:1303.3853, Theorem 5, Step 1. States the step in the form
+used here: `F` is stably equivalent to `(f_1 - (y + a)(z + b), f_2, …, f_n,
+y + a, z + b)`, removing a term `ab` of a component at the cost of two new
+variables. No reuse of an earlier variable.
+
+**Long, C. D.**, *Small counterexamples to the Gaussian Moments Conjecture*,
+arXiv:2607.18186, Proposition 2.1. Tracks the same reduction for the same
+source map. With `c(d)` the number of degree-lowering steps for one monomial of
+degree `d`, the recursion `c(d) ≤ 1 + c(p+1) + c(q+1) + c(p) + c(q)` gives
+`c(4) = 1`, `c(5) ≤ 2`, `c(6) ≤ 3`, `c(7) ≤ 5`, and the support of the
+normalized map needs at most 18 steps, hence `3 + 2·18 = 39` variables at
+degree 3. The author calls the resulting figure a transparent upper bound and
+not an optimization.
+
+Set beside each other, in the same normal form of degree 3:
+
+| route | variables |
+| --- | --- |
+| tracked bound, one step per monomial | 39 |
+| published explicit reduction | 19 |
+| this project, without reusing carriers | 17 |
+| this project, reusing two carriers | 15 |
+
+The steps down from 39 to 17 come from choosing the factorization better —
+`P · Q` may be any subsum of the target component, so one step can remove
+several monomials. The step from 17 to 15 comes from reusing a carrier.
+
+### Is reusing a carrier known?
+
+We looked for prior art and did not find it in this literature. Campbell states
+the step with two new variables. Long counts two per step. The Bass–Connell–
+Wright proof itself introduces a variable for each of `P` and `Q`. None of them
+discusses reusing a variable an earlier step introduced.
+
+The underlying idea is not new elsewhere. Computing a polynomial by naming
+intermediate results and using each name more than once is what a straight-line
+program or an arithmetic circuit does, and eliminating repeated subexpressions
+is standard practice in computer algebra. A carrier is the algebraic-geometry
+form of such a name: `X_j + P` records `P` in a coordinate, and the reduction
+is then a circuit for the map written as a stable extension. In that reading,
+the number of variables a reduction needs measures the size of a circuit for
+`F`, not the number of its monomials.
+
+We make no claim of novelty. The absence of a reference here says only that a
+serious search did not turn one up; the technique is simple enough that it may
+well be folklore, and someone who knows the literature better may recognise it
+at once. If a source is found, it belongs in this section.
+
 ### `alpoege15`
 
 Not an external source: this project's own reduction of Alpöge's map, obtained
@@ -153,13 +207,21 @@ rendering of the same chain in `scripts/reconstruct_alpoege15.py`, as
 `reconstruct_bcw17.py` does for the seventeen-dimensional map.
 
 Since 0.3 the suite derives it: a `Reduction` of eight steps, two of which
-reuse a carrier and therefore introduce one generator instead of two.
+reuse a carrier and therefore introduce one generator instead of two. The last
+step is given the fixed components as its target, so BCW-1 compares them
+against `G ∘ F^[m] ∘ H`.
 
-The endpoint is not an external fact, which is the difference from the
-seventeen-dimensional case. The fixed components come from the same hand
-computation that produced the chain, so supplying them to the last step shows
-that two implementations of the same formulas agree. It does not show
-agreement with a published map, because there is none to agree with.
+Those components are not output of this library. They come from
+`scripts/reconstruct_alpoege15.py`, which uses SymPy alone, and its commit
+predates the point at which `kellermap` could express the chain at all. In
+that sense the target is supplied here exactly as it is for the
+seventeen-dimensional map.
+
+The difference from that case is what the agreement is evidence for, not
+whether the check can fail. For the seventeen-dimensional map the other side
+is someone else's mathematics. Here it is this project's own second
+implementation, so the agreement says that two implementations of the same
+formulas compute the same thing.
 
 No claim of minimality attaches to it, following the practice of the sources
 above — the author of the 24-variable map states plainly that he claims neither
@@ -204,15 +266,16 @@ would add no check that is not closed-loop — it would compare the test against
 a copy rather than against the source — while adding a third-party file of
 unclear licence.
 
-Its reduction is *not* a chain of `BCWStep`s. The note describes seventeen
-elementary steps with sixteen carrier variables, so not two per step, and the
-carriers `x^2`, `xy`, `y^2`, `yz`, `xz`, `x^2 y`, `xy^2`, `y^2 z` are shared
-building blocks reused across steps. Such a step needs only one fresh variable
-and stays elementary, which BCW-2 does not admit. Whether to widen it is a
-question for 0.3. The `w`-numbering is also not the order of introduction —
-the component of `w2` reads `w9` and `w13` — so the factorization cannot be
-read off the way BCW17's can. The map is therefore fixed input, not a
-`Reduction`.
+Its reduction reuses carriers. The note describes seventeen elementary steps
+with sixteen carrier variables, so not two per step, and the carriers `x^2`,
+`xy`, `y^2`, `yz`, `xz`, `x^2 y`, `xy^2`, `y^2 z` are building blocks used by
+more than one step. Since 0.3 a `BCWStep` can express such a step.
+
+What is missing is the sequence. The note publishes the map but not its
+factorization, and the `w`-numbering is not the order of introduction — the
+component of `w2` reads `w9` and `w13` — so it cannot be read off the way
+BCW17's can. Reconstructing it is a search problem and therefore 0.4. Until
+then the map is fixed input rather than a `Reduction`.
 
 The note arrives independently at the Schur-complement route this library uses
 for the determinant. On this map the difference is not a nicety: the carrier

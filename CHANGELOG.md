@@ -28,7 +28,21 @@ derived and verified.
 ### Changed
 
 - `BCWStep` takes two factor slots instead of `P`, `Q` and a pair of
-  variables. `Fresh(P, u), Fresh(Q, v)` is the earlier step exactly.
+  variables. This is a breaking change to the constructor and to `build()`.
+  Migration from 0.2:
+
+  ```python
+  # 0.2
+  BCWStep.build(F, i, P, Q, (u, v), level)
+  BCWStep(F, target, i, P, Q, (u, v), level)
+
+  # 0.3
+  BCWStep.build(F, i, Fresh(P, u), Fresh(Q, v), level)
+  BCWStep(F, target, i, Fresh(P, u), Fresh(Q, v), level)
+  ```
+
+  Two `Fresh` slots are exactly the earlier step. `P`, `Q` and `variables`
+  remain readable as properties.
 - `BCW-2` allows `target.dimension == source.dimension + m`. This is the only
   binding obligation the milestone weakens rather than extends, and the reason
   0.3 is a minor release.

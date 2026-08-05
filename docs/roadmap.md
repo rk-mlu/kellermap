@@ -282,8 +282,10 @@ of formula (1).
 
 # Version 0.3
 
-**Status: complete, released as `0.3.0rc1`.** The final version number is held
-back until an external audit and the release chain have run against this tree.
+**Status: complete, released as `0.3.0rc2`.** An external audit of `0.3.0rc1`
+found no functional, algebraic or packaging blocker; rc2 carries its four text
+corrections. The final version number is held back until the release chain has
+run against this tree.
 
 ## Carrier sharing, and `alpoege15`
 
@@ -350,8 +352,16 @@ introducing a new generator (`Fresh`) or by reusing a coordinate of the source
 that already carries the value (`Carried`). The number of `Fresh` slots is `m`,
 so `m ∈ {0, 1, 2}`, and two `Fresh` slots are exactly the step of 0.2.
 
-This differs from the earlier plan in this section, which foresaw a separate
-and simpler step type for `m = 0`. Writing the contract led to a different
+Two things in the earlier plan for this milestone were dropped during
+implementation, and both are recorded where they were decided.
+
+A `BCWStep.classic()` constructor was to keep the call form of 0.2. It does not
+exist. `Fresh(P, u), Fresh(Q, v)` is no longer than `P, Q, (u, v)` and shows
+which factor belongs to which variable, so a second entry point earned nothing;
+`contracts.md` states this. The constructor change is therefore breaking, and
+`CHANGELOG.md` gives the migration.
+
+The second is the separate step type for `m = 0`. Writing the contract led to a different
 conclusion. A step `F' = G ∘ F` with `G` elementary is more general, but it
 records only that some elementary automorphism was composed on the left. It
 does not record which product was removed, from which component, or through

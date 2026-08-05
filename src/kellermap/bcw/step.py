@@ -9,8 +9,14 @@ component,
     F' = G o F^[2] o H,
 
 and the component ``i`` of ``F'`` is ``(F_i - P Q) - X_u Q - P X_v - X_u X_v``.
-``G`` and ``H`` are elementary, so the Jacobian determinant is unchanged and
-the map stays invertible with an inverse one can write down.
+
+``G`` and ``H`` are elementary automorphisms, so their determinants are one and
+their inverses can be written down. That does *not* make ``F`` or ``F'``
+invertible. What it gives is that ``F'`` is invertible exactly when ``F`` is,
+and injective exactly when ``F`` is. For the maps this project reduces, both
+are false and stay false: a collision of ``F`` becomes a collision of ``F'``,
+which is what ``transport`` computes. The Jacobian determinant is unchanged
+for the same reason.
 
 The class verifies such a step; it does not look for one. Searching is
 milestone 0.4.
@@ -464,7 +470,7 @@ class BCWStep:
         return (indices[0], indices[1])
 
     def _composite(self) -> PolynomialMap:
-        """Return ``G o F^[2] o H``."""
+        """Return ``G o F^[m] o H``."""
         return self.G.apply_to(
             self.stabilized.compose(self.H.to_polynomial_map(self.ring))
         )
@@ -550,7 +556,7 @@ class BCWStep:
         if composite != self._target:
             raise VerificationError(
                 "BCW-1",
-                "The target is not G o F^[2] o H.",
+                f"The target is not G o F^[{self.m}] o H.",
             )
 
     def _verify_invertibility(self) -> None:
@@ -601,7 +607,7 @@ class BCWStep:
         determinants come out of a ``PolyRing`` and are normalized already.
         """
         # pragma-frei nicht erreichbar: BCW-1 laeuft vorher und setzt das Ziel
-        # auf G o F^[2] o H, dessen Determinante die der Quelle ist.
+        # auf G o F^[m] o H, dessen Determinante die der Quelle ist.
         if not agree(  # pragma: no cover - implied by BCW-1
             self._target.determinant(), self._source.determinant()
         ):

@@ -813,15 +813,14 @@ shows is that two implementations of the same formulas compute the same thing,
 not that the result matches a published map.
 
 The fourth is a published cubic map in dimension 19, kept as fixed input. Its
-reduction shares carrier variables across steps, so it introduces one fresh
-variable where `BCWStep` requires two, and a chain of `BCWStep`s cannot express
-it at all. It is in the suite as an independent second instance and as a target
-for the search in 0.4, not as a reduction.
+reduction reuses carrier variables across steps, which `BCWStep` has been able
+to express since 0.3. What is missing is the ordered sequence of steps: the
+source publishes the map but not its factorization, and this project has not
+reconstructed one. It is in the suite as an independent second instance and as
+a target for the search in 0.4.
 
 Searching for a factorization rather than verifying a presented one is 0.4
-throughout. Expressing a reduction that shares carrier variables — which is
-what the third example needs, and what takes our own reduction of Alpöge's map
-down to dimension 15 — is 0.3.
+throughout.
 
 See `references.md` for sources and for what the fixed data rests on.
 

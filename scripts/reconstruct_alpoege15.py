@@ -26,8 +26,9 @@ fresh variable, and ``G`` stays elementary because ``-X_u X_w`` is free of
 ``X_i``. The mixed case below buys one of the two.
 
 This technique is not in Bass-Connell-Wright. Using it is a deliberate
-extension, and the resulting map is not a result of the ``kellermap`` library
-until milestone 0.3 can certify it -- see ``docs/references.md``.
+extension. Since milestone 0.3 the library can express and verify such a
+chain, and ``tests/test_alpoege15.py`` does so; this script stays as the
+independent second computation -- see ``docs/references.md``.
 
 Run with::
 

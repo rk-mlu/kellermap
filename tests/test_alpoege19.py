@@ -8,10 +8,13 @@ vor. Anders als bei BCW17 laesst sie sich hier auch nicht ablesen -- die
 Die Quelle beschreibt ihr Verfahren als siebzehn elementare Schritte mit
 sechzehn Traegervariablen, also nicht zwei je Schritt. Die ``P_j`` bestaetigen
 das: ``x^2``, ``xy``, ``y^2``, ``yz``, ``xz``, ``x^2 y``, ``xy^2``, ``y^2 z``
-sind gemeinsame Bausteine, die mehrfach weiterverwendet werden. Ein solcher
-Schritt braucht nur eine neue Variable und bleibt elementar; ``BCWStep`` kann
-ihn nach BCW-2 nicht ausdruecken. Deshalb steht diese Abbildung hier und nicht
-als ``Reduction``.
+sind Bausteine, die mehr als ein Schritt benutzt. Seit 0.3 kann ``BCWStep``
+einen solchen Schritt ausdruecken.
+
+Was fehlt, ist die Schrittfolge. Die Quelle veroeffentlicht die Abbildung, aber
+nicht ihre Faktorisierung, und die ``w``-Nummerierung folgt nicht der
+Reihenfolge der Schritte. Sie zu rekonstruieren ist eine Suchaufgabe und damit
+Meilenstein 0.4. Bis dahin steht die Abbildung hier als feste Eingabe.
 
 Die Kollision wird nicht aus der Tabelle der Quelle uebernommen, sondern aus
 ``w_j = -P_j`` rekonstruiert und danach mit der Tabelle verglichen. Beide Wege
@@ -254,8 +257,8 @@ def test_the_carrier_numbering_is_not_the_introduction_order() -> None:
 def test_the_carriers_are_shared_building_blocks() -> None:
     """Siebzehn Schritte, sechzehn Variablen: nicht zwei je Schritt.
 
-    ``BCWStep`` kann das nach BCW-2 nicht ausdruecken; ob die Verpflichtung
-    dafuer geoeffnet wird, ist eine Frage fuer 0.3.
+    Seit 0.3 laesst sich ein solcher Schritt als ``BCWStep`` mit einem
+    ``Carried``-Platz hinschreiben. Was fehlt, ist die Schrittfolge.
     """
     monomials = {CARRIERS[w7], CARRIERS[w9], CARRIERS[w13]}
 
