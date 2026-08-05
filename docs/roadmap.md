@@ -268,12 +268,13 @@ asserted: a `Reduction` of eight steps from Alpöge's map, verified step by
 step, transporting the three-point collision from `k^3` to `k^17`.
 
 What that does and does not establish is worth stating precisely, since the
-distinction is the point of the milestone. The intermediate maps in dimensions
+distinction is the central result of the milestone. The intermediate maps in dimensions
 5 to 15 are published nowhere and therefore cannot be supplied; their steps
 compare the implementation against itself, and the chain carries the weaker
 provenance by RED-7. The external fact is the endpoint, where the last step is
 given the fixed components as its target, and a negative control perturbs one
-component to show that the check there bites. `scripts/reconstruct_bcw17.py`
+component, so that the test fails if the check does not work.
+`scripts/reconstruct_bcw17.py`
 carries the same chain in plain SymPy, as an independent second implementation
 of formula (1).
 
@@ -338,28 +339,75 @@ of priority and global minimality applies.
 
 ### To build
 
-- **A step for `m = 0`.** `F' = G ∘ F` with `G` elementary: no stabilization,
-  hence not a `BCWStep` and no amendment to BCW-2, only a new and simpler kind
-  of step. This is what the 19-dimensional reduction uses; three signatures in
-  its second component were checked against the description above.
-- **`m = 1` in `BCWStep`.** One factor supplied by an existing coordinate, the
-  other by a fresh variable. This is what `alpoege15` needs, and it is the one
-  part that amends a binding obligation rather than adding beside it.
-- **Collision transport for both shapes.** `m = 0` appends no coordinate,
-  `m = 1` appends one. The obligations of BCW-8 carry over unchanged in
-  substance.
-- **`alpoege15` as a verified `Reduction`**, replacing the hand computation,
-  with the honest provenance: this library produced the target, so the chain is
-  `CONSTRUCTED` throughout and says so.
-- **A second independent implementation**, as `scripts/` already holds for
-  BCW17. Two renderings agreeing is worth more than one checked against itself.
+`docs/contracts.md` states the obligations, marked `[0.3]`, and was written
+before the implementation as it was for 0.2.
+
+A step is given two *factor slots*. Each slot supplies one factor, either by
+introducing a new generator (`Fresh`) or by reusing a coordinate of the source
+that already carries the value (`Carried`). The number of `Fresh` slots is `m`,
+so `m ∈ {0, 1, 2}`, and two `Fresh` slots are exactly the step of 0.2.
+
+This differs from the earlier plan in this section, which foresaw a separate
+and simpler step type for `m = 0`. Writing the contract led to a different
+conclusion. A step `F' = G ∘ F` with `G` elementary is more general, but it
+records only that some elementary automorphism was composed on the left. It
+does not record which product was removed, from which component, or through
+which two carriers. The slot form records all three and reduces to
+`F' = G ∘ F` by itself when both slots are `Carried`. See "Why one type and not
+two" in `contracts.md`.
+
+### Work packages
+
+Five work packages, with internal version numbers `0.2.1` to `0.2.5` and tags
+`wp/0.2.n`. None of them is a release. `pyproject.toml` stays at `0.2.0` until
+the milestone is complete.
+
+| WP | Internal | Content |
+| --- | --- | --- |
+| 1 | 0.2.1 | `Fresh`, `Carried`, and `BCWStep` restated in terms of factor slots |
+| 2 | 0.2.2 | `m ∈ {0, 1, 2}` in the derivation and in `verify()`, and BCW-10 |
+| 3 | 0.2.3 | Collision transport for every `m` (BCW-8) |
+| 4 | 0.2.4 | `alpoege15` as a verified `Reduction` |
+| 5 | 0.2.5 | Documentation and release |
+
+Every work package leaves the repository green.
+
+**WP 1** changes the shape of `BCWStep` without changing what it can do. `m`
+stays fixed at 2, `BCWStep.classic()` keeps the call form of 0.2, and every
+existing caller moves to it. It is done when the suite passes unchanged. The
+point of separating this from WP 2 is that a failure in WP 2 then cannot have
+its cause in the restructuring.
+
+**WP 2** derives `m` from the slots. BCW-1 and BCW-2 use `m`; BCW-5 and BCW-6
+handle the case where `H` is the identity; BCW-10 is added. It is done when a
+step with one fresh variable and a step with none both build and verify, and
+when the three clauses of BCW-10 have failing cases in the tests.
+
+**WP 3** covers transport. A point gains one coordinate per `Fresh` slot. The
+image moves only at `m = 0`, and then to `c_index - c_u * c_w`. That case did
+not exist in 0.2 and is the most likely place for an error, so it is tested on
+its own.
+
+**WP 4** builds the eight steps of `alpoege15` as a `Reduction`, with the
+target supplied in the last step, and turns `tests/test_alpoege15.py` from
+fixed input into a derivation. `test_the_chain_is_not_yet_expressible` is
+removed. The provenance of the chain is `CONSTRUCTED` throughout, because this
+library produced the target, and the tests say so — unlike BCW17, whose
+endpoint came from outside.
+
+**WP 5** removes the `[0.3]` markers from `contracts.md`, adds the factor slots
+to `architecture.md`, marks `alpoege15` as derived in `references.md`, updates
+`CHANGELOG.md`, and sets the version to `0.3.0`.
+
+The 19-dimensional map appears in no work package. 0.3 gives its reduction a
+language, but the step sequence remains unknown, and finding it is 0.4.
 
 ### Contract amendments
 
-BCW-2 fixes `target.dimension == source.dimension + 2`. Widening it to a
-declared `m ∈ {1, 2}` is an amendment to `docs/contracts.md`, made deliberately
-and visible in the wording, not an extension around it. The `m = 0` step needs
-no amendment but its own numbered block.
+BCW-2 fixes `target.dimension == source.dimension + 2`. Changing it to a
+derived `m ∈ {0, 1, 2}` is an amendment to `docs/contracts.md`, made
+deliberately and visible in the wording, not an extension around it. It is the
+only obligation this milestone weakens. BCW-10 is added.
 
 ### Not here
 
