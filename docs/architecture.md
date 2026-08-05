@@ -102,13 +102,13 @@ PolynomialMap  ←──uses──  VariableFactory  ←──holds──  Reduc
                                                   Reduction  ←──carries──  Collision
 ```
 
-`VariableFactory` sits beside the tower rather than in it: it is a naming
-policy, not a mathematical object, and every level that extends a map passes
-one down. `ReductionContext` is the thing that holds one factory to its word
-across a whole chain.
+`VariableFactory` stands beside this hierarchy rather than in it. It is a
+naming policy, not a mathematical object, and every level that extends a map
+passes one down. `ReductionContext` checks that a factory keeps the promises
+its protocol makes, across a whole chain.
 
-`Collision` also sits beside the tower. It holds no map, because the same
-points are a collision of every map that identifies them and a reduction
+`Collision` also stands beside the hierarchy. It holds no map, because the same
+points are a collision of every map that identifies them, and a reduction
 verifies them against each map of a chain in turn.
 
 ---
@@ -456,8 +456,8 @@ determinants without forming a matrix.
 
 `is_elementary` on a product is sufficient, not characteristic. Two equal
 transpositions multiply to the identity, which lies in `EA_n(k)` although
-neither factor does. The property reports on the exhibited factorization, which
-is what a certificate can check without forming anything.
+neither factor does. The property reports on the factorization that was
+supplied. A certificate can check that without forming any matrix.
 
 Dilations need their coefficient to be a unit, so a map read off a paper over
 `ZZ` passes through `over_field()` first. That stays a visible step: two maps
@@ -548,11 +548,11 @@ component that is not the deepest one. A certificate certifies correctness;
 whether a step makes progress is a question for the search in 0.4 and the
 heuristics of 0.5.
 
-Transport is the point of the whole structure. Each step carries a collision
-from its source to its target, verifying it on both sides, so a chain that
-completes has checked the counterexample at every intermediate map rather than
-only at the ends. A degree reduction that loses the collision it started from
-has reduced the wrong thing.
+Transport is what the structure exists for. Each step carries a collision from
+its source to its target and verifies it on both sides. A chain that completes
+has therefore checked the counterexample at every intermediate map, not only at
+the two ends. A degree reduction that loses the collision it started from has
+reduced the wrong thing.
 
 ---
 
@@ -646,8 +646,8 @@ thin: it names generators, extends rings and maps, and knows nothing about
 steps. Which step to take is 0.5, and a context that knew would be the wrong
 object to ask.
 
-What the context adds is distrust. Both properties a factory promises are cheap
-to check and are checked on every call — purity by asking twice and comparing,
+The context does not trust the factory. Both properties a factory promises are
+cheap to check, and both are checked on every call — purity by asking twice and comparing,
 composition by allocating `count` names at once and then one at a time. The
 reason is the one this section already gives twice: neither failure raises
 anywhere downstream. A counting factory and one naming its output after the
@@ -777,7 +777,8 @@ small one to it and transports the collision along. Only the last step is
 supplied, because the intermediate maps in dimensions 5 to 15 are published
 nowhere and writing them out ourselves would put this library's own output
 behind a `SUPPLIED` label. The external fact is the endpoint, and a negative
-control perturbs one component to show that the check there bites.
+control changes one component, so that the test fails if the check does not
+work.
 
 The third is a published cubic map in dimension 19, kept as fixed input. Its
 reduction shares carrier variables across steps, so it introduces one fresh

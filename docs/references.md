@@ -245,7 +245,7 @@ What in that is evidence, and what is a self-check:
 `scripts/reconstruct_bcw17.py` carries the same chain in plain SymPy, without
 this library. The duplication is deliberate: two independent implementations of
 formula (1) agreeing on all seventeen components and all three collision points
-is worth more than one implementation checked against itself.
+says more than one implementation checked against itself.
 
 Recomputed independently of the chain, as cross-checks rather than as part of
 the certificate: degree 3, determinant 1, the unipotent carrier block, and the

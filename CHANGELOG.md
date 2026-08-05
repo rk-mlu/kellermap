@@ -35,8 +35,8 @@ Alpöge's map instead of being asserted.
   beside them. Two things are wider than the paper states them: `P·Q` may be
   any subsum of the target component, and the target component may be any
   component.
-- `ReductionContext` — holds a `VariableFactory` to its word across a chain,
-  rechecking purity and composition on every call.
+- `ReductionContext` — checks that a `VariableFactory` keeps its promises
+  across a chain, rechecking purity and composition on every call.
 - `kellermap.canonical` — the single normal form the package compares in.
 - `docs/contracts.md` — every obligation of the verification surface, stated
   normatively before the implementation, with a stable identifier that the
@@ -78,7 +78,7 @@ required new functionality.
   then failed its own verification. Proposition (1.1) puts a translation first;
   such a source is now refused with that reason.
 - `BCWStep.build()` consumed its `variables` argument twice, so a generator was
-  spent by the first construction.
+  consumed by the first construction.
 
 ### Known limitations
 

@@ -610,8 +610,8 @@ Left composition leaves every preimage where it was and moves only the image.
 
 ## The BCW step
 
-Proposition (3.1): two dimensions bought, one factorization removed. It lives
-in the subpackage, since it is the one object here that is specific to the
+Proposition (3.1): two new dimensions, one factorization removed. It lives in
+the subpackage, because it is the one object here that is specific to the
 paper.
 
 ```python
@@ -630,7 +630,7 @@ True
 
 `G` and `H` are derived from the index, the two factors and the two fresh
 variables. They are never supplied alongside them, because two ways to say the
-same thing invite them to disagree:
+storing both would allow the two to disagree:
 
 ```python
 >>> step.H.factors[0].polynomial, step.H.factors[1].polynomial

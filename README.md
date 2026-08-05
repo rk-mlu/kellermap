@@ -55,7 +55,8 @@ The second adds the verification framework:
   its transvections are elementary in the sense of the paper
 - `BCWStep`, one certified application of Proposition (3.1)
 - `Reduction`, a chain of steps with its adjacency checked
-- `ReductionContext`, which holds a naming policy to its word across a chain
+- `ReductionContext`, which checks that a naming policy stays consistent across
+  a chain
 - Every obligation stated normatively in `docs/contracts.md`, one numbered
   identifier at a time, and cited by the exception when it fails
 
