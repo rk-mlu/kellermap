@@ -461,9 +461,22 @@ dimension grows from 3 to 19, `sum(m) == 16` over seventeen steps, so at least
 one step has `m = 0`. That is a constraint on the search and a check on its
 result.
 
-What is not known is the sequence. The `w`-numbering is not the introduction
-order — `G5` uses `w13` and `w9` — so it cannot be read off the listing, and
-the source publishes the map but not its factorization.
+What is not known is the sequence. The source publishes the map but not its
+factorization.
+
+The numbering, on the other hand, is probably the introduction order after all.
+This page said it was not, on the evidence that the fifth component uses `w13`
+and `w9` and so cannot come fifth. That component is `w2`'s, and the `w2`
+finding below shows it to be a residue rather than an introduced value. With
+that corrected, every dependency points to a smaller index — `w6 <- w1`,
+`w8 <- w4`, `w10 <- w2`, `w11 <- w3`, `w12 <- w6`, `w14 <- w7`, `w15 <- w8` —
+so `w1` to `w16` is a valid introduction order and the only evidence against it
+has been explained away.
+
+That is a hypothesis and not a result: it is one valid order among some
+7.26e10, and consistency is not proof. It is, however, the order an author
+numbering carriers as they introduce them would produce, and nothing in the data
+contradicts it. WP 7 tries it first.
 
 What *is* readable is every factor. A `Fresh` slot introduces `X_u + P`, so the
 sixteen carrier values `components[3 + j] - w_j` are the sixteen factors the

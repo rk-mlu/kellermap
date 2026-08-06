@@ -921,12 +921,21 @@ The names of the fresh generators are given too. This is a decision, and the
 alternative is worth stating because a reader will otherwise assume it. A search
 that allocated its own names through a `ReductionContext` would introduce them
 in the order it discovers them, and BCW-2 puts the generators of a target in
-that order. The published map lists them as `w1` to `w16`, which is not the
-introduction order — the source's own numbering is not chronological. The two
+that order, which need not be the order the published map lists them in. The two
 maps would then be equal in no sense the package can check without a second
 notion of equality. Giving the search the names and letting it search their
 *assignment to steps* keeps one notion of equality, and leaves the remaining
 difference a matter of presentation, which SEA-4 handles.
+
+This clause was argued from a stronger premise than survives. It said the
+published numbering *is not* the introduction order, on the evidence that the
+fifth component uses `w13` and `w9`. That component is `w2`'s, and it is a
+residue rather than an introduced value; with that corrected, every dependency
+points to a smaller index and `w1` to `w16` is a valid introduction order. The
+decision stands on the weaker premise, which is all it needed: the two orders
+*need not* agree, and a search that assumed they did would be assuming its
+answer. If they do agree, `reordered()` returns the map unchanged and nothing is
+lost.
 
 **SEA-1 — The search is not trusted.** It returns a `Reduction` or reports that
 it found none. Nothing about the search is part of any certificate, and

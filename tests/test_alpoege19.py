@@ -1,9 +1,17 @@
 """Die 19-dimensionale kubische Keller-Abbildung aus einer fremden Quelle.
 
 Feste Eingabe wie BCW17, und aus demselben Grund: die Schrittfolge liegt nicht
-vor. Anders als bei BCW17 laesst sie sich hier auch nicht ablesen -- die
-``w``-Nummerierung ist nicht die Einfuehrungsreihenfolge, ``G5`` benutzt
-``w13`` und ``w9``.
+vor. Anders als bei BCW17 laesst sie sich hier auch nicht ablesen -- die Quelle
+veroeffentlicht die Abbildung, nicht ihre Faktorisierung.
+
+Bis 0.4 stand hier, die ``w``-Nummerierung sei nicht die
+Einfuehrungsreihenfolge, weil ``G5`` die spaeteren ``w13`` und ``w9`` benutzt.
+Das war ein Fehlschluss. ``G5`` ist die Komponente von ``w2``, und die ist kein
+eingefuehrter Wert, sondern der Rest eines spaeteren Schritts -- siehe unten.
+Nach dieser Korrektur zeigt jede Abhaengigkeit auf einen kleineren Index, und
+``w1`` bis ``w16`` ist eine gueltige Einfuehrungsreihenfolge. Bewiesen ist
+damit nichts: sie ist eine von etwa 7.26e10 gueltigen. Sie ist nur wieder die
+naheliegende.
 
 Die Quelle beschreibt ihr Verfahren als siebzehn elementare Schritte mit
 sechzehn Traegervariablen, also nicht zwei je Schritt. Die ``P_j`` bestaetigen
@@ -399,6 +407,48 @@ def test_w2_is_the_only_carrier_that_shows_the_signature() -> None:
     ]
 
     assert rewritten == [w2]
+
+
+def test_the_numbering_is_a_valid_introduction_order() -> None:
+    """Jede Abhaengigkeit zeigt auf einen kleineren Index -- nach der Korrektur.
+
+    Der eingefuehrte Wert von ``w2`` ist ``x^3 y`` und nennt keine
+    Traegervariable; die beiden, die seine veroeffentlichte Komponente nennt,
+    stehen dort als Rest. Damit ist ``w1`` bis ``w16`` eine gueltige
+    topologische Sortierung des Abhaengigkeitsgraphen.
+
+    Das beweist nicht, dass es die Reihenfolge war. Es entkraeftet den einzigen
+    Beleg dagegen, den die Quelle hergibt.
+    """
+    values = dict(CARRIERS)
+    values[w2] = W2_INTRODUCED
+
+    for position, variable in enumerate(w):
+        used = {
+            w.index(symbol) for symbol in values[variable].free_symbols if symbol in w
+        }
+
+        assert all(earlier < position for earlier in used), variable
+
+
+def test_the_uncorrected_value_of_w2_is_what_broke_the_reading() -> None:
+    """Negativkontrolle: mit dem abgelesenen Wert scheitert die Sortierung.
+
+    Und zwar an genau einer Stelle. Ohne diese Kontrolle sagt der Test darueber
+    die Korrektur nichts -- er koennte auch dann gruen sein, wenn der
+    abgelesene Wert ebenso gepasst haette.
+    """
+    offenders = [
+        variable
+        for position, variable in enumerate(w)
+        if any(
+            w.index(symbol) >= position
+            for symbol in CARRIERS[variable].free_symbols
+            if symbol in w
+        )
+    ]
+
+    assert offenders == [w2]
 
 
 def test_the_pool_read_off_the_map_misses_that_value() -> None:
