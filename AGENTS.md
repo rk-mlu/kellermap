@@ -17,9 +17,9 @@ This file describes how to work, not what the project is. For that, read
   `docs/`, `README.md`, `CHANGELOG.md`, commit messages, release notes. The
   one exception is test docstrings and test comments, which are German by
   existing convention.
-- **Python files are pure ASCII.** Write `Alpoege`, `ueber`, `laesst`, and
-  `Section 4` rather than `§4`. Umlauts and typographic characters belong in
-  `docs/` and `README.md`, not in `.py` files.
+- **Python files are pure ASCII.** This is enforced by 
+  `pytest tests/test_ascii.py` since WP 4 of version v0.4.0. Umlauts and
+  typographic characters belong in `docs/` and `README.md`, not in `.py` files.
 - **Documentation uses plain language.** Short sentences, one statement per
   sentence. No metaphors for technical facts, no rhetorical constructions, no
   sentences carrying two dashes and three subordinate clauses. The text has to
