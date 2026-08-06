@@ -35,6 +35,12 @@ corrections are visible in the wording: the milestone number in RC-7 and under
 "No progress measure", the scope of the `filtration_level` row in the error
 table, and the withdrawal of the non-obligation "No search".
 
+The page has also grown during the milestone, which an audit should read as
+intended rather than as drift. SEA-8 to SEA-10 were added in work package 5,
+before the enumerator was written and after a measurement showed that the
+enumerator the plan implied was unaffordable. The measurement and its numbers
+are on this page beside the obligations they justify.
+
 Full statement coverage is not full obligation coverage, and the difference is
 worth naming. Several of the raises here cannot be reached at all, because an
 obligation checked earlier in the same `verify()` rules them out — BCW-5,
@@ -994,20 +1000,87 @@ one is, it carries no `verify()` and therefore no numbered obligations, in the
 shape of `LinearAutomorphism`. A candidate is a proposal. It becomes a
 certificate by being built and verified, and by nothing else.
 
-The enumeration has a control that costs nothing: the seven steps of the
-`alpoege15` chain and the eight of `bcw17` are known, and the enumerator must
-contain each of them at the map that precedes it. An enumerator that misses a
-step which demonstrably exists is incomplete in a way that a search failure
-alone would not reveal.
+The three obligations below were added in work package 5, after a measurement
+the plan for this milestone had left open. They narrow what the enumerator
+claims, and each is there because the unrestricted version is either infinite or
+unaffordable.
+
+**SEA-8 — The value pool is data.** The polynomials a `Fresh` slot may supply
+are given to the enumerator. It does not invent them and does not search for
+them.
+
+This is SEA-3 one level down, and for the milestone target it is not a
+restriction at all. The sixteen carrier values of the published
+nineteen-dimensional map are readable from the map itself, as
+`components[3 + j] - w_j`:
+
+    w1  = y^2 z    w5  = x^2 y    w9  = x y     w13 = x^2
+    w3  = x y^2    w6  = w1 x     w10 = w2 z    w14 = w7 y
+    w4  = y z      w7  = y^2      w11 = w3 y    w15 = w8 y
+    w16 = x z      w8  = w4 x     w12 = w6 x
+    w2  = -w13 w9 - w13 x y - w9 x^2
+
+A `Fresh` slot introduces `X_u + P`, so these sixteen polynomials *are* the
+sixteen factors the seventeen steps supplied. What the search has to find is
+their order, the co-factor each was paired with, and the component each step
+acted on — not the factors themselves.
+
+**SEA-9 — A pool value is used verbatim, and the scalar goes to the co-factor.**
+`(P, Q)` and `(cP, c^-1 Q)` remove the same product for any unit `c` of the
+coefficient domain, so without a rule the enumerator would emit one candidate
+per unit, which over a field is infinitely many.
+
+The rule is not a tie-break between equals. The two steps have *different*
+targets, whose fresh coordinates differ by a scaling, and the pool says which of
+them is wanted. Step one of the `alpoege15` chain is recorded as
+`Fresh(-x1 x3 / 2), Fresh(x1^2)`; against the pool it appears as `P = x z`,
+`Q = -x1^2 / 2`. Same product, scalar on the other side, and only the second
+spelling reaches a map whose carrier component is `x z`, which is what the
+published map lists.
+
+**SEA-10 — A proper part of the co-factor is a candidate too.** The enumerator
+does not offer only the largest `Q` for which `P Q` is a subsum of the
+component.
+
+Measured against a known chain. Step two of `alpoege15` uses
+`Q = x1 x2 x3 + 3 x2^2`, while the largest admissible co-factor at that map is
+`3 x1 x2 x3 + 9 x2^2 + 6 x3`. The step leaves a term behind, so an enumerator
+restricted to the largest co-factor would miss a step that demonstrably exists.
+
+Every selection is checked to be a subsum in its own right. Dropping terms from
+`Q` is not a safe operation: cancellation inside `P Q` can hide a monomial that
+reappears once a term is removed, so the smaller product can fail where the
+larger one held.
+
+### The control, and what it costs
+
+The seven steps of the `alpoege15` chain and the eight of `bcw17` are known, and
+the enumerator must contain each of them at the map that precedes it, with the
+final map supplying the pool. An enumerator that misses a step which
+demonstrably exists is incomplete in a way that a search failure alone would not
+reveal.
+
+Affordability is measured rather than assumed. At the first map of the chain,
+the eight pool values that depend on no other carrier give 21 pairs of a value
+and a component, each with a co-factor of at most five terms and therefore at
+most 32 selections. The components stay small further along: no component of the
+`alpoege15` chain exceeds 13 terms, and the published nineteen-dimensional map
+has 24, 18 and 5 terms in its three non-carrier components, 4 in the carrier
+component of `w2`, and 2 in each of the remaining fifteen.
+
+For contrast, the enumerator SEA-8 rules out. Free choice of `P` means choosing
+a subsum of a component and a way to split it, which at 13 terms is 8192 subsums
+before any factorization, per component, at every node of a seventeen-level
+search.
 
 ### Which of these can fail on supplied data
 
 SEA-5, and only SEA-5. It compares a chain this library built against a map and
-a collision it did not. SEA-1 to SEA-4, SEA-6 and SEA-7 are obligations on the
-library's own conduct: they say what the search may claim, not what the data
-is. A review weighing this milestone should look first at SEA-5 and at the
-provenance of the two published objects it compares against, which
-`references.md` records.
+a collision it did not. SEA-1 to SEA-4 and SEA-6 to SEA-10 are obligations on
+the library's own conduct: they say what the search and its enumerator may
+claim, not what the data is. A review weighing this milestone should look first
+at SEA-5 and at the provenance of the two published objects it compares against,
+which `references.md` records.
 
 ---
 
@@ -1095,6 +1168,14 @@ non-obligations take its place.
 none exists. It has shown that this search, with these arguments, did not find
 one. Nothing in the package converts the one statement into the other, and a
 negative result should not be quoted as if it did.
+
+**No completeness of the enumerator either.** `[0.4]` The enumerator is complete
+relative to its value pool, and relative to nothing else. It does not offer
+every `(P, Q)` whose product is a subsum of a component: that space is infinite
+before SEA-9 normalizes it and exponential in the number of terms afterwards.
+A step outside the pool is therefore not merely unfound but unreachable, and a
+search that fails is silent about it. This is the narrower price of SEA-8, and
+it is the reason SEA-6 is stated as bluntly as it is.
 
 **No optimality of the sequence.** `[0.4]` A chain the search finds is one that
 verifies and reaches the target. Nothing claims it is the shortest such chain,

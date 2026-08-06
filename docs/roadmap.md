@@ -465,14 +465,39 @@ What is not known is the sequence. The `w`-numbering is not the introduction
 order — `G5` uses `w13` and `w9` — so it cannot be read off the listing, and
 the source publishes the map but not its factorization.
 
-The carriers do constrain the order. Their dependency graph is acyclic, which
-`tests/test_alpoege19.py` already relies on when it reconstructs the collision
-by iterating `w_j = -P_j` from zero. A topological order of that graph is a
-necessary condition on the introduction order. Whether it narrows the search to
-a handful of orders is a measurement, and WP 4 makes it before anything is
-claimed here.
+What *is* readable is every factor. A `Fresh` slot introduces `X_u + P`, so the
+sixteen carrier values `components[3 + j] - w_j` are the sixteen factors the
+seventeen steps supplied. They are written out under SEA-8 in `contracts.md`.
+The search therefore does not look for the factors. It looks for their order,
+for the co-factor each was paired with, and for the component each step acted
+on.
 
-### Two decisions taken before the implementation
+The carriers constrain the order, and less than this page assumed. Their
+dependency graph is acyclic — `tests/test_alpoege19.py` already relies on that
+when it reconstructs the collision by iterating `w_j = -P_j` from zero — so a
+topological order of that graph is a necessary condition on the introduction
+order. Whether it narrows the search to a handful of orders was left here as a
+measurement. WP 5 made it, and the answer is no:
+
+    12 108 096 000 topological orders.
+
+Eight of the sixteen values depend on no other carrier, and the rest form short
+chains: `w1 → w6 → w12`, `w4 → w8 → w15`, `w3 → w11`, `w7 → w14`, and
+`{w13, w9} → w2 → w10`. The order is a filter the search can apply and not a
+filter the search can rest on. The sentence this paragraph replaces guessed
+otherwise, and guessing was the reason it was written as a measurement rather
+than as a claim.
+
+One reading is *not* established and is recorded here so that it is not assumed
+by accident. Fifteen of the sixteen carrier components of the published map have
+two terms, `w2` has four, and every carrier value is a clean product. That is consistent
+with no step ever having targeted a carrier component, hence with all seventeen
+steps acting on components 0, 1 or 2 — which would narrow the search
+considerably. It does not follow from the shapes alone, and `alpoege15` is a
+counterexample to the general pattern: its step seven targets component 10. WP 6
+tests it rather than presupposing it.
+
+### Three decisions taken before the implementation
 
 **Fresh generators are given to the search, not allocated by it.** BCW-2 puts
 the generators of a target in introduction order. A search allocating its own
@@ -495,6 +520,14 @@ equals the published map, and the transported three-point collision equals the
 published table. SEA-5 states them. This is the same distinction 0.2 drew at
 `bcw17`, where only the endpoint could be supplied, and it is what an audit of
 this milestone should look at first.
+
+**The value pool is data too.** Taken in WP 5, after the measurement, and for the
+same reason as the first decision: the factors are readable off the target, and
+an enumerator that searched for them instead would be enumerating a space that
+is infinite before SEA-9 normalizes it and exponential after. SEA-8 to SEA-10
+state what the enumerator claims and what it does not. The price is that a step
+outside the pool is unreachable rather than merely unfound, which
+`contracts.md` records under "No completeness of the enumerator either".
 
 ## Open from 0.2 and 0.3
 
@@ -524,7 +557,7 @@ and the note under the `Step` protocol in `contracts.md` carry the reasoning.
 
 ## Work packages
 
-Eight work packages, with internal version numbers `0.3.1` to `0.3.8` and tags
+Nine work packages, with internal version numbers `0.3.1` to `0.3.9` and tags
 `wp/0.3.n`. None of them is a release. `pyproject.toml` stays at `0.3.0` for the
 duration and moves to `0.4.0rc1` in one step at the end.
 
@@ -534,14 +567,19 @@ duration and moves to `0.4.0rc1` in one step at the end.
 | 2 | 0.3.2 | `TranslationStep`, TRA-1 to TRA-8 | yes |
 | 3 | 0.3.3 | `PolynomialMap.reordered()` | yes |
 | 4 | 0.3.4 | A gate for the ASCII agreement | yes |
-| 5 | 0.3.5 | Candidate enumeration | no |
-| 6 | 0.3.6 | The search against a given target | no |
-| 7 | 0.3.7 | `alpoege19` as a verified `Reduction` | no |
-| 8 | 0.3.8 | Documentation and release | no |
+| 5 | 0.3.5 | SEA-8 to SEA-10, and the measurement behind them | yes |
+| 6 | 0.3.6 | Candidate enumeration | no |
+| 7 | 0.3.7 | The search against a given target | no |
+| 8 | 0.3.8 | `alpoege19` as a verified `Reduction` | no |
+| 9 | 0.3.9 | Documentation and release | no |
 
-The plan had seven. WP 4 was inserted after WP 3, which turned up the one breach
-of the ASCII agreement in the tree and found no gate to attribute it to. The
-packages behind it moved down by one; nothing about their content changed.
+The plan had seven, and two packages were inserted rather than appended. WP 4
+came out of WP 3, which turned up the one breach of the ASCII agreement in the
+tree and found no gate to attribute it to. WP 5 came out of the measurement WP 6
+was to make: the enumerator the plan implied turned out to be unaffordable, and
+the obligations that narrow it belong on the page before the code exists rather
+than beside it afterwards. Both times the packages behind moved down by one and
+nothing about their content changed.
 
 Every work package leaves the repository green.
 
@@ -578,7 +616,7 @@ project does not do.
 **WP 3** adds `PolynomialMap.reordered()` and nothing else. A restructuring,
 separated from the search deliberately: the comparison SEA-5 rests on has to be
 in place and tested on maps whose reordering is known before a search produces a
-map whose reordering is not. A failure in WP 6 then cannot have its cause here.
+map whose reordering is not. A failure in WP 7 then cannot have its cause here.
 It is done when reordering `bcw17` and `alpoege15` into a shuffled variable order
 and back returns the original, when the determinant, the degree and the
 filtration degree survive it, and when a non-permutation raises.
@@ -596,18 +634,31 @@ wheel. It names the three directories rather than walking from the root, because
 working tree, and a third party's files are neither ours nor covered by this
 agreement.
 
-**WP 5** enumerates candidates: for a given map, which products can be removed
-from which component through which factor slots. Deterministic and independent
-of any strategy. Its control costs nothing and is the reason it is its own
-package: the seven steps of `alpoege15` and the eight of `bcw17` are known, and
-the enumerator must contain each of them at the map that precedes it. This is
-also where the topological-order hypothesis above is measured.
+**WP 5** states what the enumerator may claim, before it exists. The plan gave
+WP 6 one sentence and left the affordability of free enumeration open; measuring
+it first showed that the unrestricted enumerator is infinite before
+normalization and exponential after, and that every factor the target needs is
+readable off the target. SEA-8 to SEA-10 record that, with the numbers beside
+them. `docs/` only.
 
-**WP 6** is the search itself, under SEA-1 to SEA-7. It is done when it recovers
+The measurement is also what corrects the paragraph on topological orders above.
+It was written as a measurement precisely so that it could come out the other
+way, and it did.
+
+**WP 6** enumerates candidates: for a given map and a given value pool, which
+products can be removed from which component through which factor slots.
+Deterministic and independent of any strategy, under SEA-8 to SEA-10. Its
+control costs nothing and is the reason it is its own package: the seven steps
+of `alpoege15` and the eight of `bcw17` are known, and the enumerator must
+contain each of them at the map that precedes it, with the final map supplying
+the pool. It is also where the reading recorded above — that all seventeen steps
+acted on components 0, 1 or 2 — is tested rather than presupposed.
+
+**WP 7** is the search itself, under SEA-1 to SEA-7. It is done when it recovers
 a known sequence — `alpoege15` from its own endpoints — before it is pointed at
 the unknown one.
 
-**WP 7** points it at the nineteen-dimensional map. The result becomes a
+**WP 8** points it at the nineteen-dimensional map. The result becomes a
 `Reduction` in `tests/test_alpoege19.py`, the transported collision replaces the
 `lift` reconstruction as the primary route to the three points, and
 `scripts/reconstruct_alpoege19.py` carries the recovered sequence in plain
@@ -619,7 +670,7 @@ out, and the milestone ships the search without the result. SEA-6 exists so that
 this outcome can be reported without being overstated. It would not be a
 successful milestone, and it would not be a false one either.
 
-**WP 8** removes the `[0.4]` markers from `contracts.md`, adds the translation
+**WP 9** removes the `[0.4]` markers from `contracts.md`, adds the translation
 and the search to `architecture.md`, records the provenance of the recovered
 sequence in `references.md`, updates `CHANGELOG.md`, and sets the version.
 
@@ -639,6 +690,10 @@ wording of `contracts.md`:
 - "No search" is withdrawn, in the shape of the entry 0.3 withdrew, and three
   narrower non-obligations take its place: no completeness, no optimality of
   the sequence, no claim from reordering.
+
+WP 5 added rather than corrected: SEA-8, SEA-9 and SEA-10, with the measurements
+that justify them beside them on the page. No obligation was withdrawn or
+narrowed, and no identifier was reused.
 
 BCW-10 is *not* amended. The search relies on a reused factor being carried by
 a coordinate of the immediate source, which is how the obligation already reads.
