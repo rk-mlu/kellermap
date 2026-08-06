@@ -374,12 +374,20 @@ def test_a_perturbed_residue_is_not_the_component() -> None:
         )
 
 
-def test_w2_is_the_only_carrier_that_was_rewritten() -> None:
+def test_w2_is_the_only_carrier_that_shows_the_signature() -> None:
     """Der Rest eines Schritts traegt ein Monom in zwei Traegervariablen.
 
-    Ein Wert wie ``w6 = w1 x`` nennt zwar eine Traegervariable, aber nur eine;
-    er kann kein ``-X_a X_b`` sein, weil die Komponente von ``x`` kein Traeger
-    ist und als Platz daher nicht in Frage kommt. Nur ``w2`` zeigt die Signatur.
+    Das ist keine Faustregel. Beide Platzkoordinaten eines Schritts sind
+    Traegervariablen -- ``Carried`` verlangt einen Traeger, ``Fresh`` legt
+    einen an -- und die Komponenten von x, y und z sind hier keine Traeger,
+    kommen als Platz also nicht in Frage. Ein Rest muss die Signatur tragen.
+    Ein Wert wie ``w6 = w1 x`` nennt zwar eine Traegervariable, aber nur eine.
+
+    Was der Test nicht ausschliesst: dass sich der ``-X_a X_b``-Term gegen
+    einen Term des eingefuehrten Werts weghebt, so wie sich bei ``w2`` der
+    ``-P Q``-Term weghebt. Eine so ueberschriebene Komponente saehe unberuehrt
+    aus. Der Test zeigt, dass nur ``w2`` die Signatur traegt, nicht, dass nur
+    ``w2`` ueberschrieben wurde.
     """
     rewritten = [
         variable

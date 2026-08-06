@@ -481,12 +481,27 @@ measurement. WP 5 made it, and the answer is no:
 
     12 108 096 000 topological orders.
 
-Eight of the sixteen values depend on no other carrier, and the rest form short
-chains: `w1 → w6 → w12`, `w4 → w8 → w15`, `w3 → w11`, `w7 → w14`, and
-`{w13, w9} → w2 → w10`. The order is a filter the search can apply and not a
-filter the search can rest on. The sentence this paragraph replaces guessed
-otherwise, and guessing was the reason it was written as a measurement rather
-than as a claim.
+That figure is superseded, and by the `w2` finding below rather than by a
+recount. It was computed from the *published* carrier values, and the published
+value of `w2` is not an introduced value. It names `w13` and `w9` only because
+it is a residue; the value `w2` was introduced with, `x^3 y`, names no carrier
+at all. With that corrected, `w2` is a root rather than a link in a chain:
+
+    72 648 576 000 topological orders.
+
+Nine of the sixteen values then depend on no other carrier, and the rest form
+short chains: `w1 → w6 → w12`, `w4 → w8 → w15`, `w3 → w11`, `w7 → w14`, and
+`w2 → w10`. The first number was wrong in the direction that flatters the
+search, which is worth naming: a graph read off a published map over-constrains
+wherever a step has rewritten a carrier.
+
+Neither figure changes the conclusion, and the conclusion is what the
+measurement was for. The order is a filter the search can apply and not a filter
+the search can rest on. It is in fact not a filter the search applies at all: a
+pool value naming `w1` does not convert into the ring until `w1` is a generator,
+so the dependency enforces itself in the arithmetic. The graph is a property of
+the answer rather than a lever on the way to it, which is the more useful
+correction of the two.
 
 One step of the sequence is known. The component of `w2` is not an introduced
 carrier value but the residue of a later step: with `w13` and `w9` in the two
@@ -661,7 +676,8 @@ them. `docs/` only.
 
 The measurement is also what corrects the paragraph on topological orders above.
 It was written as a measurement precisely so that it could come out the other
-way, and it did.
+way, and it did. WP 7 then corrected the measurement itself, once the published
+value of `w2` turned out not to be an introduced one.
 
 **WP 6** enumerates candidates: for a given map and a given value pool, which
 products can be removed from which component through which factor slots.
