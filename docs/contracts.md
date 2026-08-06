@@ -38,7 +38,8 @@ table, and the withdrawal of the non-obligation "No search".
 Full statement coverage is not full obligation coverage, and the difference is
 worth naming. Several of the raises here cannot be reached at all, because an
 obligation checked earlier in the same `verify()` rules them out — BCW-5,
-BCW-7, LIN-2, LIN-3 and the `MA^1` clause of LIN-6. They carry
+BCW-7, LIN-2, LIN-3, the `MA^1` clause of LIN-6, and, since 0.4, TRA-3, TRA-4
+and the `MA^0` clause of TRA-6. They carry
 `# pragma: no cover` with the reason written beside them. Writing a test for
 them would mean forcing the object into a state it cannot reach. Each type states which of
 its obligations can fail on supplied data and which are self-checks of the
@@ -720,7 +721,7 @@ class TranslationStep:
     provenance: Provenance
 
     @classmethod
-    def build(cls, source, shift) -> TranslationStep: ...
+    def build(cls, source, shift, normalizing=False) -> TranslationStep: ...
 
     @classmethod
     def normalize(cls, source) -> TranslationStep: ...
@@ -802,10 +803,18 @@ boundary.
 
 ### Which of these can fail on supplied data
 
-TRA-1 and both clauses of TRA-6. TRA-3 and TRA-4 follow from TRA-1 and can only
-fail if the library is wrong about its own arithmetic. TRA-2 is a constructor
-invariant and is not reachable by `verify()` at all. TRA-5 is a property of the
-type rather than a check.
+TRA-1 and the first clause of TRA-6, which compares the shift against `F(0)`.
+
+This is narrower than the wording this section carried when it was written,
+which named both clauses of TRA-6. The implementation showed why. The `MA^0`
+clause follows from TRA-1 together with the first clause: if the target is the
+source translated by `F(0)`, it vanishes at the origin. It is retained as a
+self-check and carries `# pragma: no cover`.
+
+TRA-3 and TRA-4 follow from TRA-1 in the same way and can only fail if the
+library is wrong about its own arithmetic. TRA-2 is a constructor invariant and
+is not reachable by `verify()` at all. TRA-5 is a property of the type rather
+than a check.
 
 ---
 

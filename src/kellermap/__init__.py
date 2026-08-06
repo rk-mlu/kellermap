@@ -17,6 +17,7 @@ from .reduction import (
     Provenance,
     Reduction,
     Step,
+    TranslationStep,
 )
 from .variables import (
     DEFAULT_VARIABLE_FACTORY,
@@ -42,6 +43,7 @@ __all__ = [
     "Reduction",
     "ReductionContext",
     "Step",
+    "TranslationStep",
     "Transposition",
     "Transvection",
     "VariableFactory",

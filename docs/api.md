@@ -23,6 +23,7 @@ what they do.
 - [Linear automorphisms](#linear-automorphisms)
 - [Collisions](#collisions)
 - [Steps and reductions](#steps-and-reductions)
+  - [The translation](#the-translation)
 - [The BCW step](#the-bcw-step)
 - [Naming across a reduction](#naming-across-a-reduction)
 - [Guarantees](#guarantees)
@@ -35,7 +36,7 @@ what they do.
 ```python
 >>> import kellermap
 >>> kellermap.__all__
-['DEFAULT_VARIABLE_FACTORY', 'Collision', 'Dilation', 'ElementaryAutomorphism', 'ElementaryFactor', 'FixedVariableFactory', 'IndexedVariableFactory', 'LinearAutomorphism', 'LinearFactor', 'LinearStep', 'PolynomialMap', 'Provenance', 'Reduction', 'ReductionContext', 'Step', 'Transposition', 'Transvection', 'VariableFactory', 'VerificationError', 'field_ring', 'over_field', 'reserved_names']
+['DEFAULT_VARIABLE_FACTORY', 'Collision', 'Dilation', 'ElementaryAutomorphism', 'ElementaryFactor', 'FixedVariableFactory', 'IndexedVariableFactory', 'LinearAutomorphism', 'LinearFactor', 'LinearStep', 'PolynomialMap', 'Provenance', 'Reduction', 'ReductionContext', 'Step', 'TranslationStep', 'Transposition', 'Transvection', 'VariableFactory', 'VerificationError', 'field_ring', 'over_field', 'reserved_names']
 
 ```
 
@@ -605,6 +606,60 @@ every intermediate map rather than only at the ends:
 ```
 
 Left composition leaves every preimage where it was and moves only the image.
+
+### The translation
+
+Proposition (1.1) splits `F` as `(X + F(0)) ∘ F_(1) ∘ F'`, so the linear
+normalization is the *second* factor. A map that does not fix the origin has
+to lose the first one before `LinearStep.normalize` will look at it:
+
+```python
+>>> from kellermap import TranslationStep
+>>> moved = over_field(PolynomialMap((x, y), (x + y**2 + 1, y + 2)))
+>>> LinearStep.normalize(moved)
+Traceback (most recent call last):
+    ...
+ValueError: The map does not fix the origin, so the linear normalization is not the first step: Proposition (1.1) splits F as (X + F(0)) o F_(1) o F', and the translation (X - F(0)) has to come off first. Use TranslationStep.normalize on this map and normalize its target.
+
+```
+
+`TranslationStep.normalize` takes `F(0)` off, and the two steps chain:
+
+```python
+>>> shifted = TranslationStep.normalize(moved)
+>>> shifted.shift
+(1, 2)
+>>> shifted.target == keller
+True
+>>> Reduction([shifted, LinearStep.normalize(shifted.target)]).verify() is None
+True
+
+```
+
+A translation is elementary in the sense of the paper, and the step exhibits
+the factorization rather than asserting invertibility:
+
+```python
+>>> [(factor.index, factor.polynomial) for factor in shifted.translation.factors]
+[(0, -1), (1, -2)]
+
+```
+
+It lies in no `EA^d` for `d ≥ 0` all the same, because it leaves `MA^0`. The
+degree `-1` belongs to the transformation; what the *step* reports is the `EA`
+bound it establishes for its target, and a translation establishes none:
+
+```python
+>>> shifted.translation.filtration_degree()
+-1
+>>> shifted.filtration_level
+inf
+
+```
+
+That is the difference that keeps `Reduction.filtration_level()` meaningful:
+the level describes the target of the chain, and the translation is a
+statement about its source.
 
 ---
 

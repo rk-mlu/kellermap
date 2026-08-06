@@ -531,7 +531,7 @@ duration and moves to `0.4.0rc1` in one step at the end.
 | WP | Internal | Content | Done |
 | --- | --- | --- | --- |
 | 1 | 0.3.1 | Plan and contracts | yes |
-| 2 | 0.3.2 | `TranslationStep`, TRA-1 to TRA-8 | no |
+| 2 | 0.3.2 | `TranslationStep`, TRA-1 to TRA-8 | yes |
 | 3 | 0.3.3 | `PolynomialMap.reordered()` | no |
 | 4 | 0.3.4 | Candidate enumeration | no |
 | 5 | 0.3.5 | The search against a given target | no |
@@ -558,8 +558,16 @@ signature and no test changes.
 milestone: it needs no search, and no search needs it, since Alpöge's map fixes
 the origin. It is done when a map outside `MA^0` can be carried into `MA^0` by a
 `Reduction` of two steps, when `LinearStep.normalize` names the step that now
-exists, and when each of TRA-1, TRA-3, TRA-4 and both clauses of TRA-6 has a
-failing case in the tests.
+exists, and when TRA-1 and the first clause of TRA-6 have failing cases in the
+tests.
+
+The completion criterion is narrower than it was written. It asked for failing
+cases for TRA-3, TRA-4 and both clauses of TRA-6 as well; writing the
+implementation showed that three of those cannot be reached, because TRA-1 runs
+first and rules them out. They carry `# pragma: no cover` with the reason, and
+`contracts.md` says so under "Which of these can fail on supplied data". A test
+for them would have to force the object into a state it cannot reach, which the
+project does not do.
 
 **WP 3** adds `PolynomialMap.reordered()` and nothing else. A restructuring,
 separated from the search deliberately: the comparison SEA-5 rests on has to be
