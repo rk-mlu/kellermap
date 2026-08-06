@@ -1,7 +1,9 @@
 # Contracts
 
-Normative specification of the public surface introduced in version 0.2:
-`ReductionContext`, `BCWStep` and `Reduction`.
+Normative specification of the verification surface: `Collision`,
+`LinearAutomorphism`, the `Step` protocol, `ReductionContext`, `BCWStep`,
+`LinearStep`, `TranslationStep`, `Reduction`, and the search that assembles a
+reduction.
 
 This document is written *before* the implementation and is binding on it.
 Where the implementation and this page disagree, the implementation is wrong
@@ -12,12 +14,26 @@ Error messages cite the identifier that failed, so that an independent review
 can address findings to a numbered obligation rather than to a line of code.
 Identifiers are never reused; a withdrawn obligation stays listed as withdrawn.
 
-**Status as of `0.3.0`:** every obligation on this page is implemented, and
-the test suite covers every statement of the package. Where the implementation
-forced a change, this page was amended deliberately and the amendment is
-visible in the wording — the clearest cases are COL-4 and BCW-3, which moved
-from obligations of `verify()` to constructor invariants, and LIN-2, which was
-narrowed to what is actually checkable.
+An obligation marked `[0.4]` is stated but not yet implemented. The marker is
+removed when the milestone closes. It is a statement of intent that the
+implementation is measured against, not a description of the current code, and
+a review of an unfinished milestone should read it as such. Obligations
+without a marker are implemented.
+
+**Status as of `0.3.0`:** every unmarked obligation on this page is
+implemented, and the test suite covers every statement of the package. Where
+the implementation forced a change, this page was amended deliberately and the
+amendment is visible in the wording — the clearest cases are COL-4 and BCW-3,
+which moved from obligations of `verify()` to constructor invariants, and
+LIN-2, which was narrowed to what is actually checkable.
+
+**Milestone `0.4`, in progress.** The milestone adds `TranslationStep`, which
+completes Chapter II, Proposition (1.1), and a search that recovers the step
+sequence of the published 19-dimensional map. Its obligations carry the `[0.4]`
+marker. Four statements on this page were corrected at the same time, and the
+corrections are visible in the wording: the milestone number in RC-7 and under
+"No progress measure", the scope of the `filtration_level` row in the error
+table, and the withdrawal of the non-obligation "No search".
 
 Full statement coverage is not full obligation coverage, and the difference is
 worth naming. Several of the raises here cannot be reached at all, because an
@@ -42,7 +58,9 @@ the implementation is required to guarantee.
 - [ReductionContext](#reductioncontext)
 - [BCWStep](#bcwstep)
 - [LinearStep](#linearstep)
+- [TranslationStep](#translationstep)
 - [Reduction](#reduction)
+- [Search](#search)
 - [Errors](#errors)
 - [Deliberate non-obligations](#deliberate-non-obligations)
 
@@ -211,6 +229,17 @@ Chapter II, Proposition (1.1) does so does not make the operation theirs.
 `filtration_level` reports `math.inf` where a step establishes no `EA` level,
 following `ElementaryAutomorphism.filtration_degree()` on the identity.
 
+**`[0.4]`** This is the `EA` bound the step establishes for its target. It is
+not the filtration degree of the transformation the step applies, and the two
+must not be conflated. `TranslationStep` is where they visibly differ: the
+translation `X |-> X - c` has filtration degree `-1`, since its displacement
+`-c` has order zero, and it lies in no `EA^d` for `d >= 0`. As a step it
+establishes no `EA` bound at all, so its `filtration_level` is `math.inf`, like
+`LinearStep`'s. Reporting `-1` here would make `Reduction.filtration_level()`
+return `-1` for every chain that begins with a translation, which says nothing
+about that chain's target; the degree of the transformation is available on the
+transformation, where it belongs.
+
 **STEP-1 — Verification raises, it does not return a verdict.** `verify()`
 returns `None` on success and raises `VerificationError` otherwise. A boolean
 would collapse six distinct obligations into one bit; an audit needs to know
@@ -312,7 +341,18 @@ runs in one arithmetic context from beginning to end.
 
 **RC-7 — Scope.** The context names generators and extends rings and maps. It
 does not choose steps, does not verify anything, does not hold the reduction,
-and does not know which step is being taken. Selection is milestone 0.5.
+and does not know which step is being taken. Selection is milestone 0.4.
+
+The milestone number is a correction. Until 0.4 this clause read 0.5, which
+disagreed with the non-obligation "No search" on the same page. 0.4 searches for
+one step sequence against a known target; 0.5 searches without one. The
+obligations of the search are stated under [Search](#search) below.
+
+**`[0.4]`** The search of 0.4 does not use a `ReductionContext`, because by
+SEA-3 it is given the names of the fresh generators rather than allocating
+them. This changes nothing about RC-1 to RC-7. The context remains the route
+for a reduction that allocates its own names, which is every chain the test
+suite builds today.
 
 A step therefore takes its two variables as data rather than taking a context.
 That is not only separation of concerns: a supplied certificate has to record
@@ -648,6 +688,13 @@ and presupposes the first. Without it the target simply fails to reach `MA^1`,
 which is true but points one stage past the cause; `normalize()` refuses such a
 source outright rather than building a step that fails its own verification.
 
+**`[0.4]`** The first factor is `TranslationStep`, and the refusal names it.
+Until 0.4 the message named a step that did not exist, which was honest about
+the gap and useless for closing it. `normalize()` still refuses; it does not
+insert a translation of its own. Proposition (1.1) has three factors and a
+`Reduction` shows all three, rather than folding two of them into one step
+whose name mentions only one.
+
 ### Which of these can fail on supplied data
 
 LIN-1 and the first clause of LIN-6. LIN-2 and LIN-3 follow from LIN-1 and can
@@ -655,6 +702,110 @@ only fail if the library is wrong about its own arithmetic; the second clause
 of LIN-6 follows from the first. They are retained as cheap self-checks, and a
 review should weigh them as such rather than as evidence about a supplied
 target.
+
+---
+
+## TranslationStep
+
+**`[0.4]`** The first factor of BCW Chapter II, Proposition (1.1). A `Step`, so
+that a `Reduction` can begin at a map that does not fix the origin.
+
+```python
+@dataclass(frozen=True)
+class TranslationStep:
+    source: PolynomialMap
+    target: PolynomialMap
+    shift: tuple[sp.Expr, ...]
+    normalizing: bool
+    provenance: Provenance
+
+    @classmethod
+    def build(cls, source, shift) -> TranslationStep: ...
+
+    @classmethod
+    def normalize(cls, source) -> TranslationStep: ...
+
+    @property
+    def translation(self) -> ElementaryAutomorphism: ...
+```
+
+The step composes `X |-> X - shift` on the left. `normalize()` sets
+`shift = source(0)`, which is the only case a reduction needs, and `build()`
+admits any constant shift.
+
+As for `LinearStep` and `BCWStep`, `provenance` is recorded rather than given:
+the public constructor always sets `SUPPLIED`, and `build()` and `normalize()`
+are the only routes to `CONSTRUCTED`.
+
+### Why a separate type
+
+A translation is affine and not linear, so it is not an element of `GL_n(k)`
+and cannot be a `LinearAutomorphism`. Widening that type to affine maps would
+break the two things it exists for: `matrix()` and the structural determinant.
+
+Nor is it a `BCWStep`. It is elementary in the sense of the paper —
+`X_i |-> X_i - c_i` displaces `X_i` by a constant, which is free of `X_i` — so
+it needs no new non-elementary type, and `translation` exhibits it as an
+`ElementaryAutomorphism` with one factor per non-zero entry of `shift`. What it
+is not is an application of Proposition (3.1): it removes no product, names no
+target component, and buys no carrier. Recording it as a `BCWStep` with both
+slots `Carried` would state three things that are not the case.
+
+**TRA-1 — The identity.** `target == translation ∘ source`, that is,
+`target.components[i] == source.components[i] - shift[i]` for every `i`, as a
+polynomial identity in one shared `PolyRing`.
+
+**TRA-2 — The shift is constant.** Every entry of `shift` lies in the
+coefficient domain of `source.ring` and involves no generator. Enforced at
+construction and by conversion rather than by inspection, in the shape of
+BCW-3: the entries are converted into the domain, so an entry involving a
+generator cannot be built at all, and TRA-2 has no verify-time code.
+
+Symbols of the coefficient domain are permitted, as in COL-2 and BCW-3: a
+translation by `T` over `k[T]` is a translation. What the obligation excludes is
+a shift that varies with the point, which would not be a translation and whose
+Jacobian would not be the identity.
+
+**TRA-3 — Invertibility is exhibited, not asserted.** `translation` is checked
+to be a product of elementary factors whose polynomials do not involve their own
+variable, and `translation.inverse() ∘ translation` is checked to be the
+identity map. The inverse is `X_i |-> X_i + c_i`, read off the definition.
+
+**TRA-4 — The determinant is unchanged.** `target.determinant() ==
+source.determinant()`. The Jacobian of a translation is the identity matrix.
+Redundant in principle and retained as a cheap self-check, in the shape of
+BCW-7.
+
+**TRA-5 — The step establishes no `EA` level.** `filtration_level` is
+`math.inf`. The transformation has filtration degree `-1` and lies in no
+`EA^d`; the step therefore constrains nothing about its target's filtration
+stage, and `Reduction.filtration_level()` is not lowered by it. The reasoning
+is under [The Step protocol](#the-step-protocol).
+
+**TRA-6 — Normalization is a claim, not a definition.** If the step declares
+itself the normalization, `shift == source(0)` and `target` lies in `MA^0`. A
+`TranslationStep` that is not so declared carries no such obligation. This is
+LIN-6 one stage earlier, and for the same reason: a step that says what it is
+for can be held to it.
+
+A source already in `MA^0` is not refused. Its shift is zero, the target equals
+the source, and the step is the identity — a true statement, and simpler than a
+special case in every caller that does not know in advance whether its map fixes
+the origin.
+
+**TRA-7 — Transport.** Points are unchanged; the image becomes
+`c - shift`. Left composition does not move preimages, as in LIN-5.
+
+**TRA-8 — Provenance is recorded, and not settable.** As BCW-9, with the same
+reading: an integrity marker against mislabelling by accident, not a security
+boundary.
+
+### Which of these can fail on supplied data
+
+TRA-1 and both clauses of TRA-6. TRA-3 and TRA-4 follow from TRA-1 and can only
+fail if the library is wrong about its own arithmetic. TRA-2 is a constructor
+invariant and is not reachable by `verify()` at all. TRA-5 is a property of the
+type rather than a check.
 
 ---
 
@@ -716,11 +867,135 @@ verified transport of a genuine collision is a machine-checked proof that
 steps establish. It answers, from the certificate alone, why the target lies in
 the filtration stage it does.
 
+**`[0.4]`** A `TranslationStep` reports `math.inf` by TRA-5 and therefore does
+not lower it, as a `LinearStep` does not. A chain that begins at a map outside
+`MA^0` reports the same level as the same chain begun one step later, which is
+the intended reading: the level describes the target, and the translation is
+about the source.
+
 **RED-7 — Provenance propagates.** `Reduction.provenance` is `SUPPLIED` only if
 every step is `SUPPLIED`.
 
 **RED-8 — Value semantics.** `steps` is a tuple; concatenation and slicing
 return new `Reduction` objects; nothing mutates.
+
+---
+
+## Search
+
+**`[0.4]`** Assembling a `Reduction` rather than checking one that is presented.
+The milestone target is the step sequence of the published 19-dimensional map,
+which its source does not publish.
+
+The search is the first part of this package that produces a chain instead of
+checking one, and the obligations below exist mostly to keep that from being
+read as more than it is. A found chain is not evidence because a search found
+it. It is evidence because `Reduction.verify()` passes on it and because its
+endpoint equals a map this library did not compute.
+
+### What is searched, and what is given
+
+The task is bounded on both ends. The source is Alpöge's three-dimensional map,
+the target is the published nineteen-dimensional map, and both are fixed input.
+What is unknown is the sequence between them: seventeen steps and sixteen fresh
+generators, so `sum(m) == 16` over the seventeen steps and at least one step has
+`m = 0`.
+
+The names of the fresh generators are given too. This is a decision, and the
+alternative is worth stating because a reader will otherwise assume it. A search
+that allocated its own names through a `ReductionContext` would introduce them
+in the order it discovers them, and BCW-2 puts the generators of a target in
+that order. The published map lists them as `w1` to `w16`, which is not the
+introduction order — the source's own numbering is not chronological. The two
+maps would then be equal in no sense the package can check without a second
+notion of equality. Giving the search the names and letting it search their
+*assignment to steps* keeps one notion of equality, and leaves the remaining
+difference a matter of presentation, which SEA-4 handles.
+
+**SEA-1 — The search is not trusted.** It returns a `Reduction` or reports that
+it found none. Nothing about the search is part of any certificate, and
+`Reduction.verify()` is called on the result rather than assumed. A search that
+returns a wrong chain is caught by verification, not by the search.
+
+**SEA-2 — Determinism.** A search is a pure function of its arguments. Two runs
+with value-equal arguments return equal results, in the same process, in a later
+process, and in a different interpreter run. Dependence on `id()`, on set or
+dict iteration order, on wall clock or on a random seed that is not an argument
+is forbidden. This is RC-1 for a larger object and for the same reason: a chain
+that cannot be replayed is not a certificate anyone else can check.
+
+**SEA-3 — Fresh generators are data.** The names of the fresh generators are
+supplied to the search. It decides which name belongs to which step, not what
+the names are. Each satisfies RC-4 against the source's ring, as it would if a
+context had produced it.
+
+**SEA-4 — Reordering is presentation, and is not a step.** A chain built by the
+search has its generators in introduction order. `PolynomialMap.reordered(vars)`
+returns the same map with its generators listed in the given order, permuting
+the component tuple by the same permutation. `vars` must be a permutation of the
+map's own variables; anything else raises `ValueError`.
+
+This changes no polynomial and no value. Coordinate `i` of the result is the
+coordinate of the argument that carries the same generator, together with the
+component that belongs to it, so the two objects describe one map on `k^n` and
+differ only in the order the coordinates are listed. That is why it is not a
+`Step` and certifies nothing: there is nothing to certify. Making it a step
+would put an entry in a chain that verifies an identity between two spellings of
+one object, which reads like evidence and is not.
+
+**SEA-5 — The evidence is the endpoint.** A chain the search produces is
+`CONSTRUCTED` throughout, so by BCW-9 its BCW-1 compares the implementation
+against itself. The external fact is
+
+```
+found.target.reordered(published.variables) == published
+```
+
+which is checked separately from `verify()` and is the only place where the run
+can be contradicted by data this library did not compute. A review should read
+the two as different in kind: verification says the chain is internally sound,
+and this equality says it arrives where an outside source says it should.
+
+The transported collision is a second such fact. `Reduction.transport()` carries
+Alpöge's three points to `k^19` by RED-5, and the result, reordered, is compared
+against the published table. The two facts are independent: one is about the
+map, the other about three points of it.
+
+**SEA-6 — A failure to find is not a proof of absence.** Reporting no chain
+means this search did not find one with these arguments. It is not a statement
+that no chain exists, and nothing in the package turns it into one. See
+"No completeness" under
+[Deliberate non-obligations](#deliberate-non-obligations).
+
+**SEA-7 — Deferral is explicit.** A structural case the search does not handle
+raises `NotImplementedError` naming the work package, rather than returning a
+plausible chain or silently reporting no result. A case it handles and does not
+solve reports no result, which is a different outcome and is spelled
+differently.
+
+### Candidates
+
+The search enumerates the arguments of `BCWStep.build` — a target component and
+two factor slots — against a map it has reached. No new type is required for
+that, and none is introduced unless the implementation shows one is needed; if
+one is, it carries no `verify()` and therefore no numbered obligations, in the
+shape of `LinearAutomorphism`. A candidate is a proposal. It becomes a
+certificate by being built and verified, and by nothing else.
+
+The enumeration has a control that costs nothing: the seven steps of the
+`alpoege15` chain and the eight of `bcw17` are known, and the enumerator must
+contain each of them at the map that precedes it. An enumerator that misses a
+step which demonstrably exists is incomplete in a way that a search failure
+alone would not reveal.
+
+### Which of these can fail on supplied data
+
+SEA-5, and only SEA-5. It compares a chain this library built against a map and
+a collision it did not. SEA-1 to SEA-4, SEA-6 and SEA-7 are obligations on the
+library's own conduct: they say what the search may claim, not what the data
+is. A review weighing this milestone should look first at SEA-5 and at the
+provenance of the two published objects it compares against, which
+`references.md` records.
 
 ---
 
@@ -744,7 +1019,7 @@ identifier also appears in `str(...)`, but a caller is expected to branch on
 | Situation | Raised |
 | --- | --- |
 | an obligation on this page fails | `VerificationError` |
-| `filtration_level` outside `{0, 1}` | `ValueError` |
+| a `BCWStep` `filtration_level` outside `{0, 1}` | `ValueError` |
 | `index` outside `range(source.dimension)` | `ValueError` |
 | a reused slot naming `index`, or an index out of range | `ValueError` |
 | a reused slot naming a component that is not a carrier | `VerificationError` |
@@ -757,11 +1032,25 @@ identifier also appears in `str(...)`, but a caller is expected to branch on
 | fewer than two collision points, or two equal ones | `ValueError` |
 | a collision whose points and image differ in length | `ValueError` |
 | a factory returning a miscounted or colliding name | `ValueError` |
+| a shift entry outside the coefficient domain | `ValueError` |
+| a shift whose length is not `source.dimension` | `ValueError` |
+| `reordered()` given anything but a permutation of the variables | `ValueError` |
+| a structural case the search does not handle | `NotImplementedError` |
 | arguments of the wrong type | `TypeError` |
+
+The scope of the `filtration_level` row is a correction. It was written for
+`BCWStep`, where BCW-6 confines the declared level to `{0, 1}`, but it was
+stated without naming a type. Read as a statement about `Step.filtration_level`
+it was already wrong in 0.3, since `LinearStep` reports `math.inf`; with
+`TranslationStep` doing the same it would be wrong twice. The obligation
+`filtration_level ∈ {0, 1}` is BCW-6 and belongs to `BCWStep` alone.
 
 Constructor-time conditions raise at construction. Conditions that require
 polynomial arithmetic are checked by `verify()` and raise `VerificationError`;
 construction never performs them silently.
+
+A search that finds nothing raises nothing. It reports no result, and SEA-6 and
+SEA-7 keep that outcome distinct from a case it refuses to attempt.
 
 ---
 
@@ -772,14 +1061,40 @@ Listed so that their absence is not read as an oversight.
 **No progress measure.** Nothing requires a `BCWStep` to lower the degree or
 the number of top-degree monomials. Steps two and three of the reference
 reduction leave the degree at seven. A certificate certifies correctness;
-whether a step makes progress is a question for the heuristics of 0.5, and
-`Reduction` reports degrees rather than constraining them.
+whether a step makes progress is a question for the search, and `Reduction`
+reports degrees rather than constraining them.
+
+The milestone number here is a correction. It read 0.5, which disagreed with
+"No search" below. Progress is a question the search of 0.4 already has to
+answer for one target; ranking steps in general is 0.5. Neither is a question
+for a certificate, which is what this entry says and what has not changed.
 
 **No minimality.** Nothing claims a reduction is the shortest, or the
 lowest-dimensional, or that dimension 17 cannot be improved.
 
-**No search.** Neither `BCWStep` nor `Reduction` finds a factorization. They
-verify one that is presented to them. Searching is 0.4.
+**No search.** *Withdrawn in 0.4.* Until then the package only verified a
+factorization that was presented to it. It now assembles one as well, under the
+obligations of [Search](#search). What has not changed is the division the entry
+was there to protect: `BCWStep` and `Reduction` still verify and do not search,
+and SEA-1 keeps the search outside every certificate. Three narrower
+non-obligations take its place.
+
+**No completeness.** `[0.4]` A search that reports no chain has not shown that
+none exists. It has shown that this search, with these arguments, did not find
+one. Nothing in the package converts the one statement into the other, and a
+negative result should not be quoted as if it did.
+
+**No optimality of the sequence.** `[0.4]` A chain the search finds is one that
+verifies and reaches the target. Nothing claims it is the shortest such chain,
+the one the published source used, or the one with the fewest fresh generators.
+Recovering *a* sequence that produces the published map is the milestone target;
+recovering *the* sequence its author wrote down is not something the published
+data makes checkable.
+
+**No claim from reordering.** `[0.4]` `reordered()` establishes nothing. It puts
+two presentations of one map into one order so that they can be compared at all,
+and SEA-4 says why that is not a step. The comparison afterwards is what carries
+the weight.
 
 **No reduction method other than this one.** *Withdrawn in 0.3.* Until then,
 BCW-2 fixed exactly two fresh variables per step, so a chain of `BCWStep`s
@@ -792,6 +1107,14 @@ BCW-10 is stated against the immediate source, not against the chain. In
 practice a carrier does survive, because no step changes a component it does
 not target, but `Reduction` still cannot express a step that refers to a map
 earlier in the chain. Nothing in 0.3 requires that.
+
+**`[0.4]`** The search of 0.4 relies on this and does not widen it. The
+published nineteen-dimensional map shares sixteen carriers across seventeen
+steps, and whether every one of them survives to the step that reuses it is a
+property of that sequence, not something this page can assert in advance. If the
+sequence turns out to need a factor carried by an earlier map, BCW-10 is
+amended, deliberately and visibly, and the amendment gets its own work package
+rather than being folded into the search.
 
 **No injectivity claim about `source`.** `transport()` moves a collision that
 is supplied. That a map *has* no collision is not something this framework

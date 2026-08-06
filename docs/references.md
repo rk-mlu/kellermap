@@ -143,8 +143,10 @@ the same source is reported at 79 variables. The dimension-19 map keeps the
 determinant −2, so it has not been linearly normalized.
 
 Comparing them meaningfully needs the certificates that milestone 0.2
-introduces. Reproducing published dimensions with machine-verifiable
-certificates is the first target of 0.5; improving them is secondary.
+introduces. Reproducing the dimension-19 map's own step sequence with
+machine-verifiable certificates is the target of 0.4; reproducing published
+dimensions more generally is the first target of 0.5, and improving them is
+secondary.
 
 ### Where the counts come from
 

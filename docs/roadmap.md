@@ -435,6 +435,67 @@ ourselves.
 
 # Version 0.4
 
+**Status: in progress.** `docs/contracts.md` states the obligations, marked
+`[0.4]`, and was written before the implementation as it was for 0.2 and 0.3.
+
+## The step sequence of the 19-dimensional map
+
+One release goal, and it is a search. The published nineteen-dimensional cubic
+map has been fixed input since 0.2. 0.3 gave its reduction a language, by
+admitting steps that reuse a carrier, but its step sequence is unpublished and
+recovering it is the milestone.
+
+An earlier plan for this milestone also carried the Reduction Theorem — degree
+reduction, homogenization, unipotent reduction and a general pipeline. That is
+Section 4 of the paper and a milestone of its own; putting it beside a search
+would have made this one impossible to audit as a whole. It moves to 0.6, and
+the milestones after it move down by one.
+
+### What is known and what is not
+
+Both ends are fixed. The source is Alpöge's three-dimensional map of degree 7,
+the same map from which `bcw17` and `alpoege15` are derived; the target is the
+published nineteen-dimensional map in `tests/test_alpoege19.py`. The source
+describes seventeen elementary steps with sixteen carrier variables. Since the
+dimension grows from 3 to 19, `sum(m) == 16` over seventeen steps, so at least
+one step has `m = 0`. That is a constraint on the search and a check on its
+result.
+
+What is not known is the sequence. The `w`-numbering is not the introduction
+order — `G5` uses `w13` and `w9` — so it cannot be read off the listing, and
+the source publishes the map but not its factorization.
+
+The carriers do constrain the order. Their dependency graph is acyclic, which
+`tests/test_alpoege19.py` already relies on when it reconstructs the collision
+by iterating `w_j = -P_j` from zero. A topological order of that graph is a
+necessary condition on the introduction order. Whether it narrows the search to
+a handful of orders is a measurement, and WP 4 makes it before anything is
+claimed here.
+
+### Two decisions taken before the implementation
+
+**Fresh generators are given to the search, not allocated by it.** BCW-2 puts
+the generators of a target in introduction order. A search allocating its own
+names through a `ReductionContext` would therefore produce a map whose generator
+order is not `w1` to `w16`, and the comparison against the published map would
+need a second notion of equality. Instead the search is handed the sixteen names
+and searches their assignment to steps. This is SEA-3.
+
+What remains is a difference of presentation, and
+`PolynomialMap.reordered()` settles it: the same map with its generators listed
+in a given order, permuting the component tuple by the same permutation. It
+changes no polynomial, it is not a `Step`, and it certifies nothing. This is
+SEA-4, and "No claim from reordering" in `contracts.md` says the same from the
+other side.
+
+**A found chain is `CONSTRUCTED`, so the chain is not the evidence.** By BCW-9
+every step the search builds compares the implementation against itself. The
+external facts are two, and both live outside `verify()`: the reordered target
+equals the published map, and the transported three-point collision equals the
+published table. SEA-5 states them. This is the same distinction 0.2 drew at
+`bcw17`, where only the endpoint could be supplied, and it is what an audit of
+this milestone should look at first.
+
 ## Open from 0.2 and 0.3
 
 **The translation.** BCW Chapter II, Proposition (1.1) splits a map with
@@ -450,24 +511,121 @@ degree is `-1`.
 
 It is not required for either driving example: Alpöge's map fixes the origin,
 so neither `alpoege15` nor the 19-dimensional reduction ever needs it. That is
-why it waits here rather than travelling with 0.3.
+why it waits here rather than travelling with 0.3, and why it is the second work
+package rather than the fifth: it extends the step surface, and it is better
+done while that surface is otherwise quiet.
 
-## BCW reduction
+`TranslationStep` reports `filtration_level` as `math.inf`, not as `-1`. The
+filtration degree `-1` belongs to the transformation; the step establishes no
+`EA` bound on its target, exactly as a `LinearStep` does not. Reporting `-1`
+would make `Reduction.filtration_level()` return `-1` for every chain that
+begins with a translation, which says nothing about that chain's target. TRA-5
+and the note under the `Step` protocol in `contracts.md` carry the reasoning.
 
-Implement
+## Work packages
 
-- degree reduction,
-- elementary transformations,
-- stable extension,
-- homogenization and unipotent reduction,
-- complete reduction pipeline.
+Seven work packages, with internal version numbers `0.3.1` to `0.3.7` and tags
+`wp/0.3.n`. None of them is a release. `pyproject.toml` stays at `0.3.0` for the
+duration and moves to `0.4.0rc1` in one step at the end.
 
-Goal:
+| WP | Internal | Content | Done |
+| --- | --- | --- | --- |
+| 1 | 0.3.1 | Plan and contracts | yes |
+| 2 | 0.3.2 | `TranslationStep`, TRA-1 to TRA-8 | no |
+| 3 | 0.3.3 | `PolynomialMap.reordered()` | no |
+| 4 | 0.3.4 | Candidate enumeration | no |
+| 5 | 0.3.5 | The search against a given target | no |
+| 6 | 0.3.6 | `alpoege19` as a verified `Reduction` | no |
+| 7 | 0.3.7 | Documentation and release | no |
 
-Produce fully verified reductions for examples from the literature without
-recomputing global invariants that follow from the certified local steps. The
-first target is the published 19-dimensional map, whose step sequence 0.3
-leaves unrecovered.
+Every work package leaves the repository green.
+
+**WP 1** is this plan and the contract obligations. Its purpose is that an
+external audit can hold intention and implementation against each other, which
+requires the intention to be on record before the implementation exists. It
+carries four corrections to `contracts.md`, listed under "Contract amendments"
+below.
+
+It is not quite `docs/`-only, and the exception is worth naming rather than
+hiding. Moving selection from 0.5 to 0.4 leaves three milestone numbers stale
+elsewhere: one sentence in `architecture.md`, one in `references.md`, and one
+line of the module docstring of `kellermap.context`. They are corrected here
+rather than in WP 7, because a number that contradicts `contracts.md` for six
+work packages is the drift this package exists to prevent. No behaviour, no
+signature and no test changes.
+
+**WP 2** implements `TranslationStep`. Independent of everything else in the
+milestone: it needs no search, and no search needs it, since Alpöge's map fixes
+the origin. It is done when a map outside `MA^0` can be carried into `MA^0` by a
+`Reduction` of two steps, when `LinearStep.normalize` names the step that now
+exists, and when each of TRA-1, TRA-3, TRA-4 and both clauses of TRA-6 has a
+failing case in the tests.
+
+**WP 3** adds `PolynomialMap.reordered()` and nothing else. A restructuring,
+separated from the search deliberately: the comparison SEA-5 rests on has to be
+in place and tested on maps whose reordering is known before a search produces a
+map whose reordering is not. A failure in WP 5 then cannot have its cause here.
+It is done when reordering `bcw17` and `alpoege15` into a shuffled variable order
+and back returns the original, when the determinant, the degree and the
+filtration degree survive it, and when a non-permutation raises.
+
+**WP 4** enumerates candidates: for a given map, which products can be removed
+from which component through which factor slots. Deterministic and independent
+of any strategy. Its control costs nothing and is the reason it is its own
+package: the seven steps of `alpoege15` and the eight of `bcw17` are known, and
+the enumerator must contain each of them at the map that precedes it. This is
+also where the topological-order hypothesis above is measured.
+
+**WP 5** is the search itself, under SEA-1 to SEA-7. It is done when it recovers
+a known sequence — `alpoege15` from its own endpoints — before it is pointed at
+the unknown one.
+
+**WP 6** points it at the nineteen-dimensional map. The result becomes a
+`Reduction` in `tests/test_alpoege19.py`, the transported collision replaces the
+`lift` reconstruction as the primary route to the three points, and
+`scripts/reconstruct_alpoege19.py` carries the recovered sequence in plain
+SymPy as the independent second computation. The script joins the gates in
+`Makefile` and `AGENTS.md`.
+
+If WP 5 finds no sequence, WP 6 records what was searched and what was ruled
+out, and the milestone ships the search without the result. SEA-6 exists so that
+this outcome can be reported without being overstated. It would not be a
+successful milestone, and it would not be a false one either.
+
+**WP 7** removes the `[0.4]` markers from `contracts.md`, adds the translation
+and the search to `architecture.md`, records the provenance of the recovered
+sequence in `references.md`, updates `CHANGELOG.md`, and sets the version.
+
+## Contract amendments
+
+Four, all corrections rather than changes of obligation, and all visible in the
+wording of `contracts.md`:
+
+- RC-7 said selection was 0.5 while "No search" said searching was 0.4. The
+  first is corrected; 0.4 searches against a known target, 0.5 without one.
+- "No progress measure" carried the same wrong number and is corrected the same
+  way.
+- The error table row `filtration_level outside {0, 1}` was stated without a
+  type. It is BCW-6 and belongs to `BCWStep`; read as a statement about
+  `Step.filtration_level` it was already wrong in 0.3, since `LinearStep`
+  reports `math.inf`.
+- "No search" is withdrawn, in the shape of the entry 0.3 withdrew, and three
+  narrower non-obligations take its place: no completeness, no optimality of
+  the sequence, no claim from reordering.
+
+BCW-10 is *not* amended. The search relies on a reused factor being carried by
+a coordinate of the immediate source, which is how the obligation already reads.
+Should the recovered sequence need a factor carried by an earlier map in the
+chain, that amendment gets its own work package rather than being folded into
+the search.
+
+## Not here
+
+The Reduction Theorem, and general selection. Degree reduction, homogenization,
+unipotent reduction and a pipeline that reduces an arbitrary Keller map are 0.6.
+Ranking, pruning and term-growth prediction for maps whose target is *not*
+known are 0.5. The search of this milestone is bounded on both ends, and that
+boundedness is what makes it a milestone rather than a research programme.
 
 ---
 
@@ -475,13 +633,14 @@ leaves unrecovered.
 
 ## Selection heuristics and scientific benchmarks
 
-Develop heuristics for choosing reduction steps.
+Search without a known target. 0.4 searches between two fixed endpoints, which
+is what makes its result checkable; here the endpoint is not given, and a
+sequence has to be chosen rather than recovered.
 
-Tasks:
+Candidate enumeration is already 0.4's, under SEA and WP 4 of that milestone.
+What is added:
 
-- candidate generation,
 - ranking heuristics,
-- search strategies,
 - pruning,
 - term-growth prediction,
 - dimension-growth tracking,
@@ -497,6 +656,33 @@ This milestone targets research results rather than user-interface features.
 ---
 
 # Version 0.6
+
+## The Reduction Theorem
+
+Moved here from 0.4, where it stood beside a search and would have made that
+milestone impossible to audit as a whole.
+
+Implement
+
+- degree reduction,
+- elementary transformations,
+- stable extension,
+- homogenization and unipotent reduction,
+- complete reduction pipeline.
+
+This is Section 4 of the paper: the reduction of an arbitrary Keller map to a
+cubic homogeneous one with nilpotent Jacobian. 0.2 to 0.4 build and search
+chains for particular maps; this milestone reduces a map that is handed to it,
+which needs the general construction rather than a sequence someone chose.
+
+Goal:
+
+Produce fully verified reductions for examples from the literature without
+recomputing global invariants that follow from the certified local steps.
+
+---
+
+# Version 0.7
 
 ## Performance engineering
 
@@ -518,7 +704,7 @@ semantics and certificate format.
 
 ---
 
-# Version 0.7
+# Version 0.8
 
 ## Complete verification and benchmark framework
 
@@ -531,7 +717,7 @@ semantics and certificate format.
 
 ---
 
-# Version 0.8
+# Version 0.9
 
 ## User experience
 

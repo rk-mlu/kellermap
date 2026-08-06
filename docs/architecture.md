@@ -668,7 +668,7 @@ denote the same generator.
 `VariableFactory` covers naming and nothing else. `ReductionContext` keeps
 names reproducible across a complete reduction sequence, and is deliberately
 thin: it names generators, extends rings and maps, and knows nothing about
-steps. Which step to take is 0.5, and a context that knew would be the wrong
+steps. Which step to take is 0.4, and a context that knew would be the wrong
 object to ask.
 
 The context does not trust the factory. Both properties a factory promises are

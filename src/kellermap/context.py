@@ -7,7 +7,7 @@ reduction run twice must produce the same map, not merely an isomorphic one.
 
 The context is what holds a factory to that. It is deliberately thin: it names
 generators, extends rings and maps, and knows nothing about steps. Which step
-to take is milestone 0.5, and a context that knew would be the wrong object to
+to take is milestone 0.4, and a context that knew would be the wrong object to
 ask.
 
 What it does add is distrust. Both properties a factory promises are cheap to
