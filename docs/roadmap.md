@@ -568,7 +568,7 @@ duration and moves to `0.4.0rc1` in one step at the end.
 | 3 | 0.3.3 | `PolynomialMap.reordered()` | yes |
 | 4 | 0.3.4 | A gate for the ASCII agreement | yes |
 | 5 | 0.3.5 | SEA-8 to SEA-10, and the measurement behind them | yes |
-| 6 | 0.3.6 | Candidate enumeration | no |
+| 6 | 0.3.6 | Candidate enumeration | yes |
 | 7 | 0.3.7 | The search against a given target | no |
 | 8 | 0.3.8 | `alpoege19` as a verified `Reduction` | no |
 | 9 | 0.3.9 | Documentation and release | no |
@@ -647,12 +647,23 @@ way, and it did.
 
 **WP 6** enumerates candidates: for a given map and a given value pool, which
 products can be removed from which component through which factor slots.
-Deterministic and independent of any strategy, under SEA-8 to SEA-10. Its
-control costs nothing and is the reason it is its own package: the seven steps
-of `alpoege15` and the eight of `bcw17` are known, and the enumerator must
-contain each of them at the map that precedes it, with the final map supplying
-the pool. It is also where the reading recorded above — that all seventeen steps
-acted on components 0, 1 or 2 — is tested rather than presupposed.
+Deterministic and independent of any strategy, under SEA-8 to SEA-10. The
+control is the reason it is its own package: the seven steps of `alpoege15` and
+the seven of `bcw17` are known, and the enumerator contains each of them at the
+map that precedes it, with the final map supplying the pool, and derives the
+filtration level each of the fourteen declares.
+
+It amended SEA-8. The pool bounds one factor of a candidate, not both: the
+anchor comes from the pool or from a carrier, and the co-factor is obtained by
+division and is free. The stronger reading was measured and gives zero
+candidates at the first map. `contracts.md` carries the measurement and the
+reason — a pool read off a final map is not the set of factors its chain used
+wherever a later step rewrote a carrier, which is exactly what step seven of
+`alpoege15` does to component 10.
+
+The reading recorded above — that all seventeen steps of the published chain
+acted on components 0, 1 or 2 — moves to WP 7, where a search either uses it or
+does not.
 
 **WP 7** is the search itself, under SEA-1 to SEA-7. It is done when it recovers
 a known sequence — `alpoege15` from its own endpoints — before it is pointed at

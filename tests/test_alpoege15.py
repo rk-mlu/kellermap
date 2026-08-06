@@ -36,6 +36,7 @@ from kellermap import (
     Reduction,
     ReductionContext,
     VerificationError,
+    enumerate_candidates,
     over_field,
 )
 from kellermap.bcw import BCWStep, Carried, Fresh
@@ -423,3 +424,41 @@ def test_a_perturbed_target_would_be_caught(reduction: Reduction) -> None:
 
     assert failure.value.obligation == "BCW-1"
     assert failure.value.step == 7
+
+
+def test_the_enumerator_contains_every_step_of_this_chain(
+    reduction: Reduction,
+) -> None:
+    """Die Kontrolle fuer den Kandidatenaufzaehler, an bekannten Schritten.
+
+    Der Vorrat kommt aus der Zielabbildung: die Werte, die ihre Traegerkoor-
+    dinaten halten. Fuer jeden Schritt der Kette muss der Aufzaehler an der
+    Karte davor einen Kandidaten mit derselben Zielkomponente und denselben
+    beiden Faktoren liefern, und die abgeleitete EA-Stufe muss die des
+    Schritts sein.
+
+    Ein Aufzaehler, der einen nachweislich existierenden Schritt uebergeht,
+    ist unvollstaendig auf eine Weise, die ein Fehlschlag der Suche allein
+    nicht zeigen wuerde.
+    """
+    final = reduction.target
+    pool = [
+        sp.expand(final.components[index] - final.variables[index])
+        for index in final.carrier_indices
+    ]
+
+    steps = [step for step in reduction.steps if isinstance(step, BCWStep)]
+    assert len(steps) == 7
+
+    for position, step in enumerate(steps, start=1):
+        wanted = sorted(str(sp.expand(value)) for value in (step.P, step.Q))
+        found = [
+            candidate
+            for candidate in enumerate_candidates(step.source, pool)
+            if candidate.index == step.index
+            and sorted(str(sp.expand(v)) for v in candidate.values(step.source))
+            == wanted
+        ]
+
+        assert found, f"Schritt {position} fehlt in der Aufzaehlung"
+        assert found[0].filtration_level(step.source) == step.filtration_level

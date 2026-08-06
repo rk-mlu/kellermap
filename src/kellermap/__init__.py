@@ -19,6 +19,7 @@ from .reduction import (
     Step,
     TranslationStep,
 )
+from .search import Candidate, anchors, enumerate_candidates
 from .variables import (
     DEFAULT_VARIABLE_FACTORY,
     FixedVariableFactory,
@@ -29,6 +30,7 @@ from .variables import (
 
 __all__ = [
     "DEFAULT_VARIABLE_FACTORY",
+    "Candidate",
     "Collision",
     "Dilation",
     "ElementaryAutomorphism",
@@ -48,6 +50,8 @@ __all__ = [
     "Transvection",
     "VariableFactory",
     "VerificationError",
+    "anchors",
+    "enumerate_candidates",
     "field_ring",
     "over_field",
     "reserved_names",

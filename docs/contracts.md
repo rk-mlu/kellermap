@@ -1005,12 +1005,29 @@ the plan for this milestone had left open. They narrow what the enumerator
 claims, and each is there because the unrestricted version is either infinite or
 unaffordable.
 
-**SEA-8 — The value pool is data.** The polynomials a `Fresh` slot may supply
-are given to the enumerator. It does not invent them and does not search for
-them.
+**SEA-8 — The value pool is data.** The polynomials the enumerator may use to
+*anchor* a candidate are given to it. It does not invent them and does not
+search for them.
 
-This is SEA-3 one level down, and for the milestone target it is not a
-restriction at all. The sixteen carrier values of the published
+This is narrower than the wording of work package 5, which said the pool bounds
+every `Fresh` slot. Work package 6 measured that, and it is false. One factor of
+a candidate is an anchor, from the pool or from a coordinate that already
+carries it; the other is obtained by dividing the component and is *free*. The
+stronger reading was tested and yields nothing: at the first map of the
+`alpoege15` chain, no pair of pool values has a product that is a subsum of any
+component. Zero candidates, against an average of 122 per map for the rule as it
+now stands.
+
+The reason is visible in the reference chain. Step four of `alpoege15`
+introduces `x1^2 x2 x3 + 3 x1 x2^2 + 3 x1 x3 + 7 x2`, and the published
+fifteen-dimensional map does not carry that value: step seven acts on component
+10 and rewrites it. A pool read off a final map is therefore not the set of
+factors its chain used, wherever a later step targets a carrier.
+
+What survives is the bound that matters. A carrier value is available only once
+the map has the generator it names, so `w6 = w1 x` does not convert into the
+ring until `w1` exists, and the dependency order falls out of the arithmetic
+rather than being imposed. The sixteen carrier values of the published
 nineteen-dimensional map are readable from the map itself, as
 `components[3 + j] - w_j`:
 
@@ -1020,23 +1037,32 @@ nineteen-dimensional map are readable from the map itself, as
     w16 = x z      w8  = w4 x     w12 = w6 x
     w2  = -w13 w9 - w13 x y - w9 x^2
 
-A `Fresh` slot introduces `X_u + P`, so these sixteen polynomials *are* the
-sixteen factors the seventeen steps supplied. What the search has to find is
-their order, the co-factor each was paired with, and the component each step
-acted on — not the factors themselves.
+A `Fresh` slot introduces `X_u + P`, so these sixteen polynomials are the
+sixteen factors the seventeen steps supplied *if* no step rewrote a carrier
+component afterwards. Whether that holds for this map is the reading recorded in
+`roadmap.md` and tested in work package 7, not assumed here. What the search has
+to find is their order, the co-factor each was paired with, and the component
+each step acted on.
 
-**SEA-9 — A pool value is used verbatim, and the scalar goes to the co-factor.**
+**SEA-9 — An anchor is used verbatim, and the scalar goes to the co-factor.**
 `(P, Q)` and `(cP, c^-1 Q)` remove the same product for any unit `c` of the
 coefficient domain, so without a rule the enumerator would emit one candidate
 per unit, which over a field is infinitely many.
 
 The rule is not a tie-break between equals. The two steps have *different*
-targets, whose fresh coordinates differ by a scaling, and the pool says which of
-them is wanted. Step one of the `alpoege15` chain is recorded as
-`Fresh(-x1 x3 / 2), Fresh(x1^2)`; against the pool it appears as `P = x z`,
-`Q = -x1^2 / 2`. Same product, scalar on the other side, and only the second
-spelling reaches a map whose carrier component is `x z`, which is what the
-published map lists.
+targets, whose fresh coordinates differ by a scaling, and the anchor says which
+of them is wanted. Step one of the `alpoege15` chain is recorded as
+`Fresh(-x1 x3 / 2), Fresh(x1^2)` and appears in the enumeration as the same
+product with the scalar on the other side, because the anchor is taken verbatim
+and the division puts the scalar into the quotient.
+
+Two further factors are excluded outright, each because the step would not
+build. A constant may be neither anchor nor co-factor: `H` displaces a fresh
+coordinate by its factor, so a factor of order zero puts `H` outside `EA^0` and
+BCW-6 refuses the step at either admissible level. And a `Carried` slot on the
+component the step acts on is never offered, which the constructor of `BCWStep`
+refuses in any case. Moving a refusal from the enumerator to the constructor
+would not make it less certain, only later.
 
 **SEA-10 — A proper part of the co-factor is a candidate too.** The enumerator
 does not offer only the largest `Q` for which `P Q` is a subsum of the
@@ -1050,23 +1076,43 @@ restricted to the largest co-factor would miss a step that demonstrably exists.
 Every selection is checked to be a subsum in its own right. Dropping terms from
 `Q` is not a safe operation: cancellation inside `P Q` can hide a monomial that
 reappears once a term is removed, so the smaller product can fail where the
-larger one held.
+larger one held. `(x - y)(x + y)` is a subsum of `x^2 - y^2`; the part `x` of
+the co-factor gives `x^2 - x y`, and `-x y` is not there.
+
+What is divided is the *displacement* `F_i - X_i`, not the component. A product
+containing the term `X_i` itself would leave a target whose `i`-th component is
+no longer `X_i` plus something. The arithmetic of BCW-1 would hold, and the map
+would leave the shape every later step assumes.
 
 ### The control, and what it costs
 
-The seven steps of the `alpoege15` chain and the eight of `bcw17` are known, and
+The seven steps of the `alpoege15` chain and the seven of `bcw17` are known, and
 the enumerator must contain each of them at the map that precedes it, with the
-final map supplying the pool. An enumerator that misses a step which
-demonstrably exists is incomplete in a way that a search failure alone would not
-reveal.
+final map supplying the pool, and must derive the filtration level each step
+declares. An enumerator that misses a step which demonstrably exists is
+incomplete in a way that a search failure alone would not reveal.
 
-Affordability is measured rather than assumed. At the first map of the chain,
-the eight pool values that depend on no other carrier give 21 pairs of a value
-and a component, each with a co-factor of at most five terms and therefore at
-most 32 selections. The components stay small further along: no component of the
-`alpoege15` chain exceeds 13 terms, and the published nineteen-dimensional map
-has 24, 18 and 5 terms in its three non-carrier components, 4 in the carrier
-component of `w2`, and 2 in each of the remaining fifteen.
+The count is a correction. This page said eight for `bcw17`; there are seven,
+which is what the dimension requires, since `bcw17` grows from 3 to 17 and every
+one of its steps introduces two generators.
+
+The control passes for all fourteen, and the derived level agrees with the
+declared level in all fourteen. The level is derived rather than searched: `H`
+displaces the fresh coordinates by the factors, so its filtration degree is one
+below the smallest order among them, reported as 1 wherever BCW-6's ceiling
+applies.
+
+Affordability is measured rather than assumed. Over the two reference chains the
+enumerator offers between 104 and 173 candidates per map, averaging 122 and 124.
+The components stay small, which is why: no component of the `alpoege15` chain
+exceeds 13 terms, and the published nineteen-dimensional map has 24, 18 and 5
+terms in its three non-carrier components, 4 in the carrier component of `w2`,
+and 2 in each of the remaining fifteen.
+
+`selection_limit` caps the number of terms a quotient may have before its parts
+are skipped and only the whole quotient is offered. It guards against a
+pathological component rather than against the data: no quotient in either
+reference chain comes near the default of 8.
 
 For contrast, the enumerator SEA-8 rules out. Free choice of `P` means choosing
 a subsum of a component and a way to split it, which at 13 terms is 8192 subsums

@@ -26,6 +26,7 @@ what they do.
 - [Steps and reductions](#steps-and-reductions)
   - [The translation](#the-translation)
 - [The BCW step](#the-bcw-step)
+- [Finding candidates](#finding-candidates)
 - [Naming across a reduction](#naming-across-a-reduction)
 - [Guarantees](#guarantees)
 - [Errors](#errors)
@@ -37,7 +38,7 @@ what they do.
 ```python
 >>> import kellermap
 >>> kellermap.__all__
-['DEFAULT_VARIABLE_FACTORY', 'Collision', 'Dilation', 'ElementaryAutomorphism', 'ElementaryFactor', 'FixedVariableFactory', 'IndexedVariableFactory', 'LinearAutomorphism', 'LinearFactor', 'LinearStep', 'PolynomialMap', 'Provenance', 'Reduction', 'ReductionContext', 'Step', 'TranslationStep', 'Transposition', 'Transvection', 'VariableFactory', 'VerificationError', 'field_ring', 'over_field', 'reserved_names']
+['DEFAULT_VARIABLE_FACTORY', 'Candidate', 'Collision', 'Dilation', 'ElementaryAutomorphism', 'ElementaryFactor', 'FixedVariableFactory', 'IndexedVariableFactory', 'LinearAutomorphism', 'LinearFactor', 'LinearStep', 'PolynomialMap', 'Provenance', 'Reduction', 'ReductionContext', 'Step', 'TranslationStep', 'Transposition', 'Transvection', 'VariableFactory', 'VerificationError', 'anchors', 'enumerate_candidates', 'field_ring', 'over_field', 'reserved_names']
 
 ```
 
@@ -847,6 +848,64 @@ True
 ```
 
 The first coordinate moved from `1` to `1 - 4 * 9`.
+
+---
+
+## Finding candidates
+
+`enumerate_candidates(source, pool)` lists the steps Proposition (3.1) could
+take at a map. It verifies nothing: a `Candidate` is a proposal, and it becomes
+evidence only by being built and verified.
+
+The `pool` bounds the search. It holds the polynomials a fresh coordinate may
+carry, and one factor of every candidate comes from it; the other is obtained
+by dividing the component and is free.
+
+```python
+>>> from kellermap import enumerate_candidates
+>>> from kellermap.bcw import Carried
+>>> flat = PolynomialMap((x, y), (x + x**2 * y**3, y))
+>>> found = enumerate_candidates(flat, [x * y])
+>>> [(c.index, c.values(flat)) for c in found]
+[(0, (x*y, x*y**2))]
+
+```
+
+The candidate says: remove `x**2 * y**3` from component 0, splitting it as
+`(x y) * (x y^2)`. Its slots are still nameless, because by SEA-3 the names
+come from outside:
+
+```python
+>>> candidate = found[0]
+>>> candidate.m
+2
+>>> candidate.factors(sp.symbols("u v"))
+(Fresh(polynomial=x*y, variable=u), Fresh(polynomial=x*y**2, variable=v))
+
+```
+
+The `EA` level is derived rather than chosen. `H` displaces the fresh
+coordinates by the factors, so its filtration degree is one below the smallest
+order among them:
+
+```python
+>>> candidate.filtration_level(flat)
+1
+
+```
+
+A factor a coordinate already carries costs no dimension, so carriers are
+offered as anchors whether or not the pool is empty, and a `Carried` slot is
+preferred to a fresh one supplying the same factor:
+
+```python
+>>> carried = PolynomialMap((x, y), (x + x**2 * y**3, y + x**2))
+>>> carried.carrier_indices
+(1,)
+>>> [(c.index, c.left, c.right, c.m) for c in enumerate_candidates(carried, [])]
+[(0, Carried(index=1), y**3, 1)]
+
+```
 
 ---
 
