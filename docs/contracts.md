@@ -1039,10 +1039,33 @@ nineteen-dimensional map are readable from the map itself, as
 
 A `Fresh` slot introduces `X_u + P`, so these sixteen polynomials are the
 sixteen factors the seventeen steps supplied *if* no step rewrote a carrier
-component afterwards. Whether that holds for this map is the reading recorded in
-`roadmap.md` and tested in work package 7, not assumed here. What the search has
-to find is their order, the co-factor each was paired with, and the component
-each step acted on.
+component afterwards. What the search has to find is their order, the co-factor
+each was paired with, and the component each step acted on.
+
+**The condition under which a pool read off a target carries.** Every step has
+at least one factor that no later step overwrites. It is a statement about a
+chain and not about Keller maps, and it is the assumption the whole pool
+construction rests on, so it is named here rather than left implicit.
+
+It does not hold for `w2`. The component of that carrier is not an introduced
+value but the residue of a later step, with `w13` and `w9` in the two slots and
+`x^3 y` removed; `tests/test_alpoege19.py` verifies the identity and a
+perturbation of it. The value `w2` was introduced with is therefore absent from
+the pool, and the step that introduced it is reachable only through its partner.
+
+What makes the assumption plausible here is a degree bound rather than anything
+structural. Degrees do not rise along either reference chain, so every removed
+product has degree at most 7 and `min(deg P, deg Q) <= 3`; a factor of degree at
+most three needs no reduction towards a cubic map. Measured across all fourteen
+known steps, exactly one factor per chain is missing from the pool, and in both
+cases it is the single factor of degree 4, whose partner of degree 3 is present.
+
+The bound is a property of this example. For a source of degree `d` it gives
+only `min <= floor(d / 2)`, which says nothing from degree 8 upward, and nothing
+obliges a chain to leave a small carrier alone in any case — see "No progress
+measure". Searching without this assumption means giving up the pool and
+enumerating factorizations of subsums, which is what SEA-8 exists to avoid. That
+is 0.5's problem, where the target is not known either.
 
 **SEA-9 — An anchor is used verbatim, and the scalar goes to the co-factor.**
 `(P, Q)` and `(cP, c^-1 Q)` remove the same product for any unit `c` of the
@@ -1222,6 +1245,12 @@ before SEA-9 normalizes it and exponential in the number of terms afterwards.
 A step outside the pool is therefore not merely unfound but unreachable, and a
 search that fails is silent about it. This is the narrower price of SEA-8, and
 it is the reason SEA-6 is stated as bluntly as it is.
+
+The price is bounded on the other side. An incomplete pool can only cause a
+failure to find; it cannot produce a wrong result, because SEA-5 checks the
+endpoint against a map this library did not compute. The worst outcome is a
+milestone that ships the search without the sequence, which the roadmap provides
+for.
 
 **No optimality of the sequence.** `[0.4]` A chain the search finds is one that
 verifies and reaches the target. Nothing claims it is the shortest such chain,

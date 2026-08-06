@@ -488,8 +488,26 @@ filter the search can rest on. The sentence this paragraph replaces guessed
 otherwise, and guessing was the reason it was written as a measurement rather
 than as a claim.
 
-One reading is *not* established and is recorded here so that it is not assumed
-by accident. Fifteen of the sixteen carrier components of the published map have
+One step of the sequence is known. The component of `w2` is not an introduced
+carrier value but the residue of a later step: with `w13` and `w9` in the two
+slots, carrying `x^2` and `x y`, the formula leaves exactly
+`-w13 w9 - w13 x y - w9 x^2` once `x^3 y` is removed, and `x^3 y` is the product
+of those two carried values. So `w2` was introduced carrying `x^3 y`, and a
+later step took it out again with two `Carried` slots. That step has `m = 0`,
+which the arithmetic requires: the dimension grows by 16 over 17 steps. It is
+also the only carrier of the published map that shows the signature of a
+residue, a monomial in two carrier variables. `tests/test_alpoege19.py` verifies
+the identity, a perturbation of it, and the uniqueness.
+
+The finding has a consequence for the search. The value `x^3 y` is not in the
+pool read off the target, so the step that introduced `w2` is reachable only
+through its partner. The condition under which a read pool carries at all — that
+every step has a factor no later step overwrites — is named under SEA-8 in
+`contracts.md`, together with the degree bound that makes it plausible here and
+the reason that bound does not generalize.
+
+One further reading is *not* established and is recorded here so that it is not
+assumed by accident. Fifteen of the sixteen carrier components of the published map have
 two terms, `w2` has four, and every carrier value is a clean product. That is consistent
 with no step ever having targeted a carrier component, hence with all seventeen
 steps acting on components 0, 1 or 2 — which would narrow the search

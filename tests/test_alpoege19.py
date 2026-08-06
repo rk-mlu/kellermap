@@ -317,3 +317,89 @@ def test_the_points_extend_alpoeges_in_their_first_three_coordinates() -> None:
 def test_the_first_point_is_the_origin_over_alpoeges() -> None:
     """P1 liegt auf allen Traegern bei null, weil alle P_j dort verschwinden."""
     assert lift(ALPOEGE_POINTS[0])[3:] == (sp.Integer(0),) * 16
+
+
+# --------------------------------------------------------------------------
+# Ein Stueck der gesuchten Schrittfolge
+# --------------------------------------------------------------------------
+
+# Die Komponente von w2 ist kein eingefuehrter Traegerwert, sondern der Rest
+# eines spaeteren Schritts. Proposition (3.1) hinterlaesst in der Zielkomponente
+#
+#     (F_i - P Q) - X_a Q - P X_b - X_a X_b,
+#
+# und mit den beiden Traegerkoordinaten w13 und w9 als Plaetzen -- sie tragen
+# x^2 und x y -- ist der eingefuehrte Wert von w2 genau P Q = x^3 y, der sich
+# gegen den ersten Term weghebt. Was stehen bleibt, sind die drei Restterme.
+W2_INTRODUCED = x**3 * y
+
+
+def test_the_component_of_w2_is_the_residue_of_a_carried_step() -> None:
+    """Ein Schritt mit zwei ``Carried``-Plaetzen, also ``m = 0``.
+
+    Die Abbildung waechst von Dimension 3 auf 19, also ist die Summe der ``m``
+    ueber siebzehn Schritte gleich sechzehn und mindestens einer hat ``m = 0``.
+    Dies ist einer, und es ist der einzige, den die Daten hergeben.
+    """
+    left, right = CARRIERS[w13], CARRIERS[w9]
+
+    residue = sp.expand(
+        (W2_INTRODUCED - left * right) - w13 * right - left * w9 - w13 * w9
+    )
+
+    assert left == x**2
+    assert right == x * y
+    assert residue == sp.expand(CARRIERS[w2])
+
+
+def test_the_removed_product_is_the_value_w2_was_introduced_with() -> None:
+    """Der ``-P Q``-Term fehlt im Rest, weil er sich weghebt.
+
+    Genau daran ist der eingefuehrte Wert ablesbar: er muss ``P Q`` sein.
+    """
+    assert sp.expand(CARRIERS[w13] * CARRIERS[w9]) == W2_INTRODUCED
+
+
+def test_a_perturbed_residue_is_not_the_component() -> None:
+    """Negativkontrolle: ohne sie sagt die Uebereinstimmung oben nichts."""
+    for perturbation in (w13 * w9, w13 * x * y, w9 * x**2):
+        broken = sp.expand(CARRIERS[w2] + perturbation)
+
+        assert broken != sp.expand(CARRIERS[w2])
+        assert broken != sp.expand(
+            (W2_INTRODUCED - CARRIERS[w13] * CARRIERS[w9])
+            - w13 * CARRIERS[w9]
+            - CARRIERS[w13] * w9
+            - w13 * w9
+        )
+
+
+def test_w2_is_the_only_carrier_that_was_rewritten() -> None:
+    """Der Rest eines Schritts traegt ein Monom in zwei Traegervariablen.
+
+    Ein Wert wie ``w6 = w1 x`` nennt zwar eine Traegervariable, aber nur eine;
+    er kann kein ``-X_a X_b`` sein, weil die Komponente von ``x`` kein Traeger
+    ist und als Platz daher nicht in Frage kommt. Nur ``w2`` zeigt die Signatur.
+    """
+    rewritten = [
+        variable
+        for variable, value in CARRIERS.items()
+        if any(
+            sum(1 for exponent in monomial[3:] if exponent) >= 2
+            for monomial in sp.Poly(value, *VARIABLES).monoms()
+        )
+    ]
+
+    assert rewritten == [w2]
+
+
+def test_the_pool_read_off_the_map_misses_that_value() -> None:
+    """Was der Befund fuer die Suche heisst.
+
+    SEA-8 laesst einen Anker aus dem Vorrat kommen, und der Vorrat wird von
+    der Zielabbildung abgelesen. Der Wert, mit dem ``w2`` eingefuehrt wurde,
+    steht dort nicht: ein Aufzaehler erreicht diesen Schritt nur ueber seinen
+    Partner. Die Bedingung, unter der ein abgelesener Vorrat traegt, steht
+    unter SEA-8 in ``docs/contracts.md``.
+    """
+    assert W2_INTRODUCED not in set(CARRIERS.values())
