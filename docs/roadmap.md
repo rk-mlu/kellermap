@@ -524,7 +524,7 @@ and the note under the `Step` protocol in `contracts.md` carry the reasoning.
 
 ## Work packages
 
-Seven work packages, with internal version numbers `0.3.1` to `0.3.7` and tags
+Eight work packages, with internal version numbers `0.3.1` to `0.3.8` and tags
 `wp/0.3.n`. None of them is a release. `pyproject.toml` stays at `0.3.0` for the
 duration and moves to `0.4.0rc1` in one step at the end.
 
@@ -533,10 +533,15 @@ duration and moves to `0.4.0rc1` in one step at the end.
 | 1 | 0.3.1 | Plan and contracts | yes |
 | 2 | 0.3.2 | `TranslationStep`, TRA-1 to TRA-8 | yes |
 | 3 | 0.3.3 | `PolynomialMap.reordered()` | yes |
-| 4 | 0.3.4 | Candidate enumeration | no |
-| 5 | 0.3.5 | The search against a given target | no |
-| 6 | 0.3.6 | `alpoege19` as a verified `Reduction` | no |
-| 7 | 0.3.7 | Documentation and release | no |
+| 4 | 0.3.4 | A gate for the ASCII agreement | yes |
+| 5 | 0.3.5 | Candidate enumeration | no |
+| 6 | 0.3.6 | The search against a given target | no |
+| 7 | 0.3.7 | `alpoege19` as a verified `Reduction` | no |
+| 8 | 0.3.8 | Documentation and release | no |
+
+The plan had seven. WP 4 was inserted after WP 3, which turned up the one breach
+of the ASCII agreement in the tree and found no gate to attribute it to. The
+packages behind it moved down by one; nothing about their content changed.
 
 Every work package leaves the repository green.
 
@@ -550,8 +555,9 @@ It is not quite `docs/`-only, and the exception is worth naming rather than
 hiding. Moving selection from 0.5 to 0.4 leaves three milestone numbers stale
 elsewhere: one sentence in `architecture.md`, one in `references.md`, and one
 line of the module docstring of `kellermap.context`. They are corrected here
-rather than in WP 7, because a number that contradicts `contracts.md` for six
-work packages is the drift this package exists to prevent. No behaviour, no
+rather than in the documentation package at the end, because a number that
+contradicts `contracts.md` for the rest of the milestone is the drift this
+package exists to prevent. No behaviour, no
 signature and no test changes.
 
 **WP 2** implements `TranslationStep`. Independent of everything else in the
@@ -572,35 +578,48 @@ project does not do.
 **WP 3** adds `PolynomialMap.reordered()` and nothing else. A restructuring,
 separated from the search deliberately: the comparison SEA-5 rests on has to be
 in place and tested on maps whose reordering is known before a search produces a
-map whose reordering is not. A failure in WP 5 then cannot have its cause here.
+map whose reordering is not. A failure in WP 6 then cannot have its cause here.
 It is done when reordering `bcw17` and `alpoege15` into a shuffled variable order
 and back returns the original, when the determinant, the degree and the
 filtration degree survive it, and when a non-permutation raises.
 
-**WP 4** enumerates candidates: for a given map, which products can be removed
+**WP 4** makes the ASCII agreement checkable. `AGENTS.md` requires Python files
+to be pure ASCII, and until now nothing enforced it: `ruff` reports confusable
+characters under RUF001 to RUF003, which a ring operator is not, and one had sat
+in the docstring of `PolynomialMap.compose` since 0.3. `tests/test_ascii.py`
+walks `src`, `tests` and `scripts` and names file, line, column and character.
+
+It is a test rather than a `Makefile` target, so that it runs in every `pytest`
+invocation — including the one `make build-test` fires against the installed
+wheel. It names the three directories rather than walking from the root, because
+`make build-test` and `make test-minimum` leave virtual environments in the
+working tree, and a third party's files are neither ours nor covered by this
+agreement.
+
+**WP 5** enumerates candidates: for a given map, which products can be removed
 from which component through which factor slots. Deterministic and independent
 of any strategy. Its control costs nothing and is the reason it is its own
 package: the seven steps of `alpoege15` and the eight of `bcw17` are known, and
 the enumerator must contain each of them at the map that precedes it. This is
 also where the topological-order hypothesis above is measured.
 
-**WP 5** is the search itself, under SEA-1 to SEA-7. It is done when it recovers
+**WP 6** is the search itself, under SEA-1 to SEA-7. It is done when it recovers
 a known sequence — `alpoege15` from its own endpoints — before it is pointed at
 the unknown one.
 
-**WP 6** points it at the nineteen-dimensional map. The result becomes a
+**WP 7** points it at the nineteen-dimensional map. The result becomes a
 `Reduction` in `tests/test_alpoege19.py`, the transported collision replaces the
 `lift` reconstruction as the primary route to the three points, and
 `scripts/reconstruct_alpoege19.py` carries the recovered sequence in plain
 SymPy as the independent second computation. The script joins the gates in
 `Makefile` and `AGENTS.md`.
 
-If WP 5 finds no sequence, WP 6 records what was searched and what was ruled
+If WP 6 finds no sequence, WP 7 records what was searched and what was ruled
 out, and the milestone ships the search without the result. SEA-6 exists so that
 this outcome can be reported without being overstated. It would not be a
 successful milestone, and it would not be a false one either.
 
-**WP 7** removes the `[0.4]` markers from `contracts.md`, adds the translation
+**WP 8** removes the `[0.4]` markers from `contracts.md`, adds the translation
 and the search to `architecture.md`, records the provenance of the recovered
 sequence in `references.md`, updates `CHANGELOG.md`, and sets the version.
 
