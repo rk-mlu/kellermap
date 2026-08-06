@@ -532,7 +532,7 @@ duration and moves to `0.4.0rc1` in one step at the end.
 | --- | --- | --- | --- |
 | 1 | 0.3.1 | Plan and contracts | yes |
 | 2 | 0.3.2 | `TranslationStep`, TRA-1 to TRA-8 | yes |
-| 3 | 0.3.3 | `PolynomialMap.reordered()` | no |
+| 3 | 0.3.3 | `PolynomialMap.reordered()` | yes |
 | 4 | 0.3.4 | Candidate enumeration | no |
 | 5 | 0.3.5 | The search against a given target | no |
 | 6 | 0.3.6 | `alpoege19` as a verified `Reduction` | no |

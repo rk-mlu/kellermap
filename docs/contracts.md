@@ -709,7 +709,8 @@ target.
 ## TranslationStep
 
 **`[0.4]`** The first factor of BCW Chapter II, Proposition (1.1). A `Step`, so
-that a `Reduction` can begin at a map that does not fix the origin.
+that a `Reduction` can begin at a map that does not fix the origin. Implemented
+in work package 2 of this milestone.
 
 ```python
 @dataclass(frozen=True)
@@ -938,7 +939,9 @@ supplied to the search. It decides which name belongs to which step, not what
 the names are. Each satisfies RC-4 against the source's ring, as it would if a
 context had produced it.
 
-**SEA-4 — Reordering is presentation, and is not a step.** A chain built by the
+**SEA-4 — Reordering is presentation, and is not a step.** Implemented in work
+package 3 of this milestone, ahead of the search, so that a failure there
+cannot have its cause here. A chain built by the
 search has its generators in introduction order. `PolynomialMap.reordered(vars)`
 returns the same map with its generators listed in the given order, permuting
 the component tuple by the same permutation. `vars` must be a permutation of the

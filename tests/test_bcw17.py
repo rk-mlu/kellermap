@@ -164,6 +164,25 @@ def bcw17() -> PolynomialMap:
     return PolynomialMap(variables=X, components=COMPONENTS)
 
 
+def test_reordering_the_generators_changes_no_value(bcw17: PolynomialMap) -> None:
+    """SEA-4 an der zweiten festen Abbildung, in Dimension 17.
+
+    Dieselbe Kontrolle wie fuer ALPOEGE15, an anderen Daten: das Umsortieren
+    ist eine Umschreibung der Darstellung, und der Rueckweg liefert das
+    Original.
+    """
+    shuffled = X[8:] + X[:8]
+
+    moved = bcw17.reordered(shuffled)
+
+    assert moved.variables == shuffled
+    assert moved != bcw17
+    assert moved.reordered(X) == bcw17
+    assert moved.determinant() == bcw17.determinant()
+    assert moved.degree() == bcw17.degree()
+    assert moved.filtration_degree() == bcw17.filtration_degree()
+
+
 def test_bcw17_is_not_injective(bcw17: PolynomialMap) -> None:
     """Der eigentliche Inhalt: drei verschiedene Urbilder desselben Punktes."""
     points = tuple(tuple(map(sp.nsimplify, p)) for p in BCW17_COLLISION)

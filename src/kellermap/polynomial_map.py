@@ -72,6 +72,32 @@ def _copy_coefficient(coefficient: Any, domain: Any) -> Any:
     return coefficient
 
 
+def _reindex(
+    polynomial: PolyElement,
+    ring: PolyRing,
+    positions: tuple[int, ...],
+) -> PolyElement:
+    """Rewrite a polynomial for a ring whose generators have been permuted.
+
+    ``positions[j]`` is the position the ``j``-th generator of ``ring`` held
+    before. An exponent vector is indexed by position, so carrying a term over
+    means reading the exponents in that order; the coefficients are untouched
+    apart from being rebound to the new domain.
+
+    The polynomial is the same polynomial. Only the encoding of its monomials
+    follows the new generator order.
+    """
+    return ring.from_terms(
+        [
+            (
+                tuple(monomial[position] for position in positions),
+                _copy_coefficient(coefficient, ring.domain),
+            )
+            for monomial, coefficient in polynomial.iterterms()
+        ]
+    )
+
+
 # SymPys aeltere ``old_poly_ring``-Domains tragen ihre Koeffizienten als
 # ``DMP``-Objekte statt als ``PolyElement``. Sie liessen sich hier weder
 # zuverlaessig klonen noch verrechnen -- ``from_ring`` scheiterte an einer
@@ -559,7 +585,7 @@ class PolynomialMap:
         return self._determinant_polynomial.as_expr()
 
     def compose(self, other: PolynomialMap) -> PolynomialMap:
-        """Return the simultaneous composition ``self ∘ other``."""
+        """Return the simultaneous composition ``self o other``."""
         if self.variables != other.variables:
             raise ValueError("Polynomial maps have different variables.")
 
@@ -695,6 +721,55 @@ class PolynomialMap:
                 "The variable factory returned names already in use: "
                 f"{sorted(collisions)}."
             )
+
+    def reordered(self, variables: Iterable[sp.Symbol]) -> PolynomialMap:
+        """Return the same map with its generators listed in a given order.
+
+        A change of presentation, not of value. Coordinate ``i`` of the result
+        carries ``variables[i]`` together with the component that belonged to
+        that generator, so the two objects describe one map on ``k^n`` and
+        differ only in the order the coordinates are listed. No polynomial
+        changes, and nothing is certified: there is nothing to certify. See
+        SEA-4 in ``docs/contracts.md``.
+
+        It exists because a chain built step by step lists its generators in
+        the order the steps introduced them, which need not be the order in
+        which a published map lists the same generators. Comparing the two
+        then needs one of them rewritten, and rewriting a presentation is
+        cheaper and more honest than a second notion of equality.
+
+        ``variables`` must be a permutation of ``self.variables``. Anything
+        else raises ``ValueError``: dropping, adding or substituting a
+        generator would be a different map, which this method has no business
+        producing quietly.
+        """
+        order = tuple(variables)
+
+        if (
+            len(order) != self.dimension
+            or any(symbol not in self.variables for symbol in order)
+            or any(symbol not in order for symbol in self.variables)
+        ):
+            raise ValueError(
+                f"The order {order} is not a permutation of {self.variables}."
+            )
+
+        if order == self.variables:
+            return self
+
+        # Positionsweise, nicht ueber ``set_ring``: das bildet Monome nach
+        # Position ab und wuerde die Exponenten eines umsortierten Rings still
+        # umdeuten, statt sie mitzunehmen.
+        positions = tuple(self.variables.index(symbol) for symbol in order)
+        new_ring = clone_ring(self._ring, order)
+
+        return PolynomialMap.from_ring(
+            new_ring,
+            tuple(
+                _reindex(self._poly_components[source], new_ring, positions)
+                for source in positions
+            ),
+        )
 
     def __call__(self, *args: sp.Expr) -> sp.ImmutableMatrix:
         """Evaluate the map, allowing arbitrary symbolic arguments."""

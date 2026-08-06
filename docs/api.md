@@ -18,6 +18,7 @@ what they do.
   - [Composition](#composition)
   - [Jacobian and determinant](#jacobian-and-determinant)
   - [Stable extension](#stable-extension)
+  - [Reordering](#reordering)
 - [Variable factories](#variable-factories)
 - [Elementary automorphisms](#elementary-automorphisms)
 - [Linear automorphisms](#linear-automorphisms)
@@ -214,6 +215,56 @@ What survives is the displacement, and therefore the filtration degree:
 ```python
 >>> F.extend(2).filtration_degree() == F.filtration_degree()
 True
+
+```
+
+### Reordering
+
+`F.reordered(variables)` lists the same map's coordinates in a different
+order. Coordinate `i` of the result carries `variables[i]` and the component
+that belonged to that generator, so both lists move together:
+
+```python
+>>> F.components
+(x + y**3, y)
+>>> F.reordered((y, x)).components
+(y, x + y**3)
+
+```
+
+Nothing about the map changes, and nothing is certified — there is nothing to
+certify. Degree, order, filtration degree and the Jacobian determinant all
+survive, and the round trip returns the original:
+
+```python
+>>> shuffled = F.reordered((y, x))
+>>> (shuffled.degree(), shuffled.determinant()) == (F.degree(), F.determinant())
+True
+>>> shuffled.reordered((x, y)) == F
+True
+
+```
+
+Equality compares the variables as an ordered tuple, so the two presentations
+are *not* equal until one of them is rewritten. That is what the method is
+for: a chain built step by step lists its generators in the order the steps
+introduced them, which need not be the order in which a published map lists
+the same generators.
+
+```python
+>>> shuffled == F
+False
+
+```
+
+Anything that is not a permutation of the map's own variables is refused,
+since dropping, adding or substituting a generator would be a different map:
+
+```python
+>>> F.reordered((x, x))
+Traceback (most recent call last):
+    ...
+ValueError: The order (x, x) is not a permutation of (x, y).
 
 ```
 

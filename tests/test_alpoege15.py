@@ -156,6 +156,27 @@ def test_the_determinant_is_one() -> None:
     assert ALPOEGE15.determinant() == 1
 
 
+def test_reordering_the_generators_changes_no_value() -> None:
+    """SEA-4 an einer Abbildung, deren Umsortierung bekannt ist.
+
+    Die Suche in 0.4 baut eine Kette, deren Generatoren in der Reihenfolge
+    ihrer Einfuehrung stehen; eine veroeffentlichte Abbildung listet dieselben
+    Generatoren anders. Umsortieren ist Darstellung und kein Schritt, also muss
+    es genau nichts am Wert aendern -- hier in Dimension 15 nachgerechnet, wo
+    ein Fehler in der Monomkodierung nicht mehr zufaellig durchgeht.
+    """
+    shuffled = X[3:] + X[:3]
+
+    moved = ALPOEGE15.reordered(shuffled)
+
+    assert moved.variables == shuffled
+    assert moved != ALPOEGE15
+    assert moved.reordered(X) == ALPOEGE15
+    assert moved.determinant() == ALPOEGE15.determinant()
+    assert moved.degree() == ALPOEGE15.degree()
+    assert moved.filtration_degree() == ALPOEGE15.filtration_degree()
+
+
 def test_it_lies_in_MA0_but_not_in_MA1() -> None:  # noqa: N802
     """Aus demselben Grund wie BCW17: zwei Schritte erreichen nur EA^0."""
     assert ALPOEGE15.is_in_MA(0)

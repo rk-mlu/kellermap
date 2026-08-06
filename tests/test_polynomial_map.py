@@ -1153,3 +1153,132 @@ def test_older_dense_domains_are_rejected_with_a_readable_message() -> None:
 
     with pytest.raises(ValueError, match="older dense domains"):
         PolynomialMap.from_ring(R, R.gens)
+
+
+# --------------------------------------------------------------------------
+# reordered: Darstellung, nicht Wert
+# --------------------------------------------------------------------------
+
+
+@pytest.fixture
+def spread() -> PolynomialMap:
+    """Drei Variablen, damit eine Permutation mehr als ein Tausch sein kann."""
+    x, y, z = sp.symbols("x y z")
+    return PolynomialMap((x, y, z), (x + y**2 * z, y + z**3, z))
+
+
+def test_reordered_permutes_variables_and_components_together(
+    spread: PolynomialMap,
+) -> None:
+    """Koordinate ``i`` traegt ``variables[i]`` und die Komponente dazu.
+
+    Wuerde nur die Variablenliste umsortiert, waere das Ergebnis eine andere
+    Abbildung. Der Test haelt beide Listen gegeneinander.
+    """
+    x, y, z = spread.variables
+
+    moved = spread.reordered((z, x, y))
+
+    assert moved.variables == (z, x, y)
+    assert moved.components == (z, x + y**2 * z, y + z**3)
+
+
+def test_reordering_changes_no_value(spread: PolynomialMap) -> None:
+    """Grad, Ordnung, Filtrationsgrad und Determinante ueberleben.
+
+    Die Jacobi-Matrix wird in Zeilen und Spalten gleich permutiert, also
+    aendert sich ihre Determinante nicht.
+    """
+    x, y, z = spread.variables
+
+    moved = spread.reordered((y, z, x))
+
+    assert moved.degree() == spread.degree()
+    assert moved.order() == spread.order()
+    assert moved.filtration_degree() == spread.filtration_degree()
+    assert moved.determinant() == spread.determinant()
+
+
+def test_the_round_trip_returns_the_original(spread: PolynomialMap) -> None:
+    x, y, z = spread.variables
+
+    assert spread.reordered((z, y, x)).reordered((x, y, z)) == spread
+
+
+def test_the_identity_order_is_the_map_itself(spread: PolynomialMap) -> None:
+    """Kein Aufwand fuer den haeufigsten Fall, und keine neue Identitaet."""
+    assert spread.reordered(spread.variables) is spread
+
+
+def test_the_reordered_map_is_not_equal_to_the_original(
+    spread: PolynomialMap,
+) -> None:
+    """Genau deshalb gibt es die Methode.
+
+    Gleichheit vergleicht die Variablen als geordnetes Tupel. Zwei
+    Darstellungen derselben Abbildung sind also ungleich, solange eine von
+    beiden nicht umgeschrieben wird.
+    """
+    x, y, z = spread.variables
+
+    assert spread.reordered((y, x, z)) != spread
+
+
+def test_reordering_carries_the_carriers_along() -> None:
+    """Traegerindizes sind Positionen und wandern mit der Permutation."""
+    x, y, z = sp.symbols("x y z")
+    mixed = PolynomialMap((x, y, z), (x**2, y + z**3, z))
+
+    assert mixed.carrier_indices == (1, 2)
+    assert mixed.reordered((z, x, y)).carrier_indices == (0, 2)
+
+
+def test_a_composite_domain_survives_the_reordering() -> None:
+    """Die Koeffizienten sind selbst Polynome und werden mitgenommen."""
+    x, y = sp.symbols("x y")
+    T = sp.Symbol("T")
+    parametric = PolynomialMap((x, y), (x + T * y**2, y))
+
+    moved = parametric.reordered((y, x))
+
+    assert moved.ring.domain == parametric.ring.domain
+    assert moved.components == (y, T * y**2 + x)
+
+
+def test_the_reordered_map_shares_no_ring_with_the_original(
+    spread: PolynomialMap,
+) -> None:
+    """Wie ueberall sonst: der neue Ring ist ein Klon, kein geteiltes Objekt."""
+    moved = spread.reordered(
+        (spread.variables[1], spread.variables[0], spread.variables[2])
+    )
+
+    assert moved.ring is not spread.ring
+    assert moved.ring.gens[0] is not spread.ring.gens[1]
+
+
+@pytest.mark.parametrize(
+    "wrong",
+    [
+        (),
+        ("x", "y", "z"),
+    ],
+)
+def test_a_non_permutation_is_refused(spread: PolynomialMap, wrong: tuple) -> None:
+    with pytest.raises(ValueError, match="not a permutation"):
+        spread.reordered(wrong)
+
+
+def test_a_repeated_variable_is_refused(spread: PolynomialMap) -> None:
+    """Gleiche Laenge, gleiche Menge -- aber eine Variable fehlt."""
+    x, y, _ = spread.variables
+
+    with pytest.raises(ValueError, match="not a permutation"):
+        spread.reordered((x, y, x))
+
+
+def test_a_foreign_variable_is_refused(spread: PolynomialMap) -> None:
+    x, y, _ = spread.variables
+
+    with pytest.raises(ValueError, match="not a permutation"):
+        spread.reordered((x, y, sp.Symbol("w")))
