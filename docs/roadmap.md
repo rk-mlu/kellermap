@@ -746,17 +746,38 @@ Running the search against the nineteen-dimensional map is WP 8. It costs about
 maintainer's machine rather than for a session, and `exhausted` is what reports
 a budget that ran out.
 
-**WP 8** points it at the nineteen-dimensional map. The result becomes a
-`Reduction` in `tests/test_alpoege19.py`, the transported collision replaces the
-`lift` reconstruction as the primary route to the three points, and
-`scripts/reconstruct_alpoege19.py` carries the recovered sequence in plain
-SymPy as the independent second computation. The script joins the gates in
-`Makefile` and `AGENTS.md`.
+**WP 8** points it at the nineteen-dimensional map.
+`scripts/search_alpoege19.py` drives the run: it reads Alpoege's map and the
+published one from the test modules rather than copying them, builds the pool
+with `w2` corrected, and searches with a doubling budget so that a long run
+prints a trail. It is not a gate and not a second independent computation, and
+its docstring says so — the two `reconstruct_` scripts stand apart from the
+library on purpose, and this one drives it.
 
-If WP 6 finds no sequence, WP 7 records what was searched and what was ruled
-out, and the milestone ships the search without the result. SEA-6 exists so that
-this outcome can be reported without being overstated. It would not be a
-successful milestone, and it would not be a false one either.
+Its exit status distinguishes the three outcomes SEA-6 and SEA-11 keep apart:
+a chain found, a space exhausted without one, and a budget that ran out. Only
+the middle one says anything about what does not exist, and only about the
+space this search covers.
+
+The run costs about 1.5 maps per second, against 6 for the fifteen-dimensional
+recovery, so it belongs on a machine rather than in a session.
+
+If a chain is found, it becomes a `Reduction` in `tests/test_alpoege19.py`, the
+transported collision replaces the `lift` reconstruction as the primary route to
+the three points, and `scripts/reconstruct_alpoege19.py` carries the recovered
+sequence in plain SymPy as the independent second computation, joining the gates
+in `Makefile` and `AGENTS.md`.
+
+If none is found, WP 8 records what was searched and what was ruled out, and the
+milestone ships the search without the result. SEA-6 exists so that this outcome
+can be reported without being overstated. It would not be a successful milestone,
+and it would not be a false one either.
+
+One thing the run cannot tell us by failing: whether `w2` is the only carrier a
+later step rewrote. If another was, its introduced value is missing from the
+pool and the chain is inexpressible rather than unfound — the same failure
+`alpoege15` shows when its own missing value is withheld, and it looks identical
+from outside.
 
 **WP 9** removes the `[0.4]` markers from `contracts.md`, adds the translation
 and the search to `architecture.md`, records the provenance of the recovered
