@@ -226,10 +226,28 @@ that sense the target is supplied here exactly as it is for the
 seventeen-dimensional map.
 
 The difference from that case is what the agreement is evidence for, not
-whether the check can fail. For the seventeen-dimensional map the other side
-is someone else's mathematics. Here it is this project's own second
+whether the check can fail. Here the other side is this project's own second
 implementation, so the agreement says that two implementations of the same
 formulas compute the same thing.
+
+That sentence used to continue: for the seventeen-dimensional map the other
+side is someone else's mathematics. **It was wrong, and is withdrawn in 0.4.**
+The components of the seventeen-dimensional map are the maintainer's own hand
+computation, checked against `scripts/reconstruct_bcw17.py`. They are external
+to the *library* — the point BCW-9 and RED-7 are about — and not external to
+the *project*. `AGENTS.md` asks for exactly that distinction and the sentence
+collapsed it.
+
+What follows from the correction is worth stating plainly, because it changes
+what this repository could claim before 0.4. Two things in it are somebody
+else's mathematics: Alpöge's three-dimensional map, which every chain starts
+from, and the nineteen-dimensional map. Everything else is the project's own,
+including both endpoints that the `bcw17` and `alpoege15` chains are held
+against. So until the search reaches the nineteen-dimensional map, the only
+external datum a chain is compared against is its *source*, and the endpoint
+comparison — the one the last step's BCW-1 performs — is against data this
+project produced by hand. That is a real check and it can fail; it is not
+agreement with a third party, and this page said it was.
 
 No claim of minimality attaches to it, following the practice of the sources
 above — the author of the 24-variable map states plainly that he claims neither
@@ -280,10 +298,15 @@ with sixteen carrier variables, so not two per step, and the carriers `x^2`,
 more than one step. Since 0.3 a `BCWStep` can express such a step.
 
 What is missing is the sequence. The note publishes the map but not its
-factorization, and the `w`-numbering is not the order of introduction — the
-component of `w2` reads `w9` and `w13` — so it cannot be read off the way
-BCW17's can. Reconstructing it is a search problem and therefore 0.4. Until
-then the map is fixed input rather than a `Reduction`.
+factorization, so it cannot be read off the way BCW17's can. Reconstructing it
+is a search problem and therefore 0.4.
+
+This paragraph used to add that the `w`-numbering is not the order of
+introduction, on the evidence that the component of `w2` reads `w9` and `w13`.
+That is withdrawn in 0.4: the component of `w2` is the residue of a later step
+and not an introduced value, so it says nothing about when `w2` arrived. With
+the introduced value in its place, every dependency points to a smaller index.
+`tests/test_alpoege19.py` records both.
 
 The note arrives independently at the Schur-complement route this library uses
 for the determinant. On this map the difference is not a nicety: the carrier

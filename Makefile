@@ -1,6 +1,6 @@
 .PHONY: all format lint typecheck test test-slow test-all coverage docs \
-        check check-full build-test test-minimum lock-check dist-check \
-        release clean
+        reconstruct check check-full build-test test-minimum lock-check \
+        dist-check release clean
 
 all: check
 
@@ -41,6 +41,13 @@ coverage:
 # Nur die ausfuehrbaren Beispiele aus docs/.
 docs:
 	uv run pytest docs
+
+# Die zweiten, von der Bibliothek unabhaengigen Rechnungen. Sie stehen in
+# AGENTS.md seit 0.2 unter den Gates, wurden aber von keinem Ziel aufgerufen
+# und liefen daher nur von Hand. Ein Nachweis, den niemand faehrt, ist keiner.
+reconstruct:
+	uv run python scripts/reconstruct_bcw17.py
+	uv run python scripts/reconstruct_alpoege15.py
 
 # --------------------------------------------------------------------------
 # Sammelziele
@@ -116,7 +123,7 @@ lock-check:
 	uv lock --check
 
 # Alle Freigabe-Gates vor einem Tag.
-release: lock-check check-full coverage build-test dist-check test-minimum
+release: lock-check check-full coverage reconstruct build-test dist-check test-minimum
 
 # --------------------------------------------------------------------------
 

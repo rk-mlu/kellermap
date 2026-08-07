@@ -20,8 +20,7 @@ sind Bausteine, die mehr als ein Schritt benutzt. Seit 0.3 kann ``BCWStep``
 einen solchen Schritt ausdruecken.
 
 Was fehlt, ist die Schrittfolge. Die Quelle veroeffentlicht die Abbildung, aber
-nicht ihre Faktorisierung, und die ``w``-Nummerierung folgt nicht der
-Reihenfolge der Schritte. Sie zu rekonstruieren ist eine Suchaufgabe und damit
+nicht ihre Faktorisierung. Sie zu rekonstruieren ist eine Suchaufgabe und damit
 Meilenstein 0.4. Bis dahin steht die Abbildung hier als feste Eingabe.
 
 Die Kollision wird nicht aus der Tabelle der Quelle uebernommen, sondern aus
@@ -251,13 +250,18 @@ def test_the_carrier_block_is_the_stabilization() -> None:
     assert ALPOEGE19.carrier_indices == tuple(range(3, 19))
 
 
-def test_the_carrier_numbering_is_not_the_introduction_order() -> None:
+def test_the_factors_cannot_be_read_off_pairwise() -> None:
     """Deshalb steht die Abbildung hier und nicht als Reduction.
 
     Bei BCW17 lassen sich die Faktoren paarweise aus den Komponenten ablesen,
     weil Schritt k die Variablen 2k+2 und 2k+3 anlegt. Hier greift die
-    Komponente von ``w2`` auf ``w9`` und ``w13`` zu, die Nummerierung folgt
-    also nicht der Reihenfolge der Schritte.
+    Komponente von ``w2`` auf ``w9`` und ``w13`` zu, also gibt es kein solches
+    Muster.
+
+    Der Test hiess bis 0.4 ``..._numbering_is_not_the_introduction_order`` und
+    behauptete damit mehr, als er zeigt. Die Komponente von ``w2`` ist ein Rest
+    und kein eingefuehrter Wert, sagt ueber den Zeitpunkt seiner Einfuehrung
+    also nichts.
     """
     assert {w9, w13} <= CARRIERS[w2].free_symbols
 
