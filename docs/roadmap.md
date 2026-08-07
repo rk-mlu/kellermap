@@ -725,9 +725,26 @@ the reason and the verified identity relating the two sign conventions.
 Two rules bound the walk, both decisions rather than facts: the degree never
 rises, and the dimension never passes the target's. SEA-12 says so.
 
-Running it against the nineteen-dimensional map is WP 8. At the exploratory
-budget reachable in a session the search does not finish, and `exhausted` is
-what says so.
+It is done when it recovers a chain to `alpoege15` from Alpoege's normalized map
+and the published fifteen-dimensional one. That criterion was met late: WP 7 was
+first marked complete on the strength of small examples, and the reference
+recovery only followed while preparing WP 8. It found a chain in 62 maps, with
+`D` the identity, and the chain is *not* the recorded one — its degrees run
+`7, 6, 5, 4, 4, 4, 4, 3` against the recorded `7, 7, 7, 7, 5, 4, 4, 3`. A chain,
+not the chain, which is what "No optimality of the sequence" already says.
+
+Two rules bound the walk, both decisions rather than facts: the degree never
+rises, and the dimension never passes the target's. SEA-12 says so. Moves are
+tried lower degree and fewer terms first, and that ordering is not what took the
+reference recovery from "nothing at 400 maps" to "found at 62" — supplying the
+missing carrier value did. A set of already-visited maps was tried alongside it
+and removed again: two orders that introduce the same generators list them in
+the order they arrived, so the maps differ and the set almost never fires.
+
+Running the search against the nineteen-dimensional map is WP 8. It costs about
+1.5 maps per second there against 6 for `alpoege15`, so it is a run for the
+maintainer's machine rather than for a session, and `exhausted` is what reports
+a budget that ran out.
 
 **WP 8** points it at the nineteen-dimensional map. The result becomes a
 `Reduction` in `tests/test_alpoege19.py`, the transported collision replaces the

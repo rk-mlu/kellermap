@@ -1099,7 +1099,16 @@ It does not hold for `w2`. The component of that carrier is not an introduced
 value but the residue of a later step, with `w13` and `w9` in the two slots and
 `x^3 y` removed; `tests/test_alpoege19.py` verifies the identity and a
 perturbation of it. The value `w2` was introduced with is therefore absent from
-the pool, and the step that introduced it is reachable only through its partner.
+the pool.
+
+The consequence is sharper than it first looks, and `alpoege15` shows it.
+Step seven of that chain acts on component 10 and rewrites it, so the value
+that coordinate was introduced with is not in its published map either. A
+search given only the published carrier values does not fail to find the chain:
+it cannot express it, because a fresh coordinate needs a name and the only
+names on offer are the published ones. Supplying the one missing value turns a
+budget spent for nothing into a chain found after 62 maps. Both runs are in
+`tests/test_alpoege15.py`, the second as the negative control.
 
 What makes the assumption plausible here is a degree bound rather than anything
 structural. Degrees do not rise along either reference chain, so every removed

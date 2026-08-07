@@ -529,13 +529,17 @@ def search(
     step supplies can differ by one; SEA-5 collects those differences into the
     diagonal ``D`` the outcome reports.
 
-    Three rules bound the walk, and each is a decision rather than a fact about
+    Four rules bound the walk, and each is a decision rather than a fact about
     Keller maps:
 
     * the degree never rises along a chain, which holds for both reference
       reductions and is what makes a chain converge on a cubic target;
     * the dimension never passes the target's;
     * at most ``budget`` maps are examined.
+
+    The moves out of a map are tried in a fixed order, lower degree and fewer
+    terms first. Ordering discards nothing; it decides which chain is found
+    first, which is what a budget makes visible.
 
     The result verifies nothing by itself. Its chain is ``CONSTRUCTED``
     throughout, so by BCW-9 its own obligations compare the implementation
@@ -567,6 +571,7 @@ def search(
             for sign in (1, -1)
         ]
 
+        reachable = []
         for candidate in enumerate_candidates(
             current, available, selection_limit=selection_limit
         ):
@@ -578,6 +583,11 @@ def search(
             if not _admissible(step.target, current, target):
                 continue
 
+            reachable.append((_rank(step.target), step, assigned))
+
+        reachable.sort(key=lambda entry: entry[0])
+
+        for _, step, assigned in reachable:
             found = walk(step.target, used | set(assigned), (*steps, step))
             if found is not None:
                 return found
@@ -645,6 +655,21 @@ def _extend(
     step.verify()
 
     return step
+
+
+def _rank(reached: PolynomialMap) -> tuple[int, int, int]:
+    """Return the order in which the moves from one map are tried.
+
+    Lower degree first, then fewer terms, then fewer coordinates. Ordering
+    loses no chain -- every move is still walked -- and it decides which one is
+    walked first, which is what a bounded budget makes visible. The key is a
+    total order on values, so SEA-2 survives it.
+    """
+    return (
+        reached.degree(),
+        sum(len(component.terms()) for component in reached.to_polynomials()),
+        reached.dimension,
+    )
 
 
 def _admissible(

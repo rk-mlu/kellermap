@@ -36,8 +36,10 @@ from kellermap import (
     Reduction,
     ReductionContext,
     VerificationError,
+    conjugate,
     enumerate_candidates,
     over_field,
+    search,
 )
 from kellermap.bcw import BCWStep, Carried, Fresh
 from kellermap.reduction import LinearStep
@@ -462,3 +464,59 @@ def test_the_enumerator_contains_every_step_of_this_chain(
 
         assert found, f"Schritt {position} fehlt in der Aufzaehlung"
         assert found[0].filtration_level(step.source) == step.filtration_level
+
+
+@pytest.mark.slow
+def test_the_search_recovers_a_chain_to_this_map(reduction: Reduction) -> None:
+    """Die Abnahmebedingung fuer die Suche, an einer bekannten Abbildung.
+
+    Quelle ist Alpoeges normalisierte Abbildung, Ziel ist ALPOEGE15, und der
+    Vorrat sind die Werte, die ihre Traegerkoordinaten halten -- mit einer
+    Ergaenzung, die genau die Bedingung unter SEA-8 sichtbar macht. Schritt
+    sieben zielt auf Komponente 10 und schreibt sie um, also steht der Wert,
+    mit dem diese Koordinate eingefuehrt wurde, in der Zielabbildung nicht
+    mehr. Ohne ihn ist die Kette fuer die Suche unerreichbar, nicht bloss
+    ungefunden.
+
+    Gefunden wird *eine* Kette, nicht *die* Kette. Ihre Gradfolge unterscheidet
+    sich von der ueberlieferten; siehe "No optimality of the sequence" in
+    ``docs/contracts.md``.
+    """
+    source = reduction.steps[0].target
+    pool = {
+        X[index]: sp.expand(COMPONENTS[index] - X[index])
+        for index in ALPOEGE15.carrier_indices
+    }
+    pool[X[10]] = sp.expand(STEPS[3][2][1])
+
+    outcome = search(source, ALPOEGE15, pool, budget=2000)
+
+    assert outcome.reduction is not None
+    assert outcome.reduction.verify() is None
+    assert outcome.reduction.source == source
+    assert outcome.signs == (1,) * 15
+    assert (
+        conjugate(
+            outcome.reduction.target.reordered(ALPOEGE15.variables), outcome.signs
+        )
+        == ALPOEGE15
+    )
+
+
+@pytest.mark.slow
+def test_without_that_value_the_chain_is_out_of_reach(reduction: Reduction) -> None:
+    """Negativkontrolle zur Bedingung unter SEA-8.
+
+    Derselbe Lauf mit dem Wert, den die Zielabbildung wirklich traegt. Der
+    Aufzaehler kann den Schritt dann nicht anbieten, und der Fehlschlag sagt
+    nichts ueber die Existenz der Kette -- SEA-6.
+    """
+    source = reduction.steps[0].target
+    pool = {
+        X[index]: sp.expand(COMPONENTS[index] - X[index])
+        for index in ALPOEGE15.carrier_indices
+    }
+
+    outcome = search(source, ALPOEGE15, pool, budget=400)
+
+    assert outcome.reduction is None
