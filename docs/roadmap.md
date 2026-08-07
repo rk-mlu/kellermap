@@ -615,7 +615,7 @@ duration and moves to `0.4.0rc1` in one step at the end.
 | 4 | 0.3.4 | A gate for the ASCII agreement | yes |
 | 5 | 0.3.5 | SEA-8 to SEA-10, and the measurement behind them | yes |
 | 6 | 0.3.6 | Candidate enumeration | yes |
-| 7 | 0.3.7 | The search against a given target | no |
+| 7 | 0.3.7 | The search against a given target | yes |
 | 8 | 0.3.8 | `alpoege19` as a verified `Reduction` | no |
 | 9 | 0.3.9 | Documentation and release | no |
 
@@ -712,9 +712,22 @@ The reading recorded above — that all seventeen steps of the published chain
 acted on components 0, 1 or 2 — moves to WP 7, where a search either uses it or
 does not.
 
-**WP 7** is the search itself, under SEA-1 to SEA-7. It is done when it recovers
-a known sequence — `alpoege15` from its own endpoints — before it is pointed at
-the unknown one.
+**WP 7** is the search itself, under SEA-1 to SEA-12. It recovers a known chain
+from its own endpoints before being pointed at the unknown one, and it reports
+what it examined and whether it finished.
+
+Two things it forced. The `w2` step of the published chain is recorded here
+rather than in WP 8, because it stands whether or not the search succeeds. And
+SEA-5 is amended: the published map is reached up to conjugation by a diagonal
+`D` of ones and minus ones, which the search reports. `contracts.md` carries
+the reason and the verified identity relating the two sign conventions.
+
+Two rules bound the walk, both decisions rather than facts: the degree never
+rises, and the dimension never passes the target's. SEA-12 says so.
+
+Running it against the nineteen-dimensional map is WP 8. At the exploratory
+budget reachable in a session the search does not finish, and `exhausted` is
+what says so.
 
 **WP 8** points it at the nineteen-dimensional map. The result becomes a
 `Reduction` in `tests/test_alpoege19.py`, the transported collision replaces the

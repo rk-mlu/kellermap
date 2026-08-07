@@ -21,7 +21,7 @@ See ``docs/contracts.md``, SEA-8 to SEA-10.
 
 from __future__ import annotations
 
-from collections.abc import Iterable, Iterator
+from collections.abc import Iterable, Iterator, Mapping, Sequence
 from dataclasses import dataclass
 from itertools import combinations
 from typing import TypeAlias, cast
@@ -29,9 +29,10 @@ from typing import TypeAlias, cast
 import sympy as sp
 from sympy.polys.rings import PolyElement
 
-from .bcw import Carried, Fresh
+from .bcw import BCWStep, Carried, Fresh
 from .bcw.step import Factor
 from .polynomial_map import PolynomialMap
+from .reduction import Reduction
 
 # Ein Platz vor der Namensvergabe: entweder der Wert, den eine frische
 # Koordinate tragen wuerde, oder eine Koordinate, die ihn schon traegt.
@@ -342,3 +343,336 @@ def _key(candidate: Candidate) -> tuple[int, str, str]:
     )
 
     return (candidate.index, left, right)
+
+
+# --------------------------------------------------------------------------
+# Assembling a chain
+# --------------------------------------------------------------------------
+
+
+@dataclass(frozen=True)
+class SearchOutcome:
+    """What a search returns. Not a certificate; see SEA-1.
+
+    Parameters
+    ----------
+    reduction
+        The chain, or ``None`` if none was found.
+    signs
+        The diagonal of ``D``, one entry per coordinate of the target, or
+        ``None``. See SEA-5: a chain reaches the published map up to
+        conjugation by a signed diagonal matrix, and ``D`` is exhibited rather
+        than absorbed.
+    examined
+        How many maps the search looked at.
+    exhausted
+        Whether the space the search covers was exhausted. ``False`` means the
+        budget ran out first, and then a negative result says even less than
+        SEA-6 already allows.
+    """
+
+    reduction: Reduction | None
+    signs: tuple[int, ...] | None
+    examined: int
+    exhausted: bool
+
+
+def conjugate(source: PolynomialMap, signs: Sequence[int]) -> PolynomialMap:
+    """Return ``D F D^-1`` for a diagonal ``D`` of ones and minus ones.
+
+    A change of coordinates and not a presentation change: it rewrites the
+    polynomials. Degree, order and filtration degree survive, and a collision
+    carries over with its points and image sign-flipped, so two conjugate maps
+    are the same map in different coordinates. ``D`` is its own inverse.
+
+    The Jacobian determinant survives as a *function*, in the new coordinates:
+    it becomes ``det J(F)`` composed with ``D``. For a Keller map that is the
+    same constant, which is the case SEA-5 is about; for a map whose
+    determinant is not constant the two are equal only up to the sign flips.
+
+    Entries other than ``1`` and ``-1`` raise: this is the group SEA-5 admits,
+    not an arbitrary linear change.
+    """
+    if len(signs) != source.dimension or any(sign not in (1, -1) for sign in signs):
+        raise ValueError(
+            f"Expected {source.dimension} entries of 1 or -1, got {tuple(signs)}."
+        )
+
+    ring = source.ring
+    flipped = tuple(position for position, sign in enumerate(signs) if sign == -1)
+
+    return PolynomialMap.from_ring(
+        ring,
+        tuple(
+            ring.from_terms(
+                [
+                    (
+                        monomial,
+                        coefficient
+                        * (-1) ** sum(monomial[position] for position in flipped)
+                        * sign,
+                    )
+                    for monomial, coefficient in component.iterterms()
+                ]
+            )
+            for component, sign in zip(source.to_polynomials(), signs, strict=True)
+        ),
+    )
+
+
+def diagonal_matching(
+    candidate: PolynomialMap,
+    published: PolynomialMap,
+) -> tuple[int, ...] | None:
+    """Return the signs of the ``D`` carrying ``candidate`` to ``published``.
+
+    ``None`` if there is none. The system is linear over GF(2): a monomial
+    with exponent vector ``e`` in component ``i`` acquires the sign
+    ``d_i * prod(d_k ^ e_k)``, so each monomial of each component is one
+    equation. It is heavily overdetermined -- nineteen components against
+    nineteen unknowns for the milestone target -- so ``D`` is read off rather
+    than fitted, which is what makes the comparison of SEA-5 evidence.
+
+    Both maps must already list their generators in the same order. Use
+    ``PolynomialMap.reordered`` first, per SEA-4.
+    """
+    if candidate.variables != published.variables:
+        raise ValueError(
+            "The two maps list different generators, or in a different order."
+        )
+
+    size = candidate.dimension
+    rows: list[tuple[list[int], int]] = []
+
+    for index, (ours, theirs) in enumerate(
+        zip(candidate.to_polynomials(), published.to_polynomials(), strict=True)
+    ):
+        if set(ours.monoms()) != set(theirs.monoms()):
+            return None
+
+        for monomial, coefficient in ours.iterterms():
+            other = theirs[monomial]
+            if abs(coefficient) != abs(other):
+                return None
+
+            row = [0] * size
+            row[index] ^= 1
+            for position, exponent in enumerate(monomial):
+                if exponent % 2:
+                    row[position] ^= 1
+
+            rows.append((row, 0 if other == coefficient else 1))
+
+    signs = _solve_gf2(rows, size)
+    if signs is None:
+        return None
+
+    # Selbstpruefung: die Loesung eines widerspruchsfreien Systems erfuellt es.
+    # Sie kann nur scheitern, wenn die Elimination falsch ist.
+    if conjugate(candidate, signs) != published:  # pragma: no cover - elimination
+        return None
+
+    return signs
+
+
+def _solve_gf2(rows: list[tuple[list[int], int]], size: int) -> tuple[int, ...] | None:
+    """Return one solution of the system, or ``None`` if it is inconsistent.
+
+    Free variables are set so that the solution has as few minus ones as the
+    elimination leaves; the choice is fixed rather than arbitrary, because
+    SEA-2 makes the whole search a pure function of its arguments.
+    """
+    pivots: dict[int, tuple[list[int], int]] = {}
+
+    for row, value in rows:
+        current, rhs = list(row), value
+        for column in range(size):
+            if not current[column]:
+                continue
+            if column in pivots:
+                other, other_rhs = pivots[column]
+                current = [a ^ b for a, b in zip(current, other, strict=True)]
+                rhs ^= other_rhs
+            else:
+                pivots[column] = (current, rhs)
+                break
+        else:
+            if rhs:
+                return None
+
+    solution = [0] * size
+    for column in sorted(pivots, reverse=True):
+        row, rhs = pivots[column]
+        value = rhs
+        for later in range(column + 1, size):
+            if row[later]:
+                value ^= solution[later]
+        solution[column] = value
+
+    return tuple(1 - 2 * bit for bit in solution)
+
+
+def search(
+    source: PolynomialMap,
+    target: PolynomialMap,
+    pool: Mapping[sp.Symbol, sp.Expr],
+    *,
+    budget: int = 20000,
+    selection_limit: int = 8,
+) -> SearchOutcome:
+    """Look for a chain of ``BCWStep`` from ``source`` to ``target``.
+
+    ``pool`` maps the name of a fresh generator to the value it carries in the
+    published target. The search decides which step introduces which name, not
+    what the names are (SEA-3) and not what the values are (SEA-8). A value is
+    admitted with either sign, because the published listing and the value a
+    step supplies can differ by one; SEA-5 collects those differences into the
+    diagonal ``D`` the outcome reports.
+
+    Three rules bound the walk, and each is a decision rather than a fact about
+    Keller maps:
+
+    * the degree never rises along a chain, which holds for both reference
+      reductions and is what makes a chain converge on a cubic target;
+    * the dimension never passes the target's;
+    * at most ``budget`` maps are examined.
+
+    The result verifies nothing by itself. Its chain is ``CONSTRUCTED``
+    throughout, so by BCW-9 its own obligations compare the implementation
+    against itself, and the evidence is the endpoint (SEA-5). Finding nothing
+    is not a proof that nothing exists (SEA-6), and with ``exhausted`` false it
+    is not even a statement about the space this search covers.
+    """
+    names = tuple(pool)
+    values = {name: sp.expand(pool[name]) for name in names}
+    remaining = [budget]
+    order = target.variables
+
+    def walk(
+        current: PolynomialMap,
+        used: frozenset[sp.Symbol],
+        steps: tuple[BCWStep, ...],
+    ) -> SearchOutcome | None:
+        if remaining[0] <= 0:
+            return None
+        remaining[0] -= 1
+
+        if len(used) == len(names):
+            return _finish(current, target, order, steps, budget - remaining[0])
+
+        available = [
+            sign * values[name]
+            for name in names
+            if name not in used
+            for sign in (1, -1)
+        ]
+
+        for candidate in enumerate_candidates(
+            current, available, selection_limit=selection_limit
+        ):
+            assigned = _assign(candidate, current, values, used)
+            if assigned is None:
+                continue
+
+            step = _extend(current, candidate, assigned)
+            if not _admissible(step.target, current, target):
+                continue
+
+            found = walk(step.target, used | set(assigned), (*steps, step))
+            if found is not None:
+                return found
+
+        return None
+
+    outcome = walk(source, frozenset(), ())
+    if outcome is not None:
+        return outcome
+
+    return SearchOutcome(None, None, budget - max(remaining[0], 0), remaining[0] > 0)
+
+
+def _assign(
+    candidate: Candidate,
+    current: PolynomialMap,
+    values: dict[sp.Symbol, sp.Expr],
+    used: frozenset[sp.Symbol],
+) -> list[sp.Symbol] | None:
+    """Return the name for each fresh slot, or ``None`` if there is no fit.
+
+    A fresh slot must carry an unused pool value, up to sign, and two slots of
+    one step must not claim the same name.
+    """
+    chosen: list[sp.Symbol] = []
+
+    for slot, value in zip(candidate.slots, candidate.values(current), strict=True):
+        if isinstance(slot, Carried):
+            continue
+
+        wanted = sp.expand(value)
+        match = [
+            name
+            for name in values
+            if name not in used
+            and name not in chosen
+            and wanted in (values[name], sp.expand(-values[name]))
+        ]
+        if not match:
+            return None
+
+        chosen.append(match[0])
+
+    return chosen
+
+
+def _extend(
+    current: PolynomialMap,
+    candidate: Candidate,
+    names: list[sp.Symbol],
+) -> BCWStep:
+    """Build the step and verify it before it enters a chain.
+
+    The enumerator already declines what BCW-6 and the constructor of
+    ``BCWStep`` would refuse, so nothing here is expected to raise. Verifying
+    anyway costs one pass and means a chain cannot grow through a step that
+    does not hold.
+    """
+    step = BCWStep.build(
+        current,
+        candidate.index,
+        *candidate.factors(names),
+        candidate.filtration_level(current),
+    )
+    step.verify()
+
+    return step
+
+
+def _admissible(
+    reached: PolynomialMap,
+    previous: PolynomialMap,
+    target: PolynomialMap,
+) -> bool:
+    """Return whether the walk may continue through this map."""
+    return (
+        reached.dimension <= target.dimension
+        and reached.degree() <= previous.degree()
+        and reached.degree() >= target.degree()
+    )
+
+
+def _finish(
+    current: PolynomialMap,
+    target: PolynomialMap,
+    order: tuple[sp.Symbol, ...],
+    steps: tuple[BCWStep, ...],
+    examined: int,
+) -> SearchOutcome | None:
+    """Check the endpoint, and report the chain with its ``D`` if it matches."""
+    if current.dimension != target.dimension:
+        return None
+
+    signs = diagonal_matching(current.reordered(order), target)
+    if signs is None:
+        return None
+
+    return SearchOutcome(Reduction(steps), signs, examined, False)

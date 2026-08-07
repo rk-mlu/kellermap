@@ -27,6 +27,7 @@ what they do.
   - [The translation](#the-translation)
 - [The BCW step](#the-bcw-step)
 - [Finding candidates](#finding-candidates)
+- [Assembling a chain](#assembling-a-chain)
 - [Naming across a reduction](#naming-across-a-reduction)
 - [Guarantees](#guarantees)
 - [Errors](#errors)
@@ -38,7 +39,7 @@ what they do.
 ```python
 >>> import kellermap
 >>> kellermap.__all__
-['DEFAULT_VARIABLE_FACTORY', 'Candidate', 'Collision', 'Dilation', 'ElementaryAutomorphism', 'ElementaryFactor', 'FixedVariableFactory', 'IndexedVariableFactory', 'LinearAutomorphism', 'LinearFactor', 'LinearStep', 'PolynomialMap', 'Provenance', 'Reduction', 'ReductionContext', 'Step', 'TranslationStep', 'Transposition', 'Transvection', 'VariableFactory', 'VerificationError', 'anchors', 'enumerate_candidates', 'field_ring', 'over_field', 'reserved_names']
+['DEFAULT_VARIABLE_FACTORY', 'Candidate', 'Collision', 'Dilation', 'ElementaryAutomorphism', 'ElementaryFactor', 'FixedVariableFactory', 'IndexedVariableFactory', 'LinearAutomorphism', 'LinearFactor', 'LinearStep', 'PolynomialMap', 'Provenance', 'Reduction', 'ReductionContext', 'SearchOutcome', 'Step', 'TranslationStep', 'Transposition', 'Transvection', 'VariableFactory', 'VerificationError', 'anchors', 'conjugate', 'diagonal_matching', 'enumerate_candidates', 'field_ring', 'over_field', 'reserved_names', 'search']
 
 ```
 
@@ -904,6 +905,50 @@ preferred to a fresh one supplying the same factor:
 (1,)
 >>> [(c.index, c.left, c.right, c.m) for c in enumerate_candidates(carried, [])]
 [(0, Carried(index=1), y**3, 1)]
+
+```
+
+## Assembling a chain
+
+`search(source, target, pool)` looks for a chain of `BCWStep` from one map to
+another. `pool` maps the name of a fresh generator to the value it carries in
+the target; the search decides which step introduces which name.
+
+```python
+>>> from kellermap import search, conjugate
+>>> u, v = sp.symbols("u v")
+>>> start = over_field(PolynomialMap((x, y), (x + x**2 * y**3, y)))
+>>> finish = BCWStep.build(start, 0, Fresh(x*y, u), Fresh(x*y**2, v), 1).target
+>>> outcome = search(start, finish, {u: x * y, v: x * y**2})
+>>> outcome.reduction.verify() is None
+True
+>>> outcome.reduction.target == finish
+True
+
+```
+
+The search verifies nothing by itself. Its chain is `CONSTRUCTED` throughout,
+so what carries weight is that the endpoint matches a map the library did not
+compute. That comparison allows one thing beyond reordering: conjugation by a
+diagonal of ones and minus ones, which `outcome.signs` reports rather than
+absorbs.
+
+```python
+>>> flipped = conjugate(finish, (1, 1, 1, -1))
+>>> outcome = search(start, flipped, {u: x * y, v: x * y**2})
+>>> outcome.signs
+(-1, -1, 1, 1)
+>>> conjugate(outcome.reduction.target, outcome.signs) == flipped
+True
+
+```
+
+Finding nothing is not a proof that nothing exists, and `exhausted` says
+whether even the space the search covers was seen to the end:
+
+```python
+>>> search(start, finish, {u: x * y, v: x * y**2}, budget=1).exhausted
+False
 
 ```
 

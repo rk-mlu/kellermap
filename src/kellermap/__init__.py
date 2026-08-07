@@ -19,7 +19,15 @@ from .reduction import (
     Step,
     TranslationStep,
 )
-from .search import Candidate, anchors, enumerate_candidates
+from .search import (
+    Candidate,
+    SearchOutcome,
+    anchors,
+    conjugate,
+    diagonal_matching,
+    enumerate_candidates,
+    search,
+)
 from .variables import (
     DEFAULT_VARIABLE_FACTORY,
     FixedVariableFactory,
@@ -44,6 +52,7 @@ __all__ = [
     "Provenance",
     "Reduction",
     "ReductionContext",
+    "SearchOutcome",
     "Step",
     "TranslationStep",
     "Transposition",
@@ -51,8 +60,11 @@ __all__ = [
     "VariableFactory",
     "VerificationError",
     "anchors",
+    "conjugate",
+    "diagonal_matching",
     "enumerate_candidates",
     "field_ring",
     "over_field",
     "reserved_names",
+    "search",
 ]

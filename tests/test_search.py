@@ -15,9 +15,13 @@ import sympy as sp
 from kellermap import (
     Candidate,
     PolynomialMap,
+    SearchOutcome,
     anchors,
+    conjugate,
+    diagonal_matching,
     enumerate_candidates,
     over_field,
+    search,
 )
 from kellermap.bcw import BCWStep, Carried, Fresh
 
@@ -262,3 +266,246 @@ def test_a_carried_cofactor_moves_to_the_first_slot() -> None:
     found = enumerate_candidates(source, [x * y])
 
     assert [(c.index, c.left, c.right) for c in found] == [(0, Carried(1), x * y)]
+
+
+# --------------------------------------------------------------------------
+# Konjugation mit einer Vorzeichendiagonale
+# --------------------------------------------------------------------------
+
+
+def test_conjugation_is_an_involution(flat: PolynomialMap) -> None:
+    """``D`` ist zu sich selbst invers."""
+    signs = (1, -1)
+
+    assert conjugate(conjugate(flat, signs), signs) == flat
+
+
+def test_conjugation_preserves_what_a_certificate_claims() -> None:
+    """Grad, Ordnung, Filtrationsgrad und die Keller-Determinante ueberleben.
+
+    Deshalb ist SEA-5 mit einem ausgewiesenen ``D`` noch eine Aussage ueber
+    dieselbe Abbildung und nicht ueber eine andere.
+    """
+    source = over_field(PolynomialMap((x, y), (x + y**3, y)))
+
+    moved = conjugate(source, (1, -1))
+
+    assert moved != source
+    assert moved.degree() == source.degree()
+    assert moved.order() == source.order()
+    assert moved.filtration_degree() == source.filtration_degree()
+    assert moved.determinant() == source.determinant() == 1
+
+
+def test_a_non_constant_determinant_moves_with_the_coordinates() -> None:
+    """Sie ueberlebt als Funktion, nicht als Polynom.
+
+    Fuer eine Keller-Abbildung ist das dieselbe Konstante -- der Fall, um den
+    es bei SEA-5 geht. Sonst unterscheiden sich die beiden um die Vorzeichen.
+    """
+    source = PolynomialMap((x, y), (x + x**2 * y**3, y))
+
+    moved = conjugate(source, (1, -1))
+
+    assert source.determinant() == 1 + 2 * x * y**3
+    assert moved.determinant() == 1 - 2 * x * y**3
+
+
+def test_the_identity_diagonal_changes_nothing(flat: PolynomialMap) -> None:
+    assert conjugate(flat, (1, 1)) == flat
+
+
+@pytest.mark.parametrize("wrong", [(1,), (1, 1, 1), (1, 2), (0, 1)])
+def test_only_ones_and_minus_ones_are_admitted(
+    flat: PolynomialMap, wrong: tuple[int, ...]
+) -> None:
+    with pytest.raises(ValueError, match="entries of 1 or -1"):
+        conjugate(flat, wrong)
+
+
+# --------------------------------------------------------------------------
+# Das Ablesen von D
+# --------------------------------------------------------------------------
+
+
+def test_the_diagonal_is_read_off(flat: PolynomialMap) -> None:
+    signs = (1, -1)
+
+    found = diagonal_matching(conjugate(flat, signs), flat)
+
+    assert found is not None
+    assert conjugate(conjugate(flat, signs), found) == flat
+
+
+def test_maps_of_different_shape_have_no_diagonal(flat: PolynomialMap) -> None:
+    """Andere Monome, also keine Vorzeichenwahl, die es richtet."""
+    other = PolynomialMap((x, y), (x + x**2 * y**2, y))
+
+    assert diagonal_matching(other, flat) is None
+
+
+def test_a_different_magnitude_has_no_diagonal(flat: PolynomialMap) -> None:
+    """``D`` kann Vorzeichen drehen, keine Koeffizienten."""
+    other = PolynomialMap((x, y), (x + 2 * x**2 * y**3, y))
+
+    assert diagonal_matching(other, flat) is None
+
+
+def test_an_inconsistent_system_has_no_diagonal() -> None:
+    """Zwei Monome fordern dasselbe Produkt mit verschiedenem Vorzeichen."""
+    source = PolynomialMap((x, y), (x + x * y**2 + x**3, y))
+    other = PolynomialMap((x, y), (x + x * y**2 - x**3, y))
+
+    assert diagonal_matching(other, source) is None
+
+
+def test_a_different_generator_order_is_refused(flat: PolynomialMap) -> None:
+    """SEA-4 zuerst: umsortieren, dann vergleichen."""
+    with pytest.raises(ValueError, match="different generators"):
+        diagonal_matching(flat.reordered((y, x)), flat)
+
+
+# --------------------------------------------------------------------------
+# Die Suche
+# --------------------------------------------------------------------------
+
+
+@pytest.fixture
+def two_step() -> tuple[PolynomialMap, PolynomialMap, dict]:
+    """Quelle, Ziel und Vorrat einer Kette, deren Antwort bekannt ist."""
+    source = over_field(PolynomialMap((x, y), (x + x**2 * y**3, y)))
+    target = BCWStep.build(source, 0, Fresh(x * y, u), Fresh(x * y**2, v), 1).target
+
+    return source, target, {u: x * y, v: x * y**2}
+
+
+def test_the_search_recovers_a_known_chain(two_step: tuple) -> None:
+    source, target, pool = two_step
+
+    outcome = search(source, target, pool)
+
+    assert outcome.reduction is not None
+    assert outcome.reduction.verify() is None
+    assert outcome.reduction.target == target
+    assert outcome.signs == (1, 1, 1, 1)
+
+
+def test_the_result_is_reported_up_to_the_diagonal(two_step: tuple) -> None:
+    """SEA-5: das Ziel wird bis auf eine ausgewiesene Konjugation erreicht."""
+    source, target, pool = two_step
+    flipped = conjugate(target, (1, 1, 1, -1))
+
+    outcome = search(source, flipped, pool)
+
+    assert outcome.reduction is not None
+    assert outcome.signs is not None
+    assert conjugate(outcome.reduction.target, outcome.signs) == flipped
+
+
+def test_a_value_outside_the_pool_is_unreachable(two_step: tuple) -> None:
+    """Nicht ungefunden, sondern unerreichbar -- der Preis von SEA-8."""
+    source, target, _ = two_step
+
+    outcome = search(source, target, {u: x, v: x * y**2})
+
+    assert outcome.reduction is None
+    assert outcome.exhausted
+
+
+def test_a_budget_that_runs_out_says_less(two_step: tuple) -> None:
+    """SEA-6 mit noch weniger Gehalt: ``exhausted`` unterscheidet die Faelle."""
+    source, target, pool = two_step
+
+    outcome = search(source, target, pool, budget=1)
+
+    assert outcome.reduction is None
+    assert not outcome.exhausted
+    assert outcome.examined == 1
+
+
+def test_an_exhausted_space_is_reported_as_such(two_step: tuple) -> None:
+    source, target, pool = two_step
+
+    outcome = search(source, target, pool)
+
+    assert outcome.exhausted is False or outcome.reduction is not None
+
+
+def test_a_wrong_target_of_the_right_shape_is_not_found() -> None:
+    """Der Endpunkt entscheidet, nicht die Kette."""
+    source = over_field(PolynomialMap((x, y), (x + x**2 * y**3, y)))
+    reachable = BCWStep.build(source, 0, Fresh(x * y, u), Fresh(x * y**2, v), 1).target
+    wrong = PolynomialMap(
+        reachable.variables,
+        (reachable.components[0] + u * v,) + tuple(reachable.components[1:]),
+    )
+
+    assert search(source, wrong, {u: x * y, v: x * y**2}).reduction is None
+
+
+def test_a_chain_that_would_raise_the_degree_is_not_walked() -> None:
+    """Beschneidung: entlang beider Referenzketten faellt der Grad nie.
+
+    Die Regel ist eine Entscheidung ueber die Suche, keine Aussage ueber
+    Keller-Abbildungen -- ein Zertifikat verlangt keinen Fortschritt.
+    """
+    source = over_field(PolynomialMap((x, y), (x + x**2 * y**3, y)))
+    target = BCWStep.build(source, 0, Fresh(x * y, u), Fresh(x * y**2, v), 1).target
+
+    assert target.degree() <= source.degree()
+    assert search(source, target, {u: x * y, v: x * y**2}).reduction is not None
+
+
+def test_a_target_of_the_wrong_dimension_is_not_reached() -> None:
+    """Alle Namen verbraucht, aber die Dimension passt nicht."""
+    source = over_field(PolynomialMap((x, y), (x + x**2 * y**3, y)))
+    target = BCWStep.build(source, 0, Fresh(x * y, u), Fresh(x * y**2, v), 1).target
+    wider = target.extend(2)
+
+    assert search(source, wider, {u: x * y, v: x * y**2}).reduction is None
+
+
+def test_the_outcome_carries_what_was_examined(two_step: tuple) -> None:
+    source, target, pool = two_step
+
+    outcome = search(source, target, pool)
+
+    assert isinstance(outcome, SearchOutcome)
+    assert outcome.examined >= 1
+
+
+@pytest.fixture
+def with_carrier() -> PolynomialMap:
+    """Koordinate 1 traegt ``x**2``, also gibt es ``m = 1``-Zuege."""
+    return over_field(PolynomialMap((x, y), (x + x**3 * y**3, y + x**2)))
+
+
+def test_a_carried_slot_consumes_no_name_in_the_search(
+    with_carrier: PolynomialMap,
+) -> None:
+    """Ein Schritt, der einen vorhandenen Traeger wiederbenutzt, kostet keine
+    Dimension und keinen Namen aus dem Vorrat."""
+    target = BCWStep.build(with_carrier, 0, Carried(1), Fresh(x * y**3, u), 1).target
+
+    outcome = search(with_carrier, target, {u: x * y**3})
+
+    assert outcome.reduction is not None
+    assert outcome.reduction.steps[0].left == Carried(1)
+    assert outcome.reduction.target == target
+
+
+def test_a_step_past_the_target_dimension_is_not_walked(
+    with_carrier: PolynomialMap,
+) -> None:
+    """Beschneidung: die Dimension darf die des Ziels nicht ueberschreiten.
+
+    Der Vorrat haelt hier zwei Namen und das Ziel hat nur Platz fuer einen, so
+    dass der ``m = 2``-Zug gebaut, geprueft und dann verworfen wird.
+    """
+    target = BCWStep.build(with_carrier, 0, Carried(1), Fresh(x * y**3, u), 1).target
+
+    outcome = search(with_carrier, target, {u: x * y**3, v: x**2})
+
+    assert outcome.reduction is None
+    assert outcome.exhausted
+    assert target.dimension == with_carrier.dimension + 1

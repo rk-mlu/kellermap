@@ -975,11 +975,36 @@ one object, which reads like evidence and is not.
 against itself. The external fact is
 
 ```
-found.target.reordered(published.variables) == published
+conjugate(found.target.reordered(published.variables), D) == published
 ```
 
-which is checked separately from `verify()` and is the only place where the run
-can be contradicted by data this library did not compute. A review should read
+for a diagonal `D` of ones and minus ones that the search reports rather than
+absorbs. It is checked separately from `verify()` and is the only place where
+the run can be contradicted by data this library did not compute.
+
+`D` is an amendment, forced by the data in work package 7. Component 2 of the
+published map carries `+w13 w16`, and this library's `G` subtracts `X_u X_v`
+always, so no choice of factors reproduces it. The published map is reached
+under `G = X_i + X_u X_v`, and the two conventions are related by
+
+    S+(-P, Q) = D_u o S-(P, Q) o D_u^-1,
+
+verified componentwise, where `D_u` flips one slot coordinate. So the second
+convention reaches no map the first does not, up to conjugation by a signed
+diagonal, and implementing it would add a per-step degree of freedom inside
+`BCWStep` — inside the verification surface — to reach maps already reachable.
+`D` keeps that freedom in the search, which SEA-1 already declines to trust.
+
+`D` cannot absorb an error. Every monomial of every component is one equation
+over GF(2) for the signs, so the system is heavily overdetermined: nineteen
+components against nineteen unknowns for the milestone target, and six of its
+equations are readable from the published map before any chain exists. The
+minimum weight consistent with those six is three, so `D` is not the identity
+and is not free either. It is read off and then checked, not fitted.
+
+Conjugation preserves what the comparison is about: degree, order, filtration
+degree, and the constant Jacobian determinant of a Keller map. Two conjugate
+maps are the same map in different coordinates. A review should read
 the two as different in kind: verification says the chain is internally sound,
 and this equality says it arrives where an outside source says it should.
 
@@ -999,6 +1024,20 @@ raises `NotImplementedError` naming the work package, rather than returning a
 plausible chain or silently reporting no result. A case it handles and does not
 solve reports no result, which is a different outcome and is spelled
 differently.
+
+**SEA-11 — A budget is reported, not hidden.** `[0.4]` The search examines at
+most a stated number of maps and says how many it examined and whether the
+space it covers was exhausted. A result with `exhausted` false says less than
+SEA-6 already allows: not merely that nothing was found, but that the search
+did not finish looking.
+
+**SEA-12 — The walk is bounded by stated rules, and they are decisions.**
+`[0.4]` The degree never rises along a chain, and the dimension never passes
+the target's. Neither is a fact about Keller maps. Nothing obliges a step to
+lower the degree — see "No progress measure" — and the rule is adopted because
+degrees do not rise along either reference chain and a chain that does not
+converge on a cubic target cannot reach one. A chain outside these rules is
+unreachable here, in the sense of "No completeness of the enumerator either".
 
 ### Candidates
 
@@ -1154,7 +1193,7 @@ search.
 ### Which of these can fail on supplied data
 
 SEA-5, and only SEA-5. It compares a chain this library built against a map and
-a collision it did not. SEA-1 to SEA-4 and SEA-6 to SEA-10 are obligations on
+a collision it did not. SEA-1 to SEA-4 and SEA-6 to SEA-12 are obligations on
 the library's own conduct: they say what the search and its enumerator may
 claim, not what the data is. A review weighing this milestone should look first
 at SEA-5 and at the provenance of the two published objects it compares against,
