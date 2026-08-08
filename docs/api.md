@@ -30,6 +30,7 @@ what they do.
 - [The BCW step](#the-bcw-step)
 - [Finding candidates](#finding-candidates)
 - [Assembling a chain](#assembling-a-chain)
+- [Peeling a chain off a target](#peeling-a-chain-off-a-target)
 - [Naming across a reduction](#naming-across-a-reduction)
 - [Guarantees](#guarantees)
 - [Errors](#errors)
@@ -41,7 +42,7 @@ what they do.
 ```python
 >>> import kellermap
 >>> kellermap.__all__
-['DEFAULT_VARIABLE_FACTORY', 'Candidate', 'Collision', 'Dilation', 'ElementaryAutomorphism', 'ElementaryFactor', 'FixedVariableFactory', 'IndexedVariableFactory', 'LinearAutomorphism', 'LinearFactor', 'LinearStep', 'PolynomialMap', 'Provenance', 'Reduction', 'ReductionContext', 'SearchOutcome', 'Step', 'TranslationStep', 'Transposition', 'Transvection', 'VariableFactory', 'VerificationError', 'anchors', 'conjugate', 'diagonal_matching', 'enumerate_candidates', 'field_ring', 'over_field', 'reserved_names', 'search']
+['DEFAULT_VARIABLE_FACTORY', 'Candidate', 'Collision', 'Dilation', 'ElementaryAutomorphism', 'ElementaryFactor', 'FixedVariableFactory', 'IndexedVariableFactory', 'LinearAutomorphism', 'LinearFactor', 'LinearStep', 'PeelOutcome', 'PolynomialMap', 'Provenance', 'Reduction', 'ReductionContext', 'SearchOutcome', 'Step', 'TranslationStep', 'Transposition', 'Transvection', 'Undo', 'VariableFactory', 'VerificationError', 'anchors', 'conjugate', 'diagonal_matching', 'enumerate_candidates', 'field_ring', 'over_field', 'peel', 'reserved_names', 'search']
 
 ```
 
@@ -1001,6 +1002,42 @@ whether even the space the search covers was seen to the end:
 
 ```python
 >>> search(start, finish, {u: x * y, v: x * y**2}, budget=1).exhausted
+False
+
+```
+
+## Peeling a chain off a target
+
+`peel(source, target)` walks the other way. It is given the two maps and
+nothing else -- no value pool, no names, no sign convention -- because a step
+leaves its fresh coordinate in exactly two components, which says which
+coordinates could have been introduced last.
+
+```python
+>>> from kellermap import peel
+>>> outcome = peel(start, finish)
+>>> outcome.reduction.verify() is None
+True
+>>> outcome.reduction.target == finish
+True
+
+```
+
+What a peel produces is a structure. The chain is rebuilt forwards with
+`BCWStep.build` and verified before it is a `Reduction`, and the endpoint is
+compared against the target as before. The diagonal is reported the same way:
+
+```python
+>>> outcome = peel(start, conjugate(finish, (1, 1, 1, -1)))
+>>> outcome.signs
+(1, 1, -1, 1)
+
+```
+
+Finding nothing means the same as it does forwards, and no more:
+
+```python
+>>> peel(start, finish, budget=1).exhausted
 False
 
 ```

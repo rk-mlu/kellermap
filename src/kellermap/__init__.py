@@ -11,6 +11,7 @@ from .linear import (
     field_ring,
     over_field,
 )
+from .peeling import PeelOutcome, Undo, peel
 from .polynomial_map import PolynomialMap
 from .reduction import (
     LinearStep,
@@ -48,6 +49,7 @@ __all__ = [
     "LinearAutomorphism",
     "LinearFactor",
     "LinearStep",
+    "PeelOutcome",
     "PolynomialMap",
     "Provenance",
     "Reduction",
@@ -57,6 +59,7 @@ __all__ = [
     "TranslationStep",
     "Transposition",
     "Transvection",
+    "Undo",
     "VariableFactory",
     "VerificationError",
     "anchors",
@@ -65,6 +68,7 @@ __all__ = [
     "enumerate_candidates",
     "field_ring",
     "over_field",
+    "peel",
     "reserved_names",
     "search",
 ]

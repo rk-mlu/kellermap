@@ -617,7 +617,7 @@ for the duration and moves to `0.4.0rc1` in one step at the end.
 | 6 | 0.3.6 | Candidate enumeration | yes |
 | 7 | 0.3.7 | The forward search against a given target | yes |
 | 8 | 0.3.8 | `examples.py` and `tests/data.py`: fixed data by provenance | yes |
-| 9 | 0.3.9 | The backward search: peeling a chain off a target | no |
+| 9 | 0.3.9 | The backward search: peeling a chain off a target | yes |
 | 10 | 0.3.10 | `alpoege19` as a verified `Reduction` | no |
 | 11 | 0.3.11 | Documentation and release | no |
 
@@ -892,6 +892,22 @@ records this.
 Peeling is a different operation from building, so it gets its own obligations.
 A chain found backwards is rebuilt forwards and verified, and the endpoint
 comparison of SEA-5 is unchanged.
+
+What it cost and what it bought, measured. Recovering the fifteen-dimensional
+map takes **8 maps and under a second**, against 62 maps forwards -- and,
+which matters more, without a value pool: the forward search manages that
+recovery only when handed a value the published map no longer carries.
+Against the nineteen-dimensional map the space is **exhausted after 376 maps
+in three minutes**, where the forward search needed 68425 maps and two and a
+half hours to say the same thing about a different space. Neither holds a
+chain. The direction did not find the sequence; it made the question cheap
+enough to ask repeatedly.
+
+The move order decides more than anything else here. With coordinate-removing
+steps offered one at a time first, the fifteen-dimensional recovery does not
+come through in 1500 maps; with the steps that remove two offered first, it
+takes 8. A step that removes two coordinates gets twice as far for the same
+depth.
 
 **WP 10** points it at the nineteen-dimensional map.
 `scripts/search_alpoege19.py` drives the run: it reads Alpoege's map and the
