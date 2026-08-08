@@ -36,31 +36,17 @@ without one, and 1 if the budget ran out.
 
 from __future__ import annotations
 
-import importlib.util
 import sys
 import time
 from pathlib import Path
-from types import ModuleType
 
 import sympy as sp
 
-from kellermap import LinearStep, PolynomialMap, conjugate, over_field, search
+sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-ROOT = Path(__file__).resolve().parent.parent
+from _common import describe, flips, read, sanity  # noqa: E402
 
-
-def read(name: str) -> ModuleType:
-    """Return a test module, so that fixed data is read and not copied."""
-    path = ROOT / "tests" / f"{name}.py"
-    spec = importlib.util.spec_from_file_location(f"{name}_data", path)
-    if spec is None or spec.loader is None:
-        raise RuntimeError(f"Cannot read fixed data from {path}.")
-
-    module = importlib.util.module_from_spec(spec)
-    sys.path.insert(0, str(ROOT))
-    spec.loader.exec_module(module)
-
-    return module
+from kellermap import LinearStep, PolynomialMap, over_field, search  # noqa: E402
 
 
 def setup(
@@ -128,23 +114,17 @@ def main(
         print("would: the search did not finish looking.")
         return 1
 
-    outcome.reduction.verify()
-    reached = outcome.reduction.target.reordered(target.variables)
+    matched = sanity(outcome.reduction, outcome.signs, target)
     print()
     print("A chain was found.")
     print(f"  steps      {len(outcome.reduction.steps)}")
-    print(f"  dimensions {outcome.reduction.dimensions()}")
-    print(f"  degrees    {outcome.reduction.degrees()}")
     print("  verify()   passed")
-    print(f"  endpoint   {conjugate(reached, outcome.signs) == target}")
-    flipped = [
-        str(variable)
-        for variable, sign in zip(target.variables, outcome.signs, strict=True)
-        if sign == -1
-    ]
-    print(f"  D flips    {flipped or 'nothing'}")
+    print(f"  endpoint   {matched}")
+    print(f"  D flips    {[str(v) for v in flips(outcome.signs, target)] or 'nothing'}")
+    print()
+    print(describe(outcome.reduction, outcome.signs, target))
 
-    return 0
+    return 0 if matched else 2
 
 
 if __name__ == "__main__":

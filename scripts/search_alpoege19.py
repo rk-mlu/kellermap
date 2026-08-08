@@ -74,37 +74,18 @@ does not exist, and it says it about the space this search covers.
 
 from __future__ import annotations
 
-import importlib.util
 import sys
 import time
 from pathlib import Path
-from types import ModuleType
 
 import sympy as sp
 
-from kellermap import PolynomialMap, Reduction, conjugate, over_field, search
-from kellermap.bcw import BCWStep, Carried
+sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-ROOT = Path(__file__).resolve().parent.parent
+from _common import describe, flips, read, sanity  # noqa: E402
 
-
-def read(name: str) -> ModuleType:
-    """Return a test module, so that fixed data is read and not copied.
-
-    Alpoege's map and the published nineteen-dimensional one are already in the
-    repository, with their provenance recorded beside them. A second copy here
-    would add nothing but a way for the two to disagree.
-    """
-    path = ROOT / "tests" / f"{name}.py"
-    spec = importlib.util.spec_from_file_location(f"{name}_data", path)
-    if spec is None or spec.loader is None:
-        raise RuntimeError(f"Cannot read fixed data from {path}.")
-
-    module = importlib.util.module_from_spec(spec)
-    sys.path.insert(0, str(ROOT))
-    spec.loader.exec_module(module)
-
-    return module
+from kellermap import PolynomialMap, Reduction, over_field, search  # noqa: E402
+from kellermap.bcw import BCWStep, Carried  # noqa: E402
 
 
 def undone(published: PolynomialMap) -> PolynomialMap:
@@ -173,32 +154,6 @@ def setup() -> tuple[PolynomialMap, PolynomialMap, dict[sp.Symbol, sp.Expr]]:
     pool[carriers[1]] = nineteen.W2_INTRODUCED
 
     return source, published, pool
-
-
-def describe(
-    reduction: Reduction,
-    signs: tuple[int, ...],
-    variables: tuple[sp.Symbol, ...],
-) -> str:
-    """Return the chain in a form that can be read into a test."""
-    lines = ["STEPS = ("]
-    for step in reduction.steps:
-        slots = []
-        for slot in (step.left, step.right):
-            if isinstance(slot, Carried):
-                slots.append(f'("carried", {slot.index})')
-            else:
-                slots.append(f'("fresh", {slot.polynomial})')
-        lines.append(
-            f"    ({step.index}, {slots[0]}, {slots[1]}, {step.filtration_level}),"
-        )
-    lines.append(")")
-
-    flipped = [str(v) for v, sign in zip(variables, signs, strict=True) if sign == -1]
-    lines.append("")
-    lines.append(f"# D flips: {flipped or 'nothing'}")
-
-    return "\n".join(lines)
 
 
 def restore(reduction: Reduction, published: PolynomialMap) -> Reduction:
@@ -303,16 +258,15 @@ def main(start: int = 100_000, ceiling: int = 8_000_000, spare: int = 1) -> int:
     print(f"  steps      {len(chain.steps)}")
     print(f"  dimensions {chain.dimensions()}")
     print(f"  degrees    {chain.degrees()}")
-    chain.verify()
+    matched = sanity(chain, signs, published)
     print("  verify()   passed")
-    reached = chain.target.reordered(published.variables)
-    matched = conjugate(reached, signs) == published
     print(f"  endpoint   {matched}")
+    print(f"  D flips    {[str(v) for v in flips(signs, published)] or 'nothing'}")
     if not matched:
         print("  The endpoint does not match the published map. Nothing is claimed.")
         return 2
     print()
-    print(describe(chain, signs, published.variables))
+    print(describe(chain, signs, published))
 
     return 0
 

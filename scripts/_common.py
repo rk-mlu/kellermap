@@ -1,0 +1,123 @@
+"""Shared helpers for the two search drivers.
+
+Not part of the library and not a gate. It exists so that ``read`` and
+``describe`` are written once rather than twice, since a second copy is a
+second thing to keep in step.
+"""
+
+from __future__ import annotations
+
+import importlib.util
+import sys
+from pathlib import Path
+from types import ModuleType
+
+import sympy as sp
+
+from kellermap import PolynomialMap, Reduction
+from kellermap.bcw import Carried
+
+ROOT = Path(__file__).resolve().parent.parent
+
+
+def read(name: str) -> ModuleType:
+    """Return a test module, so that fixed data is read and not copied.
+
+    The fixed maps are already in the repository with their provenance
+    recorded beside them. A second copy in a script would add nothing but a
+    way for the two to disagree.
+    """
+    path = ROOT / "tests" / f"{name}.py"
+    spec = importlib.util.spec_from_file_location(f"{name}_data", path)
+    if spec is None or spec.loader is None:
+        raise RuntimeError(f"Cannot read fixed data from {path}.")
+
+    module = importlib.util.module_from_spec(spec)
+    sys.path.insert(0, str(ROOT))
+    spec.loader.exec_module(module)
+
+    return module
+
+
+def describe(
+    reduction: Reduction,
+    signs: tuple[int, ...],
+    published: PolynomialMap,
+) -> str:
+    """Return everything needed to replay the chain, by name and not by index.
+
+    A chain lists its generators in the order its steps introduced them, so
+    every position in it depends on the chain. Positions are therefore printed
+    as generator names: the component a step acts on, the coordinate a
+    ``Carried`` slot reuses, and -- the part that was missing and made an
+    earlier version of this report useless -- the name each fresh slot was
+    given. Without those names the introduction order cannot be recovered, and
+    without the introduction order neither the reordering of SEA-4 nor the
+    endpoint comparison of SEA-5 can be redone.
+
+    What the caller still needs, and already has: the source map, the value
+    pool, and this library.
+    """
+    lines = [
+        "# Replay by name. Positions belong to the chain, names do not.",
+        "STEPS = (",
+    ]
+
+    for step in reduction.steps:
+        slots = []
+        for slot in (step.left, step.right):
+            if isinstance(slot, Carried):
+                slots.append(f'("carried", {step.source.variables[slot.index]})')
+            else:
+                slots.append(f'("fresh", {slot.polynomial}, {slot.variable})')
+        target = step.source.variables[step.index]
+        lines.append(
+            f"    ({target}, {slots[0]}, {slots[1]}, {step.filtration_level}),"
+        )
+
+    lines.append(")")
+    lines.append("")
+
+    order = reduction.target.variables
+    lines.append(f"# introduction order: {', '.join(str(v) for v in order)}")
+    lines.append(f"# dimensions:         {reduction.dimensions()}")
+    lines.append(f"# degrees:            {reduction.degrees()}")
+
+    flipped = [
+        str(variable)
+        for variable, sign in zip(published.variables, signs, strict=True)
+        if sign == -1
+    ]
+    lines.append(f"# D flips:            {', '.join(flipped) or 'nothing'}")
+    lines.append("# every other entry of D is +1")
+
+    return "\n".join(lines)
+
+
+def sanity(
+    reduction: Reduction,
+    signs: tuple[int, ...],
+    published: PolynomialMap,
+) -> bool:
+    """Return whether the chain verifies and reaches the published map.
+
+    Printed beside the chain so that a report carries its own check. The
+    endpoint is compared against the published map itself, not against
+    anything the search produced.
+    """
+    reduction.verify()
+
+    from kellermap import conjugate
+
+    reached = reduction.target.reordered(published.variables)
+
+    return bool(conjugate(reached, signs) == published)
+
+
+def flips(signs: tuple[int, ...], published: PolynomialMap) -> list[sp.Symbol]:
+    """Return the coordinates ``D`` turns around."""
+    return [
+        variable
+        for variable, sign in zip(published.variables, signs, strict=True)
+        if sign == -1
+    ]
