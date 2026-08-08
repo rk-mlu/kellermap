@@ -21,6 +21,7 @@ from kellermap import (
     Reduction,
     Step,
     VerificationError,
+    examples,
     over_field,
 )
 from kellermap.bcw import BCWStep, Carried, Fresh
@@ -30,7 +31,7 @@ x1, x2, x3, x4, x5, x6, x7 = sp.symbols("x1 x2 x3 x4 x5 x6 x7")
 
 # F = (x1 + x2^2 x3^2, x2, x3). Der Spitzenterm x2^2 x3^2 der ersten
 # Komponente faktorisiert als P * Q mit P = x2^2 und Q = x3^2.
-SIMPLE = over_field(PolynomialMap((x1, x2, x3), (x1 + x2**2 * x3**2, x2, x3)))
+SIMPLE = over_field(examples.factorable_shear())
 
 P = x2**2
 Q = x3**2
@@ -647,16 +648,7 @@ def test_repr_names_the_essentials(step: BCWStep) -> None:
 # Regression: der erste Schritt der Referenzreduktion, mit vorgelegtem Ziel
 # --------------------------------------------------------------------------
 
-ALPOEGE = over_field(
-    PolynomialMap(
-        (x1, x2, x3),
-        (
-            (1 + x1 * x2) ** 3 * x3 + x2**2 * (1 + x1 * x2) * (4 + 3 * x1 * x2),
-            x2 + 3 * x1 * (1 + x1 * x2) ** 2 * x3 + 3 * x1 * x2**2 * (4 + 3 * x1 * x2),
-            2 * x1 - 3 * x1**2 * x2 - x1**3 * x3,
-        ),
-    )
-)
+ALPOEGE = over_field(examples.alpoege())
 
 # Ausgeschrieben, nicht gerechnet: nur so kann BCW-1 ueberhaupt scheitern.
 FIRST_TARGET = PolynomialMap(

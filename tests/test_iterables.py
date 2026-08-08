@@ -25,6 +25,7 @@ from kellermap import (
     PolynomialMap,
     Reduction,
     Transposition,
+    examples,
     over_field,
 )
 from kellermap.bcw import BCWStep
@@ -33,7 +34,7 @@ from kellermap.reduction import LinearStep
 x1, x2, x3, x4, x5 = sp.symbols("x1 x2 x3 x4 x5")
 
 SHEAR = over_field(PolynomialMap((x1, x2, x3), (x1 + x2**3, x2, x3)))
-QUARTIC = over_field(PolynomialMap((x1, x2, x3), (x1 + x2**2 * x3**2, x2, x3)))
+QUARTIC = over_field(examples.factorable_shear())
 SQUARE = over_field(PolynomialMap((x1, x2, x3), (x1**2, x2, x3)))
 RING = SHEAR.ring
 

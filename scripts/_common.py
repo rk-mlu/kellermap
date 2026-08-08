@@ -21,11 +21,12 @@ ROOT = Path(__file__).resolve().parent.parent
 
 
 def read(name: str) -> ModuleType:
-    """Return a test module, so that fixed data is read and not copied.
+    """Return a module under ``tests/``, for the data the package does not ship.
 
-    The fixed maps are already in the repository with their provenance
-    recorded beside them. A second copy in a script would add nothing but a
-    way for the two to disagree.
+    Everything a script needs is importable from ``kellermap.examples`` except
+    the nineteen-dimensional map, whose licence could not be established and
+    which therefore stays out of the wheel. This detour exists for that one map
+    only, which puts the distinction in the code and not only in a document.
     """
     path = ROOT / "tests" / f"{name}.py"
     spec = importlib.util.spec_from_file_location(f"{name}_data", path)

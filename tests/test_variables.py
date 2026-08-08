@@ -14,6 +14,7 @@ from kellermap import (
     DEFAULT_VARIABLE_FACTORY,
     IndexedVariableFactory,
     PolynomialMap,
+    examples,
     reserved_names,
 )
 
@@ -46,8 +47,8 @@ def test_factory_is_a_pure_function(numbered: PolynomialMap) -> None:
 
 def test_repeated_extension_of_equal_maps_agrees() -> None:
     """Dieselbe Zusage, eine Ebene hoeher."""
-    F = PolynomialMap((x, y), (x + y, x - y))
-    G = PolynomialMap((x, y), (x + y, x - y))
+    F = examples.sum_and_difference()
+    G = examples.sum_and_difference()
 
     assert F.extend(2).variables == G.extend(2).variables
 
@@ -68,7 +69,7 @@ def test_convention_is_read_off_numbered_generators(numbered: PolynomialMap) -> 
 
 def test_fallback_prefix_without_a_convention() -> None:
     """x, y traegt keine Nummerierung: Verhalten wie vor der Factory."""
-    F = PolynomialMap((x, y), (x + y, x - y))
+    F = examples.sum_and_difference()
 
     assert F.extend(2).variables == (x, y, sp.Symbol("X3"), sp.Symbol("X4"))
 
@@ -83,7 +84,7 @@ def test_fallback_prefix_on_mixed_conventions() -> None:
 
 def test_explicit_prefix_overrides_the_convention() -> None:
     """Der Sinn der Injektion: eine Reduktion kann Traegervariablen benennen."""
-    F = PolynomialMap((x, y), (x + y, x - y))
+    F = examples.sum_and_difference()
 
     extended = F.extend(3, IndexedVariableFactory(prefix="u"))
 
@@ -97,7 +98,7 @@ def test_explicit_prefix_overrides_the_convention() -> None:
 
 def test_reserved_names_cover_the_coefficient_domain() -> None:
     """T in k[T] ist kein Generator, sein Name ist trotzdem belegt."""
-    F = PolynomialMap((x, y), (T * x + y, x))
+    F = examples.parametric_swap()
 
     assert reserved_names(F.ring) == {"x", "y", "T"}
 
@@ -135,7 +136,7 @@ def test_factory_returns_nothing_for_zero(numbered: PolynomialMap) -> None:
 def test_extend_rejects_a_colliding_name() -> None:
     """Der teuerste Fehlerfall: ``clone`` wuerde ihn wortlos hinnehmen und
     einen Ring bauen, in dem zwei Koordinaten denselben Generator meinen."""
-    F = PolynomialMap((x, y), (x + y, x - y))
+    F = examples.sum_and_difference()
 
     def colliding(ring: object, count: int) -> tuple[sp.Symbol, ...]:
         return (x,)
@@ -145,7 +146,7 @@ def test_extend_rejects_a_colliding_name() -> None:
 
 
 def test_extend_rejects_a_wrong_count() -> None:
-    F = PolynomialMap((x, y), (x + y, x - y))
+    F = examples.sum_and_difference()
 
     def too_few(ring: object, count: int) -> tuple[sp.Symbol, ...]:
         return (sp.Symbol("u1"),)
@@ -155,7 +156,7 @@ def test_extend_rejects_a_wrong_count() -> None:
 
 
 def test_extend_rejects_duplicates() -> None:
-    F = PolynomialMap((x, y), (x + y, x - y))
+    F = examples.sum_and_difference()
 
     def duplicated(ring: object, count: int) -> tuple[sp.Symbol, ...]:
         return (sp.Symbol("u1"), sp.Symbol("u1"))
@@ -165,7 +166,7 @@ def test_extend_rejects_duplicates() -> None:
 
 
 def test_extend_rejects_non_symbols() -> None:
-    F = PolynomialMap((x, y), (x + y, x - y))
+    F = examples.sum_and_difference()
 
     def not_symbols(ring: object, count: int) -> tuple[sp.Expr, ...]:
         return (x * y,)
@@ -194,7 +195,7 @@ def test_extending_twice_equals_extending_once(
     einzige Stabilisierung landet. Der Test prueft die Namensvergabe, nicht
     die Komponenten -- die sind ohnehin Identitaeten.
     """
-    F = PolynomialMap((x, y), (x + y, x - y))
+    F = examples.sum_and_difference()
 
     assert F.extend(m, factory).extend(ell, factory) == F.extend(m + ell, factory)
 
@@ -233,7 +234,7 @@ def test_purity_alone_does_not_give_the_composition_invariant() -> None:
     def by_ring_size(ring: PolyRing, count: int) -> tuple[sp.Symbol, ...]:
         return tuple(sp.Symbol(f"g{ring.ngens}_{i}") for i in range(1, count + 1))
 
-    F = PolynomialMap((x, y), (x + y, x - y))
+    F = examples.sum_and_difference()
 
     assert by_ring_size(F.ring, 2) == by_ring_size(F.ring, 2)
 

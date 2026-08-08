@@ -3,7 +3,7 @@ import math
 import pytest
 import sympy as sp
 
-from kellermap import PolynomialMap
+from kellermap import PolynomialMap, examples
 
 
 @pytest.fixture
@@ -121,7 +121,7 @@ def test_hashable(F: PolynomialMap) -> None:
 
 def test_equal_maps_built_separately_compare_equal(F: PolynomialMap) -> None:
     x, y = F.variables
-    twin = PolynomialMap((x, y), (x + y, x - y))
+    twin = examples.sum_and_difference()
 
     assert twin is not F
     assert twin == F
@@ -145,7 +145,7 @@ def test_maps_differing_in_the_variables_are_unequal() -> None:
     """Gleiche Komponenten, andere Traegervariablen: verschiedene Abbildungen."""
     x, y, u, v = sp.symbols("x y u v")
 
-    assert PolynomialMap((x, y), (x, y)) != PolynomialMap((u, v), (u, v))
+    assert PolynomialMap.identity((x, y)) != PolynomialMap.identity((u, v))
 
 
 def test_variable_order_matters(F: PolynomialMap) -> None:
@@ -163,7 +163,7 @@ def test_equality_with_a_foreign_type_is_not_implemented(F: PolynomialMap) -> No
 def test_equal_maps_share_a_hash(F: PolynomialMap) -> None:
     """Das Vertragsversprechen von __hash__: a == b impliziert hash(a) == hash(b)."""
     x, y = F.variables
-    twin = PolynomialMap((x, y), (x + y, x - y))
+    twin = examples.sum_and_difference()
 
     assert hash(twin) == hash(F)
     assert len({F, twin}) == 1
@@ -194,8 +194,8 @@ def test_variables_must_be_symbols() -> None:
 
 def test_compose_requires_same_variables() -> None:
     x, y, u, v = sp.symbols("x y u v")
-    F = PolynomialMap((x, y), (x, y))
-    G = PolynomialMap((u, v), (u, v))
+    F = PolynomialMap.identity((x, y))
+    G = PolynomialMap.identity((u, v))
     with pytest.raises(ValueError, match="different variables"):
         F.compose(G)
 
@@ -255,7 +255,7 @@ def test_displacement(F: PolynomialMap) -> None:
 
 def test_identity_lies_in_every_MA() -> None:
     x, y = sp.symbols("x y")
-    identity = PolynomialMap((x, y), (x, y))
+    identity = PolynomialMap.identity((x, y))
 
     assert identity.filtration_degree() == math.inf
     assert identity.is_in_MA(17)
@@ -269,7 +269,7 @@ def test_identity_lies_in_every_MA() -> None:
 def test_bcw_G_lies_in_MA1() -> None:
     """G = (X1 - X3*X4, X2, X3, X4) verschiebt um Ordnung 2, liegt also in MA^1."""
     X1, X2, X3, X4 = sp.symbols("X1 X2 X3 X4")
-    G = PolynomialMap((X1, X2, X3, X4), (X1 - X3 * X4, X2, X3, X4))
+    G = examples.product_shear()
 
     assert G.filtration_degree() == 1
     assert G.is_in_MA(1)
@@ -403,7 +403,7 @@ def test_non_polynomial_component_is_rejected() -> None:
 
 def test_compose_unifies_compatible_coefficient_domains() -> None:
     x, y, T = sp.symbols("x y T")
-    F = PolynomialMap((x, y), (T * x + y, x))
+    F = examples.parametric_swap()
     G = PolynomialMap((x, y), (x / 2, y))
 
     assert F.compose(G).components == (T * x / 2 + y, x / 2)
@@ -450,8 +450,8 @@ DETERMINANT_CASES = [
     PolynomialMap((X1, X2), (X1 * X2 + 1, X1 - X2**2)),
     PolynomialMap((X1, X2), (X1 + X2**2, X2 + X1**2)),
     PolynomialMap((X1, X2), (sp.Symbol("T") * X1 + X2, X1 - X2)),
-    PolynomialMap((X1, X2, X3, X4), (X1 - X3 * X4, X2, X3, X4)),
-    PolynomialMap((X1, X2, X3, X4), (X1, X2, X3 + X2**2, X4 + X2**2)),
+    examples.product_shear(),
+    examples.paired_shear(),
     PolynomialMap((X1, X2, X3), (X1 + X2 * X3, X2 + X3**2, X3)),
 ]
 
@@ -484,7 +484,7 @@ def test_schur_complement_agrees_with_the_domain_matrix_path(
 def test_elementary_automorphism_is_unipotent_throughout() -> None:
     """Der Grenzfall: der Kopfblock ist leer, die Determinante folgt aus der
     Struktur und nicht aus einer Entwicklung."""
-    G = PolynomialMap((X1, X2, X3, X4), (X1 - X3 * X4, X2, X3, X4))
+    G = examples.product_shear()
 
     assert G.carrier_indices == (0, 1, 2, 3)
     assert G.determinant() == 1
@@ -492,7 +492,7 @@ def test_elementary_automorphism_is_unipotent_throughout() -> None:
 
 def test_carrier_requires_a_unit_diagonal_entry() -> None:
     """dF_i/dX_i muss exakt 1 sein, nicht bloss konstant."""
-    F = PolynomialMap((X1, X2), (2 * X1 + X2**2, X2))
+    F = examples.doubled_shear()
 
     assert F.carrier_indices == (1,)
 
@@ -539,7 +539,7 @@ def test_schur_complement_refuses_a_non_nilpotent_block() -> None:
 def test_unipotent_block_rejects_a_non_unit_diagonal() -> None:
     """Zweiter Teil der Vorbedingung: D muss I + L sein, nicht bloss
     dreiecksfoermig."""
-    F = PolynomialMap((X1, X2), (2 * X1 + X2**2, X2))
+    F = examples.doubled_shear()
 
     assert F._is_unipotent_block((1,))
     assert not F._is_unipotent_block((0, 1))
@@ -701,7 +701,7 @@ def _nested_coefficient(polynomial: object) -> object:
 
 def test_to_polynomials_copies_nested_coefficients() -> None:
     x, y, T = sp.symbols("x y T")
-    F = PolynomialMap((x, y), (T * x + y, x))
+    F = examples.parametric_swap()
 
     assert str(F.ring.domain) == "ZZ[T]"
 
@@ -1011,7 +1011,7 @@ def test_extend_rejects_a_boolean() -> None:
     fast sicher ein Tippfehler und nicht das, was jemand meinte.
     """
     x, y = sp.symbols("x y")
-    F = PolynomialMap((x, y), (x + y, y))
+    F = examples.shear()
 
     with pytest.raises(TypeError, match="must be an integer"):
         F.extend(True)  # type: ignore[arg-type]
@@ -1020,7 +1020,7 @@ def test_extend_rejects_a_boolean() -> None:
 @pytest.mark.parametrize("number", [2.0, "2", None])
 def test_extend_rejects_non_integers(number: object) -> None:
     x, y = sp.symbols("x y")
-    F = PolynomialMap((x, y), (x + y, y))
+    F = examples.shear()
 
     with pytest.raises(TypeError, match="must be an integer"):
         F.extend(number)  # type: ignore[arg-type]
@@ -1052,7 +1052,7 @@ def test_a_genuine_parameter_is_still_accepted() -> None:
     """Die Gegenprobe: ein Parameter mit eigenem Namen bleibt zulaessig."""
     x, y, T = sp.symbols("x y T")
 
-    F = PolynomialMap((x, y), (T * x + y, x))
+    F = examples.parametric_swap()
 
     assert str(F.ring.domain) == "ZZ[T]"
 
@@ -1237,7 +1237,7 @@ def test_a_composite_domain_survives_the_reordering() -> None:
     """Die Koeffizienten sind selbst Polynome und werden mitgenommen."""
     x, y = sp.symbols("x y")
     T = sp.Symbol("T")
-    parametric = PolynomialMap((x, y), (x + T * y**2, y))
+    parametric = examples.parametric_shear()
 
     moved = parametric.reordered((y, x))
 
@@ -1309,7 +1309,7 @@ def test_the_identity_takes_any_iterable() -> None:
 
 def test_the_identity_composes_to_nothing() -> None:
     x, y = sp.symbols("x y")
-    other = PolynomialMap((x, y), (x + y**2, y))
+    other = examples.quadratic_shear()
 
     assert other.compose(PolynomialMap.identity((x, y))) == other
     assert PolynomialMap.identity((x, y)).compose(other) == other

@@ -48,136 +48,30 @@ nachrechnen.
 
 import sympy as sp
 
-from kellermap import Collision, PolynomialMap
-
-x, y, z = sp.symbols("x y z")
-w = sp.symbols("w1:17")
-w1, w2, w3, w4, w5, w6, w7, w8, w9, w10, w11, w12, w13, w14, w15, w16 = w
-
-VARIABLES = (x, y, z) + w
-
-COMPONENTS = (
-    x * w1 * w5
-    + 3 * x * w4 * w9
-    - x * w6 * w9
-    + 6 * x * y * w11
-    - x * y * w12
-    - 7 * x * y * w7
-    + 3 * x * y * w8
-    + 3 * x * y * z
-    + 6 * y * w3 * w9
-    - 3 * y * z * w5
-    + y**2 * w10
-    - 7 * y**2 * w9
-    + z * w2 * w7
-    - w1 * w2
-    - 3 * w3**2
-    - 3 * w4 * w5
-    + w5 * w6
-    + w7 * w10
-    - 7 * w7 * w9
-    + 3 * w8 * w9
-    + 6 * w9 * w11
-    - w9 * w12
-    + 4 * y**2
-    + z,
-    3 * x * w4 * w5
-    + 12 * x * y**2
-    + 9 * x**2 * w14
-    - 3 * x**2 * w15
-    - 6 * x**2 * w4
-    + 9 * y * w7 * w13
-    - 3 * y * w8 * w13
-    - 6 * y * z * w13
-    - 3 * y * z * w2
-    - 9 * y**2 * w5
-    + 9 * w13 * w14
-    - 3 * w13 * w15
-    - 3 * w2 * w4
-    - 6 * w4 * w13
-    - 9 * w5 * w7
-    + 3 * w5 * w8
-    + 3 * x * z
-    + y,
-    x * z * w13 + x**2 * w16 - 3 * x**2 * y + w13 * w16 + 2 * x,
-    y**2 * z + w1,
-    -x * y * w13 - x**2 * w9 - w9 * w13 + w2,
-    x * y**2 + w3,
-    y * z + w4,
-    x**2 * y + w5,
-    x * w1 + w6,
-    y**2 + w7,
-    x * w4 + w8,
-    x * y + w9,
-    z * w2 + w10,
-    y * w3 + w11,
-    x * w6 + w12,
-    x**2 + w13,
-    y * w7 + w14,
-    y * w8 + w15,
-    x * z + w16,
+from kellermap import Collision
+from tests.data import (
+    ALPOEGE19,
+    ALPOEGE_IMAGE,
+    ALPOEGE_POINTS,
+    CARRIERS,
+    COMPONENTS,
+    PUBLISHED_POINTS,
+    VARIABLES,
+    W2_INTRODUCED,
+    w,
+    w2,
+    w7,
+    w9,
+    w13,
+    x,
+    y,
+    z,
 )
-
-ALPOEGE19 = PolynomialMap(VARIABLES, COMPONENTS)
 
 # Die drei Punkte aus der Quelle, zum Vergleich mit der Rekonstruktion.
-R = sp.Rational
-PUBLISHED_POINTS = (
-    (0, 0, R(-1, 4)) + (0,) * 16,
-    (
-        1,
-        R(-3, 2),
-        R(13, 2),
-        R(-117, 8),
-        R(3, 2),
-        R(-9, 4),
-        R(39, 4),
-        R(3, 2),
-        R(117, 8),
-        R(-9, 4),
-        R(-39, 4),
-        R(3, 2),
-        R(-39, 4),
-        R(-27, 8),
-        R(-117, 8),
-        -1,
-        R(-27, 8),
-        R(-117, 8),
-        R(-13, 2),
-    ),
-    (
-        -1,
-        R(3, 2),
-        R(13, 2),
-        R(-117, 8),
-        R(3, 2),
-        R(9, 4),
-        R(-39, 4),
-        R(-3, 2),
-        R(-117, 8),
-        R(-9, 4),
-        R(-39, 4),
-        R(3, 2),
-        R(-39, 4),
-        R(-27, 8),
-        R(-117, 8),
-        -1,
-        R(27, 8),
-        R(117, 8),
-        R(13, 2),
-    ),
-)
 
-ALPOEGE_POINTS = (
-    (0, 0, R(-1, 4)),
-    (1, R(-3, 2), R(13, 2)),
-    (-1, R(3, 2), R(13, 2)),
-)
-
-ALPOEGE_IMAGE = (R(-1, 4), 0, 0)
 
 # Die Traegerkomponenten haben die Form w_j + P_j.
-CARRIERS = {w[j]: sp.expand(COMPONENTS[3 + j] - w[j]) for j in range(16)}
 
 
 def lift(point: tuple[sp.Expr, ...]) -> tuple[sp.Expr, ...]:
@@ -343,7 +237,6 @@ def test_the_first_point_is_the_origin_over_alpoeges() -> None:
 # und mit den beiden Traegerkoordinaten w13 und w9 als Plaetzen -- sie tragen
 # x^2 und x y -- ist der eingefuehrte Wert von w2 genau P Q = x^3 y, der sich
 # gegen den ersten Term weghebt. Was stehen bleibt, sind die drei Restterme.
-W2_INTRODUCED = x**3 * y
 
 
 def test_the_component_of_w2_is_the_residue_of_a_carried_step() -> None:

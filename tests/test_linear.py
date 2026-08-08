@@ -115,7 +115,7 @@ def test_the_identity_carries_no_dimension() -> None:
 
 
 def test_composition_across_rings_is_refused(ring: object) -> None:
-    other = over_field(PolynomialMap(sp.symbols("u v w"), sp.symbols("u v w"))).ring
+    other = over_field(PolynomialMap.identity(sp.symbols("u v w"))).ring
     left = LinearAutomorphism([Transposition(ring, 0, 1)])
     right = LinearAutomorphism([Transposition(other, 0, 1)])
 
@@ -203,7 +203,7 @@ def test_apply_to_agrees_with_composition(factor_of, F: PolynomialMap) -> None: 
 
 
 def test_a_factor_rejects_a_foreign_map(ring: object) -> None:
-    other = PolynomialMap(sp.symbols("u v w"), sp.symbols("u v w"))
+    other = PolynomialMap.identity(sp.symbols("u v w"))
 
     with pytest.raises(ValueError, match="different rings"):
         Transposition(ring, 0, 1).apply_to(other)
@@ -309,7 +309,7 @@ def test_composition_concatenates(ring: object) -> None:
 
 
 def test_factors_must_share_a_ring(ring: object) -> None:
-    other = over_field(PolynomialMap(sp.symbols("u v w"), sp.symbols("u v w"))).ring
+    other = over_field(PolynomialMap.identity(sp.symbols("u v w"))).ring
 
     with pytest.raises(ValueError, match="same ring"):
         LinearAutomorphism([Transposition(ring, 0, 1), Transposition(other, 0, 1)])

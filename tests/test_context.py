@@ -19,11 +19,12 @@ from kellermap import (
     IndexedVariableFactory,
     PolynomialMap,
     ReductionContext,
+    examples,
 )
 
 x1, x2, x3 = sp.symbols("x1 x2 x3")
 
-IDENTITY = PolynomialMap((x1, x2, x3), (x1, x2, x3))
+IDENTITY = PolynomialMap.identity((x1, x2, x3))
 RING = IDENTITY.ring
 
 
@@ -259,7 +260,7 @@ def test_a_context_names_the_variables_of_a_step(
     from kellermap import over_field
     from kellermap.bcw import BCWStep, Fresh
 
-    source = over_field(PolynomialMap((x1, x2, x3), (x1 + x2**2 * x3**2, x2, x3)))
+    source = over_field(examples.factorable_shear())
     fresh = context.variables(source.ring, 2)
     step = BCWStep.build(source, 0, Fresh(x2**2, fresh[0]), Fresh(x3**2, fresh[1]))
 
@@ -272,7 +273,7 @@ def test_the_context_names_a_whole_chain(context: ReductionContext) -> None:
     """Drei Schritte, sechs Variablen, und keine Luecke dazwischen."""
     from kellermap import over_field
 
-    current = over_field(PolynomialMap((x1, x2, x3), (x1, x2, x3)))
+    current = over_field(PolynomialMap.identity((x1, x2, x3)))
     allocated: tuple[sp.Symbol, ...] = ()
     for _ in range(3):
         fresh = context.variables(current.ring, 2)

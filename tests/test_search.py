@@ -20,6 +20,7 @@ from kellermap import (
     conjugate,
     diagonal_matching,
     enumerate_candidates,
+    examples,
     over_field,
     search,
 )
@@ -286,7 +287,7 @@ def test_conjugation_preserves_what_a_certificate_claims() -> None:
     Deshalb ist SEA-5 mit einem ausgewiesenen ``D`` noch eine Aussage ueber
     dieselbe Abbildung und nicht ueber eine andere.
     """
-    source = over_field(PolynomialMap((x, y), (x + y**3, y)))
+    source = over_field(examples.cubic_shear())
 
     moved = conjugate(source, (1, -1))
 

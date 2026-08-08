@@ -24,22 +24,14 @@ from kellermap import (
     PolynomialMap,
     Transposition,
     VerificationError,
+    examples,
     over_field,
 )
 from kellermap.reduction import LinearStep, Provenance, Reduction, Step
 
 x1, x2, x3 = sp.symbols("x1 x2 x3")
 
-ALPOEGE = over_field(
-    PolynomialMap(
-        (x1, x2, x3),
-        (
-            (1 + x1 * x2) ** 3 * x3 + x2**2 * (1 + x1 * x2) * (4 + 3 * x1 * x2),
-            x2 + 3 * x1 * (1 + x1 * x2) ** 2 * x3 + 3 * x1 * x2**2 * (4 + 3 * x1 * x2),
-            2 * x1 - 3 * x1**2 * x2 - x1**3 * x3,
-        ),
-    )
-)
+ALPOEGE = over_field(examples.alpoege())
 
 ALPOEGE_POINTS = (
     (0, 0, sp.Rational(-1, 4)),
@@ -123,7 +115,7 @@ def test_normalize_needs_the_origin_to_be_fixed() -> None:
     F(0) = 0 lieferte es bisher einen Schritt, der an seiner eigenen
     Verifikation scheiterte.
     """
-    affine = over_field(PolynomialMap((x1, x2, x3), (x1 + 1, x2, x3)))
+    affine = over_field(examples.unit_translation())
 
     assert not affine.is_in_MA(0)
 
@@ -137,7 +129,7 @@ def test_LIN6_a_normalizing_claim_over_a_shifted_source() -> None:  # noqa: N802
     Bisher meldete LIN-6 nur, dass das Ziel nicht in MA^1 liegt -- richtig,
     aber die Ursache steht eine Stufe frueher.
     """
-    affine = over_field(PolynomialMap((x1, x2, x3), (x1 + 1, x2, x3)))
+    affine = over_field(examples.unit_translation())
     identity = LinearAutomorphism([Transposition(affine.ring, 0, 1)])
 
     with pytest.raises(VerificationError) as failure:

@@ -39,7 +39,11 @@ from __future__ import annotations
 
 import sympy as sp
 
+from .collision import Collision
 from .polynomial_map import PolynomialMap
+
+R = sp.Rational
+"""Short name for the rational coefficients the reference reductions carry."""
 
 # --------------------------------------------------------------------------
 # Two coordinates
@@ -214,4 +218,252 @@ def product_shear() -> PolynomialMap:
 
     return PolynomialMap(
         names, (names[0] - names[2] * names[3], names[1], names[2], names[3])
+    )
+
+
+# --------------------------------------------------------------------------
+# The reference reductions
+# --------------------------------------------------------------------------
+
+
+def bcw17() -> PolynomialMap:
+    """Return the seventeen-dimensional cubic reduction of Alpoege's map.
+
+    Seven Proposition (3.1) steps, each introducing two coordinates, so its
+    factors can be read off the components pairwise. Determinant ``1``: the
+    chain begins with the linear normalization, which divides out the ``-2`` of
+    the map it reduces.
+
+    Not output of this library: the components are the maintainer's own hand
+    computation, checked against ``scripts/reconstruct_bcw17.py``. External to
+    the library and not to the project, which is the distinction
+    ``docs/references.md`` records and BCW-9 turns on.
+    """
+    names = sp.symbols("x1:18")
+    _1, _2, _3, _4, _5, _6, _7, _8, _9, _10, _11, _12, _13, _14, _15, _16, _17 = names
+    return PolynomialMap(
+        names,
+        (
+            -3 * _1**2 * _2 / 2 - _1**2 * _4 + _1 * _3 * _5 / 2 + _1 - _4 * _5,
+            12 * _1 * _2**2
+            - _1 * _2 * _9
+            - 6 * _1 * _3 * _8
+            + 3 * _1 * _3
+            + 3 * _1 * _7 * _8
+            - 3 * _2**2 * _6
+            + _2
+            + _3 * _6 * _8
+            - _6 * _7
+            - _8 * _9,
+            -3 * _1 * _10 * _3
+            + _1 * _12 * _3
+            - _1 * _15 * _2
+            + 3 * _1 * _2 * _3
+            - _10 * _11
+            + _10 * _13 * _14
+            - 7 * _10 * _2
+            + _11 * _14 * _2
+            - _12 * _13
+            + 3 * _12 * _2
+            - _14 * _15
+            + 4 * _2**2
+            + _3,
+            -_1 * _3 / 2 + _4,
+            _1**2 + _5,
+            3 * _1**2 * _2 + _6,
+            _1 * _2 * _3 + 3 * _2**2 + _7,
+            _1 * _2 + _8,
+            6 * _1 * _3 - 3 * _1 * _7 - _3 * _6 + _9,
+            _1 * _2**2 + _10,
+            -(_1**2) * _16
+            + 3 * _1 * _2**2
+            + 3 * _1 * _3
+            + _11
+            - _16 * _17
+            - _17 * _2 * _3
+            + 7 * _2,
+            _1 * _10 * _2 + _12,
+            -_1 * _3 + _13 - 3 * _2,
+            _1 * _2 + _14,
+            -_10 * _13 - _11 * _2 + _15,
+            _16 + _2 * _3,
+            _1**2 + _17,
+        ),
+    )
+
+
+def alpoege15() -> PolynomialMap:
+    """Return the fifteen-dimensional cubic reduction of Alpoege's map.
+
+    Seven steps as well, two of which reuse a carrier and so introduce one
+    coordinate rather than two -- which is what takes it to fifteen instead of
+    seventeen. Its seventh step rewrites component 10, so the value that
+    coordinate was introduced with is not the value it carries here.
+
+    Same provenance as ``bcw17``, checked against
+    ``scripts/reconstruct_alpoege15.py``.
+    """
+    names = sp.symbols("x1:16")
+    _1, _2, _3, _4, _5, _6, _7, _8, _9, _10, _11, _12, _13, _14, _15 = names
+    return PolynomialMap(
+        names,
+        (
+            -3 * _1**2 * _2 / 2 - _1**2 * _4 + _1 * _3 * _5 / 2 + _1 - _4 * _5,
+            12 * _1 * _2**2
+            - _1 * _2 * _9
+            - 6 * _1 * _3 * _8
+            + 3 * _1 * _3
+            + 3 * _1 * _7 * _8
+            - 3 * _2**2 * _6
+            + _2
+            + _3 * _6 * _8
+            - _6 * _7
+            - _8 * _9,
+            -3 * _1 * _10 * _3
+            + _1 * _12 * _3
+            - _1 * _14 * _2
+            + 3 * _1 * _2 * _3
+            - _10 * _11
+            + _10 * _13 * _8
+            - 7 * _10 * _2
+            + _11 * _2 * _8
+            - _12 * _13
+            + 3 * _12 * _2
+            - _14 * _8
+            + 4 * _2**2
+            + _3,
+            -_1 * _3 / 2 + _4,
+            _1**2 + _5,
+            3 * _1**2 * _2 + _6,
+            _1 * _2 * _3 + 3 * _2**2 + _7,
+            _1 * _2 + _8,
+            6 * _1 * _3 - 3 * _1 * _7 - _3 * _6 + _9,
+            _1 * _2**2 + _10,
+            -(_1**2) * _15
+            + 3 * _1 * _2**2
+            + 3 * _1 * _3
+            + _11
+            - _15 * _5
+            - _2 * _3 * _5
+            + 7 * _2,
+            _1 * _10 * _2 + _12,
+            -_1 * _3 + _13 - 3 * _2,
+            -_10 * _13 - _11 * _2 + _14,
+            _15 + _2 * _3,
+        ),
+    )
+
+
+# --------------------------------------------------------------------------
+# The collisions these maps carry
+# --------------------------------------------------------------------------
+
+
+def alpoege_collision() -> Collision:
+    """Return the three points Alpoege's map sends to one image.
+
+    Somebody else's mathematics, like the map itself. The points are the
+    datum; the image is computed from them, which is what ``Collision.at``
+    does and what makes it a claim this library can be wrong about.
+    """
+    return Collision.at(
+        alpoege(),
+        (
+            (0, 0, R(-1, 4)),
+            (1, R(-3, 2), R(13, 2)),
+            (-1, R(3, 2), R(13, 2)),
+        ),
+    )
+
+
+def bcw17_collision() -> Collision:
+    """Return the collision of ``bcw17``, Alpoege's carried to seventeen
+    coordinates."""
+    return Collision(
+        (
+            (0, 0, R(-1, 4), 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0),
+            (
+                1,
+                R(-3, 2),
+                R(13, 2),
+                R(13, 4),
+                -1,
+                R(9, 2),
+                3,
+                R(3, 2),
+                R(-3, 4),
+                R(-9, 4),
+                -6,
+                R(-27, 8),
+                2,
+                R(3, 2),
+                R(9, 2),
+                R(39, 4),
+                -1,
+            ),
+            (
+                -1,
+                R(3, 2),
+                R(13, 2),
+                R(-13, 4),
+                -1,
+                R(-9, 2),
+                3,
+                R(3, 2),
+                R(3, 4),
+                R(9, 4),
+                6,
+                R(27, 8),
+                -2,
+                R(3, 2),
+                R(9, 2),
+                R(-39, 4),
+                -1,
+            ),
+        ),
+        tuple(sp.Matrix([0, 0, R(-1, 4)] + [0] * 14)),
+    )
+
+
+def alpoege15_collision() -> Collision:
+    """Return the collision of ``alpoege15``."""
+    return Collision(
+        (
+            (0, 0, R(-1, 4)) + (0,) * 12,
+            (
+                1,
+                R(-3, 2),
+                R(13, 2),
+                R(13, 4),
+                -1,
+                R(9, 2),
+                3,
+                R(3, 2),
+                R(-3, 4),
+                R(-9, 4),
+                -6,
+                R(-27, 8),
+                2,
+                R(9, 2),
+                R(39, 4),
+            ),
+            (
+                -1,
+                R(3, 2),
+                R(13, 2),
+                R(-13, 4),
+                -1,
+                R(-9, 2),
+                3,
+                R(3, 2),
+                R(3, 4),
+                R(9, 4),
+                6,
+                R(27, 8),
+                -2,
+                R(9, 2),
+                R(-39, 4),
+            ),
+        ),
+        (0, 0, R(-1, 4)) + (0,) * 12,
     )

@@ -78,22 +78,28 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from _common import describe, flips, read, sanity  # noqa: E402
 
-from kellermap import PolynomialMap, Reduction, over_field, search  # noqa: E402
+from kellermap import (  # noqa: E402
+    PolynomialMap,
+    Reduction,
+    examples,
+    over_field,
+    search,
+)
 
 
 def setup() -> tuple[PolynomialMap, PolynomialMap, dict[sp.Symbol, sp.Expr]]:
     """Return the source, the published target, and the value pool."""
-    fifteen, nineteen = read("test_alpoege15"), read("test_alpoege19")
+    data = read("data")
 
-    published = PolynomialMap(nineteen.VARIABLES, nineteen.COMPONENTS)
-    carriers = nineteen.VARIABLES[3:]
-    rename = dict(zip(fifteen.ALPOEGE_VARIABLES, nineteen.VARIABLES[:3], strict=True))
+    published = data.ALPOEGE19
+    carriers = published.variables[3:]
+    alpoege = examples.alpoege()
+    rename = dict(zip(alpoege.variables, published.variables[:3], strict=True))
     source = over_field(
         PolynomialMap(
-            nineteen.VARIABLES[:3],
+            published.variables[:3],
             tuple(
-                sp.expand(component.subs(rename))
-                for component in fifteen.ALPOEGE_COMPONENTS
+                sp.expand(component.subs(rename)) for component in alpoege.components
             ),
         )
     )
@@ -104,7 +110,7 @@ def setup() -> tuple[PolynomialMap, PolynomialMap, dict[sp.Symbol, sp.Expr]]:
     }
     # The published component of w2 is the residue of a later step, not an
     # introduced value. See tests/test_alpoege19.py.
-    pool[carriers[1]] = nineteen.W2_INTRODUCED
+    pool[carriers[1]] = data.W2_INTRODUCED
 
     return source, published, pool
 

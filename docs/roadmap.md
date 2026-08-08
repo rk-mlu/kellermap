@@ -616,7 +616,7 @@ for the duration and moves to `0.4.0rc1` in one step at the end.
 | 5 | 0.3.5 | SEA-8 to SEA-10, and the measurement behind them | yes |
 | 6 | 0.3.6 | Candidate enumeration | yes |
 | 7 | 0.3.7 | The forward search against a given target | yes |
-| 8 | 0.3.8 | `examples.py` and `tests/data.py`: fixed data by provenance | no |
+| 8 | 0.3.8 | `examples.py` and `tests/data.py`: fixed data by provenance | yes |
 | 9 | 0.3.9 | The backward search: peeling a chain off a target | no |
 | 10 | 0.3.10 | `alpoege19` as a verified `Reduction` | no |
 | 11 | 0.3.11 | Documentation and release | no |

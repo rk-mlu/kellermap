@@ -46,108 +46,26 @@ from kellermap import (
     ReductionContext,
     VerificationError,
     enumerate_candidates,
+    examples,
     over_field,
 )
 from kellermap.bcw import BCWStep, Fresh
 from kellermap.reduction import LinearStep
 
-X = sp.symbols("x1:18")
+BCW17 = examples.bcw17()
+X = BCW17.variables
+COMPONENTS = BCW17.components
+BCW17_COLLISION = examples.bcw17_collision().points
+BCW17_IMAGE = sp.Matrix(examples.bcw17_collision().image)
+ALPOEGE_COLLISION = examples.alpoege_collision().points
+
 _1, _2, _3, _4, _5, _6, _7, _8, _9, _10, _11, _12, _13, _14, _15, _16, _17 = X
 
-COMPONENTS = (
-    -3 * _1**2 * _2 / 2 - _1**2 * _4 + _1 * _3 * _5 / 2 + _1 - _4 * _5,
-    12 * _1 * _2**2
-    - _1 * _2 * _9
-    - 6 * _1 * _3 * _8
-    + 3 * _1 * _3
-    + 3 * _1 * _7 * _8
-    - 3 * _2**2 * _6
-    + _2
-    + _3 * _6 * _8
-    - _6 * _7
-    - _8 * _9,
-    -3 * _1 * _10 * _3
-    + _1 * _12 * _3
-    - _1 * _15 * _2
-    + 3 * _1 * _2 * _3
-    - _10 * _11
-    + _10 * _13 * _14
-    - 7 * _10 * _2
-    + _11 * _14 * _2
-    - _12 * _13
-    + 3 * _12 * _2
-    - _14 * _15
-    + 4 * _2**2
-    + _3,
-    -_1 * _3 / 2 + _4,
-    _1**2 + _5,
-    3 * _1**2 * _2 + _6,
-    _1 * _2 * _3 + 3 * _2**2 + _7,
-    _1 * _2 + _8,
-    6 * _1 * _3 - 3 * _1 * _7 - _3 * _6 + _9,
-    _1 * _2**2 + _10,
-    -(_1**2) * _16
-    + 3 * _1 * _2**2
-    + 3 * _1 * _3
-    + _11
-    - _16 * _17
-    - _17 * _2 * _3
-    + 7 * _2,
-    _1 * _10 * _2 + _12,
-    -_1 * _3 + _13 - 3 * _2,
-    _1 * _2 + _14,
-    -_10 * _13 - _11 * _2 + _15,
-    _16 + _2 * _3,
-    _1**2 + _17,
-)
 
 R = sp.Rational
 
 # Die drei Urbilder entstehen aus Alpoeges rationaler Kollision, indem die
 # Stabilisierungsvariablen x4..x17 topologisch nachgezogen werden.
-BCW17_COLLISION = (
-    (0, 0, R(-1, 4), 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0),
-    (
-        1,
-        R(-3, 2),
-        R(13, 2),
-        R(13, 4),
-        -1,
-        R(9, 2),
-        3,
-        R(3, 2),
-        R(-3, 4),
-        R(-9, 4),
-        -6,
-        R(-27, 8),
-        2,
-        R(3, 2),
-        R(9, 2),
-        R(39, 4),
-        -1,
-    ),
-    (
-        -1,
-        R(3, 2),
-        R(13, 2),
-        R(-13, 4),
-        -1,
-        R(-9, 2),
-        3,
-        R(3, 2),
-        R(3, 4),
-        R(9, 4),
-        6,
-        R(27, 8),
-        -2,
-        R(3, 2),
-        R(9, 2),
-        R(-39, 4),
-        -1,
-    ),
-)
-
-BCW17_IMAGE = sp.Matrix([0, 0, R(-1, 4)] + [0] * 14)
 
 
 # Die 14 Stabilisierungskoordinaten x4..x17 aus BCW Proposition (3.1). Ihr
@@ -295,19 +213,6 @@ def test_bcw17_determinant_strategies_agree(bcw17: PolynomialMap) -> None:
 # Ableitung: die Kette von Alpoege hierher
 # --------------------------------------------------------------------------
 
-ALPOEGE_VARIABLES = (_1, _2, _3)
-
-ALPOEGE_COMPONENTS = (
-    (1 + _1 * _2) ** 3 * _3 + _2**2 * (1 + _1 * _2) * (4 + 3 * _1 * _2),
-    _2 + 3 * _1 * (1 + _1 * _2) ** 2 * _3 + 3 * _1 * _2**2 * (4 + 3 * _1 * _2),
-    2 * _1 - 3 * _1**2 * _2 - _1**3 * _3,
-)
-
-ALPOEGE_COLLISION = (
-    (0, 0, R(-1, 4)),
-    (1, R(-3, 2), R(13, 2)),
-    (-1, R(3, 2), R(13, 2)),
-)
 
 # Die sieben Anwendungen von Proposition (3.1): Zielkomponente (nullbasiert),
 # die beiden Faktoren, und die EA-Stufe, die H erreicht. Die frischen
@@ -328,7 +233,7 @@ STEPS = (
 @pytest.fixture(scope="module")
 def alpoege() -> PolynomialMap:
     """Ueber QQ, weil die Normalisierung sofort einen Kehrwert braucht."""
-    return over_field(PolynomialMap(ALPOEGE_VARIABLES, ALPOEGE_COMPONENTS))
+    return over_field(examples.alpoege())
 
 
 @pytest.fixture(scope="module")

@@ -46,7 +46,13 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from _common import describe, flips, read, sanity  # noqa: E402
 
-from kellermap import LinearStep, PolynomialMap, over_field, search  # noqa: E402
+from kellermap import (  # noqa: E402
+    LinearStep,
+    PolynomialMap,
+    examples,
+    over_field,
+    search,
+)
 
 
 def setup(
@@ -58,21 +64,20 @@ def setup(
     where the recorded one starts. That differs from the nineteen-dimensional
     case, whose published linear part is Alpoege's own.
     """
-    data = read("test_alpoege15")
-
-    target = PolynomialMap(data.X, data.COMPONENTS)
-    source = LinearStep.normalize(
-        over_field(PolynomialMap(data.ALPOEGE_VARIABLES, data.ALPOEGE_COMPONENTS))
-    ).target
+    target = examples.alpoege15()
+    source = LinearStep.normalize(over_field(examples.alpoege())).target
 
     pool = {
-        data.X[index]: sp.expand(data.COMPONENTS[index] - data.X[index])
+        target.variables[index]: sp.expand(
+            target.components[index] - target.variables[index]
+        )
         for index in target.carrier_indices
     }
     if complete:
         # The value coordinate 10 was introduced with, before step seven of the
-        # recorded chain rewrote its component.
-        pool[data.X[10]] = sp.expand(data.STEPS[3][2][1])
+        # recorded chain rewrote its component. The chain itself is not shipped,
+        # so this one value is read from the test module that records it.
+        pool[target.variables[10]] = sp.expand(read("test_alpoege15").STEPS[3][2][1])
 
     return source, target, pool
 

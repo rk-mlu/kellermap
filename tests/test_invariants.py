@@ -17,6 +17,7 @@ from kellermap import (
     ElementaryFactor,
     IndexedVariableFactory,
     PolynomialMap,
+    examples,
 )
 
 # Eine eigene Namenspolitik fuer die Stabilisierungsvariablen.
@@ -24,9 +25,9 @@ CARRIER = IndexedVariableFactory(prefix="u")
 
 x, y = sp.symbols("x y")
 
-LINEAR = PolynomialMap((x, y), (x + y, x - y))
-TRIANGULAR = PolynomialMap((x, y), (x + y**2, y))
-KELLER = PolynomialMap((x, y), (x + y**3, y))
+LINEAR = examples.sum_and_difference()
+TRIANGULAR = examples.quadratic_shear()
+KELLER = examples.cubic_shear()
 NONCONSTANT = PolynomialMap((x, y), (x**2, y))
 QUADRATIC = PolynomialMap((x, y), (x * y + 1, x - y**2))
 
@@ -72,8 +73,8 @@ def test_elementary_automorphisms_have_determinant_one() -> None:
     """
     X1, X2, X3, X4 = sp.symbols("X1 X2 X3 X4")
 
-    G = PolynomialMap((X1, X2, X3, X4), (X1 - X3 * X4, X2, X3, X4))
-    H = PolynomialMap((X1, X2, X3, X4), (X1, X2, X3 + X2**2, X4 + X2**2))
+    G = examples.product_shear()
+    H = examples.paired_shear()
 
     assert G.determinant() == 1
     assert H.determinant() == 1
@@ -177,7 +178,7 @@ def test_stabilization_is_a_monoid_homomorphism(
 
 
 def test_stabilization_of_the_identity_is_the_identity() -> None:
-    identity = PolynomialMap((x, y), (x, y))
+    identity = PolynomialMap.identity((x, y))
     extended = identity.extend(2)
 
     assert extended.components == extended.variables
@@ -194,8 +195,8 @@ def test_MA_is_closed_under_composition() -> None:  # noqa: N802
     BCW komponieren in Proposition (3.1) wiederholt Elemente aus EA^1; das
     ist nur zulaessig, weil die Filtrierungsstufe dabei erhalten bleibt.
     """
-    A = PolynomialMap((x, y), (x + y**3, y))
-    B = PolynomialMap((x, y), (x, y + x**2))
+    A = examples.cubic_shear()
+    B = examples.lower_shear()
 
     assert A.is_in_MA(1)
     assert B.is_in_MA(1)
@@ -205,7 +206,7 @@ def test_MA_is_closed_under_composition() -> None:  # noqa: N802
 def test_composition_does_not_lower_the_filtration_degree() -> None:
     """ord(F o G - X) >= min(ord(F - X), ord(G - X))."""
     A = PolynomialMap((x, y), (x + y**4, y))
-    B = PolynomialMap((x, y), (x, y + x**2))
+    B = examples.lower_shear()
 
     assert A.compose(B).filtration_degree() >= min(
         A.filtration_degree(), B.filtration_degree()
@@ -248,7 +249,7 @@ BCW_F = PolynomialMap((X1, X2), (X1 + X2**4, X2))
 BCW_P = X2**2
 BCW_Q = X2**2
 
-BCW_G = PolynomialMap((X1, X2, X3, X4), (X1 - X3 * X4, X2, X3, X4))
+BCW_G = examples.product_shear()
 BCW_H = PolynomialMap((X1, X2, X3, X4), (X1, X2, X3 + BCW_P, X4 + BCW_Q))
 
 

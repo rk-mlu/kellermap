@@ -23,12 +23,19 @@ def named() -> list[tuple[str, object]]:
     )
 
 
-NAMES = [name for name, _ in named()]
+ALL = [name for name, _ in named()]
+NAMES = [name for name in ALL if isinstance(getattr(examples, name)(), PolynomialMap)]
+COLLISIONS = [name for name in ALL if name not in NAMES]
 
 
 def test_the_module_holds_what_it_says_it_holds() -> None:
-    """Dreizehn, so viele wie die Zaehlung ergeben hat."""
-    assert len(NAMES) == 13
+    """Dreizehn wiederholte kleine Abbildungen, dazu die beiden Reduktionen.
+
+    Und drei Kollisionen, die keine Abbildungen sind und deshalb von den
+    Kriterien unten nicht erfasst werden.
+    """
+    assert len(NAMES) == 15
+    assert len(COLLISIONS) == 3
 
 
 @pytest.mark.parametrize("name", NAMES)
@@ -49,7 +56,7 @@ def test_every_example_is_a_polynomial_map(name: str) -> None:
     assert isinstance(getattr(examples, name)(), PolynomialMap)
 
 
-@pytest.mark.parametrize("name", NAMES)
+@pytest.mark.parametrize("name", NAMES + COLLISIONS)
 def test_every_example_is_a_pure_function(name: str) -> None:
     """Zwei Aufrufe geben gleiche Abbildungen und keine geteilten Objekte.
 
@@ -59,10 +66,10 @@ def test_every_example_is_a_pure_function(name: str) -> None:
     first, second = getattr(examples, name)(), getattr(examples, name)()
 
     assert first == second
-    assert first.ring is not second.ring
+    assert first is not second
 
 
-@pytest.mark.parametrize("name", NAMES)
+@pytest.mark.parametrize("name", ALL)
 def test_every_example_is_documented(name: str) -> None:
     """Der Docstring nennt die Abbildung; ohne ihn ist der Name eine Vermutung."""
     assert (getattr(examples, name).__doc__ or "").strip()
@@ -134,3 +141,42 @@ def test_not_every_example_has_determinant_one() -> None:
     assert determinants != {1}
     assert examples.sum_and_difference().determinant() == -2
     assert examples.doubled_shear().determinant() == 2
+
+
+# --------------------------------------------------------------------------
+# Die Referenzreduktionen und ihre Kollisionen
+# --------------------------------------------------------------------------
+
+
+@pytest.mark.parametrize(
+    ("map_name", "collision_name"),
+    [
+        ("alpoege", "alpoege_collision"),
+        ("bcw17", "bcw17_collision"),
+        ("alpoege15", "alpoege15_collision"),
+    ],
+)
+def test_each_collision_belongs_to_its_map(map_name: str, collision_name: str) -> None:
+    """Sonst waere die Zusammengehoerigkeit nur eine Namensaehnlichkeit."""
+    collision = getattr(examples, collision_name)()
+
+    assert collision.verify(getattr(examples, map_name)()) is None
+    assert len(collision.points) == 3
+
+
+def test_the_reference_reductions_are_cubic_and_normalized() -> None:
+    """Beide beginnen mit der linearen Normalisierung, also Determinante eins."""
+    seventeen, fifteen = examples.bcw17(), examples.alpoege15()
+
+    assert (seventeen.dimension, seventeen.degree()) == (17, 3)
+    assert (fifteen.dimension, fifteen.degree()) == (15, 3)
+    assert seventeen.determinant() == fifteen.determinant() == 1
+
+
+def test_the_reductions_reduce_alpoeges_map() -> None:
+    """Der Grad faellt von sieben auf drei, die Dimension steigt."""
+    source = examples.alpoege()
+
+    assert source.degree() == 7
+    assert examples.bcw17().degree() == examples.alpoege15().degree() == 3
+    assert source.dimension < examples.alpoege15().dimension

@@ -25,6 +25,7 @@ from kellermap import (
     Step,
     TranslationStep,
     VerificationError,
+    examples,
     over_field,
 )
 
@@ -35,7 +36,7 @@ T = sp.Symbol("T")
 @pytest.fixture
 def keller() -> PolynomialMap:
     """Eine Keller-Abbildung in ``MA^1``, die den Ursprung festhaelt."""
-    return over_field(PolynomialMap((x, y), (x + y**2, y)))
+    return over_field(examples.quadratic_shear())
 
 
 @pytest.fixture
@@ -115,7 +116,7 @@ def test_a_shift_involving_a_generator_is_refused(keller: PolynomialMap) -> None
 
 def test_a_shift_outside_the_domain_is_refused() -> None:
     """Ueber ``ZZ`` ist ``1/2`` keine Konstante des Rings."""
-    integral = PolynomialMap((x, y), (x + y**2, y))
+    integral = examples.quadratic_shear()
 
     with pytest.raises(ValueError, match="coefficient domain"):
         TranslationStep.build(integral, (sp.Rational(1, 2), 0))
@@ -127,7 +128,7 @@ def test_a_domain_parameter_is_admitted() -> None:
     Dieselbe Unterscheidung wie in COL-2 und BCW-3: Parameter des
     Koeffizientenbereichs sind keine Variablen der Abbildung.
     """
-    parametric = PolynomialMap((x, y), (x + T * y**2, y))
+    parametric = examples.parametric_shear()
     step = TranslationStep.build(parametric, (T, 1))
 
     assert step.shift == (T, 1)
