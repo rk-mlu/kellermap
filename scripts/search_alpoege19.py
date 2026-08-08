@@ -9,12 +9,14 @@ left out of ``make check``.
 
 What it does:
 
-* builds Alpoege's three-dimensional map as the source, in the coordinates the
-  published map uses -- the published map's linear part is Alpoege's own, so
-  the chain starts at the unnormalized map and not at ``LinearStep.normalize``;
+* reads Alpoege's three-dimensional map and the published nineteen-dimensional
+  one from the test modules that already hold them, rather than copying them;
+* uses Alpoege's map unnormalized, because the published map's linear part is
+  Alpoege's own, so the chain does not begin with ``LinearStep.normalize``;
 * builds the value pool from the published carriers, with the value of ``w2``
   replaced by the one it was introduced with;
-* searches with a doubling budget, printing what each round cost;
+* searches with a doubling budget, printing what each round cost and how far
+  it got;
 * on success prints the chain step by step, together with the diagonal ``D``
   of SEA-5, in a form that can be read into ``tests/test_alpoege19.py``.
 
@@ -34,7 +36,21 @@ every later round would search the same space.
 
 Run with::
 
-    python scripts/search_alpoege19.py [start_budget] [max_budget]
+    python scripts/search_alpoege19.py [start_budget] [max_budget] [spare]
+
+``spare`` is the number of steps a chain may take that introduce no generator,
+and it bounds the length of a chain: every other step consumes a name, so a
+chain has at most ``len(pool) + spare`` steps. One is the arithmetic minimum
+here, since the dimension grows by sixteen over seventeen steps. Two is the
+library's default and doubles a branch there is no reason to need yet, so this
+script asks for one unless told otherwise.
+
+A first round below 68425 maps is wasted. The run of 8 August 2026 exhausted a
+strictly smaller space at that count -- the search then stopped at the last
+introduction, so no chain could *end* with a step that introduces nothing, and
+this map needs at least one. The space searched now contains that one and
+cannot be smaller. The episode is also why an exhausted space is reported
+together with the rules that defined it.
 
 The exit status is 0 if a chain was found, 2 if the space was exhausted
 without one, and 1 if the budget ran out first. The three are different
@@ -44,82 +60,72 @@ does not exist, and it says it about the space this search covers.
 
 from __future__ import annotations
 
+import importlib.util
 import sys
 import time
+from pathlib import Path
+from types import ModuleType
 
 import sympy as sp
 
-from kellermap import (
-    PolynomialMap,
-    Reduction,
-    conjugate,
-    over_field,
-    search,
-)
+from kellermap import PolynomialMap, Reduction, conjugate, over_field, search
 from kellermap.bcw import Carried
 
-x, y, z = sp.symbols("x y z")
-w = sp.symbols("w1:17")
-VARIABLES = (x, y, z, *w)
-
-# Alpoege's map, in the coordinates of the published one. The published map's
-# linear part is this map's own, so no normalization comes first.
-SOURCE_COMPONENTS = (
-    x**3 * y**3 * z
-    + 3 * x**2 * y**4
-    + 3 * x**2 * y**2 * z
-    + 7 * x * y**3
-    + 3 * x * y * z
-    + 4 * y**2
-    + z,
-    3 * x**3 * y**2 * z
-    + 9 * x**2 * y**3
-    + 6 * x**2 * y * z
-    + 12 * x * y**2
-    + 3 * x * z
-    + y,
-    -(x**3) * z - 3 * x**2 * y + 2 * x,
-)
-
-# The sixteen carrier values, read off the published map, with w2 corrected.
-POOL_VALUES = {
-    w[0]: y**2 * z,
-    w[1]: x**3 * y,
-    w[2]: x * y**2,
-    w[3]: y * z,
-    w[4]: x**2 * y,
-    w[5]: w[0] * x,
-    w[6]: y**2,
-    w[7]: w[3] * x,
-    w[8]: x * y,
-    w[9]: w[1] * z,
-    w[10]: w[2] * y,
-    w[11]: w[5] * x,
-    w[12]: x**2,
-    w[13]: w[6] * y,
-    w[14]: w[7] * y,
-    w[15]: x * z,
-}
+ROOT = Path(__file__).resolve().parent.parent
 
 
-def target() -> PolynomialMap:
-    """Return the published map, read from the test module that records it."""
-    import importlib.util
-    from pathlib import Path
+def read(name: str) -> ModuleType:
+    """Return a test module, so that fixed data is read and not copied.
 
-    path = Path(__file__).resolve().parent.parent / "tests" / "test_alpoege19.py"
-    spec = importlib.util.spec_from_file_location("alpoege19_data", path)
-    if spec is None or spec.loader is None:  # pragma: no cover - packaging
-        raise RuntimeError(f"Cannot read the published map from {path}.")
+    Alpoege's map and the published nineteen-dimensional one are already in the
+    repository, with their provenance recorded beside them. A second copy here
+    would add nothing but a way for the two to disagree.
+    """
+    path = ROOT / "tests" / f"{name}.py"
+    spec = importlib.util.spec_from_file_location(f"{name}_data", path)
+    if spec is None or spec.loader is None:
+        raise RuntimeError(f"Cannot read fixed data from {path}.")
 
     module = importlib.util.module_from_spec(spec)
-    sys.path.insert(0, str(path.parent.parent))
+    sys.path.insert(0, str(ROOT))
     spec.loader.exec_module(module)
 
-    return PolynomialMap(module.VARIABLES, module.COMPONENTS)
+    return module
 
 
-def describe(reduction: Reduction, signs: tuple[int, ...]) -> str:
+def setup() -> tuple[PolynomialMap, PolynomialMap, dict[sp.Symbol, sp.Expr]]:
+    """Return the source, the published target, and the value pool."""
+    fifteen, nineteen = read("test_alpoege15"), read("test_alpoege19")
+
+    published = PolynomialMap(nineteen.VARIABLES, nineteen.COMPONENTS)
+    carriers = nineteen.VARIABLES[3:]
+    rename = dict(zip(fifteen.ALPOEGE_VARIABLES, nineteen.VARIABLES[:3], strict=True))
+    source = over_field(
+        PolynomialMap(
+            nineteen.VARIABLES[:3],
+            tuple(
+                sp.expand(component.subs(rename))
+                for component in fifteen.ALPOEGE_COMPONENTS
+            ),
+        )
+    )
+
+    pool = {
+        carrier: sp.expand(published.components[3 + position] - carrier)
+        for position, carrier in enumerate(carriers)
+    }
+    # The published component of w2 is the residue of a later step, not an
+    # introduced value. See tests/test_alpoege19.py.
+    pool[carriers[1]] = nineteen.W2_INTRODUCED
+
+    return source, published, pool
+
+
+def describe(
+    reduction: Reduction,
+    signs: tuple[int, ...],
+    variables: tuple[sp.Symbol, ...],
+) -> str:
     """Return the chain in a form that can be read into a test."""
     lines = ["STEPS = ("]
     for step in reduction.steps:
@@ -134,29 +140,32 @@ def describe(reduction: Reduction, signs: tuple[int, ...]) -> str:
         )
     lines.append(")")
 
-    flipped = [str(v) for v, sign in zip(VARIABLES, signs, strict=True) if sign == -1]
+    flipped = [str(v) for v, sign in zip(variables, signs, strict=True) if sign == -1]
     lines.append("")
     lines.append(f"# D flips: {flipped or 'nothing'}")
 
     return "\n".join(lines)
 
 
-def main(start: int = 500, ceiling: int = 2_000_000) -> int:
-    published = target()
-    source = over_field(PolynomialMap((x, y, z), SOURCE_COMPONENTS))
+def main(start: int = 100_000, ceiling: int = 8_000_000, spare: int = 1) -> int:
+    source, published, pool = setup()
+    corrected = pool[published.variables[4]]
 
     print(f"source: dimension {source.dimension}, degree {source.degree()}")
     print(f"target: dimension {published.dimension}, degree {published.degree()}")
-    print(f"pool:   {len(POOL_VALUES)} values, w2 corrected to {POOL_VALUES[w[1]]}")
+    print(f"pool:   {len(pool)} values, w2 corrected to {corrected}")
+    print(f"spare:  {spare} step(s) may introduce no generator")
     print()
 
     budget = start
+    outcome = None
     while budget <= ceiling:
         began = time.monotonic()
-        outcome = search(source, published, POOL_VALUES, budget=budget)
+        outcome = search(source, published, pool, budget=budget, spare=spare)
         spent = time.monotonic() - began
         print(
             f"budget {budget:>9}: examined {outcome.examined:>9}, "
+            f"deepest {outcome.deepest:>3}, "
             f"exhausted {outcome.exhausted}, {spent:.0f}s"
         )
         sys.stdout.flush()
@@ -172,13 +181,17 @@ def main(start: int = 500, ceiling: int = 2_000_000) -> int:
             reached = outcome.reduction.target.reordered(published.variables)
             print(f"  endpoint   {conjugate(reached, outcome.signs) == published}")
             print()
-            print(describe(outcome.reduction, outcome.signs))
+            print(describe(outcome.reduction, outcome.signs, published.variables))
             return 0
 
         if outcome.exhausted:
             print()
-            print("The space this search covers holds no chain, under SEA-8, SEA-10")
-            print("and SEA-12. That is not a statement that none exists; see SEA-6.")
+            print("The space this search covers holds no chain. The rules that")
+            print(f"defined it: spare={spare}; degrees do not rise; the dimension")
+            print("does not pass the target's; anchors come from the pool; and")
+            print("co-factors are parts of the division of the displacement.")
+            print(f"The longest chain it reached was {outcome.deepest} steps.")
+            print("That is not a statement that no chain exists; see SEA-6.")
             return 2
 
         budget *= 2
@@ -186,10 +199,12 @@ def main(start: int = 500, ceiling: int = 2_000_000) -> int:
     print()
     print(f"No chain within {ceiling} maps. The budget ran out, so this says less")
     print("than an exhausted space would: the search did not finish looking.")
+    if outcome is not None:
+        print(f"The longest chain it reached was {outcome.deepest} steps.")
 
     return 1
 
 
 if __name__ == "__main__":
-    arguments = [int(value) for value in sys.argv[1:3]]
+    arguments = [int(value) for value in sys.argv[1:4]]
     raise SystemExit(main(*arguments))

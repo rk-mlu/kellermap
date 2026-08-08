@@ -365,6 +365,12 @@ class SearchOutcome:
         than absorbed.
     examined
         How many maps the search looked at.
+    deepest
+        The greatest number of steps any chain reached. On a negative result it
+        is the only thing that says what was searched rather than how much, and
+        a run that never gets past a handful of steps is reporting something
+        different from one that reaches the last name and fails at the
+        endpoint.
     exhausted
         Whether the space the search covers was exhausted. ``False`` means the
         budget ran out first, and then a negative result says even less than
@@ -374,6 +380,7 @@ class SearchOutcome:
     reduction: Reduction | None
     signs: tuple[int, ...] | None
     examined: int
+    deepest: int
     exhausted: bool
 
 
@@ -518,6 +525,7 @@ def search(
     pool: Mapping[sp.Symbol, sp.Expr],
     *,
     budget: int = 20000,
+    spare: int = 2,
     selection_limit: int = 8,
 ) -> SearchOutcome:
     """Look for a chain of ``BCWStep`` from ``source`` to ``target``.
@@ -535,7 +543,18 @@ def search(
     * the degree never rises along a chain, which holds for both reference
       reductions and is what makes a chain converge on a cubic target;
     * the dimension never passes the target's;
+    * at most ``spare`` steps introduce no generator at all;
     * at most ``budget`` maps are examined.
+
+    ``spare`` is what bounds the length of a chain. Every other step consumes a
+    name, so a chain has at most ``len(pool) + spare`` steps. A step that
+    introduces nothing reuses two coordinates that already carry their factors;
+    the published nineteen-dimensional map needs at least one, because its
+    dimension grows by sixteen over seventeen steps, and its `w2` component is
+    the residue of exactly such a step. Such a step may also come *after* the
+    last generator has been introduced, so reaching the target is tried
+    whenever every name is spent and the walk continues afterwards if any spare
+    step is left.
 
     The moves out of a map are tried in a fixed order, lower degree and fewer
     terms first. Ordering discards nothing; it decides which chain is found
@@ -550,19 +569,28 @@ def search(
     names = tuple(pool)
     values = {name: sp.expand(pool[name]) for name in names}
     remaining = [budget]
+    deepest = [0]
     order = target.variables
 
     def walk(
         current: PolynomialMap,
         used: frozenset[sp.Symbol],
         steps: tuple[BCWStep, ...],
+        spare: int,
     ) -> SearchOutcome | None:
         if remaining[0] <= 0:
             return None
         remaining[0] -= 1
+        deepest[0] = max(deepest[0], len(steps))
 
         if len(used) == len(names):
-            return _finish(current, target, order, steps, budget - remaining[0])
+            reached = _finish(
+                current, target, order, steps, budget - remaining[0], deepest[0]
+            )
+            if reached is not None:
+                return reached
+            if spare <= 0:
+                return None
 
         available = [
             sign * values[name]
@@ -578,6 +606,8 @@ def search(
             assigned = _assign(candidate, current, values, used)
             if assigned is None:
                 continue
+            if not assigned and spare <= 0:
+                continue
 
             step = _extend(current, candidate, assigned)
             if not _admissible(step.target, current, target):
@@ -588,17 +618,24 @@ def search(
         reachable.sort(key=lambda entry: entry[0])
 
         for _, step, assigned in reachable:
-            found = walk(step.target, used | set(assigned), (*steps, step))
+            found = walk(
+                step.target,
+                used | set(assigned),
+                (*steps, step),
+                spare - (0 if assigned else 1),
+            )
             if found is not None:
                 return found
 
         return None
 
-    outcome = walk(source, frozenset(), ())
+    outcome = walk(source, frozenset(), (), spare)
     if outcome is not None:
         return outcome
 
-    return SearchOutcome(None, None, budget - max(remaining[0], 0), remaining[0] > 0)
+    return SearchOutcome(
+        None, None, budget - max(remaining[0], 0), deepest[0], remaining[0] > 0
+    )
 
 
 def _assign(
@@ -691,6 +728,7 @@ def _finish(
     order: tuple[sp.Symbol, ...],
     steps: tuple[BCWStep, ...],
     examined: int,
+    deepest: int,
 ) -> SearchOutcome | None:
     """Check the endpoint, and report the chain with its ``D`` if it matches."""
     if current.dimension != target.dimension:
@@ -700,4 +738,4 @@ def _finish(
     if signs is None:
         return None
 
-    return SearchOutcome(Reduction(steps), signs, examined, False)
+    return SearchOutcome(Reduction(steps), signs, examined, deepest, False)

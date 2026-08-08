@@ -509,3 +509,92 @@ def test_a_step_past_the_target_dimension_is_not_walked(
     assert outcome.reduction is None
     assert outcome.exhausted
     assert target.dimension == with_carrier.dimension + 1
+
+
+# --------------------------------------------------------------------------
+# Schritte, die keinen Generator einfuehren
+# --------------------------------------------------------------------------
+
+
+@pytest.fixture
+def spare_case() -> tuple[PolynomialMap, PolynomialMap]:
+    """Quelle und Ziel einer Kette aus einem einzigen ``m = 0``-Schritt.
+
+    Koordinate 1 traegt ``x**2``, Koordinate 2 traegt ``x**3``, und Komponente
+    0 enthaelt deren Produkt. Der Schritt benutzt beide Traeger wieder und
+    verbraucht keinen Namen.
+    """
+    source = over_field(PolynomialMap((x, y, z), (x + x**5, y + x**2, z + x**3)))
+    target = BCWStep.build(source, 0, Carried(1), Carried(2), 1).target
+
+    return source, target
+
+
+def test_a_chain_may_end_with_a_step_that_introduces_nothing(
+    spare_case: tuple[PolynomialMap, PolynomialMap],
+) -> None:
+    """Der Endpunkt wird geprueft, sobald alle Namen vergeben sind -- und die
+    Suche laeuft danach weiter, solange ein Ersatzschritt uebrig ist.
+
+    Ohne das waere eine Kette unerreichbar, deren letzter Schritt keinen
+    Generator anlegt. Die veroeffentlichte neunzehndimensionale Abbildung
+    braucht mindestens einen solchen Schritt: ihre Dimension waechst um
+    sechzehn ueber siebzehn Schritte.
+    """
+    source, target = spare_case
+
+    outcome = search(source, target, {}, spare=1)
+
+    assert outcome.reduction is not None
+    assert outcome.reduction.verify() is None
+    assert outcome.reduction.target == target
+    assert len(outcome.reduction.steps) == 1
+
+
+def test_without_a_spare_step_that_chain_is_out_of_reach(
+    spare_case: tuple[PolynomialMap, PolynomialMap],
+) -> None:
+    """Negativkontrolle: ``spare`` ist die Schranke fuer die Kettenlaenge.
+
+    Jeder andere Schritt verbraucht einen Namen, also hat eine Kette hoechstens
+    ``len(pool) + spare`` Schritte. Ohne Ersatzschritt ist die Kette hier nicht
+    ungefunden, sondern nicht ausdrueckbar.
+    """
+    source, target = spare_case
+
+    outcome = search(source, target, {}, spare=0)
+
+    assert outcome.reduction is None
+    assert outcome.exhausted
+
+
+def test_a_spare_step_is_refused_mid_chain_as_well(
+    spare_case: tuple[PolynomialMap, PolynomialMap],
+) -> None:
+    """Die Schranke gilt nicht erst am Ende der Kette.
+
+    Hier sind noch Namen offen, also laeuft die Suche weiter, und die
+    ``m = 0``-Zuege werden trotzdem verworfen.
+    """
+    source, target = spare_case
+
+    outcome = search(source, target, {u: x**4}, spare=0)
+
+    assert outcome.reduction is None
+    assert outcome.exhausted
+
+
+def test_the_outcome_says_how_far_a_failed_search_got(two_step: tuple) -> None:
+    """Bei einem Fehlschlag ist das die einzige Angabe zum *Was*.
+
+    Eine Suche, die nie ueber wenige Schritte hinauskommt, berichtet etwas
+    anderes als eine, die den letzten Namen vergibt und am Endpunkt scheitert.
+    """
+    source, target, pool = two_step
+
+    reached = search(source, target, pool)
+    stopped = search(source, target, {u: x, v: x * y**2})
+
+    assert reached.deepest == 1
+    assert stopped.reduction is None
+    assert stopped.deepest == 0
