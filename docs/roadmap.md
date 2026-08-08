@@ -767,8 +767,70 @@ licence and of what an audit can see, not of convenience.
 three-dimensional map, which every chain starts from and which now has a
 citable, licensed presentation; the seventeen- and fifteen-dimensional maps,
 which are the maintainer's own hand computation; and the small maps that are
-currently redefined in `docs/api.md`, `README.md` and half a dozen test modules.
-Each carries a line saying where it came from.
+currently written out in more than one place. Each carries a line saying where
+it came from.
+
+Two criteria decide what goes in, and both are measured rather than judged: a
+map belongs there if it is written out **more than once**, and if it **is a
+Keller map**. The tree holds 119 distinct `PolynomialMap` constructions, 25 of
+them written more than once, and the determinant sorts those 25 as follows.
+
+Repeated and Keller, so in scope:
+
+| uses | map | determinant |
+| --- | --- | --- |
+| 13 | `(x + y, x - y)` | -2 |
+| 5 | `(X1 - X3 X4, X2, X3, X4)` | 1 |
+| 4 | `(T x + y, x)` over `k[T]` | -1 |
+| 3 | `(x1 + x2^2 x3^2, x2, x3)` | 1 |
+| 3 | `(x + y^2, y)` | 1 |
+| 3 | `(x + y^3, y)` | 1 |
+| 2 | Alpoege's three-dimensional map | -2 |
+| 2 | `(X1, X2, X3 + X2^2, X4 + X2^2)` | 1 |
+| 2 | `(x, y + x^2)` | 1 |
+| 2 | `(2 X1 + X2^2, X2)` | 2 |
+| 2 | `(x + y, y)` | 1 |
+| 2 | `(x + T y^2, y)` over `k[T]` | 1 |
+| 2 | `(x1 + 1, x2, x3)` | 1 |
+
+Repeated and *not* Keller, so out of scope:
+
+| uses | map | determinant |
+| --- | --- | --- |
+| 6 | `(x + x^2 y^3, y)` | `1 + 2 x y^3` |
+| 5 | `(x1^2, x2, x3)` | `2 x1` |
+| 3 | `(X1 + X2^2, X2 + X1^2)` | `1 - 4 X1 X2` |
+| 2 | `(x^2, y)` | `2 x` |
+| 2 | `(x^2, y, z)` | `2 x` |
+| 2 | `(X3 x, y)` | `X3` |
+
+The second table is the point of the second criterion. Those maps are written
+the way they are *because* they are not Keller maps -- they exercise degree
+growth, non-injectivity and a non-constant determinant -- and a module named
+`examples` next to a library about Keller maps would say otherwise. They stay
+where they are used.
+
+Two of them are worth tidying locally all the same, and that is a different
+change from this one. All six uses of `(x + x^2 y^3, y)` are in
+`tests/test_search.py` and want one fixture there. `(x1^2, x2, x3)` is written
+five times across three modules; whether that earns a shared test helper is a
+judgement, not a rule, and the package may leave it alone.
+
+The identity map is a third case and belongs to neither table. It is not one
+object repeated but a family, so what removes the repetition is a constructor
+and not a constant: `PolynomialMap.identity(variables)`, added in this package.
+
+The count that argues for it: forty-one places write the identity out, six of
+them in `src/kellermap` itself, in two spellings. `PolynomialMap(V, V)` occurs
+twenty-one times and repeats its own variable list, where a typo in the second
+copy gives a map that is not the identity and still constructs.
+`from_ring(ring, ring.gens)` occurs twenty times, repeats nothing and keeps its
+ring explicit; it stays as it is, and the constructor covers only the spelling
+that repeated something.
+
+The entries are functions rather than module-level constants, so that importing
+`kellermap` does not build a fifteen- and a seventeen-dimensional map nobody
+asked for, and so that the caller decides the coefficient domain.
 
 `tests/data.py` takes the nineteen-dimensional map, which stays out of the
 wheel. Its licence cannot be established, and `AGENTS.md` says not to vendor

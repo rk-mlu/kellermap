@@ -1282,3 +1282,40 @@ def test_a_foreign_variable_is_refused(spread: PolynomialMap) -> None:
 
     with pytest.raises(ValueError, match="not a permutation"):
         spread.reordered((x, y, sp.Symbol("w")))
+
+
+# --------------------------------------------------------------------------
+# identity: ein Objekt, das nicht zweimal dastehen sollte
+# --------------------------------------------------------------------------
+
+
+def test_the_identity_is_the_identity() -> None:
+    x, y, z = sp.symbols("x y z")
+
+    built = PolynomialMap.identity((x, y, z))
+
+    assert built == PolynomialMap((x, y, z), (x, y, z))
+    assert built.components == (x, y, z)
+    assert built.determinant() == 1
+    assert built.degree() == 1
+
+
+def test_the_identity_takes_any_iterable() -> None:
+    """Wie ``PolynomialMap`` selbst; ein Generator wird einmal ausgelesen."""
+    x, y = sp.symbols("x y")
+
+    assert PolynomialMap.identity(v for v in (x, y)) == PolynomialMap.identity((x, y))
+
+
+def test_the_identity_composes_to_nothing() -> None:
+    x, y = sp.symbols("x y")
+    other = PolynomialMap((x, y), (x + y**2, y))
+
+    assert other.compose(PolynomialMap.identity((x, y))) == other
+    assert PolynomialMap.identity((x, y)).compose(other) == other
+
+
+def test_the_identity_refuses_what_the_constructor_refuses() -> None:
+    """Kein zweiter Pruefpfad: der Konstruktor entscheidet."""
+    with pytest.raises(ValueError):
+        PolynomialMap.identity(())

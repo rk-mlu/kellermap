@@ -17,6 +17,7 @@ what they do.
   - [Degree, order and the filtration](#degree-order-and-the-filtration)
   - [Composition](#composition)
   - [Jacobian and determinant](#jacobian-and-determinant)
+  - [The identity](#the-identity)
   - [Stable extension](#stable-extension)
   - [Reordering](#reordering)
 - [Variable factories](#variable-factories)
@@ -196,6 +197,23 @@ An empty tuple means no such block was found and the general path was used:
 ```
 
 This is a performance property only; both paths return the same polynomial.
+
+### The identity
+
+`PolynomialMap.identity(variables)` builds the identity on those variables.
+Written out, the identity repeats its variable list, and a typo in the second
+copy gives a map that is not the identity and still constructs:
+
+```python
+>>> PolynomialMap.identity((x, y)).components
+(x, y)
+>>> PolynomialMap.identity((x, y)).determinant()
+1
+
+```
+
+The other spelling, `from_ring(ring, ring.gens)`, repeats nothing and keeps its
+ring explicit. It stays as it is.
 
 ### Stable extension
 

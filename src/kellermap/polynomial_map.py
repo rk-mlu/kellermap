@@ -255,6 +255,23 @@ class PolynomialMap:
         )
 
     @classmethod
+    def identity(cls, variables: Iterable[sp.Symbol]) -> PolynomialMap:
+        """Return the identity map on ``variables``.
+
+        Written out, the identity repeats its own variable list: the tuple
+        appears once as the coordinates and again as the components. A typo in
+        the second copy gives a map that is not the identity and still
+        constructs. Twenty-one places in this repository wrote it that way.
+
+        ``from_ring(ring, ring.gens)`` is the other spelling. It repeats
+        nothing and it keeps its ring explicit, so it stays as it is. This
+        constructor covers only the spelling that repeated something.
+        """
+        generators = tuple(variables)
+
+        return cls(generators, generators)
+
+    @classmethod
     def from_ring(
         cls,
         polynomial_ring: PolyRing,
