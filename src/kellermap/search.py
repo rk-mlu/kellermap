@@ -526,6 +526,7 @@ def search(
     *,
     budget: int = 20000,
     spare: int = 2,
+    rewrites: int = 1,
     selection_limit: int = 8,
 ) -> SearchOutcome:
     """Look for a chain of ``BCWStep`` from ``source`` to ``target``.
@@ -544,6 +545,9 @@ def search(
       reductions and is what makes a chain converge on a cubic target;
     * the dimension never passes the target's;
     * at most ``spare`` steps introduce no generator at all;
+    * at most ``rewrites`` fresh coordinates carry a factor the pool does not
+      hold, and such a coordinate has to be rewritten later to end up carrying
+      what the target publishes;
     * at most ``budget`` maps are examined.
 
     ``spare`` is what bounds the length of a chain. Every other step consumes a
@@ -577,6 +581,7 @@ def search(
         used: frozenset[sp.Symbol],
         steps: tuple[BCWStep, ...],
         spare: int,
+        rewrites: int,
     ) -> SearchOutcome | None:
         if remaining[0] <= 0:
             return None
@@ -603,33 +608,34 @@ def search(
         for candidate in enumerate_candidates(
             current, available, selection_limit=selection_limit
         ):
-            assigned = _assign(candidate, current, values, used)
-            if assigned is None:
-                continue
-            if not assigned and spare <= 0:
-                continue
+            for assigned, spent in _assignments(
+                candidate, current, values, used, rewrites
+            ):
+                if not assigned and spare <= 0:
+                    continue
 
-            step = _extend(current, candidate, assigned)
-            if not _admissible(step.target, current, target):
-                continue
+                step = _extend(current, candidate, assigned)
+                if not _admissible(step.target, current, target):
+                    continue
 
-            reachable.append((_rank(step.target), step, assigned))
+                reachable.append((_rank(step.target), step, assigned, spent))
 
         reachable.sort(key=lambda entry: entry[0])
 
-        for _, step, assigned in reachable:
+        for _, step, assigned, spent in reachable:
             found = walk(
                 step.target,
                 used | set(assigned),
                 (*steps, step),
                 spare - (0 if assigned else 1),
+                rewrites - spent,
             )
             if found is not None:
                 return found
 
         return None
 
-    outcome = walk(source, frozenset(), (), spare)
+    outcome = walk(source, frozenset(), (), spare, rewrites)
     if outcome is not None:
         return outcome
 
@@ -638,37 +644,62 @@ def search(
     )
 
 
-def _assign(
+def _assignments(
     candidate: Candidate,
     current: PolynomialMap,
     values: dict[sp.Symbol, sp.Expr],
     used: frozenset[sp.Symbol],
-) -> list[sp.Symbol] | None:
-    """Return the name for each fresh slot, or ``None`` if there is no fit.
+    rewrites: int,
+) -> Iterator[tuple[list[sp.Symbol], int]]:
+    """Yield each way of naming the fresh slots, with the rewrites it costs.
 
-    A fresh slot must carry an unused pool value, up to sign, and two slots of
-    one step must not claim the same name.
+    A fresh slot whose factor is a pool value, up to sign, takes that name.
+    That is a decision and not a fact: a coordinate carrying a value the target
+    publishes need not be the coordinate that publishes it. Assuming it is
+    keeps the branching finite, and SEA-13 says so.
+
+    A fresh slot whose factor is *not* a pool value may take any unused name,
+    at the cost of one rewrite. Such a coordinate cannot end the chain carrying
+    what the target says it carries, so a later step has to rewrite its
+    component. ``rewrites`` bounds how many chains may need that. With none
+    left the slot has no name and the candidate is dropped.
+
+    Two slots of one step never claim the same name.
     """
-    chosen: list[sp.Symbol] = []
+    fresh = [
+        sp.expand(value)
+        for slot, value in zip(candidate.slots, candidate.values(current), strict=True)
+        if not isinstance(slot, Carried)
+    ]
 
-    for slot, value in zip(candidate.slots, candidate.values(current), strict=True):
-        if isinstance(slot, Carried):
-            continue
+    def extend(
+        position: int, chosen: list[sp.Symbol], left: int
+    ) -> Iterator[tuple[list[sp.Symbol], int]]:
+        if position == len(fresh):
+            yield list(chosen), rewrites - left
+            return
 
-        wanted = sp.expand(value)
-        match = [
+        wanted = fresh[position]
+        exact = [
             name
             for name in values
             if name not in used
             and name not in chosen
             and wanted in (values[name], sp.expand(-values[name]))
         ]
-        if not match:
-            return None
+        if exact:
+            for name in exact:
+                yield from extend(position + 1, [*chosen, name], left)
+            return
 
-        chosen.append(match[0])
+        if left <= 0:
+            return
 
-    return chosen
+        for name in values:
+            if name not in used and name not in chosen:
+                yield from extend(position + 1, [*chosen, name], left - 1)
+
+    return extend(0, [], rewrites)
 
 
 def _extend(

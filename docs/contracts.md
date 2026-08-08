@@ -1031,13 +1031,50 @@ space it covers was exhausted. A result with `exhausted` false says less than
 SEA-6 already allows: not merely that nothing was found, but that the search
 did not finish looking.
 
+**SEA-13 — A factor outside the pool costs a rewrite, and rewrites are
+counted.** `[0.4]` A fresh slot whose factor is a pool value, up to sign, takes
+that name. A fresh slot whose factor is *not* a pool value may take any unused
+name, and at most `rewrites` slots in a chain may do so.
+
+The rule exists because SEA-8 bounds the anchor and leaves the co-factor free,
+while a fresh co-factor still needs a name, and the only names on offer are the
+target's. A coordinate named this way cannot end the chain carrying what the
+target publishes, so a later step has to rewrite its component — which is what
+`alpoege15` does at component 10 and what the published nineteen-dimensional
+map does at `w2`.
+
+Two halves of the rule are decisions rather than facts. A factor that matches a
+pool value takes that name, although a coordinate carrying a value the target
+publishes need not be the coordinate that publishes it; and `rewrites` bounds
+how often the other case may happen. Both are there to keep the branching
+payable, and the measurement says how much they are worth: recovering the
+fifteen-dimensional map costs 62 maps with `rewrites=0` and does not finish
+within 400 with `rewrites=1`, on the same complete pool. Allowing a rewrite is
+not a small loosening.
+
 **SEA-12 — The walk is bounded by stated rules, and they are decisions.**
-`[0.4]` The degree never rises along a chain, and the dimension never passes
-the target's. Neither is a fact about Keller maps. Nothing obliges a step to
-lower the degree — see "No progress measure" — and the rule is adopted because
-degrees do not rise along either reference chain and a chain that does not
-converge on a cubic target cannot reach one. A chain outside these rules is
-unreachable here, in the sense of "No completeness of the enumerator either".
+`[0.4]` The degree never rises along a chain, the dimension never passes the
+target's, and at most `spare` steps introduce no generator. None is a fact
+about Keller maps. Nothing obliges a step to lower the degree — see "No
+progress measure" — and the first rule is adopted because degrees do not rise
+along either reference chain and a chain that does not converge on a cubic
+target cannot reach one. A chain outside these rules is unreachable here, in
+the sense of "No completeness of the enumerator either".
+
+`spare` is what bounds the length of a chain: every other step consumes a name,
+so a chain has at most `len(pool) + spare` steps. It is also what lets a chain
+*end* with a step that introduces nothing. Reaching the target is therefore
+tried as soon as every name is spent, and the walk continues afterwards while
+any spare step is left.
+
+That last clause is a correction, and the run that forced it is worth
+recording. A search whose walk stopped at the last introduction reported the
+space exhausted without a chain after 68425 maps — a clean negative result
+about a space that could not contain the answer, since the published
+nineteen-dimensional map grows by sixteen dimensions over seventeen steps and
+its `w2` component is the residue of exactly such a step. An exhausted space
+says something only about the rules that defined it, which is why they are
+written down here rather than left in the code.
 
 ### Candidates
 
@@ -1202,7 +1239,7 @@ search.
 ### Which of these can fail on supplied data
 
 SEA-5, and only SEA-5. It compares a chain this library built against a map and
-a collision it did not. SEA-1 to SEA-4 and SEA-6 to SEA-12 are obligations on
+a collision it did not. SEA-1 to SEA-4 and SEA-6 to SEA-13 are obligations on
 the library's own conduct: they say what the search and its enumerator may
 claim, not what the data is. A review weighing this milestone should look first
 at SEA-5 and at the provenance of the two published objects it compares against,

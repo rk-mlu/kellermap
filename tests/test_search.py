@@ -403,10 +403,14 @@ def test_the_result_is_reported_up_to_the_diagonal(two_step: tuple) -> None:
 
 
 def test_a_value_outside_the_pool_is_unreachable(two_step: tuple) -> None:
-    """Nicht ungefunden, sondern unerreichbar -- der Preis von SEA-8."""
+    """Ohne Umschreibungen nicht ungefunden, sondern unerreichbar.
+
+    Das ist der Preis von SEA-8. ``rewrites`` lockert ihn, und zwar benannt:
+    siehe die Tests weiter unten.
+    """
     source, target, _ = two_step
 
-    outcome = search(source, target, {u: x, v: x * y**2})
+    outcome = search(source, target, {u: x, v: x * y**2}, rewrites=0)
 
     assert outcome.reduction is None
     assert outcome.exhausted
@@ -593,8 +597,78 @@ def test_the_outcome_says_how_far_a_failed_search_got(two_step: tuple) -> None:
     source, target, pool = two_step
 
     reached = search(source, target, pool)
-    stopped = search(source, target, {u: x, v: x * y**2})
+    stopped = search(source, target, {u: x, v: x * y**2}, rewrites=0)
 
     assert reached.deepest == 1
     assert stopped.reduction is None
     assert stopped.deepest == 0
+
+
+# --------------------------------------------------------------------------
+# Koordinaten, die spaeter ueberschrieben werden
+# --------------------------------------------------------------------------
+
+
+@pytest.fixture
+def rewritten() -> tuple[PolynomialMap, PolynomialMap, dict]:
+    """Eine Kette, deren zweite frische Koordinate spaeter umgeschrieben wird.
+
+    Schritt eins legt ``u`` und ``v`` an, Schritt zwei zielt auf die Komponente
+    von ``v``. Im Ziel traegt ``v`` daher nicht mehr den Wert, mit dem es
+    eingefuehrt wurde, und ein aus dem Ziel abgelesener Vorrat enthaelt diesen
+    Wert nicht. Genau der Fall, den ``alpoege15`` an echten Daten zeigt.
+    """
+    t = sp.Symbol("t")
+    source = over_field(
+        PolynomialMap((x, y), (x + x**2 * y**3 + x**2 * y**5, y)),
+    )
+    middle = BCWStep.build(source, 0, Fresh(x * y, u), Fresh(x * y**2, v), 1).target
+    target = BCWStep.build(middle, 3, Carried(2), Fresh(y, t), 0).target
+    pool = {
+        name: sp.expand(target.components[target.variables.index(name)] - name)
+        for name in (u, v, t)
+    }
+
+    return source, target, pool
+
+
+def test_a_coordinate_outside_the_pool_may_take_a_free_name(
+    rewritten: tuple,
+) -> None:
+    """SEA-13: der Vorrat begrenzt den Anker, nicht jeden frischen Platz.
+
+    Ein Platz, dessen Faktor der Vorrat nicht kennt, bekommt einen freien
+    Namen. Er kann das Ziel dann nur erreichen, wenn ein spaeterer Schritt
+    seine Komponente umschreibt -- was hier geschieht.
+    """
+    source, target, pool = rewritten
+
+    outcome = search(source, target, pool, rewrites=1)
+
+    assert outcome.reduction is not None
+    assert outcome.reduction.verify() is None
+    assert outcome.reduction.target == target
+
+
+def test_without_a_rewrite_that_chain_is_out_of_reach(rewritten: tuple) -> None:
+    """Negativkontrolle. Der Fehlschlag sagt nichts ueber die Existenz."""
+    source, target, pool = rewritten
+
+    outcome = search(source, target, pool, rewrites=0)
+
+    assert outcome.reduction is None
+    assert outcome.exhausted
+
+
+def test_a_matching_value_takes_its_own_name(two_step: tuple) -> None:
+    """Ein Faktor, den der Vorrat kennt, kostet keine Umschreibung.
+
+    Sonst waere die Verzweigung nicht zu bezahlen: jeder frische Platz haette
+    dann so viele Zuege wie es freie Namen gibt.
+    """
+    source, target, pool = two_step
+
+    outcome = search(source, target, pool, rewrites=0)
+
+    assert outcome.reduction is not None
+    assert outcome.reduction.target == target
