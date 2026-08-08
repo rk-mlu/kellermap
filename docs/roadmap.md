@@ -603,9 +603,9 @@ and the note under the `Step` protocol in `contracts.md` carry the reasoning.
 
 ## Work packages
 
-Ten work packages, with internal version numbers `0.3.1` to `0.3.10` and tags
-`wp/0.3.n`. None of them is a release. `pyproject.toml` stays at `0.3.0` for the
-duration and moves to `0.4.0rc1` in one step at the end.
+Eleven work packages, with internal version numbers `0.3.1` to `0.3.11` and
+tags `wp/0.3.n`. None of them is a release. `pyproject.toml` stays at `0.3.0`
+for the duration and moves to `0.4.0rc1` in one step at the end.
 
 | WP | Internal | Content | Done |
 | --- | --- | --- | --- |
@@ -616,19 +616,23 @@ duration and moves to `0.4.0rc1` in one step at the end.
 | 5 | 0.3.5 | SEA-8 to SEA-10, and the measurement behind them | yes |
 | 6 | 0.3.6 | Candidate enumeration | yes |
 | 7 | 0.3.7 | The forward search against a given target | yes |
-| 8 | 0.3.8 | The backward search: peeling a chain off a target | no |
-| 9 | 0.3.9 | `alpoege19` as a verified `Reduction` | no |
-| 10 | 0.3.10 | Documentation and release | no |
+| 8 | 0.3.8 | `examples.py` and `tests/data.py`: fixed data by provenance | no |
+| 9 | 0.3.9 | The backward search: peeling a chain off a target | no |
+| 10 | 0.3.10 | `alpoege19` as a verified `Reduction` | no |
+| 11 | 0.3.11 | Documentation and release | no |
 
-The plan had seven, and three packages were inserted rather than appended. WP 4
+The plan had seven, and four packages were inserted rather than appended. WP 4
 came out of WP 3, which turned up the one breach of the ASCII agreement in the
 tree and found no gate to attribute it to. WP 5 came out of the measurement WP 6
 was to make: the enumerator the plan implied turned out to be unaffordable, and
 the obligations that narrow it belong on the page before the code exists rather
-than beside it afterwards. WP 8 came out of WP 7, whose forward search exhausts
+than beside it afterwards. WP 9 came out of WP 7, whose forward search exhausts
 its space without a chain and whose failure is not diagnosable from the inside.
-Each time the packages behind moved down by one and nothing about their content
-changed.
+WP 8 was agreed while WP 7 ran and had no place in this table until now; it goes
+*before* the backward search because it reshapes how fixed data is reached and
+the backward search is what would otherwise reach it the old way and be
+rewritten. Each time the packages behind moved down by one and nothing about
+their content changed.
 
 Every work package leaves the repository green.
 
@@ -720,7 +724,8 @@ from its own endpoints before being pointed at the unknown one, and it reports
 what it examined and whether it finished.
 
 Two things it forced. The `w2` step of the published chain is recorded here
-rather than in WP 8, because it stands whether or not the search succeeds. And
+rather than in the package that runs the search, because it stands whether or
+not the search succeeds. And
 SEA-5 is amended: the published map is reached up to conjugation by a diagonal
 `D` of ones and minus ones, which the search reports. `contracts.md` carries
 the reason and the verified identity relating the two sign conventions.
@@ -728,7 +733,7 @@ the reason and the verified identity relating the two sign conventions.
 It is done when it recovers a chain to `alpoege15` from Alpoege's normalized map
 and the published fifteen-dimensional one. That criterion was met late: WP 7 was
 first marked complete on the strength of small examples, and the reference
-recovery only followed while preparing WP 8. It found a chain in 62 maps, with
+recovery only followed while preparing the run. It found a chain in 62 maps, with
 `D` the identity, and the chain is *not* the recorded one — its degrees run
 `7, 6, 5, 4, 4, 4, 4, 3` against the recorded `7, 7, 7, 7, 5, 4, 4, 3`. A chain,
 not the chain, which is what "No optimality of the sequence" already says.
@@ -748,14 +753,43 @@ recovering `alpoege15` costs 62 maps with `rewrites=0` and does not finish
 within 400 with `rewrites=1`.
 
 The package closes without reaching the nineteen-dimensional map, and the way it
-fails is why WP 8 exists. Two runs on the maintainer's machine exhausted the
+fails is why WP 9 exists. Two runs on the maintainer's machine exhausted the
 space without a chain, the second after the `spare` correction and with the same
 count to the map, 68425, because the walk never got past six steps. A forward
 search that exhausts an empty space cannot say which of its rules emptied it.
 The scan that closed the pool question is the pattern to follow: rather than
-searching harder, compute the thing directly. WP 8 does that from the other end.
+searching harder, compute the thing directly. WP 9 does that from the other end.
 
-**WP 8** searches backwards, and the measurement that motivates it is on this
+**WP 8** sorts the fixed data by where it came from, which is a question of
+licence and of what an audit can see, not of convenience.
+
+`src/kellermap/examples.py` takes the maps the project may distribute: Alpoege's
+three-dimensional map, which every chain starts from and which now has a
+citable, licensed presentation; the seventeen- and fifteen-dimensional maps,
+which are the maintainer's own hand computation; and the small maps that are
+currently redefined in `docs/api.md`, `README.md` and half a dozen test modules.
+Each carries a line saying where it came from.
+
+`tests/data.py` takes the nineteen-dimensional map, which stays out of the
+wheel. Its licence cannot be established, and `AGENTS.md` says not to vendor
+such data. It is also the one datum whose externality the milestone's result
+rests on, so having it visibly outside the distributed package costs nothing and
+saves an auditor a question.
+
+One thing has to be right in that package and is easy to get wrong. Shipping a
+map does not change who computed it, so `SUPPLIED`, BCW-9 and SEA-5 mean exactly
+what they meant before. But a reader who finds `bcw17` under `src/` sees the
+library checking against itself unless the module says otherwise, so every
+entry names its origin and points at `references.md`. `contracts.md` gains a
+short statement that the module is fixed data, carries no obligations of its
+own, and does not move the line between what this library derives and what is
+given to it.
+
+The scripts lose their `read()` detour for the two maps that move into the
+package and keep it for the one that does not, which puts the distinction in the
+code rather than only in a document.
+
+**WP 9** searches backwards, and the measurement that motivates it is on this
 page rather than in a commit message. A step that introduces a fresh coordinate
 leaves it in exactly two components: its own, as `X_u + P`, and the residue of
 the component it targeted. A coordinate occurring anywhere else was used by a
@@ -778,7 +812,7 @@ Peeling is a different operation from building, so it gets its own obligations.
 A chain found backwards is rebuilt forwards and verified, and the endpoint
 comparison of SEA-5 is unchanged.
 
-**WP 9** points it at the nineteen-dimensional map.
+**WP 10** points it at the nineteen-dimensional map.
 `scripts/search_alpoege19.py` drives the run: it reads Alpoege's map and the
 published one from the test modules rather than copying them, builds the pool
 with `w2` corrected, and searches with a doubling budget so that a long run
@@ -800,7 +834,7 @@ the three points, and `scripts/reconstruct_alpoege19.py` carries the recovered
 sequence in plain SymPy as the independent second computation, joining the gates
 in `Makefile` and `AGENTS.md`.
 
-If none is found, WP 8 records what was searched and what was ruled out, and the
+If none is found, WP 10 records what was searched and what was ruled out, and the
 milestone ships the search without the result. SEA-6 exists so that this outcome
 can be reported without being overstated. It would not be a successful milestone,
 and it would not be a false one either.
@@ -811,7 +845,7 @@ pool and the chain is inexpressible rather than unfound — the same failure
 `alpoege15` shows when its own missing value is withheld, and it looks identical
 from outside.
 
-**WP 10** removes the `[0.4]` markers from `contracts.md`, adds the translation
+**WP 11** removes the `[0.4]` markers from `contracts.md`, adds the translation
 and the search to `architecture.md`, records the provenance of the recovered
 sequence in `references.md`, updates `CHANGELOG.md`, and sets the version.
 
