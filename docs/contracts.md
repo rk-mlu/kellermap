@@ -68,6 +68,7 @@ the implementation is required to guarantee.
 - [TranslationStep](#translationstep)
 - [Reduction](#reduction)
 - [Search](#search)
+- [Peeling](#peeling)
 - [Errors](#errors)
 - [Deliberate non-obligations](#deliberate-non-obligations)
 
@@ -1244,6 +1245,76 @@ the library's own conduct: they say what the search and its enumerator may
 claim, not what the data is. A review weighing this milestone should look first
 at SEA-5 and at the provenance of the two published objects it compares against,
 which `references.md` records.
+
+---
+
+## Peeling
+
+**`[0.4]`** Assembling a chain from the far end. The forward search of SEA-1 to
+SEA-13 exhausts its space against the published nineteen-dimensional map
+without a chain and cannot say which of its rules emptied the space. Peeling
+runs the other way, and the reason it is a separate surface rather than a flag
+is that undoing a step is a different operation from building one.
+
+**REV-1 — Peeling needs the target and nothing else.** No value pool, no
+supplied names, no sign convention. The factors fall out of the arithmetic
+instead of being given, so SEA-8 and SEA-13 and the failure modes they carry do
+not apply here. That is the point of the surface, not a convenience: those two
+obligations are where a forward search silently loses a chain.
+
+**REV-2 — A coordinate may be peeled only if it occurs in exactly two
+components.** A step that introduces `X_u` leaves it in its own component, as
+`X_u + P`, and in the residue of the component it targeted. A coordinate
+occurring anywhere else was read by a later step and cannot be the last one
+introduced.
+
+This is the whole reason peeling is cheaper. Six of the sixteen carriers of the
+published map satisfy it, against the hundred and forty candidates the forward
+enumerator offers at a map of that size; `tests/test_alpoege19.py` records
+which six and what their steps targeted.
+
+**REV-3 — Undoing is exact, and needs no inverse.** A step subtracts the
+product of its two slot *components*, so
+
+    F_i = F'_i +- F'_a F'_b
+
+recovers the map before it, and every peeled coordinate must then occur in no
+remaining component. The second half is the check: a coordinate that survives
+the undoing was not introduced by the step that was undone.
+
+**REV-4 — The sign is recorded, not chosen away.** Both signs are admitted and
+each step reports which one it used.
+
+Measured, on the published map. Peeling with `+` alone stops at dimension 18;
+with `-` alone at 17; with both it reaches 15, and 14 once a step introducing
+no generator is allowed. The signs are mixed, and they are not noise: a step
+peeled with `-` says `d_i d_a d_b = -1` for the diagonal of SEA-5, which is one
+linear equation over GF(2) per step. Peeling therefore produces the constraints
+on `D` as a by-product of running, where the forward search had to solve for it
+at the end.
+
+**REV-5 — A peel is not a certificate.** The chain a peel finds is rebuilt
+forwards with `BCWStep.build`, verified, and only then is it a `Reduction`.
+Peeling and building are different operations, and that they agree is checked
+rather than assumed. The endpoint comparison of SEA-5 is unchanged: what
+carries weight is still that the chain arrives at a map this library did not
+compute.
+
+**REV-6 — Budget and depth are reported.** As SEA-11, and for the same reason:
+a peel that stops says nothing unless it says how far it got and whether it
+finished looking.
+
+**REV-7 — No completeness, again.** A peel that reaches no chain has shown that
+this peel, under REV-2 and its budget, found none. REV-2 is a decision about
+where to look and not a fact about Keller maps, so a chain outside it is
+unreachable rather than absent -- the same reading "No completeness of the
+enumerator either" already asks for.
+
+### Which of these can fail on supplied data
+
+REV-3, whose second half is a real check on the map being peeled, and REV-5,
+which compares a rebuilt chain against the target. REV-1, REV-2, REV-4, REV-6
+and REV-7 are obligations on the library's own conduct.
 
 ---
 

@@ -880,6 +880,15 @@ An exploratory peel reaches dimension 14 from 19 and finds the `m = 0` step on
 before the end, which withdraws the assumption
 `scripts/search_alpoege19.py` was making.
 
+The measurement that shapes the surface is the sign. A step subtracts the
+product of its two slot components, so undoing it adds that product back --
+except that the published map is not in this library's sign convention, and the
+difference is the `D` of SEA-5. Peeling with `+` alone stops at dimension 18,
+with `-` alone at 17, and with both at 15. The signs are mixed and each one is
+a linear equation over GF(2) for `D`, so peeling produces the constraints on it
+while running, where the forward search had to solve for it at the end. REV-4
+records this.
+
 Peeling is a different operation from building, so it gets its own obligations.
 A chain found backwards is rebuilt forwards and verified, and the endpoint
 comparison of SEA-5 is unchanged.
