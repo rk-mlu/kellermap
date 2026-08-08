@@ -832,6 +832,16 @@ The entries are functions rather than module-level constants, so that importing
 `kellermap` does not build a fifteen- and a seventeen-dimensional map nobody
 asked for, and so that the caller decides the coefficient domain.
 
+The package runs in two commits, and the repository is green after each. The
+first adds `examples.py` with the small maps and Alpoege's, and changes no call
+site, so that the naming can be read before forty places depend on it. Between
+the two commits those maps stand in two places, which is what this package is
+against; it is bounded, named here, and closed by the second commit. The
+fifteen- and seventeen-dimensional maps are not duplicated even briefly: they
+*move* in the second commit rather than appearing first and being removed
+afterwards, because a seventeen-dimensional map written twice is a different
+risk from `(x + y, y)` written twice.
+
 `tests/data.py` takes the nineteen-dimensional map, which stays out of the
 wheel. Its licence cannot be established, and `AGENTS.md` says not to vendor
 such data. It is also the one datum whose externality the milestone's result

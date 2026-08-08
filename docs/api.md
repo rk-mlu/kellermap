@@ -20,6 +20,7 @@ what they do.
   - [The identity](#the-identity)
   - [Stable extension](#stable-extension)
   - [Reordering](#reordering)
+- [Example maps](#example-maps)
 - [Variable factories](#variable-factories)
 - [Elementary automorphisms](#elementary-automorphisms)
 - [Linear automorphisms](#linear-automorphisms)
@@ -287,6 +288,40 @@ Traceback (most recent call last):
 ValueError: The order (x, x) is not a permutation of (x, y).
 
 ```
+
+---
+
+## Example maps
+
+`kellermap.examples` holds the Keller maps this repository writes out in more
+than one place. Two criteria decide what is there: a map is included if it is
+repeated, and if its Jacobian determinant is a non-zero constant. Repeated maps
+that are *not* Keller maps stay where they are used, because they are written
+the way they are precisely for that reason.
+
+```python
+>>> from kellermap import examples, over_field
+>>> examples.factorable_shear().components
+(x1 + x2**2*x3**2, x2, x3)
+>>> examples.alpoege().degree(), examples.alpoege().determinant()
+(7, -2)
+
+```
+
+They are functions, so importing `kellermap` builds nothing, and each returns
+its map over the domain its coefficients imply. Use `over_field` where a field
+is needed:
+
+```python
+>>> examples.parametric_shear().ring.domain
+ZZ[T]
+>>> over_field(examples.quadratic_shear()).ring.domain
+QQ
+
+```
+
+Everything there was written for this project except `alpoege`, which is
+somebody else's mathematics; `docs/references.md` records the source.
 
 ---
 
