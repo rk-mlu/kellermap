@@ -481,6 +481,11 @@ def test_the_search_recovers_a_chain_to_this_map(reduction: Reduction) -> None:
     Gefunden wird *eine* Kette, nicht *die* Kette. Ihre Gradfolge unterscheidet
     sich von der ueberlieferten; siehe "No optimality of the sequence" in
     ``docs/contracts.md``.
+
+    ``rewrites=0``, weil dieser Test von der Regel handelt, dass jeder frische
+    Platz einen Vorratswert traegt. Mit der Lockerung nach SEA-13 findet
+    dieselbe Suche die Kette in 400 Karten nicht -- gemessen, und der Grund,
+    warum die Lockerung eine benannte Ausnahme und keine Vorgabe ist.
     """
     source = reduction.steps[0].target
     pool = {
@@ -489,7 +494,7 @@ def test_the_search_recovers_a_chain_to_this_map(reduction: Reduction) -> None:
     }
     pool[X[10]] = sp.expand(STEPS[3][2][1])
 
-    outcome = search(source, ALPOEGE15, pool, budget=2000)
+    outcome = search(source, ALPOEGE15, pool, budget=2000, rewrites=0)
 
     assert outcome.reduction is not None
     assert outcome.reduction.verify() is None
@@ -517,6 +522,6 @@ def test_without_that_value_the_chain_is_out_of_reach(reduction: Reduction) -> N
         for index in ALPOEGE15.carrier_indices
     }
 
-    outcome = search(source, ALPOEGE15, pool, budget=400)
+    outcome = search(source, ALPOEGE15, pool, budget=400, rewrites=0)
 
     assert outcome.reduction is None

@@ -465,3 +465,61 @@ def test_the_pool_read_off_the_map_misses_that_value() -> None:
     unter SEA-8 in ``docs/contracts.md``.
     """
     assert W2_INTRODUCED not in set(CARRIERS.values())
+
+
+# --------------------------------------------------------------------------
+# Was zuletzt eingefuehrt worden sein kann
+# --------------------------------------------------------------------------
+
+
+def occurrences(variable: sp.Symbol) -> list[int]:
+    """Return the components a carrier variable occurs in."""
+    return [
+        index
+        for index, component in enumerate(COMPONENTS)
+        if variable in sp.expand(component).free_symbols
+    ]
+
+
+def test_six_coordinates_could_have_been_introduced_last() -> None:
+    """Ein Schritt hinterlaesst seine frische Koordinate an genau zwei Stellen.
+
+    In ihrer eigenen Komponente, als ``X_u + P``, und im Rest der
+    Zielkomponente. Kommt sie sonst nirgends vor, kann sie die zuletzt
+    eingefuehrte sein; kommt sie oefter vor, hat ein spaeterer Schritt sie
+    benutzt und sie kann es nicht sein.
+
+    Sechs von sechzehn erfuellen das. Das ist der Grund, warum die Suche
+    rueckwaerts guenstiger ist als vorwaerts: hier sind es sechs Kandidaten
+    fuer den letzten Schritt, vorwaerts bietet der Aufzaehler an einer Karte
+    dieser Groesse ueber hundert an.
+    """
+    last = {
+        variable
+        for variable in w
+        if len(occurrences(variable)) == 2
+        and VARIABLES.index(variable) in occurrences(variable)
+    }
+
+    assert last == {w[9], w[10], w[11], w[13], w[14], w[15]}
+
+
+def test_the_target_of_each_such_step_is_read_off_too() -> None:
+    """Die zweite Komponente ist die, auf die der einfuehrende Schritt zielte.
+
+    Drei der sechs zielen auf ``x``, zwei auf ``y``, eine auf ``z``. Keine auf
+    eine Traegerkomponente, was zu dem passt, was ``w2`` als einzige
+    ueberschriebene Traegerkomponente ausweist.
+    """
+    targets = {
+        variable: [
+            index
+            for index in occurrences(variable)
+            if index != VARIABLES.index(variable)
+        ][0]
+        for variable in (w[9], w[10], w[11], w[13], w[14], w[15])
+    }
+
+    assert [targets[w[j]] for j in (9, 10, 11)] == [0, 0, 0]
+    assert [targets[w[j]] for j in (13, 14)] == [1, 1]
+    assert targets[w[15]] == 2

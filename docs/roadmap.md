@@ -603,7 +603,7 @@ and the note under the `Step` protocol in `contracts.md` carry the reasoning.
 
 ## Work packages
 
-Nine work packages, with internal version numbers `0.3.1` to `0.3.9` and tags
+Ten work packages, with internal version numbers `0.3.1` to `0.3.10` and tags
 `wp/0.3.n`. None of them is a release. `pyproject.toml` stays at `0.3.0` for the
 duration and moves to `0.4.0rc1` in one step at the end.
 
@@ -615,17 +615,20 @@ duration and moves to `0.4.0rc1` in one step at the end.
 | 4 | 0.3.4 | A gate for the ASCII agreement | yes |
 | 5 | 0.3.5 | SEA-8 to SEA-10, and the measurement behind them | yes |
 | 6 | 0.3.6 | Candidate enumeration | yes |
-| 7 | 0.3.7 | The search against a given target | yes |
-| 8 | 0.3.8 | `alpoege19` as a verified `Reduction` | no |
-| 9 | 0.3.9 | Documentation and release | no |
+| 7 | 0.3.7 | The forward search against a given target | yes |
+| 8 | 0.3.8 | The backward search: peeling a chain off a target | no |
+| 9 | 0.3.9 | `alpoege19` as a verified `Reduction` | no |
+| 10 | 0.3.10 | Documentation and release | no |
 
-The plan had seven, and two packages were inserted rather than appended. WP 4
+The plan had seven, and three packages were inserted rather than appended. WP 4
 came out of WP 3, which turned up the one breach of the ASCII agreement in the
 tree and found no gate to attribute it to. WP 5 came out of the measurement WP 6
 was to make: the enumerator the plan implied turned out to be unaffordable, and
 the obligations that narrow it belong on the page before the code exists rather
-than beside it afterwards. Both times the packages behind moved down by one and
-nothing about their content changed.
+than beside it afterwards. WP 8 came out of WP 7, whose forward search exhausts
+its space without a chain and whose failure is not diagnosable from the inside.
+Each time the packages behind moved down by one and nothing about their content
+changed.
 
 Every work package leaves the repository green.
 
@@ -712,7 +715,7 @@ The reading recorded above — that all seventeen steps of the published chain
 acted on components 0, 1 or 2 — moves to WP 7, where a search either uses it or
 does not.
 
-**WP 7** is the search itself, under SEA-1 to SEA-12. It recovers a known chain
+**WP 7** is the forward search, under SEA-1 to SEA-13. It recovers a known chain
 from its own endpoints before being pointed at the unknown one, and it reports
 what it examined and whether it finished.
 
@@ -721,9 +724,6 @@ rather than in WP 8, because it stands whether or not the search succeeds. And
 SEA-5 is amended: the published map is reached up to conjugation by a diagonal
 `D` of ones and minus ones, which the search reports. `contracts.md` carries
 the reason and the verified identity relating the two sign conventions.
-
-Two rules bound the walk, both decisions rather than facts: the degree never
-rises, and the dimension never passes the target's. SEA-12 says so.
 
 It is done when it recovers a chain to `alpoege15` from Alpoege's normalized map
 and the published fifteen-dimensional one. That criterion was met late: WP 7 was
@@ -741,12 +741,44 @@ missing carrier value did. A set of already-visited maps was tried alongside it
 and removed again: two orders that introduce the same generators list them in
 the order they arrived, so the maps differ and the set almost never fires.
 
-Running the search against the nineteen-dimensional map is WP 8. It costs about
-1.5 maps per second there against 6 for `alpoege15`, so it is a run for the
-maintainer's machine rather than for a session, and `exhausted` is what reports
-a budget that ran out.
+SEA-11 and SEA-13 came out of it as well: the budget and the depth are
+reported, and a fresh factor the pool does not hold takes a free name at the
+cost of a counted rewrite. The second is measured rather than assumed to help:
+recovering `alpoege15` costs 62 maps with `rewrites=0` and does not finish
+within 400 with `rewrites=1`.
 
-**WP 8** points it at the nineteen-dimensional map.
+The package closes without reaching the nineteen-dimensional map, and the way it
+fails is why WP 8 exists. Two runs on the maintainer's machine exhausted the
+space without a chain, the second after the `spare` correction and with the same
+count to the map, 68425, because the walk never got past six steps. A forward
+search that exhausts an empty space cannot say which of its rules emptied it.
+The scan that closed the pool question is the pattern to follow: rather than
+searching harder, compute the thing directly. WP 8 does that from the other end.
+
+**WP 8** searches backwards, and the measurement that motivates it is on this
+page rather than in a commit message. A step that introduces a fresh coordinate
+leaves it in exactly two components: its own, as `X_u + P`, and the residue of
+the component it targeted. A coordinate occurring anywhere else was used by a
+later step and cannot be the last one introduced. Six of the sixteen carriers of
+the published map satisfy that, and `tests/test_alpoege19.py` records which.
+
+Six candidates for the last step against the hundred and forty the forward
+enumerator offers at a map of that size is the whole argument. Peeling also
+needs no value pool: the factors fall out of the arithmetic instead of being
+supplied, so SEA-8 and SEA-13 and the failure modes they carry do not apply to
+it. Nor does it need a sign choice — the sign is decided by whether the
+coordinate actually disappears.
+
+An exploratory peel reaches dimension 14 from 19 and finds the `m = 0` step on
+`w2` for the third time, by a third method. It also places that step four steps
+before the end, which withdraws the assumption
+`scripts/search_alpoege19.py` was making.
+
+Peeling is a different operation from building, so it gets its own obligations.
+A chain found backwards is rebuilt forwards and verified, and the endpoint
+comparison of SEA-5 is unchanged.
+
+**WP 9** points it at the nineteen-dimensional map.
 `scripts/search_alpoege19.py` drives the run: it reads Alpoege's map and the
 published one from the test modules rather than copying them, builds the pool
 with `w2` corrected, and searches with a doubling budget so that a long run
@@ -779,7 +811,7 @@ pool and the chain is inexpressible rather than unfound — the same failure
 `alpoege15` shows when its own missing value is withheld, and it looks identical
 from outside.
 
-**WP 9** removes the `[0.4]` markers from `contracts.md`, adds the translation
+**WP 10** removes the `[0.4]` markers from `contracts.md`, adds the translation
 and the search to `architecture.md`, records the provenance of the recovered
 sequence in `references.md`, updates `CHANGELOG.md`, and sets the version.
 

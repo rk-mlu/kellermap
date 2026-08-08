@@ -34,19 +34,13 @@ script. Doubling costs a factor of two in wasted work and needs nothing from
 the library. A round that reports the space exhausted stops the run, because
 every later round would search the same space.
 
-The run has two phases. The first searches for a chain to the map *one step
-back* -- the published map with the ``m = 0`` step undone, which needs no
-inverse and no search: that step subtracts the product of two carrier
-components, so adding it back gives ``w2 + x**3 * y`` and leaves every other
-component alone. All sixteen carrier components are then two terms long, which
-is what a map whose carriers were never rewritten looks like.
-
-The assumption behind that phase -- that the ``m = 0`` step came last -- is
-free. A chain found there gets the step appended and is then checked against
-the published map itself, so a wrong assumption cannot produce a false
-positive; it can only cost the time of a search that finds nothing. If the
-phase exhausts its space, the second phase searches the published map
-directly.
+This script once had a second phase that searched for a chain to the map with
+the ``m = 0`` step undone, on the assumption that the step came last. That
+assumption is now against the evidence: peeling the published map from the back
+puts the ``m = 0`` step four steps before the end. The phase is removed rather
+than kept, because it cost a whole exhausted space -- hours -- for a hypothesis
+the data does not support. It broke nothing while it was there: a chain found
+under a wrong assumption is still checked against the published map itself.
 
 Run with::
 
@@ -85,47 +79,6 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 from _common import describe, flips, read, sanity  # noqa: E402
 
 from kellermap import PolynomialMap, Reduction, over_field, search  # noqa: E402
-from kellermap.bcw import BCWStep, Carried  # noqa: E402
-
-
-def undone(published: PolynomialMap) -> PolynomialMap:
-    """Return the map one step before the ``m = 0`` step, if it came last.
-
-    That step is ``F' = G o F`` with ``G`` elementary and no fresh coordinate,
-    so undoing it needs no inverse and no search: ``G`` subtracts the product
-    of the two carrier components, and
-
-        F_i = F'_i + F'_u * F'_v
-
-    with ``u`` and ``v`` the coordinates of ``w13`` and ``w9``. Only component
-    ``i`` moves, and it becomes ``w2 + x**3 * y`` exactly -- the pristine
-    introduced value.
-
-    The assumption that the step came last is *free*, which is why this is
-    worth trying before the full search. A chain to this map is turned back
-    into a chain to the published one by appending the step, and the endpoint
-    is then checked against the published map itself. A wrong assumption
-    cannot produce a false positive; it can only cost the time of a search
-    that finds nothing.
-
-    What the assumption is not is established. `w2` occurs in components 0 and
-    1 of the published map, in terms that carry the shape of a step using that
-    coordinate as a slot. Such a step does not change `w2`'s own component --
-    only a step targeting it does, and its component holds exactly one step's
-    worth of residue -- but it does read `w2`'s value, which differs before and
-    after the rewrite. Whether any such step follows the rewrite is unknown.
-    """
-    left, right = (
-        published.variables.index(sp.Symbol("w13")),
-        published.variables.index(sp.Symbol("w9")),
-    )
-    target = published.variables.index(sp.Symbol("w2"))
-    components = list(published.components)
-    components[target] = sp.expand(
-        components[target] + components[left] * components[right]
-    )
-
-    return PolynomialMap(published.variables, tuple(components))
 
 
 def setup() -> tuple[PolynomialMap, PolynomialMap, dict[sp.Symbol, sp.Expr]]:
@@ -154,22 +107,6 @@ def setup() -> tuple[PolynomialMap, PolynomialMap, dict[sp.Symbol, sp.Expr]]:
     pool[carriers[1]] = nineteen.W2_INTRODUCED
 
     return source, published, pool
-
-
-def restore(reduction: Reduction, published: PolynomialMap) -> Reduction:
-    """Append the step ``undone`` took off, so the chain ends at the real map.
-
-    The chain lists its generators in the order its steps introduced them, so
-    the three coordinates are found by name and not by position.
-    """
-    reached = reduction.target
-    index = reached.variables.index(sp.Symbol("w2"))
-    left = reached.variables.index(sp.Symbol("w13"))
-    right = reached.variables.index(sp.Symbol("w9"))
-    step = BCWStep.build(reached, index, Carried(left), Carried(right), 1)
-    step.verify()
-
-    return Reduction((*reduction.steps, step))
 
 
 def report(
@@ -221,7 +158,6 @@ def report(
 def main(start: int = 100_000, ceiling: int = 8_000_000, spare: int = 1) -> int:
     source, published, pool = setup()
     corrected = pool[published.variables[4]]
-    reduced = undone(published)
 
     print(f"source: dimension {source.dimension}, degree {source.degree()}")
     print(f"target: dimension {published.dimension}, degree {published.degree()}")
@@ -229,26 +165,9 @@ def main(start: int = 100_000, ceiling: int = 8_000_000, spare: int = 1) -> int:
     print(f"spare:  {spare} step(s) may introduce no generator")
     print()
 
-    # First against the map one step back. The space is smaller, the assumption
-    # behind it costs nothing, and a chain found there is turned into a chain to
-    # the published map by appending the step and checking the endpoint against
-    # the published map itself.
     status, chain, signs = report(
-        "one step back: the m = 0 step assumed last",
-        source,
-        reduced,
-        pool,
-        start,
-        ceiling,
-        spare,
+        "the published map", source, published, pool, start, ceiling, spare
     )
-    if chain is not None and signs is not None:
-        chain = restore(chain, published)
-    else:
-        print()
-        status, chain, signs = report(
-            "the published map itself", source, published, pool, start, ceiling, spare
-        )
 
     if chain is None or signs is None:
         return status
