@@ -979,8 +979,20 @@ against itself. The external fact is
 conjugate(found.target.reordered(published.variables), D) == published
 ```
 
-for a diagonal `D` of ones and minus ones that the search reports rather than
-absorbs. It is checked separately from `verify()` and is the only place where
+for a diagonal `D` of non-zero constants that the search reports rather than
+absorbs.
+
+`D` was restricted to ones and minus ones until work package 10, and that was
+too narrow. The backward search exhausts its space against the published
+nineteen-dimensional map, and at the map where it stops, no coordinate can be
+undone with a factor of `+1` or `-1`. A diagonal with arbitrary non-zero
+entries is just as much a change of coordinates; it preserves degree, order,
+filtration degree and the constant determinant of a Keller map, and it is its
+own inverse only for signs, which is the one property the wider group loses.
+Solving for the entry costs less than trying two, and it took the peel from
+depth six to depth eleven. Conjugating by an entry that is not a unit needs a
+field, and `conjugate` says so rather than producing a map over the wrong
+domain. It is checked separately from `verify()` and is the only place where
 the run can be contradicted by data this library did not compute.
 
 `D` is an amendment, forced by the data in work package 7. Component 2 of the
@@ -1282,16 +1294,25 @@ recovers the map before it, and every peeled coordinate must then occur in no
 remaining component. The second half is the check: a coordinate that survives
 the undoing was not introduced by the step that was undone.
 
-**REV-4 — The sign is recorded, not chosen away.** Both signs are admitted and
-each step reports which one it used.
+**REV-4 — The constant is solved, not guessed.** Undoing a step adds some
+non-zero constant times the product of its two slot components. The constant is
+fixed by the requirement that the dropped coordinates vanish, which is linear
+in it, so it is computed and each step reports the value it used.
 
-Measured, on the published map. Peeling with `+` alone stops at dimension 18;
-with `-` alone at 17; with both it reaches 15, and 14 once a step introducing
-no generator is allowed. The signs are mixed, and they are not noise: a step
-peeled with `-` says `d_i d_a d_b = -1` for the diagonal of SEA-5, which is one
-linear equation over GF(2) per step. Peeling therefore produces the constraints
-on `D` as a by-product of running, where the forward search had to solve for it
-at the end.
+It was two signs until work package 10, and both measurements are worth keeping.
+With `+` alone the published map peels to dimension 18, with `-` alone to 17,
+with both to 15 -- so the constants are mixed, and restricting them to signs is
+a restriction. Solving instead of trying two took the peel from depth six to
+depth eleven, which is what showed the restriction was also wrong: at the map
+where the sign version stopped, six coordinates satisfy REV-2 and not one of
+them can be undone with `+1` or `-1`.
+
+A step undone with the constant `f` says `f = d_i / (d_u d_v)` for the diagonal
+of SEA-5. Read in the order the chain was built, each step introduces its fresh
+coordinates as new unknowns while its target and any reused coordinate are
+already fixed, so the equations solve by substitution rather than as a system.
+Peeling therefore produces `D` as a by-product of running, where the forward
+search had to solve for it at the end.
 
 **REV-5 — A peel is not a certificate.** The chain a peel finds is rebuilt
 forwards with `BCWStep.build`, verified, and only then is it a `Reduction`.

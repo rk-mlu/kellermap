@@ -903,6 +903,37 @@ half hours to say the same thing about a different space. Neither holds a
 chain. The direction did not find the sequence; it made the question cheap
 enough to ask repeatedly.
 
+Widening the backward space is cheap, and two widenings were tried. Computing
+the product of a step's two slot components once per pair instead of once per
+candidate takes the exhausted run from 196 to 74 seconds, which made a second
+step that introduces no generator affordable: `spare=2` exhausts as well, 1100
+maps in 297 seconds, and reaches exactly the same depth of six.
+
+What blocks it at six is measured and is not a matter of budget. The map there
+has dimension 14 and degree 7, and six of its coordinates satisfy REV-2 --
+`w2`, `w9`, `w11`, `w13`, `w14`, `w15`. Not one of them has a partner: for
+every carrier of that map and both signs, undoing leaves the coordinate
+standing. The rules exclude the chain rather than the budget hiding it.
+
+REV-2 is not the suspect. A coordinate introduced last is read by nobody, so it
+occurs in its own component and in the residue of the one its step targeted,
+and in no third. The condition is exact for the last coordinate rather than a
+heuristic, and widening it would admit coordinates that cannot be last without
+admitting any that can.
+
+The suspect was SEA-5's diagonal, and it was the right suspect. `D` was
+restricted to ones and minus ones, so undoing admitted the factors `+1` and
+`-1` and nothing else. A diagonal change of coordinates with arbitrary non-zero
+entries is just as much an isomorphism, and under it the product term picks up
+`d_i / (d_u d_v)`, any non-zero constant. That constant is fixed by the
+requirement that the dropped coordinates vanish, which is linear in it, so it
+is solved rather than tried.
+
+The widening took the peel from **depth six to depth eleven** against the
+published map, and the space is no longer exhausted: 8000 maps in 298 seconds
+reach eleven without finishing. Recovering the fifteen-dimensional map still
+costs 8 maps. SEA-5 and REV-4 record the change; REV-2 is untouched.
+
 The move order decides more than anything else here. With coordinate-removing
 steps offered one at a time first, the fifteen-dimensional recovery does not
 come through in 1500 maps; with the steps that remove two offered first, it

@@ -40,7 +40,7 @@ from .bcw.step import Factor
 from .linear import over_field
 from .polynomial_map import PolynomialMap
 from .reduction import Reduction
-from .search import _solve_gf2, conjugate
+from .search import conjugate
 
 
 @dataclass(frozen=True)
@@ -54,7 +54,7 @@ class Undo:
     target: sp.Symbol
     slots: tuple[sp.Symbol, sp.Symbol]
     dropped: tuple[sp.Symbol, ...]
-    sign: int
+    factor: sp.Expr
 
 
 @dataclass(frozen=True)
@@ -115,7 +115,7 @@ def undo(
     left, right = (current.components[index[slot]] for slot in step.slots)
     components = list(current.components)
     components[index[step.target]] = sp.expand(
-        components[index[step.target]] + step.sign * left * right
+        components[index[step.target]] + step.factor * left * right
     )
 
     kept = [
@@ -139,6 +139,49 @@ def undo(
     # map over ``QQ`` would come back over ``ZZ`` and compare unequal to the
     # one it came from. Peeling changes the coordinates, not the domain.
     return over_field(reached) if current.ring.domain.is_Field else reached
+
+
+def factor(
+    current: PolynomialMap,
+    target: sp.Symbol,
+    slots: tuple[sp.Symbol, sp.Symbol],
+    dropped: tuple[sp.Symbol, ...],
+) -> sp.Expr | None:
+    """Return the constant that makes the dropped coordinates cancel.
+
+    A step subtracts ``d_i / (d_u d_v)`` times the product of its slot
+    components once the map has been conjugated by a diagonal ``D``, so undoing
+    it adds some non-zero constant times that product back. The constant is not
+    guessed: the terms carrying a dropped coordinate have to vanish, which
+    fixes it, and ``None`` says no constant does.
+
+    ``dropped`` may hold two coordinates, and one of them settles the constant.
+    Whether it also suits the other is decided by ``undo``, which requires
+    every dropped coordinate to have gone.
+
+    Until 0.4 this tried ``+1`` and ``-1``. That was too narrow -- see
+    ``conjugate`` and ``roadmap.md`` -- and solving costs less than trying two.
+    """
+    components = dict(zip(current.variables, current.components, strict=True))
+    product = sp.expand(components[slots[0]] * components[slots[1]])
+
+    # One dropped coordinate settles it. A second would give a second equation
+    # for the same constant, and checking that the two agree would duplicate
+    # what ``undo`` does anyway: it requires *every* dropped coordinate to have
+    # vanished, so a constant that suits only the first is rejected there.
+    coordinate = dropped[0]
+    here = sp.expand(components[target]).coeff(coordinate, 1)
+    there = product.coeff(coordinate, 1)
+
+    # Nicht erreichbar: die Komponente eines Platzes ist ``X + P`` und nie
+    # null, also ist das Produkt in jeder Platzkoordinate linear mit einem
+    # Koeffizienten ungleich null.
+    if there == 0:  # pragma: no cover - a slot component is never zero
+        return None
+
+    ratio = sp.cancel(-here / there)
+
+    return None if ratio == 0 or ratio.free_symbols else ratio
 
 
 def moves(current: PolynomialMap, spare: int) -> Iterator[Undo]:
@@ -165,42 +208,50 @@ def moves(current: PolynomialMap, spare: int) -> Iterator[Undo]:
     for first, second in combinations(tuple(peelable), 2):
         if peelable[first] != peelable[second]:
             continue
-        for sign in (1, -1):
-            yield Undo(peelable[first], (first, second), (first, second), sign)
+        target = peelable[first]
+        found = factor(current, target, (first, second), (first, second))
+        if found is not None:
+            yield Undo(target, (first, second), (first, second), found)
 
     for fresh, target in peelable.items():
         for carried in carriers:
             if carried in (fresh, target):
                 continue
-            for sign in (1, -1):
-                yield Undo(target, (carried, fresh), (fresh,), sign)
+            found = factor(current, target, (carried, fresh), (fresh,))
+            if found is not None:
+                yield Undo(target, (carried, fresh), (fresh,), found)
 
     if spare <= 0:
         return
 
+    components = dict(zip(current.variables, current.components, strict=True))
     sizes = {
         variable: len(sp.Add.make_args(sp.expand(component)))
-        for variable, component in zip(
-            current.variables, current.components, strict=True
-        )
+        for variable, component in components.items()
     }
-    for target in current.variables:
-        if sizes[target] <= 2:
-            continue
-        for left, right in combinations(carriers, 2):
-            if target in (left, right):
+    # Das Produkt der beiden Platzkomponenten haengt weder vom Ziel noch vom
+    # Vorzeichen ab. Es einmal je Paar zu rechnen statt einmal je Kandidat ist
+    # bei neunzehn Koordinaten der Unterschied zwischen einer und vierzig
+    # Multiplikationen dichter Polynome.
+    for left, right in combinations(carriers, 2):
+        product = sp.expand(components[left] * components[right])
+        shared = sp.Poly(product, *current.variables).as_dict()
+        for target, size in sizes.items():
+            if size <= 2 or target in (left, right):
                 continue
-            for sign in (1, -1):
-                step = Undo(target, (left, right), (), sign)
-                reached = undo(current, step)
-                # Nicht erreichbar: der Zug entfernt keine Koordinate, also ist
-                # die Ueberlebenspruefung von REV-3 leer, und Ziel wie Plaetze
-                # stammen aus dieser Karte.
-                if reached is None:  # pragma: no cover - nothing to drop
+            here = sp.Poly(components[target], *current.variables).as_dict()
+            # A step that introduces nothing cancels no coordinate, so the
+            # constant is not fixed by REV-3. What fixes it is that the step
+            # removed something: every monomial the two share gives the one
+            # constant that cancels it, and only a constant that shortens the
+            # component is offered.
+            for monomial, coefficient in here.items():
+                if monomial not in shared:
                     continue
-                position = reached.variables.index(target)
-                if len(sp.Add.make_args(reached.components[position])) < sizes[target]:
-                    yield step
+                candidate = sp.cancel(-coefficient / shared[monomial])
+                shortened = sp.expand(components[target] + candidate * product)
+                if shortened != 0 and len(sp.Add.make_args(shortened)) < size:
+                    yield Undo(target, (left, right), (), candidate)
 
 
 def peel(
@@ -259,32 +310,52 @@ def peel(
     )
 
 
-def _diagonal(target: PolynomialMap, path: tuple[Undo, ...]) -> tuple[int, ...] | None:
-    """Solve the signs the peel collected, with the source coordinates fixed.
+def _scaling(
+    source: PolynomialMap,
+    target: PolynomialMap,
+    path: tuple[Undo, ...],
+) -> tuple[sp.Expr, ...] | None:
+    """Solve the constants the peel collected into the diagonal of SEA-5.
 
-    One equation per step, over GF(2): a step peeled with ``-`` says
-    ``d_i d_a d_b = -1``. The coordinates that survive the whole peel are the
-    source's, and they are pinned to ``+1`` because the source is fixed data
-    and not something a sign may be chosen for.
+    Conjugating by ``D`` turns a step into
+
+        G'_i = G_i - (d_i / (d_u d_v)) G_u G_v,
+
+    so a step undone with the constant ``f`` says ``f = d_i / (d_u d_v)``. Read
+    in the order the chain was built, each step introduces its fresh
+    coordinates as new unknowns while its target and any reused coordinate are
+    already fixed, so the equations solve by substitution rather than as a
+    system. A step with two fresh coordinates leaves one degree of freedom,
+    which is spent on the first of them; a step with none is a consistency
+    check and can fail.
+
+    The coordinates that survive the whole peel are the source's and are fixed
+    to ``1``: the source is data, not something a scaling may be chosen for.
     """
-    position = {variable: index for index, variable in enumerate(target.variables)}
-    size = target.dimension
-    rows: list[tuple[list[int], int]] = []
+    scale: dict[sp.Symbol, sp.Expr] = {
+        variable: sp.Integer(1) for variable in source.variables
+    }
 
-    for step in path:
-        row = [0] * size
-        for variable in (step.target, *step.slots):
-            row[position[variable]] ^= 1
-        rows.append((row, 0 if step.sign == 1 else 1))
+    for step in reversed(path):
+        fresh = [slot for slot in step.slots if slot in step.dropped]
+        known = [slot for slot in step.slots if slot not in step.dropped]
 
-    peeled = {variable for step in path for variable in step.dropped}
-    for variable, index in position.items():
-        if variable not in peeled:
-            row = [0] * size
-            row[index] = 1
-            rows.append((row, 0))
+        if len(fresh) == 2:
+            scale[fresh[0]] = sp.Integer(1)
+            scale[fresh[1]] = sp.cancel(scale[step.target] / step.factor)
+        elif len(fresh) == 1:
+            scale[fresh[0]] = sp.cancel(
+                scale[step.target] / (step.factor * scale[known[0]])
+            )
+        else:
+            wanted = sp.cancel(scale[step.target] / (scale[known[0]] * scale[known[1]]))
+            if sp.simplify(wanted - step.factor) != 0:
+                return None
 
-    return _solve_gf2(rows, size)
+    if any(variable not in scale for variable in target.variables):
+        return None  # pragma: no cover - every coordinate is source or dropped
+
+    return tuple(scale[variable] for variable in target.variables)
 
 
 def _rebuild(
@@ -300,14 +371,16 @@ def _rebuild(
     or the result is discarded, and the endpoint is compared against the target
     as SEA-5 requires.
     """
-    signs = _diagonal(target, path)
+    signs = _scaling(source, target, path)
     if signs is None:
         return None
 
     aligned = conjugate(target, signs)
     maps = [aligned]
     for step in path:
-        reached = undo(maps[-1], Undo(step.target, step.slots, step.dropped, 1))
+        reached = undo(
+            maps[-1], Undo(step.target, step.slots, step.dropped, sp.Integer(1))
+        )
         # Nicht erreichbar: unter der Konjugation mit ``D`` nimmt der
         # Produktterm eines mit ``s`` abgetragenen Schritts den Faktor
         # ``d_i d_a d_b = s`` auf, wird also ``+1``. Ein loesbares System heisst

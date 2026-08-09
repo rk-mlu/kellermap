@@ -316,12 +316,33 @@ def test_the_identity_diagonal_changes_nothing(flat: PolynomialMap) -> None:
     assert conjugate(flat, (1, 1)) == flat
 
 
-@pytest.mark.parametrize("wrong", [(1,), (1, 1, 1), (1, 2), (0, 1)])
-def test_only_ones_and_minus_ones_are_admitted(
+@pytest.mark.parametrize("wrong", [(1,), (1, 1, 1), (0, 1), (1, 0)])
+def test_a_diagonal_must_be_invertible_and_the_right_length(
     flat: PolynomialMap, wrong: tuple[int, ...]
 ) -> None:
-    with pytest.raises(ValueError, match="entries of 1 or -1"):
+    """Eine Null ist kein Koordinatenwechsel."""
+    with pytest.raises(ValueError, match="non-zero entries"):
         conjugate(flat, wrong)
+
+
+def test_an_entry_other_than_a_sign_is_admitted(flat: PolynomialMap) -> None:
+    """Bis 0.4 war ``D`` auf ``+-1`` beschraenkt, und das war zu eng.
+
+    Eine Diagonale mit beliebigen Eintraegen ungleich null ist genauso ein
+    Koordinatenwechsel. Das Abtragen kam damit von Tiefe sechs auf elf.
+    """
+    keller = over_field(PolynomialMap((x, y), (x + y**3, y)))
+    scaled = conjugate(keller, (2, 1))
+
+    assert scaled.components == (x + 2 * y**3, y)
+    assert scaled.determinant() == keller.determinant() == 1
+    assert conjugate(scaled, (sp.Rational(1, 2), 1)) == keller
+
+
+def test_a_non_unit_over_a_ring_is_refused(flat: PolynomialMap) -> None:
+    """Ueber ``ZZ`` gibt es kein Inverses zu zwei."""
+    with pytest.raises(ValueError, match="not a unit"):
+        conjugate(flat, (2, 1))
 
 
 # --------------------------------------------------------------------------

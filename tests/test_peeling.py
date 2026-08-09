@@ -11,7 +11,15 @@ import sympy as sp
 
 from kellermap import PolynomialMap, examples, over_field
 from kellermap.bcw import BCWStep, Carried, Fresh
-from kellermap.peeling import PeelOutcome, Undo, moves, peel, removable, undo
+from kellermap.peeling import (
+    PeelOutcome,
+    Undo,
+    factor,
+    moves,
+    peel,
+    removable,
+    undo,
+)
 from kellermap.search import conjugate
 
 x, y, z = sp.symbols("x y z")
@@ -67,7 +75,7 @@ def test_the_criterion_filters_and_the_undoing_decides(
     _, target = two_steps
 
     assert u in removable(target)
-    assert undo(target, Undo(x, (u, v), (u, v), 1)) is None
+    assert undo(target, Undo(x, (u, v), (u, v), sp.Integer(1))) is None
 
 
 def test_the_criterion_is_what_makes_the_direction_cheap() -> None:
@@ -92,7 +100,7 @@ def test_undoing_needs_no_inverse(
 ) -> None:
     source, target = one_step
 
-    reached = undo(target, Undo(x, (u, v), (u, v), 1))
+    reached = undo(target, Undo(x, (u, v), (u, v), sp.Integer(1)))
 
     assert reached is not None
     assert reached == source
@@ -108,7 +116,7 @@ def test_a_coordinate_that_survives_the_undoing_is_refused(
     """
     _, target = two_steps
 
-    assert undo(target, Undo(x, (u, v), (u, v), 1)) is None
+    assert undo(target, Undo(x, (u, v), (u, v), sp.Integer(1))) is None
 
 
 def test_a_slot_the_map_does_not_have_is_refused(
@@ -116,17 +124,17 @@ def test_a_slot_the_map_does_not_have_is_refused(
 ) -> None:
     _, target = one_step
 
-    assert undo(target, Undo(x, (u, sp.Symbol("nowhere")), (u,), 1)) is None
-    assert undo(target, Undo(sp.Symbol("nowhere"), (u, v), (u,), 1)) is None
+    assert undo(target, Undo(x, (u, sp.Symbol("nowhere")), (u,), sp.Integer(1))) is None
+    assert undo(target, Undo(sp.Symbol("nowhere"), (u, v), (u,), sp.Integer(1))) is None
 
 
-def test_the_wrong_sign_does_not_undo(
+def test_the_wrong_factor_does_not_undo(
     one_step: tuple[PolynomialMap, PolynomialMap],
 ) -> None:
-    """REV-4: das Vorzeichen entscheidet sich am Verschwinden der Koordinate."""
+    """REV-4: der Faktor entscheidet sich am Verschwinden der Koordinate."""
     _, target = one_step
 
-    assert undo(target, Undo(x, (u, v), (u, v), -1)) is None
+    assert undo(target, Undo(x, (u, v), (u, v), sp.Integer(-1))) is None
 
 
 # --------------------------------------------------------------------------
@@ -305,7 +313,7 @@ def test_a_step_that_removes_nothing_must_shorten_its_target() -> None:
     offered = [step for step in moves(target, spare=1) if not step.dropped]
 
     assert offered
-    assert all(step.sign == 1 for step in offered)
+    assert all(step.factor == 1 for step in offered)
 
 
 def test_contradictory_signs_leave_no_diagonal() -> None:
@@ -341,3 +349,22 @@ def test_a_carrier_may_also_be_a_target_and_is_then_not_its_own_slot() -> None:
     assert 1 in target.carrier_indices
     assert len(sp.Add.make_args(target.components[1])) > 2
     assert all(step.target not in step.slots for step in moves(target, spare=1))
+
+
+def test_two_coordinates_that_disagree_on_the_factor_are_not_one_step() -> None:
+    """Ein Schritt hat einen Faktor, nicht zwei.
+
+    Hier legen zwei getrennte Schritte je eine Koordinate auf derselben
+    Zielkomponente an. Beide sind danach entfernbar und werden als Paar
+    angeboten -- aber sie verlangen verschiedene Konstanten, also stammen sie
+    nicht von einem gemeinsamen Schritt.
+    """
+    source = over_field(
+        PolynomialMap((x, y), (x + x**2 * y**3 + x**3 * y**5, y + x**2)),
+    )
+    first = BCWStep.build(source, 0, Carried(1), Fresh(y**3, u), 1).target
+    target = BCWStep.build(first, 0, Carried(1), Fresh(x * y**5, v), 1).target
+
+    assert set(removable(target)) == {u, v}
+    assert factor(target, x, (u, v), (u, v)) is None
+    assert factor(target, x, (y, u), (u,)) == 1

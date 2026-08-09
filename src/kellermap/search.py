@@ -24,9 +24,10 @@ from __future__ import annotations
 from collections.abc import Iterable, Iterator, Mapping, Sequence
 from dataclasses import dataclass
 from itertools import combinations
-from typing import TypeAlias, cast
+from typing import Any, TypeAlias, cast
 
 import sympy as sp
+from sympy.polys.polyerrors import CoercionFailed
 from sympy.polys.rings import PolyElement
 
 from .bcw import BCWStep, Carried, Fresh
@@ -384,8 +385,8 @@ class SearchOutcome:
     exhausted: bool
 
 
-def conjugate(source: PolynomialMap, signs: Sequence[int]) -> PolynomialMap:
-    """Return ``D F D^-1`` for a diagonal ``D`` of ones and minus ones.
+def conjugate(source: PolynomialMap, signs: Sequence[sp.Expr]) -> PolynomialMap:
+    """Return ``D F D^-1`` for a diagonal ``D`` of non-zero constants.
 
     A change of coordinates and not a presentation change: it rewrites the
     polynomials. Degree, order and filtration degree survive, and a collision
@@ -397,32 +398,54 @@ def conjugate(source: PolynomialMap, signs: Sequence[int]) -> PolynomialMap:
     same constant, which is the case SEA-5 is about; for a map whose
     determinant is not constant the two are equal only up to the sign flips.
 
-    Entries other than ``1`` and ``-1`` raise: this is the group SEA-5 admits,
-    not an arbitrary linear change.
+    A zero entry raises: ``D`` has to be invertible, and this is the group
+    SEA-5 admits, not an arbitrary linear change.
+
+    The entries were ones and minus ones until 0.4. That was too narrow, and
+    the measurement that showed it is in ``roadmap.md``: the backward search
+    exhausts its space against the published nineteen-dimensional map, and at
+    the map where it stops, no coordinate can be undone with a factor of ``+1``
+    or ``-1``. A diagonal with arbitrary non-zero entries is just as much a
+    change of coordinates, and Alpoege's map has determinant ``-2`` while its
+    reductions have ``1``, so a scalar other than a sign is the rule in this
+    material rather than the exception.
     """
-    if len(signs) != source.dimension or any(sign not in (1, -1) for sign in signs):
+    entries = tuple(sp.sympify(entry) for entry in signs)
+    if len(entries) != source.dimension or any(entry == 0 for entry in entries):
         raise ValueError(
-            f"Expected {source.dimension} entries of 1 or -1, got {tuple(signs)}."
+            f"Expected {source.dimension} non-zero entries, got {entries}."
         )
 
     ring = source.ring
-    flipped = tuple(position for position, sign in enumerate(signs) if sign == -1)
+    domain = ring.domain
+    if not domain.is_Field and any(entry not in (1, -1) for entry in entries):
+        raise ValueError(
+            f"Conjugating by {entries} over {domain} needs the inverse of an "
+            "entry that is not a unit. Use over_field first."
+        )
+
+    try:
+        scale = [domain.from_sympy(entry) for entry in entries]
+    except CoercionFailed as error:  # pragma: no cover - the field check first
+        raise ValueError(f"The entries {entries} do not lie in {domain}.") from error
+
+    def scaled(monomial: tuple[int, ...], coefficient: Any, position: int) -> Any:
+        value = coefficient * scale[position]
+        for index, exponent in enumerate(monomial):
+            for _ in range(exponent):
+                value = value / scale[index]
+        return value
 
     return PolynomialMap.from_ring(
         ring,
         tuple(
             ring.from_terms(
                 [
-                    (
-                        monomial,
-                        coefficient
-                        * (-1) ** sum(monomial[position] for position in flipped)
-                        * sign,
-                    )
+                    (monomial, scaled(monomial, coefficient, position))
                     for monomial, coefficient in component.iterterms()
                 ]
             )
-            for component, sign in zip(source.to_polynomials(), signs, strict=True)
+            for position, component in enumerate(source.to_polynomials())
         ),
     )
 

@@ -1030,7 +1030,7 @@ compared against the target as before. The diagonal is reported the same way:
 ```python
 >>> outcome = peel(start, conjugate(finish, (1, 1, 1, -1)))
 >>> outcome.signs
-(1, 1, -1, 1)
+(1, 1, 1, -1)
 
 ```
 
