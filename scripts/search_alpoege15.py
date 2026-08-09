@@ -49,7 +49,7 @@ import sympy as sp
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-from _common import describe, flips, read, sanity  # noqa: E402
+from _common import describe, read, sanity  # noqa: E402
 
 from kellermap import (  # noqa: E402
     LinearStep,
@@ -111,7 +111,7 @@ def main(
         f"exhausted {outcome.exhausted}, {spent:.0f}s"
     )
 
-    if outcome.reduction is None or outcome.signs is None:
+    if outcome.reduction is None:
         print()
         if outcome.exhausted:
             print("The space this search covers holds no chain. The rules that")
@@ -124,15 +124,14 @@ def main(
         print("would: the search did not finish looking.")
         return 1
 
-    matched = sanity(outcome.reduction, outcome.signs, target)
+    matched = sanity(outcome.reduction, target)
     print()
     print("A chain was found.")
     print(f"  steps      {len(outcome.reduction.steps)}")
     print("  verify()   passed")
     print(f"  endpoint   {matched}")
-    print(f"  D flips    {[str(v) for v in flips(outcome.signs, target)] or 'nothing'}")
     print()
-    print(describe(outcome.reduction, outcome.signs, target))
+    print(describe(outcome.reduction, target))
 
     return 0 if matched else 2
 

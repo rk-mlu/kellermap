@@ -70,6 +70,16 @@ It can still find shorter ones, which is a different question and a fair one.
 With ``spare=2`` the structure is pinned: ``a = 1``, ``b = 14``, ``c = 2`` --
 exactly one step introducing two generators, and it is the first.
 
+``pairs`` is the other half of that and defaults to ``1`` for the same reason.
+Fixing the number of steps fixes ``a``, and a peel that may take one such step
+does not spend its search on chains with two. The pairs that go together:
+``spare=2, pairs=1`` for a seventeen-step chain, ``spare=3, pairs=2`` for one
+with two such steps and still seventeen, ``spare=2, pairs=16`` for no
+restriction beyond the steps that introduce nothing.
+
+Several runs with different settings search genuinely different spaces and can
+be started side by side. The same settings twice search the same space twice.
+
 A first round below 68425 maps is wasted. The run of 8 August 2026 exhausted a
 strictly smaller space at that count -- the search then stopped at the last
 introduction, so no chain could *end* with a step that introduces nothing, and
@@ -93,7 +103,7 @@ import sympy as sp
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-from _common import describe, flips, read, sanity  # noqa: E402
+from _common import describe, read, sanity  # noqa: E402
 
 from kellermap import (  # noqa: E402
     PolynomialMap,
@@ -157,8 +167,8 @@ def report(
         )
         sys.stdout.flush()
 
-        if outcome.reduction is not None and outcome.signs is not None:
-            return 0, outcome.reduction, outcome.signs
+        if outcome.reduction is not None:
+            return 0, outcome.reduction
 
         if outcome.exhausted:
             print("The space this search covers holds no chain. The rules that")
@@ -167,7 +177,7 @@ def report(
             print("co-factors are parts of the division of the displacement.")
             print(f"The longest chain it reached was {outcome.deepest} steps.")
             print("That is not a statement that no chain exists; see SEA-6.")
-            return 2, None, None
+            return 2, None
 
         budget *= 2
 
@@ -176,7 +186,7 @@ def report(
     if outcome is not None:
         print(f"The longest chain it reached was {outcome.deepest} steps.")
 
-    return 1, None, None
+    return 1, None
 
 
 def unpicking(
@@ -185,14 +195,15 @@ def unpicking(
     start: int,
     ceiling: int,
     spare: int,
-) -> tuple[int, Reduction | None, tuple[sp.Expr, ...] | None]:
+    pairs: int,
+) -> tuple[int, Reduction | None]:
     """Peel with a doubling budget, printing what each round cost."""
     print("--- peeling the published map from the far end ---")
     budget, outcome = start, None
 
     while budget <= ceiling:
         began = time.monotonic()
-        outcome = peel(source, target, budget=budget, spare=spare)
+        outcome = peel(source, target, budget=budget, spare=spare, pairs=pairs)
         spent = time.monotonic() - began
         print(
             f"budget {budget:>9}: examined {outcome.examined:>9}, "
@@ -201,17 +212,18 @@ def unpicking(
         )
         sys.stdout.flush()
 
-        if outcome.reduction is not None and outcome.signs is not None:
-            return 0, outcome.reduction, outcome.signs
+        if outcome.reduction is not None:
+            return 0, outcome.reduction
 
         if outcome.exhausted:
             print("The space this peel covers holds no chain. The rules that")
-            print(f"defined it: spare={spare}; a coordinate is peeled only where")
+            print(f"defined it: spare={spare}; pairs={pairs}; a coordinate is peeled")
+            print("only where")
             print("it occurs in exactly two components; the constant is the one")
             print("that makes it vanish.")
             print(f"The longest chain it reached was {outcome.deepest} steps.")
             print("That is not a statement that no chain exists; see REV-7.")
-            return 2, None, None
+            return 2, None
 
         budget *= 2
 
@@ -220,10 +232,15 @@ def unpicking(
     if outcome is not None:
         print(f"The longest chain it reached was {outcome.deepest} steps.")
 
-    return 1, None, None
+    return 1, None
 
 
-def main(start: int = 100_000, ceiling: int = 8_000_000, spare: int = 2) -> int:
+def main(
+    start: int = 100_000,
+    ceiling: int = 8_000_000,
+    spare: int = 2,
+    pairs: int = 1,
+) -> int:
     source, published, pool = setup()
     corrected = pool[published.variables[4]]
 
@@ -231,19 +248,20 @@ def main(start: int = 100_000, ceiling: int = 8_000_000, spare: int = 2) -> int:
     print(f"target: dimension {published.dimension}, degree {published.degree()}")
     print(f"pool:   {len(pool)} values, w2 corrected to {corrected}")
     print(f"spare:  {spare} step(s) may introduce no generator")
+    print(f"pairs:  {pairs} step(s) may introduce two")
     print()
 
     # Peeling first. It needs neither the pool nor the names, it reaches depth
     # eleven against this map where the forward search stops at six, and its
     # spaces are exhausted in minutes rather than hours.
-    status, chain, signs = unpicking(source, published, start, ceiling, spare)
+    status, chain = unpicking(source, published, start, ceiling, spare, pairs)
     if chain is None:
         print()
-        status, chain, signs = report(
+        status, chain = report(
             "the forward search", source, published, pool, start, ceiling, spare
         )
 
-    if chain is None or signs is None:
+    if chain is None:
         return status
 
     print()
@@ -251,19 +269,18 @@ def main(start: int = 100_000, ceiling: int = 8_000_000, spare: int = 2) -> int:
     print(f"  steps      {len(chain.steps)}")
     print(f"  dimensions {chain.dimensions()}")
     print(f"  degrees    {chain.degrees()}")
-    matched = sanity(chain, signs, published)
+    matched = sanity(chain, published)
     print("  verify()   passed")
     print(f"  endpoint   {matched}")
-    print(f"  D flips    {[str(v) for v in flips(signs, published)] or 'nothing'}")
     if not matched:
         print("  The endpoint does not match the published map. Nothing is claimed.")
         return 2
     print()
-    print(describe(chain, signs, published))
+    print(describe(chain, published))
 
     return 0
 
 
 if __name__ == "__main__":
-    arguments = [int(value) for value in sys.argv[1:4]]
+    arguments = [int(value) for value in sys.argv[1:5]]
     raise SystemExit(main(*arguments))

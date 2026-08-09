@@ -36,7 +36,6 @@ from kellermap import (
     Reduction,
     ReductionContext,
     VerificationError,
-    conjugate,
     enumerate_candidates,
     examples,
     over_field,
@@ -409,13 +408,7 @@ def test_the_search_recovers_a_chain_to_this_map(reduction: Reduction) -> None:
     assert outcome.reduction is not None
     assert outcome.reduction.verify() is None
     assert outcome.reduction.source == source
-    assert outcome.signs == (1,) * 15
-    assert (
-        conjugate(
-            outcome.reduction.target.reordered(ALPOEGE15.variables), outcome.signs
-        )
-        == ALPOEGE15
-    )
+    assert outcome.reduction.target.reordered(ALPOEGE15.variables) == ALPOEGE15
 
 
 @pytest.mark.slow

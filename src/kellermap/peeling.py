@@ -40,7 +40,6 @@ from .bcw.step import Factor
 from .linear import over_field
 from .polynomial_map import PolynomialMap
 from .reduction import Reduction
-from .search import conjugate
 
 
 @dataclass(frozen=True)
@@ -62,13 +61,17 @@ class PeelOutcome:
     """What a peel returns.
 
     ``reduction`` is a chain rebuilt forwards and verified, or ``None``.
-    ``signs`` is the diagonal of SEA-5. ``examined`` and ``deepest`` report the
-    budget and how far the peel got, as SEA-11 asks; ``exhausted`` says whether
-    the space this peel covers was seen to the end.
+    ``examined`` and ``deepest`` report the budget and how far the peel got, as
+    SEA-11 asks; ``exhausted`` says whether the space this peel covers was seen
+    to the end.
+
+    There was a ``signs`` field between work packages 9 and 10, holding the
+    diagonal of SEA-5. BCW-11 removed the need for it: the constant a step is
+    undone with is now the step's own coefficient, so the chain reaches the
+    target exactly and there is nothing left for a diagonal to carry.
     """
 
     reduction: Reduction | None
-    signs: tuple[int, ...] | None
     examined: int
     deepest: int
     exhausted: bool
@@ -215,6 +218,13 @@ def moves(current: PolynomialMap, spare: int, pairs: int = 16) -> Iterator[Undo]
             yield Undo(target, (first, second), (first, second), found)
 
     for fresh, target in peelable.items():
+        # BCW-12: eine frische Koordinate darf beide Plaetze fuellen. ``G``
+        # subtrahiert dann ein Quadrat. Der fuenfzehnte Schritt der
+        # veroeffentlichten Kette ist von dieser Gestalt.
+        found = factor(current, target, (fresh, fresh), (fresh,))
+        if found is not None:
+            yield Undo(target, (fresh, fresh), (fresh,), found)
+
         for carried in carriers:
             if carried in (fresh, target):
                 continue
@@ -296,15 +306,26 @@ def peel(
         deepest[0] = max(deepest[0], len(path))
 
         if current.dimension == source.dimension:
-            found = _rebuild(source, target, path, budget - remaining[0], deepest[0])
-            if found is not None:
-                return found
+            # Der Vergleich hier und nicht in ``_rebuild``: dort kostet er das
+            # nochmalige Rueckrechnen des ganzen Pfades, hier eine Gleichheit.
+            if current.reordered(source.variables) == source:
+                found = _rebuild(
+                    source, target, path, budget - remaining[0], deepest[0]
+                )
+                if found is not None:
+                    return found
 
         for step in moves(current, spare_left, pairs_left):
             reached = undo(current, step)
             if reached is None or reached.dimension < source.dimension:
                 continue
             if _stranded(source, reached):
+                continue
+            # Vorwaerts faellt der Grad nie -- die neuen Terme haben Grad
+            # hoechstens ``1 + deg Q <= deg(P Q)``, solange kein Faktor konstant
+            # ist, und Konstanten sind ausgeschlossen. Rueckwaerts steigt er
+            # also nie ueber den der Quelle.
+            if reached.degree() > source.degree():
                 continue
 
             found = walk(
@@ -323,7 +344,7 @@ def peel(
         return outcome
 
     return PeelOutcome(
-        None, None, budget - max(remaining[0], 0), deepest[0], remaining[0] > 0
+        None, budget - max(remaining[0], 0), deepest[0], remaining[0] > 0
     )
 
 
@@ -344,54 +365,6 @@ def _stranded(source: PolynomialMap, reached: PolynomialMap) -> bool:
     return reached.dimension == source.dimension + 1 and not source.carrier_indices
 
 
-def _scaling(
-    source: PolynomialMap,
-    target: PolynomialMap,
-    path: tuple[Undo, ...],
-) -> tuple[sp.Expr, ...] | None:
-    """Solve the constants the peel collected into the diagonal of SEA-5.
-
-    Conjugating by ``D`` turns a step into
-
-        G'_i = G_i - (d_i / (d_u d_v)) G_u G_v,
-
-    so a step undone with the constant ``f`` says ``f = d_i / (d_u d_v)``. Read
-    in the order the chain was built, each step introduces its fresh
-    coordinates as new unknowns while its target and any reused coordinate are
-    already fixed, so the equations solve by substitution rather than as a
-    system. A step with two fresh coordinates leaves one degree of freedom,
-    which is spent on the first of them; a step with none is a consistency
-    check and can fail.
-
-    The coordinates that survive the whole peel are the source's and are fixed
-    to ``1``: the source is data, not something a scaling may be chosen for.
-    """
-    scale: dict[sp.Symbol, sp.Expr] = {
-        variable: sp.Integer(1) for variable in source.variables
-    }
-
-    for step in reversed(path):
-        fresh = [slot for slot in step.slots if slot in step.dropped]
-        known = [slot for slot in step.slots if slot not in step.dropped]
-
-        if len(fresh) == 2:
-            scale[fresh[0]] = sp.Integer(1)
-            scale[fresh[1]] = sp.cancel(scale[step.target] / step.factor)
-        elif len(fresh) == 1:
-            scale[fresh[0]] = sp.cancel(
-                scale[step.target] / (step.factor * scale[known[0]])
-            )
-        else:
-            wanted = sp.cancel(scale[step.target] / (scale[known[0]] * scale[known[1]]))
-            if sp.simplify(wanted - step.factor) != 0:
-                return None
-
-    if any(variable not in scale for variable in target.variables):
-        return None  # pragma: no cover - every coordinate is source or dropped
-
-    return tuple(scale[variable] for variable in target.variables)
-
-
 def _rebuild(
     source: PolynomialMap,
     target: PolynomialMap,
@@ -403,28 +376,16 @@ def _rebuild(
 
     REV-5. The peel produced a structure; this builds the chain. The two agree
     or the result is discarded, and the endpoint is compared against the target
-    as SEA-5 requires.
+    as SEA-5 requires -- as plain equality since work package 10, because the
+    constant each step was undone with goes into the step itself.
     """
-    signs = _scaling(source, target, path)
-    if signs is None:
-        return None
-
-    aligned = conjugate(target, signs)
-    maps = [aligned]
+    maps = [target]
     for step in path:
-        reached = undo(
-            maps[-1], Undo(step.target, step.slots, step.dropped, sp.Integer(1))
-        )
-        # Nicht erreichbar: unter der Konjugation mit ``D`` nimmt der
-        # Produktterm eines mit ``s`` abgetragenen Schritts den Faktor
-        # ``d_i d_a d_b = s`` auf, wird also ``+1``. Ein loesbares System heisst
-        # genau, dass die Wiederholung mit ``+1`` durchgeht.
-        if reached is None:  # pragma: no cover - implied by the solved system
+        reached = undo(maps[-1], step)
+        # Nicht erreichbar: der Weg wurde eben durch dieselben Zuege gefunden.
+        if reached is None:  # pragma: no cover - the path came from undoing
             return None
         maps.append(reached)
-
-    if maps[-1].reordered(source.variables) != source:
-        return None
 
     steps: list[BCWStep] = []
     current = maps[-1]
@@ -438,11 +399,11 @@ def _rebuild(
         current = built.target
 
     # Nicht erreichbar: jeder Einzelschritt hat oben schon gegen seine Karte
-    # geprueft, und die erste davon ist ``aligned``.
-    if current.reordered(aligned.variables) != aligned:  # pragma: no cover - per step
+    # geprueft, und die erste davon ist das Ziel.
+    if current.reordered(target.variables) != target:  # pragma: no cover - per step
         return None
 
-    return PeelOutcome(Reduction(tuple(steps)), signs, examined, deepest, False)
+    return PeelOutcome(Reduction(tuple(steps)), examined, deepest, False)
 
 
 def _forward(
@@ -475,6 +436,7 @@ def _forward(
         factors[0],
         factors[1],
         level,
+        step.factor,
     )
     built.verify()
 

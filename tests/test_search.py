@@ -409,19 +409,23 @@ def test_the_search_recovers_a_known_chain(two_step: tuple) -> None:
     assert outcome.reduction is not None
     assert outcome.reduction.verify() is None
     assert outcome.reduction.target == target
-    assert outcome.signs == (1, 1, 1, 1)
 
 
-def test_the_result_is_reported_up_to_the_diagonal(two_step: tuple) -> None:
-    """SEA-5: das Ziel wird bis auf eine ausgewiesene Konjugation erreicht."""
+def test_a_conjugated_target_is_out_of_reach_of_the_pool(two_step: tuple) -> None:
+    """SEA-5 ist seit WP 10 wieder Gleichheit, und der Vorwaertssuche fehlt
+    dafuer etwas, das dem Abtrag nicht fehlt.
+
+    Die Schrittfamilie ist unter Diagonalkonjugation abgeschlossen, also *gibt*
+    es eine Kette zum konjugierten Ziel -- ihre Schritte tragen aber andere
+    Koeffizienten und andere Faktorwerte, und beide kommen hier aus einem
+    Vorrat, der vom unkonjugierten Ziel abgelesen wurde. Der Abtrag loest sie
+    stattdessen; siehe ``test_peeling.py``.
+    """
     source, target, pool = two_step
     flipped = conjugate(target, (1, 1, 1, -1))
 
-    outcome = search(source, flipped, pool)
-
-    assert outcome.reduction is not None
-    assert outcome.signs is not None
-    assert conjugate(outcome.reduction.target, outcome.signs) == flipped
+    assert search(source, flipped, pool).reduction is None
+    assert search(source, target, pool).reduction is not None
 
 
 def test_a_value_outside_the_pool_is_unreachable(two_step: tuple) -> None:
@@ -694,3 +698,24 @@ def test_a_matching_value_takes_its_own_name(two_step: tuple) -> None:
 
     assert outcome.reduction is not None
     assert outcome.reduction.target == target
+
+
+def test_the_diagonal_is_read_off_an_overdetermined_system() -> None:
+    """Jedes Monom jeder Komponente ist eine Gleichung, also viel mehr als
+    Unbekannte -- die spaeteren reduzieren gegen die frueheren.
+
+    ``diagonal_matching`` traegt seit WP 10 keine Verpflichtung mehr: SEA-5 ist
+    wieder Gleichheit, weil der Koeffizient im Schritt steht. Es beantwortet
+    weiterhin die Diagnosefrage, worin sich zwei Ketten unterscheiden, die
+    dieselbe Reduktion sind.
+    """
+    source = PolynomialMap(
+        (x, y, z),
+        (x + y**2 + y * z + z**3, y + x * z + x**2, z + x * y),
+    )
+    moved = conjugate(source, (1, -1, 1))
+
+    found = diagonal_matching(moved, source)
+
+    assert found == (1, -1, 1)
+    assert conjugate(moved, found) == source

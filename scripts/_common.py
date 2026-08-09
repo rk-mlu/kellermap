@@ -12,8 +12,6 @@ import sys
 from pathlib import Path
 from types import ModuleType
 
-import sympy as sp
-
 from kellermap import PolynomialMap, Reduction
 from kellermap.bcw import Carried
 
@@ -40,25 +38,7 @@ def read(name: str) -> ModuleType:
     return module
 
 
-def flips(signs: tuple[sp.Expr, ...], published: PolynomialMap) -> list[str]:
-    """Return the coordinates ``D`` scales, and by what.
-
-    ``D`` held ones and minus ones until 0.4 and now holds any non-zero
-    constants, so a coordinate is worth naming when its entry is not one --
-    which is no longer the same as being turned around.
-    """
-    return [
-        f"{variable}={entry}"
-        for variable, entry in zip(published.variables, signs, strict=True)
-        if entry != 1
-    ]
-
-
-def describe(
-    reduction: Reduction,
-    signs: tuple[sp.Expr, ...],
-    published: PolynomialMap,
-) -> str:
+def describe(reduction: Reduction, published: PolynomialMap) -> str:
     """Return everything needed to replay the chain, by name and not by index.
 
     A chain lists its generators in the order its steps introduced them, so
@@ -87,7 +67,8 @@ def describe(
                 slots.append(f'("fresh", {slot.polynomial}, {slot.variable})')
         target = step.source.variables[step.index]
         lines.append(
-            f"    ({target}, {slots[0]}, {slots[1]}, {step.filtration_level}),"
+            f"    ({target}, {slots[0]}, {slots[1]}, "
+            f"{step.filtration_level}, {step.coefficient}),"
         )
 
     lines.append(")")
@@ -98,18 +79,13 @@ def describe(
     lines.append(f"# dimensions:         {reduction.dimensions()}")
     lines.append(f"# degrees:            {reduction.degrees()}")
 
-    scaled = flips(signs, published)
-    lines.append(f"# D scales:           {', '.join(scaled) or 'nothing'}")
-    lines.append("# every other entry of D is 1")
+    coefficients = ", ".join(str(step.coefficient) for step in reduction.steps)
+    lines.append(f"# coefficients:       {coefficients}")
 
     return "\n".join(lines)
 
 
-def sanity(
-    reduction: Reduction,
-    signs: tuple[sp.Expr, ...],
-    published: PolynomialMap,
-) -> bool:
+def sanity(reduction: Reduction, published: PolynomialMap) -> bool:
     """Return whether the chain verifies and reaches the published map.
 
     Printed beside the chain so that a report carries its own check. The
@@ -118,8 +94,4 @@ def sanity(
     """
     reduction.verify()
 
-    from kellermap import conjugate
-
-    reached = reduction.target.reordered(published.variables)
-
-    return bool(conjugate(reached, signs) == published)
+    return bool(reduction.target.reordered(published.variables) == published)

@@ -983,19 +983,21 @@ True
 
 The search verifies nothing by itself. Its chain is `CONSTRUCTED` throughout,
 so what carries weight is that the endpoint matches a map the library did not
-compute. That comparison allows one thing beyond reordering: conjugation by a
-diagonal of ones and minus ones, which `outcome.signs` reports rather than
-absorbs.
+compute, and that comparison is plain equality after reordering.
+
+The pool bounds what it can reach. A target in other coordinates *is* reachable
+in principle — the family of steps is closed under conjugation by a diagonal —
+but the chain that reaches it carries other coefficients and other factor
+values, and both come from the pool here:
 
 ```python
 >>> flipped = conjugate(finish, (1, 1, 1, -1))
->>> outcome = search(start, flipped, {u: x * y, v: x * y**2})
->>> outcome.signs
-(-1, -1, 1, 1)
->>> conjugate(outcome.reduction.target, outcome.signs) == flipped
+>>> search(start, flipped, {u: x * y, v: x * y**2}).reduction is None
 True
 
 ```
+
+Peeling solves for them instead, and reaches such a target exactly.
 
 Finding nothing is not a proof that nothing exists, and `exhausted` says
 whether even the space the search covers was seen to the end:
@@ -1025,12 +1027,25 @@ True
 
 What a peel produces is a structure. The chain is rebuilt forwards with
 `BCWStep.build` and verified before it is a `Reduction`, and the endpoint is
-compared against the target as before. The diagonal is reported the same way:
+compared against the target — as plain equality, because each step carries the
+constant it was undone with:
 
 ```python
->>> outcome = peel(start, conjugate(finish, (1, 1, 1, -1)))
->>> outcome.signs
-(1, 1, 1, -1)
+>>> [step.coefficient for step in outcome.reduction.steps]
+[1]
+
+```
+
+A target in other coordinates is reached exactly too. The family of steps is
+closed under conjugation by a diagonal, so a chain that reaches `D F D^-1` is
+itself a chain:
+
+```python
+>>> other = peel(start, conjugate(finish, (1, 1, 1, -1))).reduction
+>>> other.target == conjugate(finish, (1, 1, 1, -1))
+True
+>>> [step.coefficient for step in other.steps]
+[-1]
 
 ```
 

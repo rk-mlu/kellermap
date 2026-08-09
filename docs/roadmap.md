@@ -1014,6 +1014,22 @@ that already existed: `peeling` enumerated slot pairs with `combinations`, so it
 never offered the two `Carried` slots naming one coordinate that BCW-6 has
 admitted since 0.3.
 
+What the package moved, measured. The peel against the published map went from
+depth sixteen to depth **seventeen**, which is the whole chain, and it now
+reaches dimension three -- 4767 times in 15000 maps, at three-dimensional maps
+that are not Alpoege's. The chain is inside the space for the first time; what
+is left is finding it there.
+
+Three prunes went in with it. A peel may not raise the degree above the
+source's, which is not a decision but follows from the degree never rising
+forwards. The source comparison moved into the walk, where it costs one
+equality instead of replaying the whole path. And REV-8 from WP 9 still applies.
+
+The reports changed with the diagonal. `describe` prints a coefficient per step
+where it printed the entries of `D`, and `flips` is gone: what used to be spread
+across a diagonal is now one number per step, which is also what a reader of
+`reconstruct_alpoege19.py` will need.
+
 **WP 11** points it at the nineteen-dimensional map.
 `scripts/search_alpoege19.py` drives the run: it reads Alpoege's map and the
 published one from the test modules rather than copying them, builds the pool

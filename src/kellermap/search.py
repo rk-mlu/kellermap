@@ -358,12 +358,10 @@ class SearchOutcome:
     Parameters
     ----------
     reduction
-        The chain, or ``None`` if none was found.
-    signs
-        The diagonal of ``D``, one entry per coordinate of the target, or
-        ``None``. See SEA-5: a chain reaches the published map up to
-        conjugation by a signed diagonal matrix, and ``D`` is exhibited rather
-        than absorbed.
+        The chain, or ``None`` if none was found. There was a ``signs`` field
+        between work packages 7 and 10, holding the diagonal SEA-5 then allowed
+        in the comparison. BCW-11 removed the need for it: with the constant
+        inside the step, the chain reaches the target exactly.
     examined
         How many maps the search looked at.
     deepest
@@ -379,7 +377,6 @@ class SearchOutcome:
     """
 
     reduction: Reduction | None
-    signs: tuple[int, ...] | None
     examined: int
     deepest: int
     exhausted: bool
@@ -663,7 +660,7 @@ def search(
         return outcome
 
     return SearchOutcome(
-        None, None, budget - max(remaining[0], 0), deepest[0], remaining[0] > 0
+        None, budget - max(remaining[0], 0), deepest[0], remaining[0] > 0
     )
 
 
@@ -788,8 +785,7 @@ def _finish(
     if current.dimension != target.dimension:
         return None
 
-    signs = diagonal_matching(current.reordered(order), target)
-    if signs is None:
+    if current.reordered(order) != target:
         return None
 
-    return SearchOutcome(Reduction(steps), signs, examined, deepest, False)
+    return SearchOutcome(Reduction(steps), examined, deepest, False)

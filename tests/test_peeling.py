@@ -179,7 +179,6 @@ def test_a_peel_returns_a_chain_that_was_built_forwards(
     assert outcome.reduction.verify() is None
     assert outcome.reduction.source == source
     assert outcome.reduction.target == target
-    assert outcome.signs == (1,) * 4
 
 
 def test_a_carried_slot_is_rebuilt_as_a_carried_slot(
@@ -194,19 +193,22 @@ def test_a_carried_slot_is_rebuilt_as_a_carried_slot(
     assert outcome.reduction.steps[1].m == 1
 
 
-def test_the_diagonal_is_reported_and_not_absorbed(
+def test_a_conjugated_target_is_reached_exactly(
     one_step: tuple[PolynomialMap, PolynomialMap],
 ) -> None:
-    """SEA-5 unveraendert: das Ziel wird bis auf ein ausgewiesenes ``D`` erreicht."""
+    """SEA-5 ist wieder Gleichheit, und das reicht seit BCW-11.
+
+    Die Schrittfamilie ist unter Diagonalkonjugation abgeschlossen: was frueher
+    nur bis auf ein ``D`` erreicht wurde, ist selbst eine Kette. Der Abtrag
+    findet sie, weil er den Koeffizienten loest statt ihn zu suchen.
+    """
     source, target = one_step
     flipped = conjugate(target, (1, 1, 1, -1))
 
     outcome = peel(source, flipped)
 
     assert outcome.reduction is not None
-    assert outcome.signs is not None
-    reached = outcome.reduction.target.reordered(flipped.variables)
-    assert conjugate(reached, outcome.signs) == flipped
+    assert outcome.reduction.target.reordered(flipped.variables) == flipped
 
 
 def test_a_target_that_is_not_reachable_is_reported_as_such(
@@ -261,9 +263,7 @@ def test_peeling_recovers_a_chain_to_the_fifteen_dimensional_map() -> None:
     assert outcome.reduction.verify() is None
     assert len(outcome.reduction.steps) == 7
     assert outcome.reduction.dimensions() == (3, 5, 7, 9, 11, 12, 14, 15)
-    assert outcome.signs == (1,) * 15
-    reached = outcome.reduction.target.reordered(target.variables)
-    assert conjugate(reached, outcome.signs) == target
+    assert outcome.reduction.target.reordered(target.variables) == target
 
 
 # --------------------------------------------------------------------------
@@ -441,3 +441,24 @@ def test_both_slots_may_name_the_same_coordinate() -> None:
     assert outcome.reduction is not None
     assert outcome.reduction.verify() is None
     assert outcome.reduction.target == target
+
+
+def test_the_degree_never_rises_above_the_source() -> None:
+    """Vorwaerts faellt der Grad nie, rueckwaerts steigt er also nie darueber.
+
+    Beweisbar und keine Entscheidung: die neuen Terme eines Schritts haben Grad
+    hoechstens ``1 + deg Q <= deg(P Q)``, solange kein Faktor konstant ist, und
+    Konstanten sind ausgeschlossen. Ein Abtrag, der ueber den Grad der Quelle
+    hinauslaeuft, kann sie nicht mehr erreichen.
+    """
+    source = over_field(PolynomialMap((x, y), (x + x**2 * y**3, y)))
+    target = BCWStep.build(source, 0, Fresh(x * y, u), Fresh(x * y**2, v), 1).target
+    lower = over_field(PolynomialMap((x, y), (x + y**2, y)))
+
+    assert target.degree() < source.degree()
+    assert lower.degree() < target.degree()
+
+    outcome = peel(lower, target)
+
+    assert outcome.reduction is None
+    assert outcome.exhausted
