@@ -464,6 +464,19 @@ result.
 What is not known is the sequence. The source publishes the map but not its
 factorization.
 
+**The numbering is not the introduction order.** *Settled in work package 10,
+by an external audit that reconstructed the chain.* The order is
+
+    w1, w2, w4, w5, w8, w7, w9, w13, w16, w15, w14, w6, w12, w3, w11, w10,
+
+which this repository verified independently against `tests/data.py`: the
+seventeen steps reproduce all nineteen components and all fifty-seven
+coordinates of the three collision points, with the three images agreeing.
+
+The paragraph below is what this page argued before that, and it is left
+standing because the reasoning was sound and the conclusion was wrong. It shows
+what a hypothesis marked as a hypothesis is worth.
+
 The numbering, on the other hand, is probably the introduction order after all.
 This page said it was not, on the evidence that the fifth component uses `w13`
 and `w9` and so cannot come fifth. That component is `w2`'s, and the `w2`

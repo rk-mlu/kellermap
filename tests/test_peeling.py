@@ -401,3 +401,43 @@ def test_a_source_without_carriers_cannot_take_a_single_coordinate() -> None:
 
     assert stranger.carrier_indices == ()
     assert peel(stranger, both).reduction is None
+
+
+def test_the_number_of_pair_steps_is_bounded(
+    one_step: tuple[PolynomialMap, PolynomialMap],
+) -> None:
+    """``pairs`` ist die Arithmetik von REV-8 als Regel.
+
+    Mit ``a`` Schritten, die zwei Generatoren einfuehren, ``b`` mit einem und
+    ``c`` mit keinem gilt ``2a + b = n`` und ``S = n - a + c``. Die Schrittzahl
+    festzulegen legt damit ``a`` fest. Ohne einen solchen Schritt ist eine
+    Kette, die einen braucht, nicht ungefunden, sondern unerreichbar.
+    """
+    source, target = one_step
+
+    assert peel(source, target, pairs=1).reduction is not None
+
+    without = peel(source, target, pairs=0)
+
+    assert without.reduction is None
+    assert without.exhausted
+
+
+def test_both_slots_may_name_the_same_coordinate() -> None:
+    """BCW-6 laesst das seit 0.3 zu, der Abtrag hat es nicht aufgezaehlt.
+
+    ``G`` ist dann ``X_i - X_j**2``. ``combinations`` allein bietet nur
+    verschiedene Paare an, also war eine Kette mit einem solchen Schritt nicht
+    ungefunden, sondern unerreichbar. Gefunden hat den Fehler ein externes
+    Audit, nicht ein Test.
+    """
+    source = over_field(PolynomialMap((x, y), (x + x**4, y + x**2)))
+    target = BCWStep.build(source, 0, Carried(1), Carried(1), 1).target
+
+    assert any(step.slots[0] == step.slots[1] for step in moves(target, spare=1))
+
+    outcome = peel(source, target, spare=1)
+
+    assert outcome.reduction is not None
+    assert outcome.reduction.verify() is None
+    assert outcome.reduction.target == target

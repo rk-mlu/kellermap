@@ -31,7 +31,7 @@ from __future__ import annotations
 
 from collections.abc import Iterator
 from dataclasses import dataclass
-from itertools import combinations
+from itertools import combinations, combinations_with_replacement
 
 import sympy as sp
 
@@ -184,11 +184,12 @@ def factor(
     return None if ratio == 0 or ratio.free_symbols else ratio
 
 
-def moves(current: PolynomialMap, spare: int) -> Iterator[Undo]:
+def moves(current: PolynomialMap, spare: int, pairs: int = 16) -> Iterator[Undo]:
     """Yield the steps that could have been the last one, in a fixed order.
 
     Steps removing two coordinates first, then those removing one, then those
-    removing none, and the last kind only while ``spare`` allows. The order
+    removing none; the first kind only while ``pairs`` allows and the last only
+    while ``spare`` allows. The order
     discards nothing -- every move is still walked -- and it decides which
     chain is reached first, which is what a bounded budget makes visible. A
     step that removes two coordinates gets twice as far for the same depth.
@@ -205,7 +206,7 @@ def moves(current: PolynomialMap, spare: int) -> Iterator[Undo]:
         not in sp.expand(current.components[position] - variable).free_symbols
     )
 
-    for first, second in combinations(tuple(peelable), 2):
+    for first, second in combinations(tuple(peelable), 2) if pairs > 0 else ():
         if peelable[first] != peelable[second]:
             continue
         target = peelable[first]
@@ -233,7 +234,10 @@ def moves(current: PolynomialMap, spare: int) -> Iterator[Undo]:
     # Vorzeichen ab. Es einmal je Paar zu rechnen statt einmal je Kandidat ist
     # bei neunzehn Koordinaten der Unterschied zwischen einer und vierzig
     # Multiplikationen dichter Polynome.
-    for left, right in combinations(carriers, 2):
+    # With replacement: BCW-6 admits both slots naming the same coordinate, and
+    # ``combinations`` alone would never offer ``G = X_i - X_j**2``. The step
+    # type has accepted it since 0.3; the peel did not enumerate it.
+    for left, right in combinations_with_replacement(carriers, 2):
         product = sp.expand(components[left] * components[right])
         shared = sp.Poly(product, *current.variables).as_dict()
         for target, size in sizes.items():
@@ -260,6 +264,7 @@ def peel(
     *,
     budget: int = 20000,
     spare: int = 1,
+    pairs: int = 16,
 ) -> PeelOutcome:
     """Take ``target`` apart until ``source`` is left, then rebuild forwards.
 
@@ -268,13 +273,22 @@ def peel(
     and verified, together with the diagonal ``D`` of SEA-5, or nothing.
 
     ``spare`` bounds the steps that remove no coordinate, as it does for the
-    forward search. ``budget`` bounds the maps examined.
+    forward search. ``pairs`` bounds the steps that remove two, which is the
+    arithmetic of REV-8 turned into a rule: with ``a`` steps introducing two
+    generators, ``b`` introducing one and ``c`` introducing none, a chain of
+    ``n`` generators has ``2a + b = n`` and ``S = n - a + c`` steps, so fixing
+    the number of steps fixes ``a``. Both bounds are decisions about which
+    chains are looked for, and a chain outside them is unreachable rather than
+    absent. ``budget`` bounds the maps examined.
     """
     remaining = [budget]
     deepest = [0]
 
     def walk(
-        current: PolynomialMap, path: tuple[Undo, ...], spare_left: int
+        current: PolynomialMap,
+        path: tuple[Undo, ...],
+        spare_left: int,
+        pairs_left: int,
     ) -> PeelOutcome | None:
         if remaining[0] <= 0:
             return None
@@ -286,7 +300,7 @@ def peel(
             if found is not None:
                 return found
 
-        for step in moves(current, spare_left):
+        for step in moves(current, spare_left, pairs_left):
             reached = undo(current, step)
             if reached is None or reached.dimension < source.dimension:
                 continue
@@ -297,13 +311,14 @@ def peel(
                 reached,
                 (*path, step),
                 spare_left - (0 if step.dropped else 1),
+                pairs_left - (1 if len(step.dropped) == 2 else 0),
             )
             if found is not None:
                 return found
 
         return None
 
-    outcome = walk(target, (), spare)
+    outcome = walk(target, (), spare, pairs)
     if outcome is not None:
         return outcome
 
