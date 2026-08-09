@@ -52,15 +52,19 @@ from dataclasses import dataclass
 from typing import cast
 
 import sympy as sp
+from sympy.polys.polyerrors import CoercionFailed
 from sympy.polys.rings import PolyElement, PolyRing
 
-from ..canonical import agree
+from ..canonical import agree, canonical
 from ..collision import Collision
 from ..elementary import ElementaryAutomorphism, ElementaryFactor
 from ..errors import VerificationError
 from ..polynomial_map import PolynomialMap
 from ..reduction import Provenance
 from ..variables import FixedVariableFactory, reserved_names
+
+ONE = sp.Integer(1)
+"""The coefficient a step carries unless it is given another. See BCW-11."""
 
 
 @dataclass(frozen=True)
@@ -144,6 +148,29 @@ def _coerce_factor(
         ) from error
 
 
+def _coerce_coefficient(source: PolynomialMap, coefficient: sp.Expr) -> sp.Expr:
+    """Return the coefficient as a constant of the domain, or raise.
+
+    BCW-11, enforced by conversion in the shape of BCW-3 and TRA-2: a
+    coefficient involving a generator does not lie in the coefficient domain
+    and cannot be built at all. Zero is refused separately, because a step that
+    removes nothing is the identity written at length.
+    """
+    domain = source.ring.domain
+    try:
+        value = domain.to_sympy(domain.from_sympy(canonical(coefficient)))
+    except (CoercionFailed, sp.SympifyError) as error:
+        raise ValueError(
+            f"The coefficient {coefficient} does not lie in the coefficient "
+            f"domain {domain}; it scales a product and is not part of one."
+        ) from error
+
+    if value == 0:
+        raise ValueError("The coefficient must not be zero.")
+
+    return value
+
+
 def _slot_value(source: PolynomialMap, name: str, slot: Factor) -> PolyElement:
     """Return the factor a slot supplies, as an element of the source's ring.
 
@@ -190,6 +217,7 @@ class BCWStep:
     _slots: tuple[Factor, Factor]
     _values: tuple[PolyElement, ...]
     _filtration_level: int
+    _coefficient: sp.Expr
     _provenance: Provenance
     _verified: bool
 
@@ -201,6 +229,7 @@ class BCWStep:
         left: Factor,
         right: Factor,
         filtration_level: int = 1,
+        coefficient: sp.Expr = ONE,
     ) -> None:
         if not isinstance(source, PolynomialMap):
             raise TypeError("The source must be a PolynomialMap.")
@@ -247,11 +276,21 @@ class BCWStep:
 
         fresh = tuple(slot.variable for slot in slots if isinstance(slot, Fresh))
 
+        # BCW-12. Zwei Fresh-Plaetze duerfen dieselbe Variable nennen -- dann
+        # ist G die Subtraktion eines Quadrats --, aber sie muessen denselben
+        # Faktor tragen: eine Koordinate haelt einen Wert und nicht zwei.
         # Nach dem Namen und nicht nach Symbol.__eq__: Symbol("v") und
         # Symbol("v", positive=True) sind fuer SymPy verschieden und fuer
         # einen PolyRing derselbe Generator.
-        if len({symbol.name for symbol in fresh}) != len(fresh):
-            raise ValueError("The fresh variables must be distinct.")
+        if len({symbol.name for symbol in fresh}) != len(fresh) and (
+            slots[0].polynomial != slots[1].polynomial  # type: ignore[union-attr]
+        ):
+            raise ValueError(
+                "Two fresh slots naming one variable must carry the same "
+                "polynomial; a coordinate holds one value."
+            )
+
+        scalar = _coerce_coefficient(source, coefficient)
 
         # Frueh und nicht erst in verify(): ein kollidierender Name laesst
         # sich hinterher nicht mehr von einem falschen Ziel unterscheiden,
@@ -276,6 +315,7 @@ class BCWStep:
         object.__setattr__(self, "_slots", slots)
         object.__setattr__(self, "_values", values)
         object.__setattr__(self, "_filtration_level", int(filtration_level))
+        object.__setattr__(self, "_coefficient", scalar)
         object.__setattr__(self, "_provenance", Provenance.SUPPLIED)
         object.__setattr__(self, "_verified", False)
 
@@ -287,6 +327,7 @@ class BCWStep:
         left: Factor,
         right: Factor,
         filtration_level: int = 1,
+        coefficient: sp.Expr = ONE,
     ) -> BCWStep:
         """Apply the formula and record the result as constructed.
 
@@ -304,8 +345,16 @@ class BCWStep:
         ``H`` and therefore an instance; its target is a placeholder and is
         never looked at.
         """
-        draft = cls(source, source, index, left, right, filtration_level)
-        step = cls(source, draft._composite(), index, left, right, filtration_level)
+        draft = cls(source, source, index, left, right, filtration_level, coefficient)
+        step = cls(
+            source,
+            draft._composite(),
+            index,
+            left,
+            right,
+            filtration_level,
+            coefficient,
+        )
         object.__setattr__(step, "_provenance", Provenance.CONSTRUCTED)
 
         return step
@@ -351,12 +400,26 @@ class BCWStep:
 
     @property
     def variables(self) -> tuple[sp.Symbol, ...]:
-        """Return the generators the step introduces, in slot order.
+        """Return the generators the step introduces, once each, in slot order.
 
         The new generators only, not the variables of either map; those are
-        ``source.variables`` and ``target.variables``.
+        ``source.variables`` and ``target.variables``. Two slots naming one
+        variable introduce it once, which is what BCW-2 means by slot order
+        since 0.4.
         """
-        return tuple(slot.variable for slot in self._slots if isinstance(slot, Fresh))
+        seen: list[sp.Symbol] = []
+        for slot in self._slots:
+            if isinstance(slot, Fresh) and all(
+                symbol.name != slot.variable.name for symbol in seen
+            ):
+                seen.append(slot.variable)
+
+        return tuple(seen)
+
+    @property
+    def coefficient(self) -> sp.Expr:
+        """Return the constant ``G`` scales the removed product by."""
+        return self._coefficient
 
     @property
     def m(self) -> int:
@@ -437,8 +500,16 @@ class BCWStep:
         ring = self.ring
         left, right = self._slot_coordinates()
 
+        scalar = ring.domain.from_sympy(self._coefficient)
+
         return ElementaryAutomorphism(
-            [ElementaryFactor(ring, self._index, -ring.gens[left] * ring.gens[right])]
+            [
+                ElementaryFactor(
+                    ring,
+                    self._index,
+                    -scalar * ring.gens[left] * ring.gens[right],
+                )
+            ]
         )
 
     def _fresh_positions(self) -> tuple[int, ...]:
@@ -448,24 +519,25 @@ class BCWStep:
         return tuple(offset + position for position in range(len(self.variables)))
 
     def _fresh_values(self) -> tuple[PolyElement, ...]:
-        """Return the factor of each ``Fresh`` slot, in slot order."""
-        return tuple(
-            value
-            for slot, value in zip(self._slots, self._values, strict=True)
-            if isinstance(slot, Fresh)
-        )
+        """Return the factor of each fresh generator, once each, in slot order."""
+        found: dict[str, PolyElement] = {}
+        for slot, value in zip(self._slots, self._values, strict=True):
+            if isinstance(slot, Fresh):
+                found.setdefault(slot.variable.name, value)
+
+        return tuple(found.values())
 
     def _slot_coordinates(self) -> tuple[int, int]:
         """Return the coordinate index each slot contributes to ``G``."""
         offset = self._source.dimension
-        indices = []
-        fresh_seen = 0
-        for slot in self._slots:
-            if isinstance(slot, Fresh):
-                indices.append(offset + fresh_seen)
-                fresh_seen += 1
-            else:
-                indices.append(slot.index)
+        introduced = {
+            variable.name: offset + position
+            for position, variable in enumerate(self.variables)
+        }
+        indices = [
+            introduced[slot.variable.name] if isinstance(slot, Fresh) else slot.index
+            for slot in self._slots
+        ]
 
         return (indices[0], indices[1])
 
@@ -695,6 +767,7 @@ class BCWStep:
             self._index,
             slots,
             self._filtration_level,
+            self._coefficient,
             self._provenance,
         )
 

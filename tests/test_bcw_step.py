@@ -228,8 +228,11 @@ def test_two_symbols_of_one_name_are_not_two_variables() -> None:
 
     Fuer SymPy sind sie verschieden, fuer einen ``PolyRing`` nicht; die
     Pruefung geht daher ueber den Namen und nicht ueber ``Symbol.__eq__``.
+    Seit BCW-12 duerfen zwei frische Plaetze denselben Generator nennen, aber
+    dann muessen sie denselben Faktor tragen -- und ``P`` und ``Q`` sind
+    verschieden.
     """
-    with pytest.raises(ValueError, match="must be distinct"):
+    with pytest.raises(ValueError, match="same"):
         BCWStep(
             SIMPLE,
             over_field(SIMPLE_TARGET),
@@ -508,8 +511,9 @@ def test_a_fresh_variable_that_is_not_fresh() -> None:
         BCWStep(SIMPLE, over_field(SIMPLE_TARGET), 0, Fresh(P, x2), Fresh(Q, x5))
 
 
-def test_the_two_fresh_variables_must_differ() -> None:
-    with pytest.raises(ValueError, match="must be distinct"):
+def test_BCW12_one_variable_in_both_slots_needs_one_value() -> None:  # noqa: N802
+    """Eine Koordinate haelt einen Wert und nicht zwei."""
+    with pytest.raises(ValueError, match="same"):
         BCWStep(SIMPLE, over_field(SIMPLE_TARGET), 0, Fresh(P, x4), Fresh(Q, x4))
 
 
@@ -742,3 +746,98 @@ def test_the_collision_survives_the_first_step(first_step: BCWStep) -> None:
         -1,
     )
     assert carried.image == (0, 0, sp.Rational(-1, 4), 0, 0)
+
+
+# --------------------------------------------------------------------------
+# BCW-11 und BCW-12: der Koeffizient und der wiederholte frische Platz
+# --------------------------------------------------------------------------
+
+
+def test_BCW11_the_coefficient_scales_the_removed_product() -> None:  # noqa: N802
+    """``G`` subtrahiert ``coefficient * X_u X_v``.
+
+    Erweiterung ueber Proposition (3.1) hinaus, und noetig: die
+    veroeffentlichte neunzehndimensionale Kette traegt Koeffizienten wie
+    ``3``, ``-3``, ``7`` und ``9``, und keine Koordinatenaenderung entfernt sie.
+    """
+    source = over_field(PolynomialMap((x1, x2, x3), (x1 + 3 * x2**2 * x3**2, x2, x3)))
+
+    built = BCWStep.build(source, 0, Fresh(x2**2, x4), Fresh(x3**2, x5), 1, 3)
+
+    assert built.verify() is None
+    assert built.coefficient == 3
+    assert built.target.components[0] == (
+        x1 - 3 * x4 * x5 - 3 * x4 * x3**2 - 3 * x2**2 * x5
+    )
+
+
+def test_BCW11_the_coefficient_defaults_to_one() -> None:  # noqa: N802
+    """Ein Schritt ohne Koeffizient ist genau der Schritt von vorher."""
+    source = over_field(PolynomialMap((x1, x2, x3), (x1 + x2**2 * x3**2, x2, x3)))
+
+    plain = BCWStep.build(source, 0, Fresh(x2**2, x4), Fresh(x3**2, x5))
+    spelled = BCWStep.build(source, 0, Fresh(x2**2, x4), Fresh(x3**2, x5), 1, 1)
+
+    assert plain.coefficient == 1
+    assert plain == spelled
+
+
+def test_BCW11_the_coefficient_is_a_constant() -> None:  # noqa: N802
+    """Konversion statt Inspektion, wie BCW-3 und TRA-2."""
+    source = over_field(PolynomialMap((x1, x2, x3), (x1 + x2**2 * x3**2, x2, x3)))
+
+    with pytest.raises(ValueError, match="coefficient domain"):
+        BCWStep.build(source, 0, Fresh(x2**2, x4), Fresh(x3**2, x5), 1, x1)
+
+
+def test_BCW11_zero_is_refused() -> None:  # noqa: N802
+    """Ein Schritt, der nichts entfernt, ist die Identitaet in lang."""
+    source = over_field(PolynomialMap((x1, x2, x3), (x1 + x2**2 * x3**2, x2, x3)))
+
+    with pytest.raises(ValueError, match="must not be zero"):
+        BCWStep.build(source, 0, Fresh(x2**2, x4), Fresh(x3**2, x5), 1, 0)
+
+
+def test_BCW11_the_coefficient_is_part_of_the_value() -> None:  # noqa: N802
+    """Zwei Schritte, die sich nur im Koeffizienten unterscheiden, sind
+    verschieden -- und ihre Ziele auch."""
+    source = over_field(PolynomialMap((x1, x2, x3), (x1 + 3 * x2**2 * x3**2, x2, x3)))
+
+    one = BCWStep.build(source, 0, Fresh(x2**2, x4), Fresh(x3**2, x5), 1, 3)
+    other = BCWStep.build(source, 0, Fresh(x2**2, x4), Fresh(x3**2, x5), 1, 1)
+
+    assert one != other
+    assert one.target != other.target
+
+
+def test_BCW12_one_fresh_variable_may_fill_both_slots() -> None:  # noqa: N802
+    """Der Fall, den die veroeffentlichte Kette braucht.
+
+    Ihr fuenfzehnter Schritt ist ``F_x -> F_x - 3 (w3 + x y^2)^2``. ``G``
+    subtrahiert dann ein Quadrat, und die Koordinate wird einmal angelegt.
+    """
+    source = over_field(PolynomialMap((x1, x2, x3), (x1 + 3 * x2**2 * x3**2, x2, x3)))
+
+    built = BCWStep.build(source, 0, Fresh(x2 * x3, x4), Fresh(x2 * x3, x4), 1, 3)
+
+    assert built.verify() is None
+    assert built.m == 1
+    assert built.variables == (x4,)
+    assert built.target.dimension == source.dimension + 1
+    assert built.target.components[0] == x1 - 3 * x4**2 - 6 * x2 * x3 * x4
+
+
+def test_BCW12_the_symmetry_with_a_repeated_carried_slot() -> None:  # noqa: N802
+    """Zwei ``Carried``-Plaetze duerfen dieselbe Koordinate nennen seit 0.3.
+
+    Zwei ``Fresh``-Plaetze sind dieselbe Gestalt einen Schritt frueher.
+    """
+    source = over_field(PolynomialMap((x1, x2, x3), (x1 + x2**4, x2, x3 + x2**2)))
+
+    carried = BCWStep.build(source, 0, Carried(2), Carried(2))
+    fresh = BCWStep.build(source, 0, Fresh(x2**2, x4), Fresh(x2**2, x4))
+
+    assert carried.verify() is None
+    assert fresh.verify() is None
+    assert carried.m == 0
+    assert fresh.m == 1

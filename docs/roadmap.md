@@ -616,7 +616,7 @@ and the note under the `Step` protocol in `contracts.md` carry the reasoning.
 
 ## Work packages
 
-Eleven work packages, with internal version numbers `0.3.1` to `0.3.11` and
+Twelve work packages, with internal version numbers `0.3.1` to `0.3.12` and
 tags `wp/0.3.n`. None of them is a release. `pyproject.toml` stays at `0.3.0`
 for the duration and moves to `0.4.0rc1` in one step at the end.
 
@@ -631,10 +631,13 @@ for the duration and moves to `0.4.0rc1` in one step at the end.
 | 7 | 0.3.7 | The forward search against a given target | yes |
 | 8 | 0.3.8 | `examples.py` and `tests/data.py`: fixed data by provenance | yes |
 | 9 | 0.3.9 | The backward search: peeling a chain off a target | yes |
-| 10 | 0.3.10 | `alpoege19` as a verified `Reduction` | no |
-| 11 | 0.3.11 | Documentation and release | no |
+| 10 | 0.3.10 | The coefficient and the repeated fresh slot | no |
+| 11 | 0.3.11 | `alpoege19` as a verified `Reduction` | no |
+| 12 | 0.3.12 | Documentation and release | no |
 
-The plan had seven, and four packages were inserted rather than appended. WP 4
+The plan had seven, and five packages were inserted rather than appended. WP 10
+came from an external audit, which reconstructed the chain and showed that the
+certificate language could not express it. WP 4
 came out of WP 3, which turned up the one breach of the ASCII agreement in the
 tree and found no gate to attribute it to. WP 5 came out of the measurement WP 6
 was to make: the enumerator the plan implied turned out to be unaffordable, and
@@ -975,7 +978,43 @@ come through in 1500 maps; with the steps that remove two offered first, it
 takes 8. A step that removes two coordinates gets twice as far for the same
 depth.
 
-**WP 10** points it at the nineteen-dimensional map.
+**WP 10** widens the certificate language to what the published chain actually
+uses. An external audit reconstructed that chain while WP 9 was running, and
+this repository verified the reconstruction independently: seventeen steps
+reproducing all nineteen components, all fifty-seven coordinates of the three
+collision points, and the same image for each. Its structure is `a = 1`,
+`b = 14`, `c = 2`, which is what the carrier arithmetic had predicted.
+
+Two things it uses that no `BCWStep` could express. Its steps carry explicit
+coefficients -- `3, -3, 7, 9, 6, -1, -6` among them -- and its fifteenth step
+puts one fresh coordinate in both slots: `F_x -> F_x - 3 (w3 + x y^2)^2`. Both
+are extensions beyond Proposition (3.1), and both are marked as such, as carrier
+reuse is. BCW-11 and BCW-12 state them, and BCW-1 and BCW-2 are amended.
+
+The coefficient cannot be moved into a change of coordinates. Solving the
+diagonal that would absorb the coefficients gives two contradictions: step 7
+needs `1/7` where the earlier steps force `1/9`, and step 9 needs `1` where they
+force `1/2`.
+
+The package *removes* as much as it adds. With the coefficient in the step, the
+family of steps is closed under conjugation by a diagonal, so a chain that
+reached a target only up to `D` is itself expressible as one that reaches it
+exactly. SEA-5 goes back to plain equality, the diagonal is withdrawn from it,
+and the multiplicative system in `peeling` that solved for `D` disappears -- the
+constant it solved for is the step's coefficient. `conjugate` and
+`diagonal_matching` stay as tools and carry no obligation.
+
+That also settles a question 0.5 would otherwise have inherited. Searching
+without a fixed target leaves nothing to compare against, so no diagonal and no
+reordering arise, and the benchmark half of 0.5 compares the dimension reached,
+which is invariant under both anyway.
+
+One defect was fixed ahead of the package because it stood against an obligation
+that already existed: `peeling` enumerated slot pairs with `combinations`, so it
+never offered the two `Carried` slots naming one coordinate that BCW-6 has
+admitted since 0.3.
+
+**WP 11** points it at the nineteen-dimensional map.
 `scripts/search_alpoege19.py` drives the run: it reads Alpoege's map and the
 published one from the test modules rather than copying them, builds the pool
 with `w2` corrected, and searches with a doubling budget so that a long run
@@ -1008,7 +1047,7 @@ pool and the chain is inexpressible rather than unfound — the same failure
 `alpoege15` shows when its own missing value is withheld, and it looks identical
 from outside.
 
-**WP 11** removes the `[0.4]` markers from `contracts.md`, adds the translation
+**WP 12** removes the `[0.4]` markers from `contracts.md`, adds the translation
 and the search to `architecture.md`, records the provenance of the recovered
 sequence in `references.md`, updates `CHANGELOG.md`, and sets the version.
 

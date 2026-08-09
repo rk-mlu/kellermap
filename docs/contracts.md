@@ -35,6 +35,13 @@ corrections are visible in the wording: the milestone number in RC-7 and under
 "No progress measure", the scope of the `filtration_level` row in the error
 table, and the withdrawal of the non-obligation "No search".
 
+**Amended in work package 10, after an external audit.** `BCWStep` gains a
+coefficient (BCW-11) and admits two `Fresh` slots naming one variable
+(BCW-12); BCW-1 and BCW-2 are amended for both. The diagonal is withdrawn from
+SEA-5, which returns to plain equality, and REV-4 hands its solved constant to
+the step. Both extensions go beyond Chapter II, Proposition (3.1) and are
+marked as extensions, as carrier reuse is.
+
 The page has also grown during the milestone, which an audit should read as
 intended rather than as drift. SEA-8 to SEA-10 were added in work package 5,
 before the enumerator was written and after a measurement showed that the
@@ -485,9 +492,21 @@ expressions. Version 0.3 amended this only in replacing the fixed `2` by `m`.
 At `m = 0` the stabilization and `H` are both trivial and it reads
 `target == G ∘ source`.
 
+**`[0.4]`** Version 0.4 amends it again, in `G`. Until now `G` subtracted
+`X_u X_v`; it now subtracts `coefficient * X_u X_v`, so the step removes
+`coefficient * P Q` from the target component. BCW-11 says why. Nothing that
+verified before stops verifying: the coefficient defaults to one, and a step
+built without it is exactly the earlier step.
+
 **BCW-2 — Dimension and generators.** `target.dimension == source.dimension + m`;
 the generators of `target` are those of `source` followed by `variables`, in
 slot order; each fresh variable satisfies RC-4 against `source.ring`.
+
+**`[0.4]`** `m` counts the *distinct* fresh variables, and each is appended
+once, in the order of its first slot. Until 0.4 the two readings agreed,
+because two `Fresh` slots had to name different variables. BCW-12 lifts that,
+and then a step whose two slots are one fresh variable introduces one generator
+and not two.
 
 Version 0.3 amended this. Until then the step always introduced two new
 generators, and `m` was fixed at 2. This is the only place in that milestone
@@ -611,6 +630,40 @@ For a `SUPPLIED` step, BCW-1 compares an externally computed map against the
 formula and can fail. For a `CONSTRUCTED` step it compares the implementation
 against itself and cannot: it is a self-check, not evidence. `Reduction`
 propagates the weaker provenance of its steps.
+
+**BCW-11 — The coefficient is part of the step and is recorded.** `[0.4]`
+`G` subtracts `coefficient * X_u X_v`, for a non-zero constant of the
+coefficient domain, and the step reports it. It defaults to one.
+
+This is an extension beyond the paper, and is marked as one for the same reason
+carrier reuse is: Chapter II, Proposition (3.1) removes a product and nothing
+scales it. The extension is elementary all the same -- `X_i |-> X_i - c X_u X_v`
+displaces `X_i` by a polynomial free of `X_i`, so `G` is still exhibited under
+BCW-5 -- and it is needed. The published nineteen-dimensional map is reached by
+a chain whose steps carry the coefficients `3, -3, 7, 9, 6, -1, -6` among
+others, and no single change of coordinates removes them: solving the diagonal
+that would absorb them gives two contradictions, at step 7, which needs `1/7`
+where the earlier steps force `1/9`, and at step 9, which needs `1` where they
+force `1/2`.
+
+The coefficient is a constant by the same rule as TRA-2 and BCW-3: it is
+converted into the coefficient domain, so a coefficient involving a generator
+cannot be built. Zero is refused, because a step that removes nothing is the
+identity written at length.
+
+**BCW-12 — Both slots may be one fresh variable.** `[0.4]` Two `Fresh` slots
+may name the same variable, and then they must carry the same polynomial. `G`
+subtracts `coefficient * X_u^2`, and `H` displaces `X_u` once.
+
+Also an extension, and the one the published chain forced. Its fifteenth step
+is `F_x -> F_x - 3 (w3 + x y^2)^2`, which removes `3 x^2 y^4` and leaves the
+terms in `w3^2`. Until 0.4 the constructor refused it, and correctly under the
+model it had: a chain needing it was unreachable rather than unfound.
+
+The symmetry with BCW-10 is exact and worth stating. Two `Carried` slots have
+been allowed to name one coordinate since 0.3, where `G` is `X_i - X_j^2`. Two
+`Fresh` slots naming one variable is the same shape one step earlier, and there
+was no reason for the two to differ beyond the order they were written in.
 
 **BCW-10 — A reused slot names a carrier.** For `Carried(j)`:
 `0 <= j < source.dimension`, `j != index`, and `source.components[j] - X_j` is
@@ -976,28 +1029,41 @@ one object, which reads like evidence and is not.
 against itself. The external fact is
 
 ```
-conjugate(found.target.reordered(published.variables), D) == published
+found.target.reordered(published.variables) == published
 ```
 
-for a diagonal `D` of non-zero constants that the search reports rather than
-absorbs.
+checked separately from `verify()`, and the only place where the run can be
+contradicted by data this library did not compute.
 
-`D` was restricted to ones and minus ones until work package 10, and that was
-too narrow. The backward search exhausts its space against the published
-nineteen-dimensional map, and at the map where it stops, no coordinate can be
-undone with a factor of `+1` or `-1`. A diagonal with arbitrary non-zero
-entries is just as much a change of coordinates; it preserves degree, order,
-filtration degree and the constant determinant of a Keller map, and it is its
-own inverse only for signs, which is the one property the wider group loses.
-Solving for the entry costs less than trying two, and it took the peel from
-depth six to depth eleven. Conjugating by an entry that is not a unit needs a
-field, and `conjugate` says so rather than producing a map over the wrong
-domain. It is checked separately from `verify()` and is the only place where
+**`[0.4]`** The diagonal is withdrawn from this clause. Between work packages 7
+and 10 it read `conjugate(found.target.reordered(...), D) == published` for a
+diagonal `D` the search reported. BCW-11 makes it unnecessary: with the
+coefficient inside the step, the family of steps is closed under conjugation by
+a diagonal, since conjugating `(t, a, b, lambda)` by `D` gives
+`(t, a, b, lambda d_t / (d_a d_b))` with the factor values scaled by their own
+entry. A chain that reached the target only up to `D` is therefore itself
+expressible as a chain that reaches it exactly, and equality costs nothing: the
+peel *solves* for the constant rather than searching it, and the forward search
+takes its values from the pool verbatim. Keeping `D` would leave two ways to
+say the same thing, one of them weaker.
+
+`conjugate` and `diagonal_matching` remain and carry no obligation. They answer
+a question still worth asking -- in what respect two chains that are the same
+reduction differ -- and nothing that `verify()` or this clause asks.
+
+The clause went through two widenings before it was withdrawn, and both stay on
+the page because each was a measurement. `D` was restricted to ones and minus
+ones, which was too narrow: at the map where the peel stopped, no coordinate
+could be undone with `+1` or `-1`, and admitting any non-zero entry took it from
+depth six to depth eleven. Then BCW-11 made the clause unnecessary altogether.
+The first widening was right, and the second is why it stopped mattering -- a
+scalar the step cannot carry has to live somewhere, and `D` was where it
+lived. It is checked separately from `verify()` and is the only place where
 the run can be contradicted by data this library did not compute.
 
-`D` is an amendment, forced by the data in work package 7. Component 2 of the
-published map carries `+w13 w16`, and this library's `G` subtracts `X_u X_v`
-always, so no choice of factors reproduces it. The published map is reached
+`D` entered in work package 7, forced by the data. Component 2 of the published
+map carries `+w13 w16`, and this library's `G` subtracted `X_u X_v` always, so
+no choice of factors reproduced it. The published map is reached
 under `G = X_i + X_u X_v`, and the two conventions are related by
 
     S+(-P, Q) = D_u o S-(P, Q) o D_u^-1,
@@ -1294,10 +1360,17 @@ recovers the map before it, and every peeled coordinate must then occur in no
 remaining component. The second half is the check: a coordinate that survives
 the undoing was not introduced by the step that was undone.
 
-**REV-4 — The constant is solved, not guessed.** Undoing a step adds some
-non-zero constant times the product of its two slot components. The constant is
-fixed by the requirement that the dropped coordinates vanish, which is linear
-in it, so it is computed and each step reports the value it used.
+**REV-4 — The constant is solved, not guessed, and it belongs to the step.**
+Undoing a step adds some non-zero constant times the product of its two slot
+components. The constant is fixed by the requirement that the dropped
+coordinates vanish, which is linear in it, so it is computed and each step
+reports the value it used.
+
+**`[0.4]`** That constant is the `coefficient` of BCW-11 and nothing else. Until
+work package 10 it was an entry of the diagonal of SEA-5, solved for and carried
+alongside the chain, because the step had nowhere to put it. It now goes into
+the step the peel rebuilds, and the multiplicative system that turned the
+constants into a diagonal is gone rather than kept beside a second answer.
 
 It was two signs until work package 10, and both measurements are worth keeping.
 With `+` alone the published map peels to dimension 18, with `-` alone to 17,
@@ -1307,12 +1380,12 @@ depth eleven, which is what showed the restriction was also wrong: at the map
 where the sign version stopped, six coordinates satisfy REV-2 and not one of
 them can be undone with `+1` or `-1`.
 
-A step undone with the constant `f` says `f = d_i / (d_u d_v)` for the diagonal
-of SEA-5. Read in the order the chain was built, each step introduces its fresh
-coordinates as new unknowns while its target and any reused coordinate are
-already fixed, so the equations solve by substitution rather than as a system.
-Peeling therefore produces `D` as a by-product of running, where the forward
-search had to solve for it at the end.
+What the constants were used for, and no longer are: read in the order the
+chain was built, each step introduced its fresh coordinates as new unknowns
+while its target and any reused coordinate were fixed, so `f = d_i / (d_u d_v)`
+solved by substitution and peeling produced `D` while it ran. That was worth
+having when the step could not carry a scalar. Now the substitution has one
+step: the constant is the coefficient.
 
 **REV-5 — A peel is not a certificate.** The chain a peel finds is rebuilt
 forwards with `BCWStep.build`, verified, and only then is it a `Reduction`.
@@ -1351,6 +1424,11 @@ enumerator either" already asks for.
 REV-3, whose second half is a real check on the map being peeled, and REV-5,
 which compares a rebuilt chain against the target. REV-1, REV-2, REV-4 and
 REV-6 to REV-8 are obligations on the library's own conduct.
+
+REV-4 is worth a second look by a reviewer all the same. The constant it solves
+for is now a coefficient inside a certificate rather than a presentation
+detail beside one, so an error there is an error in what the chain claims.
+BCW-1 catches it: a coefficient that does not fit makes the identity fail.
 
 ---
 
