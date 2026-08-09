@@ -42,6 +42,12 @@ than kept, because it cost a whole exhausted space -- hours -- for a hypothesis
 the data does not support. It broke nothing while it was there: a chain found
 under a wrong assumption is still checked against the published map itself.
 
+The run has two phases. It peels the published map from the far end first,
+because that direction needs neither the value pool nor the names, reaches
+depth eleven against this map where the forward search stops at six, and
+exhausts its spaces in minutes rather than hours. If the peel finds nothing,
+the forward search follows.
+
 Run with::
 
     python scripts/search_alpoege19.py [start_budget] [max_budget] [spare]
@@ -83,6 +89,7 @@ from kellermap import (  # noqa: E402
     Reduction,
     examples,
     over_field,
+    peel,
     search,
 )
 
@@ -161,6 +168,50 @@ def report(
     return 1, None, None
 
 
+def unpicking(
+    source: PolynomialMap,
+    target: PolynomialMap,
+    start: int,
+    ceiling: int,
+    spare: int,
+) -> tuple[int, Reduction | None, tuple[sp.Expr, ...] | None]:
+    """Peel with a doubling budget, printing what each round cost."""
+    print("--- peeling the published map from the far end ---")
+    budget, outcome = start, None
+
+    while budget <= ceiling:
+        began = time.monotonic()
+        outcome = peel(source, target, budget=budget, spare=spare)
+        spent = time.monotonic() - began
+        print(
+            f"budget {budget:>9}: examined {outcome.examined:>9}, "
+            f"deepest {outcome.deepest:>3}, "
+            f"exhausted {outcome.exhausted}, {spent:.0f}s"
+        )
+        sys.stdout.flush()
+
+        if outcome.reduction is not None and outcome.signs is not None:
+            return 0, outcome.reduction, outcome.signs
+
+        if outcome.exhausted:
+            print("The space this peel covers holds no chain. The rules that")
+            print(f"defined it: spare={spare}; a coordinate is peeled only where")
+            print("it occurs in exactly two components; the constant is the one")
+            print("that makes it vanish.")
+            print(f"The longest chain it reached was {outcome.deepest} steps.")
+            print("That is not a statement that no chain exists; see REV-7.")
+            return 2, None, None
+
+        budget *= 2
+
+    print(f"No chain within {ceiling} maps. The budget ran out, so this says less")
+    print("than an exhausted space would: the peel did not finish looking.")
+    if outcome is not None:
+        print(f"The longest chain it reached was {outcome.deepest} steps.")
+
+    return 1, None, None
+
+
 def main(start: int = 100_000, ceiling: int = 8_000_000, spare: int = 1) -> int:
     source, published, pool = setup()
     corrected = pool[published.variables[4]]
@@ -171,9 +222,15 @@ def main(start: int = 100_000, ceiling: int = 8_000_000, spare: int = 1) -> int:
     print(f"spare:  {spare} step(s) may introduce no generator")
     print()
 
-    status, chain, signs = report(
-        "the published map", source, published, pool, start, ceiling, spare
-    )
+    # Peeling first. It needs neither the pool nor the names, it reaches depth
+    # eleven against this map where the forward search stops at six, and its
+    # spaces are exhausted in minutes rather than hours.
+    status, chain, signs = unpicking(source, published, start, ceiling, spare)
+    if chain is None:
+        print()
+        status, chain, signs = report(
+            "the forward search", source, published, pool, start, ceiling, spare
+        )
 
     if chain is None or signs is None:
         return status

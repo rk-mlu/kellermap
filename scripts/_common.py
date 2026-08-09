@@ -40,9 +40,23 @@ def read(name: str) -> ModuleType:
     return module
 
 
+def flips(signs: tuple[sp.Expr, ...], published: PolynomialMap) -> list[str]:
+    """Return the coordinates ``D`` scales, and by what.
+
+    ``D`` held ones and minus ones until 0.4 and now holds any non-zero
+    constants, so a coordinate is worth naming when its entry is not one --
+    which is no longer the same as being turned around.
+    """
+    return [
+        f"{variable}={entry}"
+        for variable, entry in zip(published.variables, signs, strict=True)
+        if entry != 1
+    ]
+
+
 def describe(
     reduction: Reduction,
-    signs: tuple[int, ...],
+    signs: tuple[sp.Expr, ...],
     published: PolynomialMap,
 ) -> str:
     """Return everything needed to replay the chain, by name and not by index.
@@ -84,20 +98,16 @@ def describe(
     lines.append(f"# dimensions:         {reduction.dimensions()}")
     lines.append(f"# degrees:            {reduction.degrees()}")
 
-    flipped = [
-        str(variable)
-        for variable, sign in zip(published.variables, signs, strict=True)
-        if sign == -1
-    ]
-    lines.append(f"# D flips:            {', '.join(flipped) or 'nothing'}")
-    lines.append("# every other entry of D is +1")
+    scaled = flips(signs, published)
+    lines.append(f"# D scales:           {', '.join(scaled) or 'nothing'}")
+    lines.append("# every other entry of D is 1")
 
     return "\n".join(lines)
 
 
 def sanity(
     reduction: Reduction,
-    signs: tuple[int, ...],
+    signs: tuple[sp.Expr, ...],
     published: PolynomialMap,
 ) -> bool:
     """Return whether the chain verifies and reaches the published map.
@@ -113,12 +123,3 @@ def sanity(
     reached = reduction.target.reordered(published.variables)
 
     return bool(conjugate(reached, signs) == published)
-
-
-def flips(signs: tuple[int, ...], published: PolynomialMap) -> list[sp.Symbol]:
-    """Return the coordinates ``D`` turns around."""
-    return [
-        variable
-        for variable, sign in zip(published.variables, signs, strict=True)
-        if sign == -1
-    ]

@@ -10,6 +10,11 @@ Not a gate and not a second independent computation. It drives the library, as
 ``make check``. The fixed data is read from the test module that holds it
 rather than copied.
 
+For the backward direction use ``peel`` from the library directly, or
+``search_alpoege19.py``, which runs both. This script drives the forward search
+only, because the rules worth measuring here -- the pool and the rewrites --
+are the forward search's and have no counterpart in a peel.
+
 Run with::
 
     python scripts/search_alpoege15.py [budget] [spare] [rewrites] [complete]
