@@ -290,6 +290,8 @@ def peel(
             reached = undo(current, step)
             if reached is None or reached.dimension < source.dimension:
                 continue
+            if _stranded(source, reached):
+                continue
 
             found = walk(
                 reached,
@@ -308,6 +310,23 @@ def peel(
     return PeelOutcome(
         None, None, budget - max(remaining[0], 0), deepest[0], remaining[0] > 0
     )
+
+
+def _stranded(source: PolynomialMap, reached: PolynomialMap) -> bool:
+    """Return whether one coordinate too many is left for the source to take.
+
+    A last step that introduces one coordinate has a ``Carried`` slot, and that
+    slot is not the component the step acts on, so its component is the same
+    before and after -- which makes it a carrier of the source as well. A
+    source without carriers therefore cannot be reached by a step that
+    introduces one coordinate, and a peel standing at one coordinate more than
+    the source has nowhere left to go.
+
+    Alpoege's map has no carriers, so this prunes every branch that spends its
+    last removal on a single coordinate. It is a statement about the source
+    that was handed in, not a rule about Keller maps.
+    """
+    return reached.dimension == source.dimension + 1 and not source.carrier_indices
 
 
 def _scaling(

@@ -368,3 +368,36 @@ def test_two_coordinates_that_disagree_on_the_factor_are_not_one_step() -> None:
     assert set(removable(target)) == {u, v}
     assert factor(target, x, (u, v), (u, v)) is None
     assert factor(target, x, (y, u), (u,)) == 1
+
+
+def test_a_source_without_carriers_cannot_take_a_single_coordinate() -> None:
+    """Eine Beschneidung aus der Quelle, nicht aus einer Regel ueber Keller.
+
+    Der letzte Schritt einer Kette, der eine Koordinate einfuehrt, hat einen
+    ``Carried``-Platz, und der liegt nicht auf der Zielkomponente -- seine
+    Komponente ist also vor und nach dem Schritt dieselbe und macht ihn zum
+    Traeger auch der Quelle. Eine Quelle ohne Traeger ist so nicht erreichbar,
+    und ein Abtrag, der bei einer Koordinate zu viel steht, ist am Ende.
+
+    Alpoeges Abbildung hat keine Traeger, also greift das dort ueberall.
+    """
+    carrying = over_field(PolynomialMap((x, y), (x + x**3 * y**3, y + x**2)))
+    single = BCWStep.build(carrying, 0, Carried(1), Fresh(x * y**3, u), 1).target
+
+    assert carrying.carrier_indices == (1,)
+    assert peel(carrying, single).reduction is not None
+
+    without = over_field(PolynomialMap((x, y), (x + x**2 * y**3, y + x * y)))
+    both = BCWStep.build(without, 0, Fresh(x * y, u), Fresh(x * y**2, v), 1).target
+
+    assert without.carrier_indices == ()
+    assert peel(without, both).reduction is not None
+
+    # Ein anderes Ziel derselben Gestalt zwingt die Suche, auch die Zuege zu
+    # betrachten, die eine Koordinate allein abtragen. Sie fuehren auf eine
+    # Koordinate mehr als die Quelle und werden verworfen, statt einen Schritt
+    # zu suchen, den es dort nicht geben kann.
+    stranger = over_field(PolynomialMap((x, y), (x + x**2 * y**5, y + x * y)))
+
+    assert stranger.carrier_indices == ()
+    assert peel(stranger, both).reduction is None

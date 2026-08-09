@@ -930,9 +930,31 @@ requirement that the dropped coordinates vanish, which is linear in it, so it
 is solved rather than tried.
 
 The widening took the peel from **depth six to depth eleven** against the
-published map, and the space is no longer exhausted: 8000 maps in 298 seconds
-reach eleven without finishing. Recovering the fifteen-dimensional map still
-costs 8 maps. SEA-5 and REV-4 record the change; REV-2 is untouched.
+published map, and the space is no longer exhausted. Recovering the
+fifteen-dimensional map still costs 8 maps. SEA-5 and REV-4 record the change;
+REV-2 is untouched.
+
+`spare` was then corrected, and the correction came from the maintainer rather
+than from a measurement. Write `a` for the steps introducing two generators,
+`b` for those introducing one and `c` for those introducing none. Then
+`2a + b = 16` and the chain has `S = 16 - a + c` steps. Alpoege's map has no
+carriers, so a `Carried` slot has nothing to point at and the first step must
+introduce two: `a >= 1`. A seventeen-step chain therefore needs `c = a + 1 >= 2`.
+
+`spare=1` could not have found a seventeen-step chain whatever the budget, and
+the reason I chose it -- sixteen generators over seventeen steps, so at least
+one step introduces none -- silently assumed every other step introduces
+exactly one. With `spare=2` the structure is pinned: `a = 1`, `b = 14`,
+`c = 2`, and the peel reaches **depth sixteen** of the seventeen.
+
+One coordinate short, and the shortfall has a shape. At depth sixteen the map
+has four coordinates and only `w3` is removable, with no carrier left to pair
+it with. A last step introducing one coordinate has a `Carried` slot whose
+component is unchanged by that step, which makes it a carrier of the source as
+well -- so a source without carriers cannot be reached that way, and a peel
+standing at one coordinate more than the source is finished. That prune is in
+`peeling.py`, and it is a statement about the source that was handed in rather
+than a rule about Keller maps.
 
 The move order decides more than anything else here. With coordinate-removing
 steps offered one at a time first, the fifteen-dimensional recovery does not

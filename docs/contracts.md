@@ -1325,6 +1325,21 @@ compute.
 a peel that stops says nothing unless it says how far it got and whether it
 finished looking.
 
+**REV-8 — What the source admits bounds the last step.** `[0.4]` A last step
+that introduces one coordinate has a `Carried` slot, and that slot is never the
+component the step acts on, so its component is the same before and after --
+which makes it a carrier of the source as well. A source without carriers
+cannot be reached by such a step, and a peel standing at one coordinate more
+than the source has nowhere left to go and is discarded.
+
+This is a statement about the source that was handed in, not a rule about
+Keller maps, and it is why the arithmetic of a chain is worth doing before a
+run. With `a` steps introducing two generators, `b` introducing one and `c`
+introducing none, `2a + b` is the number of generators and `S = a + b + c` the
+number of steps. Alpoege's map has no carriers, so `a >= 1`, and a chain of the
+seventeen steps its source describes then needs `c = a + 1 >= 2`. A peel
+allowing one such step cannot find that chain whatever its budget.
+
 **REV-7 — No completeness, again.** A peel that reaches no chain has shown that
 this peel, under REV-2 and its budget, found none. REV-2 is a decision about
 where to look and not a fact about Keller maps, so a chain outside it is
@@ -1334,8 +1349,8 @@ enumerator either" already asks for.
 ### Which of these can fail on supplied data
 
 REV-3, whose second half is a real check on the map being peeled, and REV-5,
-which compares a rebuilt chain against the target. REV-1, REV-2, REV-4, REV-6
-and REV-7 are obligations on the library's own conduct.
+which compares a rebuilt chain against the target. REV-1, REV-2, REV-4 and
+REV-6 to REV-8 are obligations on the library's own conduct.
 
 ---
 

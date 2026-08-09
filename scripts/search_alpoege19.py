@@ -54,10 +54,21 @@ Run with::
 
 ``spare`` is the number of steps a chain may take that introduce no generator,
 and it bounds the length of a chain: every other step consumes a name, so a
-chain has at most ``len(pool) + spare`` steps. One is the arithmetic minimum
-here, since the dimension grows by sixteen over seventeen steps. Two is the
-library's default and doubles a branch there is no reason to need yet, so this
-script asks for one unless told otherwise.
+chain has at most ``len(pool) + spare`` steps.
+
+Two, and the derivation is worth writing down because the first version of this
+paragraph said one and was wrong. Write ``a`` for the steps introducing two
+generators, ``b`` for those introducing one and ``c`` for those introducing
+none. Then ``2a + b = 16`` and the chain has ``S = a + b + c = 16 - a + c``
+steps. Alpoege's map has no carriers -- measured, and true of its linear
+normalization as well -- so a ``Carried`` slot has nothing to point at and the
+first step must introduce two generators: ``a >= 1``. If the chain has the
+seventeen steps its source describes, then ``c = a + 1 >= 2``.
+
+So ``spare=1`` cannot find a seventeen-step chain at all, whatever the budget.
+It can still find shorter ones, which is a different question and a fair one.
+With ``spare=2`` the structure is pinned: ``a = 1``, ``b = 14``, ``c = 2`` --
+exactly one step introducing two generators, and it is the first.
 
 A first round below 68425 maps is wasted. The run of 8 August 2026 exhausted a
 strictly smaller space at that count -- the search then stopped at the last
@@ -212,7 +223,7 @@ def unpicking(
     return 1, None, None
 
 
-def main(start: int = 100_000, ceiling: int = 8_000_000, spare: int = 1) -> int:
+def main(start: int = 100_000, ceiling: int = 8_000_000, spare: int = 2) -> int:
     source, published, pool = setup()
     corrected = pool[published.variables[4]]
 
