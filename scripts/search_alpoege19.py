@@ -80,6 +80,29 @@ restriction beyond the steps that introduce nothing.
 Several runs with different settings search genuinely different spaces and can
 be started side by side. The same settings twice search the same space twice.
 
+What the peel is given, and where each thing comes from. Nothing here is taken
+from the reconstructed chain; every restriction is read off the published map
+or follows from the arithmetic.
+
+* ``spare=2`` and ``pairs=1`` follow from Alpoege's map having no carriers,
+  which forces the first step to introduce two coordinates, together with the
+  seventeen steps the source describes: ``2a + b = 16`` and ``S = 16 - a + c``
+  give ``a = 1`` and ``c = 2``.
+* A coordinate is peeled only where it occurs in exactly two components
+  (REV-2), and a step whose two slots are one fresh coordinate only where that
+  coordinate occurs squared (BCW-12). Both are signatures of what a step leaves
+  behind, read off the map.
+* The degree may not rise above the source's, which is not a decision: it never
+  rises going forwards.
+* The coefficient of each step is solved rather than searched, so it costs
+  nothing.
+
+At the time of writing the peel reaches depth seventeen -- the full length of
+the chain -- and arrives at three-dimensional maps that are not Alpoege's, some
+thousands of times in thirty thousand. The chain is inside this space. Finding
+it is a matter of budget and of the order the moves are tried in, and no longer
+of what the language can say.
+
 A first round below 68425 maps is wasted. The run of 8 August 2026 exhausted a
 strictly smaller space at that count -- the search then stopped at the last
 introduction, so no chain could *end* with a step that introduces nothing, and

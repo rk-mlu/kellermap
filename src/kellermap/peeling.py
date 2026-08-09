@@ -187,6 +187,23 @@ def factor(
     return None if ratio == 0 or ratio.free_symbols else ratio
 
 
+def _squared(current: PolynomialMap, target: sp.Symbol, fresh: sp.Symbol) -> bool:
+    """Return whether ``fresh`` occurs squared in the component of ``target``.
+
+    A step whose two slots are one fresh coordinate leaves ``-c X_u**2`` in the
+    component it acted on, so the coordinate stands there squared unless that
+    term cancelled. A necessary condition of the same kind as REV-2, and read
+    off the map rather than assumed about the chain.
+    """
+    position = current.variables.index(fresh)
+    component = sp.Poly(
+        sp.expand(current.components[current.variables.index(target)]),
+        *current.variables,
+    )
+
+    return any(monomial[position] >= 2 for monomial in component.monoms())
+
+
 def moves(current: PolynomialMap, spare: int, pairs: int = 16) -> Iterator[Undo]:
     """Yield the steps that could have been the last one, in a fixed order.
 
@@ -219,11 +236,14 @@ def moves(current: PolynomialMap, spare: int, pairs: int = 16) -> Iterator[Undo]
 
     for fresh, target in peelable.items():
         # BCW-12: eine frische Koordinate darf beide Plaetze fuellen. ``G``
-        # subtrahiert dann ein Quadrat. Der fuenfzehnte Schritt der
-        # veroeffentlichten Kette ist von dieser Gestalt.
-        found = factor(current, target, (fresh, fresh), (fresh,))
-        if found is not None:
-            yield Undo(target, (fresh, fresh), (fresh,), found)
+        # subtrahiert dann ein Quadrat, also steht die Koordinate quadriert in
+        # der Zielkomponente -- dieselbe Art von Signatur wie REV-2, und aus
+        # dem Ziel ablesbar. Genau eine Traegervariable der veroeffentlichten
+        # Abbildung kommt quadriert vor.
+        if _squared(current, target, fresh):
+            found = factor(current, target, (fresh, fresh), (fresh,))
+            if found is not None:
+                yield Undo(target, (fresh, fresh), (fresh,), found)
 
         for carried in carriers:
             if carried in (fresh, target):

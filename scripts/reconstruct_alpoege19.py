@@ -1,47 +1,48 @@
-"""Reconstruct the reduction from Alpoege's map to alpoege19 in plain SymPy.
+"""Render the seventeen-step reduction to the published map in plain SymPy.
 
-This file does not depend on ``kellermap`` or on its test data. It is a second,
-independent rendering of the seventeen reduction steps that lead from
-Alpoege's three-dimensional map to the published degree-three map in nineteen
-variables. The published JSON is read directly, either from its URL or from a
-local copy.
+The third of the ``reconstruct_`` scripts and the second independent rendering
+of a reduction this repository holds. Like the other two it does not import
+``kellermap``: it applies the step formula directly, so that the library has
+something other than itself to agree with.
 
-The reduction uses three extensions of the classical step from
-Bass-Connell-Wright, Chapter II, Proposition (3.1):
+It differs from them in one respect, and the difference is deliberate.
+``reconstruct_bcw17.py`` and ``reconstruct_alpoege15.py`` carry their own copy
+of the map they end at, because that map is the project's own hand computation
+and a second copy of it costs nothing. The nineteen-dimensional map is somebody
+else's, and its licence could not be established, so it is not copied a second
+time: this script reads it from ``tests/data.py``, where WP 8 put it. What is
+rendered independently here is the *reduction*, which is what the library
+computes and therefore what wants a second opinion.
 
-* a factor may be supplied by a coordinate introduced by an earlier step;
-* the product may carry an explicit scalar coefficient;
-* one fresh coordinate may supply both factors of a square.
+The chain uses three extensions of Chapter II, Proposition (3.1), all of them
+recorded in ``docs/contracts.md``:
 
-For a fresh slot ``Fresh(u, P)``, put ``Phi = u + P``. For a carried slot
-``Carried(u)``, put ``Phi = F_u``, the current component indexed by ``u``. A
-step with target ``t`` and coefficient ``lambda`` is
+* a factor may come from a coordinate an earlier step introduced (BCW-10);
+* the removed product carries a coefficient (BCW-11);
+* one fresh coordinate may fill both slots (BCW-12).
 
-    F_t -> F_t - lambda * Phi_left * Phi_right.
+For a fresh slot the factor component is ``u + P``; for a carried slot it is the
+current component of that coordinate. A step with target ``t`` and coefficient
+``c`` is
 
-Every distinct fresh coordinate is appended once. Step 15 therefore introduces
-``w3 + x*y**2`` once and uses that same component in both slots. All formulas
-below are implemented directly with SymPy expressions.
+    F_t  ->  F_t - c * Phi_left * Phi_right,
 
-Run against the published file online with::
+and each distinct fresh coordinate is appended once, carrying ``P``.
 
-    python scripts/reconstruct_alpoege19.py
-
-For an offline check, pass a downloaded copy instead::
-
-    python scripts/reconstruct_alpoege19.py degree3_map.json
+Provenance of the chain. It was reconstructed by an external audit of this
+project in August 2026 and verified here against the published map before it
+was written down. This script is that verification, kept: nothing in it is
+taken on trust, and every check it prints is recomputed from the steps.
 
 The exit status is 0 if every check passes and 1 otherwise.
 """
 
 from __future__ import annotations
 
-import json
+import importlib.util
 import sys
-from dataclasses import dataclass, replace
 from pathlib import Path
-from typing import Any
-from urllib.request import urlopen
+from types import ModuleType
 
 import sympy as sp
 
@@ -49,337 +50,164 @@ x, y, z = sp.symbols("x y z")
 w = sp.symbols("w1:17")
 w1, w2, w3, w4, w5, w6, w7, w8, w9, w10, w11, w12, w13, w14, w15, w16 = w
 
-VARIABLES = (x, y, z) + w
-SYMBOLS = {str(variable): variable for variable in VARIABLES}
-
-R = sp.Rational
-
-PUBLISHED_JSON = "https://rhicksrad.github.io/jacobian-degree3/degree3_map.json"
-
-
-# --------------------------------------------------------------------------
-# Alpoege's map and its collision
-# --------------------------------------------------------------------------
-
-ALPOEGE = {
-    x: sp.expand((1 + x * y) ** 3 * z + y**2 * (1 + x * y) * (4 + 3 * x * y)),
-    y: sp.expand(y + 3 * x * (1 + x * y) ** 2 * z + 3 * x * y**2 * (4 + 3 * x * y)),
-    z: sp.expand(2 * x - 3 * x**2 * y - x**3 * z),
-}
-
-ALPOEGE_POINTS = (
-    (sp.Integer(0), sp.Integer(0), R(-1, 4)),
-    (sp.Integer(1), R(-3, 2), R(13, 2)),
-    (sp.Integer(-1), R(3, 2), R(13, 2)),
+# Alpoege's map, in the coordinates the published one uses. Its own copy: this
+# map is somebody else's mathematics too, but it has a citable presentation
+# under a licence, and every reduction here starts from it.
+ALPOEGE = (
+    (1 + x * y) ** 3 * z + y**2 * (1 + x * y) * (4 + 3 * x * y),
+    y + 3 * x * (1 + x * y) ** 2 * z + 3 * x * y**2 * (4 + 3 * x * y),
+    2 * x - 3 * x**2 * y - x**3 * z,
 )
 
-ALPOEGE_IMAGE = (R(-1, 4), sp.Integer(0), sp.Integer(0))
+ALPOEGE_POINTS = (
+    (0, 0, sp.Rational(-1, 4)),
+    (1, sp.Rational(-3, 2), sp.Rational(13, 2)),
+    (-1, sp.Rational(3, 2), sp.Rational(13, 2)),
+)
 
-
-# --------------------------------------------------------------------------
-# The generalized reduction step
-# --------------------------------------------------------------------------
-
-
-@dataclass(frozen=True)
-class Fresh:
-    """A slot supplied by the new component ``variable + value``."""
-
-    variable: sp.Symbol
-    value: sp.Expr
-
-
-@dataclass(frozen=True)
-class Carried:
-    """A slot supplied by the current component indexed by ``variable``."""
-
-    variable: sp.Symbol
-
-
-Slot = Fresh | Carried
-Components = dict[sp.Symbol, sp.Expr]
-Point = dict[sp.Symbol, sp.Expr]
-
-
-@dataclass(frozen=True)
-class Step:
-    """One weighted step with fresh, carried, or aliased factor slots."""
-
-    target: sp.Symbol
-    left: Slot
-    right: Slot
-    coefficient: sp.Expr = sp.Integer(1)
-
-    def apply(self, components: Components) -> Components:
-        """Apply the step and return a new component dictionary."""
-        fresh = self._fresh_values()
-        self._validate(components, fresh)
-
-        result = dict(components)
-        left = self._slot_component(self.left, components)
-        right = self._slot_component(self.right, components)
-        result[self.target] = sp.expand(
-            components[self.target] - self.coefficient * left * right
-        )
-
-        for variable, value in fresh.items():
-            result[variable] = sp.expand(variable + value)
-
-        return result
-
-    def transport(self, point: Point) -> Point:
-        """Pull a domain point back through the fresh-coordinate changes."""
-        fresh = self._fresh_values()
-        result = dict(point)
-
-        for variable, value in fresh.items():
-            if variable in result:
-                raise ValueError(f"fresh variable {variable} is already present")
-            if not value.free_symbols <= result.keys():
-                raise ValueError(f"value for {variable} uses an unavailable variable")
-            result[variable] = sp.expand(-value.xreplace(result))
-
-        return result
-
-    def slot_names(self) -> str:
-        """Return the two coordinate names used in the report."""
-        return f"{self.left.variable},{self.right.variable}"
-
-    def fresh_names(self) -> str:
-        """Return the names introduced by the step."""
-        names = ",".join(str(variable) for variable in self._fresh_values())
-
-        return names or "-"
-
-    def _fresh_values(self) -> dict[sp.Symbol, sp.Expr]:
-        fresh: dict[sp.Symbol, sp.Expr] = {}
-
-        for slot in (self.left, self.right):
-            if isinstance(slot, Fresh):
-                value = sp.expand(slot.value)
-                previous = fresh.get(slot.variable)
-                if previous is not None and sp.expand(previous - value) != 0:
-                    raise ValueError(
-                        f"aliased fresh variable {slot.variable} has two values"
-                    )
-                fresh[slot.variable] = value
-
-        return fresh
-
-    def _validate(
-        self, components: Components, fresh: dict[sp.Symbol, sp.Expr]
-    ) -> None:
-        if self.target not in components:
-            raise ValueError(f"target {self.target} is not present")
-        if self.coefficient == 0:
-            raise ValueError("a reduction coefficient must be nonzero")
-
-        for slot in (self.left, self.right):
-            if slot.variable == self.target:
-                raise ValueError("the target cannot supply one of its own slots")
-            if isinstance(slot, Carried) and slot.variable not in components:
-                raise ValueError(f"carrier {slot.variable} is not present")
-
-        for variable, value in fresh.items():
-            if variable in components:
-                raise ValueError(f"fresh variable {variable} is already present")
-            if variable in value.free_symbols:
-                raise ValueError(f"value for {variable} uses itself")
-            if not value.free_symbols <= components.keys():
-                raise ValueError(f"value for {variable} uses an unavailable variable")
-
-    @staticmethod
-    def _slot_component(slot: Slot, components: Components) -> sp.Expr:
-        if isinstance(slot, Carried):
-            return components[slot.variable]
-
-        return sp.expand(slot.variable + slot.value)
-
-
-# --------------------------------------------------------------------------
-# The reconstructed chain
-# --------------------------------------------------------------------------
+# (target, left, right, coefficient). A slot is ("fresh", variable, value) or
+# ("carried", variable).
+FRESH = "fresh"
+CARRIED = "carried"
 
 STEPS = (
-    Step(x, Fresh(w1, y**2 * z), Fresh(w2, x**3 * y)),
-    Step(y, Carried(w2), Fresh(w4, y * z), 3),
-    Step(x, Carried(w4), Fresh(w5, x**2 * y), 3),
-    Step(y, Carried(w5), Fresh(w8, x * w4), -3),
-    Step(y, Carried(w5), Fresh(w7, y**2), 9),
-    Step(x, Carried(w8), Fresh(w9, x * y), -3),
-    Step(x, Carried(w7), Carried(w9), 7),
-    Step(y, Carried(w4), Fresh(w13, x**2), 6),
-    Step(w2, Carried(w9), Carried(w13)),
-    Step(z, Carried(w13), Fresh(w16, x * z), -1),
-    Step(y, Carried(w13), Fresh(w15, y * w8), 3),
-    Step(y, Carried(w13), Fresh(w14, y * w7), -9),
-    Step(x, Carried(w5), Fresh(w6, x * w1), -1),
-    Step(x, Carried(w9), Fresh(w12, x * w6)),
-    Step(x, Fresh(w3, x * y**2), Fresh(w3, x * y**2), 3),
-    Step(x, Carried(w9), Fresh(w11, y * w3), -6),
-    Step(x, Carried(w7), Fresh(w10, z * w2), -1),
+    (x, (FRESH, w1, y**2 * z), (FRESH, w2, x**3 * y), 1),
+    (y, (CARRIED, w2), (FRESH, w4, y * z), 3),
+    (x, (CARRIED, w4), (FRESH, w5, x**2 * y), 3),
+    (y, (CARRIED, w5), (FRESH, w8, x * w4), -3),
+    (y, (CARRIED, w5), (FRESH, w7, y**2), 9),
+    (x, (CARRIED, w8), (FRESH, w9, x * y), -3),
+    (x, (CARRIED, w7), (CARRIED, w9), 7),
+    (y, (CARRIED, w4), (FRESH, w13, x**2), 6),
+    (w2, (CARRIED, w9), (CARRIED, w13), 1),
+    (z, (CARRIED, w13), (FRESH, w16, x * z), -1),
+    (y, (CARRIED, w13), (FRESH, w15, y * w8), 3),
+    (y, (CARRIED, w13), (FRESH, w14, y * w7), -9),
+    (x, (CARRIED, w5), (FRESH, w6, x * w1), -1),
+    (x, (CARRIED, w9), (FRESH, w12, x * w6), 1),
+    (x, (FRESH, w3, x * y**2), (FRESH, w3, x * y**2), 3),
+    (x, (CARRIED, w9), (FRESH, w11, y * w3), -6),
+    (x, (CARRIED, w7), (FRESH, w10, z * w2), -1),
 )
 
 EXPECTED_DIMENSIONS = (3, 5, 6, 7, 8, 9, 10, 10, 11, 11, 12, 13, 14, 15, 16, 17, 18, 19)
 EXPECTED_DEGREES = (7, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 4, 4, 3)
 
 
-def reconstruct(steps: tuple[Step, ...] = STEPS) -> Components:
-    """Apply all steps to Alpoege's map."""
-    components = dict(ALPOEGE)
+def published() -> ModuleType:
+    """Return the module holding the map this reduction ends at.
 
-    for step in steps:
-        components = step.apply(components)
+    Read rather than copied. The map is not this project's and its licence
+    could not be established, so the repository holds it once, outside the
+    distributed package.
+    """
+    root = Path(__file__).resolve().parent.parent
+    path = root / "tests" / "data.py"
+    spec = importlib.util.spec_from_file_location("published_map", path)
+    if spec is None or spec.loader is None:
+        raise RuntimeError(f"Cannot read the published map from {path}.")
 
-    return components
+    module = importlib.util.module_from_spec(spec)
+    sys.path.insert(0, str(root))
+    spec.loader.exec_module(module)
 
-
-def transport(point: tuple[sp.Expr, ...]) -> tuple[sp.Expr, ...]:
-    """Transport one of Alpoege's preimages through the whole chain."""
-    values = dict(zip((x, y, z), point, strict=True))
-
-    for step in STEPS:
-        values = step.transport(values)
-
-    return tuple(values[variable] for variable in VARIABLES)
-
-
-# --------------------------------------------------------------------------
-# The published JSON
-# --------------------------------------------------------------------------
+    return module
 
 
-def load_published(
-    source: str,
-) -> tuple[tuple[sp.Expr, ...], tuple[tuple[sp.Expr, ...], ...]]:
-    """Read the published components and points from a URL or local path."""
-    if source.startswith(("http://", "https://")):
-        with urlopen(source, timeout=30) as response:  # noqa: S310
-            text = response.read().decode("utf-8")
-    else:
-        text = Path(source).read_text(encoding="utf-8")
+def apply_steps() -> tuple[
+    dict[sp.Symbol, sp.Expr], list[sp.Symbol], list[int], list[int], list[bool]
+]:
+    """Return the components, the coordinate order, and what each step cost.
 
-    data: Any = json.loads(text)
-    if not isinstance(data, dict) or data.get("N") != len(VARIABLES):
-        raise ValueError("the JSON does not describe a 19-dimensional map")
+    The identities are checked as the steps are applied, one per step: the new
+    target component must be the old one less the weighted product of the two
+    factor components. That is the whole of the step formula, written out.
+    """
+    components = {x: ALPOEGE[0], y: ALPOEGE[1], z: ALPOEGE[2]}
+    order = [x, y, z]
+    dimensions, degrees, identities = [3], [_degree(components, order)], []
 
-    raw_components = data.get("components")
-    raw_points = data.get("points")
-    if not isinstance(raw_components, list) or len(raw_components) != len(VARIABLES):
-        raise ValueError("the JSON must contain 19 components")
-    if not isinstance(raw_points, list):
-        raise ValueError("the JSON must contain a point list")
+    for target, left, right, coefficient in STEPS:
+        for slot in (left, right):
+            if slot[0] == FRESH and slot[1] not in components:
+                components[slot[1]] = slot[1] + slot[2]
+                order.append(slot[1])
 
-    components = tuple(_parse_component(component) for component in raw_components)
-    points = tuple(_parse_point(point) for point in raw_points)
-
-    return components, points
-
-
-def _parse_component(raw: Any) -> sp.Expr:
-    if not isinstance(raw, dict):
-        raise ValueError("each component must be a monomial dictionary")
-
-    result = sp.Integer(0)
-    for monomial, coefficient in raw.items():
-        if not isinstance(monomial, str) or not isinstance(coefficient, str):
-            raise ValueError("monomials and coefficients must be strings")
-        result += R(coefficient) * _parse_monomial(monomial)
-
-    return sp.expand(result)
-
-
-def _parse_monomial(raw: str) -> sp.Expr:
-    if raw == "1":
-        return sp.Integer(1)
-
-    result = sp.Integer(1)
-    for factor in raw.split("*"):
-        name, separator, exponent = factor.partition("^")
-        if name not in SYMBOLS:
-            raise ValueError(f"unknown variable {name!r}")
-        power = int(exponent) if separator else 1
-        if power < 1:
-            raise ValueError("monomial exponents must be positive")
-        result *= SYMBOLS[name] ** power
-
-    return result
-
-
-def _parse_point(raw: Any) -> tuple[sp.Expr, ...]:
-    if not isinstance(raw, dict) or set(raw) != set(SYMBOLS):
-        raise ValueError("each point must give all 19 coordinates")
-
-    values = []
-    for variable in VARIABLES:
-        value = raw[str(variable)]
-        if not isinstance(value, str):
-            raise ValueError("point coordinates must be strings")
-        values.append(R(value))
-
-    return tuple(values)
-
-
-# --------------------------------------------------------------------------
-# Report
-# --------------------------------------------------------------------------
-
-
-def main(source: str = PUBLISHED_JSON) -> int:
-    """Print the chain and check it against the published JSON."""
-    published_components, published_points = load_published(source)
-
-    components = dict(ALPOEGE)
-    dimensions = [len(components)]
-    degrees = [_degree(components)]
-
-    print(f"Published data: {source}")
-    print()
-    print("The chain")
-    print(f"  source                    dim =  3  deg = {degrees[-1]}")
-    for number, step in enumerate(STEPS, start=1):
-        components = step.apply(components)
-        dimensions.append(len(components))
-        degrees.append(_degree(components))
-        print(
-            f"  step {number:>2}  target {step.target!s:>3}  "
-            f"slots {step.slot_names():<7}  fresh {step.fresh_names():<7}  "
-            f"lambda = {step.coefficient!s:>2}  "
-            f"dim = {len(components):>2}  deg = {degrees[-1]}"
+        factors = [components[slot[1]] for slot in (left, right)]
+        before = components[target]
+        after = sp.expand(before - coefficient * factors[0] * factors[1])
+        identities.append(
+            sp.expand(before - after - coefficient * factors[0] * factors[1]) == 0
         )
-    print()
+        components[target] = after
+        dimensions.append(len(order))
+        degrees.append(_degree(components, order))
 
-    result = tuple(components[variable] for variable in VARIABLES)
-    transported = tuple(transport(point) for point in ALPOEGE_POINTS)
-    source_images = tuple(_evaluate(ALPOEGE, point) for point in ALPOEGE_POINTS)
-    result_images = tuple(_evaluate(components, point) for point in transported)
-    padded_image = ALPOEGE_IMAGE + (sp.Integer(0),) * len(w)
+    return components, order, dimensions, degrees, identities
 
-    broken = STEPS[:6] + (replace(STEPS[6], coefficient=8),) + STEPS[7:]
-    broken_result = reconstruct(broken)
+
+def transport() -> list[dict[sp.Symbol, sp.Expr]]:
+    """Return Alpoege's three points, carried along the chain.
+
+    A fresh coordinate takes the value that makes its component vanish at the
+    point, so every factor component is zero there and no target component
+    moves. That is why the three images stay equal.
+    """
+    points = [dict(zip((x, y, z), point, strict=True)) for point in ALPOEGE_POINTS]
+    seen: set[sp.Symbol] = set()
+
+    for _, left, right, _coefficient in STEPS:
+        for slot in (left, right):
+            if slot[0] == FRESH and slot[1] not in seen:
+                seen.add(slot[1])
+                for point in points:
+                    point[slot[1]] = sp.nsimplify(
+                        -sp.expand(slot[2]).subs(point, simultaneous=True)
+                    )
+
+    return points
+
+
+def _degree(components: dict[sp.Symbol, sp.Expr], order: list[sp.Symbol]) -> int:
+    return max(sp.Poly(components[v], *order).total_degree() for v in order)
+
+
+def main() -> int:
+    data = published()
+    components, order, dimensions, degrees, identities = apply_steps()
+    points = transport()
+
+    built = {variable: sp.expand(components[variable]) for variable in order}
+    target = dict(zip(data.VARIABLES, data.COMPONENTS, strict=True))
+
+    images = [
+        tuple(
+            sp.nsimplify(built[variable].subs(point, simultaneous=True))
+            for variable in data.VARIABLES
+        )
+        for point in points
+    ]
+    carried = tuple(
+        tuple(sp.nsimplify(point[variable]) for variable in data.VARIABLES)
+        for point in points
+    )
 
     checks = {
-        "Alpoege's three points have the stated common image": all(
-            image == ALPOEGE_IMAGE for image in source_images
+        "every step identity holds": all(identities),
+        "the chain has seventeen steps": len(STEPS) == 17,
+        "sixteen coordinates are introduced": len(order) == 19,
+        "the dimensions run as recorded": tuple(dimensions) == EXPECTED_DIMENSIONS,
+        "the degrees run as recorded": tuple(degrees) == EXPECTED_DEGREES,
+        "the components agree with the published map": all(
+            sp.expand(built[variable] - target[variable]) == 0
+            for variable in data.VARIABLES
         ),
-        "Jacobian determinant of Alpoege's map is -2": _jacobian_determinant(ALPOEGE)
-        == -2,
-        "components agree with the published JSON": _agree(
-            result, published_components
+        "the transported points agree": carried
+        == tuple(
+            tuple(sp.nsimplify(value) for value in point)
+            for point in data.PUBLISHED_POINTS
         ),
-        "collision agrees with the published JSON": transported == published_points,
-        "transported points have the padded common image": all(
-            image == padded_image for image in result_images
-        ),
-        "dimension sequence is the reconstructed one": tuple(dimensions)
-        == EXPECTED_DIMENSIONS,
-        "degree sequence is the reconstructed one": tuple(degrees) == EXPECTED_DEGREES,
-        "degree of the result is 3": degrees[-1] == 3,
-        "dimension of the result is 19": dimensions[-1] == 19,
-        "negative control rejects coefficient 8 in step 7": not _agree(
-            tuple(broken_result[variable] for variable in VARIABLES),
-            published_components,
-        ),
+        "the three images agree": images[0] == images[1] == images[2],
     }
 
     print("Checks")
@@ -387,54 +215,37 @@ def main(source: str = PUBLISHED_JSON) -> int:
         print(f"  [{'ok' if passed else 'FAILED'}] {description}")
     print()
 
-    print("The introduction order is")
-    print("  w1, w2, w4, w5, w8, w7, w9, w13,")
-    print("  w16, w15, w14, w6, w12, w3, w11, w10.")
-    print("Step 15 introduces w3 once and uses w3 + x*y**2 in both slots.")
+    print("Structure of the chain")
+    pairs = sum(
+        1
+        for _, left, right, _c in STEPS
+        if left[0] == FRESH and right[0] == FRESH and left[1] != right[1]
+    )
+    spare = sum(1 for _, left, right, _c in STEPS if left[0] == right[0] == CARRIED)
+    print(f"  steps introducing two coordinates: {pairs}")
+    print(f"  steps introducing none:            {spare}")
+    print(f"  steps introducing one:             {len(STEPS) - pairs - spare}")
+    print(
+        "  Alpoege's map has no carriers, so the first step has nothing for a\n"
+        "  carried slot to point at and must introduce two. Seventeen steps and\n"
+        "  sixteen coordinates then force two steps that introduce none."
+    )
+    print()
+
+    print("Introduction order")
+    print("  " + ", ".join(str(variable) for variable in order[3:]))
+    print("  Not w1 to w16. The numbering of the published map is a topological")
+    print("  order of the final carrier values, not a chronology.")
+    print()
+
+    print("Coefficients")
+    print("  " + ", ".join(str(step[3]) for step in STEPS))
+    print("  No change of coordinates removes them. A diagonal absorbing them")
+    print("  would need 1/7 at step seven where the earlier steps force 1/9, and")
+    print("  1 at step nine where they force 1/2.")
 
     return 0 if all(checks.values()) else 1
 
 
-def _degree(components: Components) -> int:
-    variables = tuple(components)
-
-    return int(
-        max(
-            sp.Poly(component, *variables).total_degree()
-            for component in components.values()
-        )
-    )
-
-
-def _evaluate(
-    components: Components, point: tuple[sp.Expr, ...]
-) -> tuple[sp.Expr, ...]:
-    variables = tuple(variable for variable in VARIABLES if variable in components)
-    substitution = dict(zip(variables, point, strict=True))
-
-    return tuple(
-        sp.expand(components[variable].xreplace(substitution)) for variable in variables
-    )
-
-
-def _jacobian_determinant(components: Components) -> sp.Expr:
-    variables = tuple(components)
-    matrix = sp.Matrix(
-        [
-            [sp.diff(components[row], column) for column in variables]
-            for row in variables
-        ]
-    )
-
-    return sp.expand(matrix.det())
-
-
-def _agree(left: tuple[sp.Expr, ...], right: tuple[sp.Expr, ...]) -> bool:
-    return all(sp.expand(a - b) == 0 for a, b in zip(left, right, strict=True))
-
-
 if __name__ == "__main__":
-    if len(sys.argv) > 2:
-        raise SystemExit("usage: reconstruct_alpoege19.py [degree3_map.json]")
-    argument = sys.argv[1] if len(sys.argv) == 2 else PUBLISHED_JSON
-    raise SystemExit(main(argument))
+    raise SystemExit(main())
