@@ -14,15 +14,22 @@ What it does:
 * uses Alpoege's map unnormalized, because the published map's linear part is
   Alpoege's own, so the chain does not begin with ``LinearStep.normalize``;
 * builds the value pool from the published carriers, with the value of ``w2``
-  replaced by the one it was introduced with;
+  replaced by the one it was introduced with -- **for the forward phase only**:
+  peeling is given the source and the target and nothing else (REV-1), so the
+  correction cannot affect it, and the peel in fact recovers the ``w2`` step by
+  itself;
 * searches with a doubling budget, printing what each round cost and how far
   it got;
 * on success prints the chain step by step, together with the diagonal ``D``
   of SEA-5, in a form that can be read into ``tests/test_alpoege19.py``.
 
-Why ``w2`` is replaced: its published component is the residue of a later step
-rather than an introduced value, so the value that coordinate was introduced
-with, ``x**3 * y``, is absent from the map. ``tests/test_alpoege19.py``
+Why ``w2`` is replaced, and why only the forward phase needs it: its published
+component is the residue of a later step rather than an introduced value, so
+the value that coordinate was introduced with, ``x**3 * y``, is absent from the
+map. A forward search takes its factors from the pool and cannot express the
+step without it. A peel reads its factors off the map as it goes and does not
+have the problem at all -- it recovered that step unaided, three times, by three
+routes. ``tests/test_alpoege19.py``
 verifies that identity. Without it the chain is not merely unfound but
 inexpressible, since a fresh coordinate needs a name and the only names on
 offer are the published ones -- ``tests/test_alpoege15.py`` shows the same
@@ -177,6 +184,10 @@ def report(
 ) -> tuple[int, Reduction | None, tuple[int, ...] | None]:
     """Search with a doubling budget, printing what each round cost."""
     print(f"--- {label} ---")
+    print(
+        f"given: a pool of {len(pool)} values, w2 corrected to "
+        f"{pool[target.variables[4]]}"
+    )
     budget, outcome = start, None
 
     while budget <= ceiling:
@@ -222,6 +233,7 @@ def unpicking(
 ) -> tuple[int, Reduction | None]:
     """Peel with a doubling budget, printing what each round cost."""
     print("--- peeling the published map from the far end ---")
+    print("given: the source and the target, and nothing else (REV-1)")
     budget, outcome = start, None
 
     while budget <= ceiling:
@@ -265,11 +277,9 @@ def main(
     pairs: int = 1,
 ) -> int:
     source, published, pool = setup()
-    corrected = pool[published.variables[4]]
 
     print(f"source: dimension {source.dimension}, degree {source.degree()}")
     print(f"target: dimension {published.dimension}, degree {published.degree()}")
-    print(f"pool:   {len(pool)} values, w2 corrected to {corrected}")
     print(f"spare:  {spare} step(s) may introduce no generator")
     print(f"pairs:  {pairs} step(s) may introduce two")
     print()
