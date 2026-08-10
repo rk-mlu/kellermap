@@ -354,6 +354,7 @@ def peel(
                 if found is not None:
                     return found
 
+        reachable = []
         for step in moves(
             current,
             spare_left,
@@ -374,6 +375,11 @@ def peel(
             if reached.degree() > source.degree():
                 continue
 
+            reachable.append((_size(reached), step, reached))
+
+        reachable.sort(key=lambda entry: entry[0])
+
+        for _, step, reached in reachable:
             found = walk(
                 reached,
                 (*path, step),
@@ -391,6 +397,26 @@ def peel(
 
     return PeelOutcome(
         None, budget - max(remaining[0], 0), deepest[0], remaining[0] > 0
+    )
+
+
+def _size(reached: PolynomialMap) -> tuple[int, int]:
+    """Return how small a map is, for ordering the moves out of one.
+
+    Terms first, then coordinates. Undoing a step takes the residue out and
+    puts the removed product back, so a peel going the right way makes the map
+    shorter, and the source is the shortest map on the chain.
+
+    An ordering and not a filter. The terms a step leaves behind number
+    ``1 + t(P) + t(Q)`` before cancellation, which is six when both factors are
+    monomials -- fifteen of the sixteen carrier values of the published map are
+    -- and something else for ``bcw17``, where five of fourteen are not.
+    Ranking by the result needs no such assumption, and ranking discards
+    nothing.
+    """
+    return (
+        sum(len(sp.Add.make_args(component)) for component in reached.components),
+        reached.dimension,
     )
 
 

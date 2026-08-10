@@ -632,7 +632,7 @@ for the duration and moves to `0.4.0rc1` in one step at the end.
 | 8 | 0.3.8 | `examples.py` and `tests/data.py`: fixed data by provenance | yes |
 | 9 | 0.3.9 | The backward search: peeling a chain off a target | yes |
 | 10 | 0.3.10 | The coefficient and the repeated fresh slot | no |
-| 11 | 0.3.11 | `alpoege19` as a verified `Reduction` | no |
+| 11 | 0.3.11 | `alpoege19` as a verified `Reduction` | yes |
 | 12 | 0.3.12 | Documentation and release | no |
 
 The plan had seven, and five packages were inserted rather than appended. WP 10

@@ -692,12 +692,12 @@ class BCWStep:
     def transport(self, collision: Collision) -> Collision:
         """Pull a collision back through ``H`` and push its image through ``G``.
 
-        A point gains one coordinate per ``Fresh`` slot, in slot order. With
+        A point gains one coordinate per fresh generator, in slot order. With
         the fresh coordinates filled with zero, ``H^-1`` sends ``(a, 0, 0)``
         to ``(a, -P(a), -Q(a))``. A ``Carried`` slot adds no coordinate,
         because the step adds no generator for it.
 
-        The image gains a zero per ``Fresh`` slot, and ``G`` then reduces its
+        The image gains a zero per fresh generator, and ``G`` then reduces its
         component ``index`` by the product of the two slot values at that
         image. A ``Fresh`` slot contributes ``0`` there, so for ``m >= 1``
         the product vanishes and the image is unchanged apart from padding.
@@ -718,13 +718,17 @@ class BCWStep:
         return moved
 
     def _appended_coordinates(self, point: tuple[sp.Expr, ...]) -> tuple[sp.Expr, ...]:
-        """Return the coordinates a point gains, one per ``Fresh`` slot."""
+        """Return the coordinates a point gains, one per fresh generator.
+
+        Once each, in the order of BCW-2, and not once per ``Fresh`` slot: a
+        step whose two slots name one variable appends one coordinate, so a
+        point gains one. ``_fresh_values`` already answers per generator.
+        """
         substitution = dict(zip(self._source.variables, point, strict=True))
 
         return tuple(
             -sp.expand(value.as_expr().xreplace(substitution))
-            for slot, value in zip(self._slots, self._values, strict=True)
-            if isinstance(slot, Fresh)
+            for value in self._fresh_values()
         )
 
     def _moved_image(self, padded: tuple[sp.Expr, ...]) -> tuple[sp.Expr, ...]:

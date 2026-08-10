@@ -46,10 +46,12 @@ brauchbar macht, ist ausschliesslich, dass die Pruefungen unten sie
 nachrechnen.
 """
 
+import pytest
 import sympy as sp
 
-from kellermap import Collision
-from tests.data import (
+from kellermap import Collision, PolynomialMap, Reduction, examples
+from kellermap.bcw import BCWStep, Carried, Fresh
+from tests.data import (  # noqa: F401
     ALPOEGE19,
     ALPOEGE_IMAGE,
     ALPOEGE_POINTS,
@@ -59,10 +61,22 @@ from tests.data import (
     VARIABLES,
     W2_INTRODUCED,
     w,
+    w1,
     w2,
+    w3,
+    w4,
+    w5,
+    w6,
     w7,
+    w8,
     w9,
+    w10,
+    w11,
+    w12,
     w13,
+    w14,
+    w15,
+    w16,
     x,
     y,
     z,
@@ -416,3 +430,208 @@ def test_the_target_of_each_such_step_is_read_off_too() -> None:
     assert [targets[w[j]] for j in (9, 10, 11)] == [0, 0, 0]
     assert [targets[w[j]] for j in (13, 14)] == [1, 1]
     assert targets[w[15]] == 2
+
+
+# --------------------------------------------------------------------------
+# Die Schrittfolge
+# --------------------------------------------------------------------------
+
+# Rekonstruiert von einem externen Audit dieses Projekts im August 2026 und
+# hier unabhaengig nachgerechnet, bevor sie aufgeschrieben wurde. Sie benutzt
+# drei Erweiterungen von Proposition (3.1): einen wiederbenutzten Traeger
+# (BCW-10), einen Koeffizienten (BCW-11) und einen Schritt, dessen beide
+# Plaetze eine frische Variable nennen (BCW-12).
+#
+# Ein Eintrag ist (Zielkoordinate, Platz, Platz, Koeffizient). Ein Platz ist
+# ("fresh", Variable, Wert) oder ("carried", Variable). Positionen gehoeren
+# der Kette, Namen nicht -- deshalb steht hier keine einzige Zahl als Index.
+FRESH, CARRIED = "fresh", "carried"
+
+STEPS = (
+    (x, (FRESH, w1, y**2 * z), (FRESH, w2, x**3 * y), 1),
+    (y, (CARRIED, w2), (FRESH, w4, y * z), 3),
+    (x, (CARRIED, w4), (FRESH, w5, x**2 * y), 3),
+    (y, (CARRIED, w5), (FRESH, w8, x * w4), -3),
+    (y, (CARRIED, w5), (FRESH, w7, y**2), 9),
+    (x, (CARRIED, w8), (FRESH, w9, x * y), -3),
+    (x, (CARRIED, w7), (CARRIED, w9), 7),
+    (y, (CARRIED, w4), (FRESH, w13, x**2), 6),
+    (w2, (CARRIED, w9), (CARRIED, w13), 1),
+    (z, (CARRIED, w13), (FRESH, w16, x * z), -1),
+    (y, (CARRIED, w13), (FRESH, w15, y * w8), 3),
+    (y, (CARRIED, w13), (FRESH, w14, y * w7), -9),
+    (x, (CARRIED, w5), (FRESH, w6, x * w1), -1),
+    (x, (CARRIED, w9), (FRESH, w12, x * w6), 1),
+    (x, (FRESH, w3, x * y**2), (FRESH, w3, x * y**2), 3),
+    (x, (CARRIED, w9), (FRESH, w11, y * w3), -6),
+    (x, (CARRIED, w7), (FRESH, w10, z * w2), -1),
+)
+
+
+def alpoege_in_published_coordinates() -> PolynomialMap:
+    """Return the source of the chain: Alpoege's map, renamed.
+
+    Not the linear normalization. The published map's linear part is Alpoege's
+    own, so the chain starts at the unnormalized map -- and over ``ZZ``, since
+    every coefficient in it is an integer and a Keller map over a ring is not
+    the same object as the one over its field of fractions.
+    """
+    source = examples.alpoege()
+    rename = dict(zip(source.variables, VARIABLES[:3], strict=True))
+
+    return PolynomialMap(
+        VARIABLES[:3],
+        tuple(sp.expand(component.subs(rename)) for component in source.components),
+    )
+
+
+def build(steps: tuple = STEPS) -> Reduction:
+    """Return the chain, built step by step with ``BCWStep``.
+
+    The filtration level is derived and not chosen: ``H`` displaces the fresh
+    coordinates by the factors, so its degree is one below the smallest order
+    among them, and BCW-6 caps the declared level at one.
+    """
+    current, built = alpoege_in_published_coordinates(), []
+
+    for target, left, right, coefficient in steps:
+        slots, orders = [], []
+        for slot in (left, right):
+            if slot[0] == CARRIED:
+                slots.append(Carried(current.variables.index(slot[1])))
+                continue
+            slots.append(Fresh(slot[2], slot[1]))
+            orders.append(
+                min(
+                    sum(monomial)
+                    for monomial in sp.Poly(
+                        sp.expand(slot[2]), *current.variables
+                    ).monoms()
+                )
+            )
+
+        step = BCWStep.build(
+            current,
+            current.variables.index(target),
+            slots[0],
+            slots[1],
+            1 if all(order >= 2 for order in orders) else 0,
+            coefficient,
+        )
+        built.append(step)
+        current = step.target
+
+    return Reduction(tuple(built))
+
+
+@pytest.mark.slow
+def test_the_chain_is_a_verified_reduction() -> None:
+    """Das Ziel von Meilenstein 0.4, als Zertifikat und nicht als Nachrechnung.
+
+    Siebzehn Schritte, jeder gegen BCW-1 bis BCW-12 geprueft, und am Ende die
+    veroeffentlichte Abbildung selbst. Die Kette ist ``CONSTRUCTED``, also ist
+    ihre eigene Pruefung nach BCW-9 kein Beleg -- der Beleg ist der Endpunkt,
+    verglichen mit Daten, die dieses Projekt nicht gerechnet hat.
+    """
+    chain = build()
+
+    assert chain.verify() is None
+    assert len(chain.steps) == 17
+    assert chain.source == alpoege_in_published_coordinates()
+    assert chain.target.reordered(VARIABLES) == ALPOEGE19
+
+
+@pytest.mark.slow
+def test_the_chain_runs_as_recorded() -> None:
+    """Dimensionen und Grade, und was sie ueber die Gestalt sagen.
+
+    Die Doppelungen in der Dimensionsfolge sind die beiden Schritte, die keinen
+    Generator einfuehren; der einzige Sprung um zwei ist der erste, der es muss,
+    weil Alpoeges Abbildung keine Traeger hat.
+    """
+    chain = build()
+
+    assert chain.dimensions() == (
+        3,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        10,
+        11,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18,
+        19,
+    )
+    assert chain.degrees() == (
+        7,
+        6,
+        6,
+        6,
+        6,
+        6,
+        6,
+        6,
+        6,
+        6,
+        6,
+        6,
+        6,
+        6,
+        6,
+        4,
+        4,
+        3,
+    )
+    assert sum(step.m for step in chain.steps) == 16
+    assert [step.m for step in chain.steps].count(2) == 1
+    assert [step.m for step in chain.steps].count(0) == 2
+
+
+@pytest.mark.slow
+def test_the_chain_carries_the_collision_to_the_published_points() -> None:
+    """Der zweite aeussere Beleg, und er ist von der Abbildung unabhaengig.
+
+    Alpoeges drei Punkte, durch siebzehn Schritte transportiert, ergeben die
+    siebenundfuenfzig Koordinaten der veroeffentlichten Tabelle.
+    """
+    chain = build()
+    carried = chain.transport(
+        Collision.at(alpoege_in_published_coordinates(), ALPOEGE_POINTS)
+    )
+    place = {variable: index for index, variable in enumerate(chain.target.variables)}
+
+    reordered = tuple(
+        tuple(sp.nsimplify(point[place[variable]]) for variable in VARIABLES)
+        for point in carried.points
+    )
+
+    assert reordered == tuple(
+        tuple(sp.nsimplify(value) for value in point) for point in PUBLISHED_POINTS
+    )
+    assert carried.verify(chain.target) is None
+
+
+@pytest.mark.slow
+def test_a_wrong_coefficient_does_not_reach_the_published_map() -> None:
+    """Negativkontrolle: die Koeffizienten sind nicht Zierrat.
+
+    Ein einziger von ihnen geaendert, und die Kette baut sich weiterhin und
+    verifiziert weiterhin -- sie kommt nur woanders an. Genau deshalb ist der
+    Endpunkt der Beleg und nicht ``verify()``.
+    """
+    target, left, right, coefficient = STEPS[6]
+    perturbed = (*STEPS[:6], (target, left, right, coefficient + 1), *STEPS[7:])
+
+    chain = build(perturbed)
+
+    assert chain.verify() is None
+    assert chain.target.reordered(VARIABLES) != ALPOEGE19

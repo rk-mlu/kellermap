@@ -841,3 +841,24 @@ def test_BCW12_the_symmetry_with_a_repeated_carried_slot() -> None:  # noqa: N80
     assert fresh.verify() is None
     assert carried.m == 0
     assert fresh.m == 1
+
+
+def test_BCW12_a_collision_gains_one_coordinate_per_generator() -> None:  # noqa: N802
+    """Nicht eine je ``Fresh``-Platz.
+
+    Der Transport zaehlte bis WP 11 die Plaetze: bei einem Schritt, dessen
+    beide Plaetze eine Variable nennen, bekamen die Punkte zwei Koordinaten und
+    das Bild eine, und ``Collision.extended`` lehnte ab. Aufgefallen ist es
+    beim Zusammenbau der Kette zur neunzehndimensionalen Abbildung, nicht durch
+    einen Test -- kein Test hat je durch einen solchen Schritt transportiert.
+    """
+    source = over_field(PolynomialMap((x1, x2, x3), (x1**2, x2, x3)))
+    collision = Collision.at(source, ((1, 0, 0), (-1, 0, 0)))
+    step = BCWStep.build(source, 1, Fresh(x1 * x3, x4), Fresh(x1 * x3, x4), 1, 3)
+
+    carried = step.transport(collision)
+
+    assert step.m == 1
+    assert all(len(point) == source.dimension + 1 for point in carried.points)
+    assert len(carried.image) == source.dimension + 1
+    assert carried.verify(step.target) is None
