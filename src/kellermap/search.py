@@ -388,7 +388,9 @@ def conjugate(source: PolynomialMap, signs: Sequence[sp.Expr]) -> PolynomialMap:
     A change of coordinates and not a presentation change: it rewrites the
     polynomials. Degree, order and filtration degree survive, and a collision
     carries over with its points and image sign-flipped, so two conjugate maps
-    are the same map in different coordinates. ``D`` is its own inverse.
+    are the same map in different coordinates. A diagonal of ones and minus
+    ones is its own inverse; a general one is not, which is why the
+    inverse is taken and not reused.
 
     The Jacobian determinant survives as a *function*, in the new coordinates:
     it becomes ``det J(F)`` composed with ``D``. For a Keller map that is the
@@ -555,8 +557,17 @@ def search(
     published target. The search decides which step introduces which name, not
     what the names are (SEA-3) and not what the values are (SEA-8). A value is
     admitted with either sign, because the published listing and the value a
-    step supplies can differ by one; SEA-5 collects those differences into the
-    diagonal ``D`` the outcome reports.
+    step supplies can differ by one.
+
+    What this search cannot reach, stated rather than left to be discovered
+    (SEA-14). Its steps carry no coefficient: ``enumerate_candidates`` divides
+    a displacement into two factors, and a division has nowhere to put a
+    weight. Its steps also give each fresh slot its own name from the pool, so
+    the step of BCW-12 whose two slots are one coordinate is outside it. A
+    chain needing either is reported as no result, which is correct under
+    SEA-6 -- the space was searched and the chain is not in it -- and is not a
+    deferral under SEA-7. ``peel`` has neither restriction: it solves for the
+    coefficient and reads the names off the target.
 
     Four rules bound the walk, and each is a decision rather than a fact about
     Keller maps:

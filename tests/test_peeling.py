@@ -487,3 +487,43 @@ def test_the_degree_never_rises_above_the_source() -> None:
 
     assert outcome.reduction is None
     assert outcome.exhausted
+
+
+def test_the_ring_survives_the_peel() -> None:
+    """Der Koeffizientenbereich und die Monomordnung gehoeren dem Ziel.
+
+    Bis 0.4.0rc1 wurden die Zwischenkarten aus Ausdruecken neu gebaut, und
+    beides wurde dabei neu abgeleitet: ``QQ`` kam als ``ZZ`` zurueck und
+    ``grlex`` als das, was die Ausdruecke nahelegten. Eine gueltige Kette
+    konnte so unauffindbar erscheinen. Ein externes Audit hat es gemeldet.
+    """
+    parameter = sp.Symbol("T")
+    source = over_field(PolynomialMap((x, y), (x + parameter * x**2 * y**3, y)))
+    target = BCWStep.build(source, 0, Fresh(x * y, u), Fresh(x * y**2, v), 1).target
+
+    outcome = peel(source, target)
+
+    assert outcome.reduction is not None
+    assert outcome.reduction.target.ring.domain == target.ring.domain
+    assert outcome.reduction.target.ring.order == target.ring.order
+    assert outcome.reduction.target.reordered(target.variables) == target
+
+
+def test_a_parameter_of_the_domain_is_a_legal_coefficient() -> None:
+    """BCW-11 laesst jede Konstante des Bereichs zu, und ``T`` ist eine.
+
+    Ein Test auf ``free_symbols`` haette ``T`` fuer eine Koordinate gehalten
+    und den Schritt verworfen. Konversion statt Inspektion, wie BCW-3 und
+    TRA-2.
+    """
+    parameter = sp.Symbol("T")
+    source = over_field(PolynomialMap((x, y), (x + parameter * x**2 * y**3, y)))
+    target = BCWStep.build(
+        source, 0, Fresh(x * y, u), Fresh(x * y**2, v), 1, parameter
+    ).target
+
+    outcome = peel(source, target)
+
+    assert outcome.reduction is not None
+    assert outcome.reduction.steps[0].coefficient == parameter
+    assert outcome.reduction.target.reordered(target.variables) == target

@@ -587,8 +587,12 @@ has determinant one, and retained because it is cheap for the maps a reduction
 produces and catches implementation errors early.
 
 **BCW-8 — Transport.** With `F(a) = F(b) = c` and the fresh coordinates filled
-with zero, a point gains one coordinate per `Fresh` slot, in slot order, and
-the image gains a zero per `Fresh` slot:
+with zero, a point gains one coordinate per fresh *generator*, in slot order,
+and the image gains a zero per generator. Since BCW-12 the two readings differ:
+a step whose slots name one coordinate has two `Fresh` slots and one generator,
+and appending twice is what it did until an assembly of the
+nineteen-dimensional chain caught it. The image is then reduced by `G`, which
+scales the removed product by the coefficient of BCW-11:
 
 ```
 a  |-->  (a, -P(a), -Q(a)),        c  |-->  (c, 0, 0)
@@ -1111,6 +1115,28 @@ plausible chain or silently reporting no result. A case it handles and does not
 solve reports no result, which is a different outcome and is spelled
 differently.
 
+**SEA-14 — The forward search builds unweighted steps with distinct fresh
+coordinates, and says so.** It reaches a proper subset of the chains
+`BCWStep` admits, and the two omissions are structural rather than incidental.
+A step with a coefficient other than one is outside it, because
+`enumerate_candidates` divides a displacement into two factors under SEA-9 and
+SEA-10 and a division has no place to put a weight. A step whose two slots name
+one fresh coordinate is outside it as well, because a candidate carries two
+factors and SEA-8 gives each of them a name from the pool.
+
+Naming the boundary is the obligation; moving it is not. `search()` reports no
+result for a chain that needs either, and that is the correct outcome under
+SEA-6 rather than a deferral under SEA-7: the case is handled, the space is
+searched, and the chain is not in it. What would be wrong is leaving a reader to
+discover the boundary from a failed run, so `search()` states it, this clause
+states it, and `tests/test_admissible_shapes.py` exercises it against every
+shape the step type admits.
+
+Peeling has neither restriction. It solves for the coefficient instead of
+dividing, and reads a fresh coordinate's name off the target instead of a pool,
+so REV-1 to REV-9 cover what SEA-14 excludes. A chain outside the forward search
+is not outside this library.
+
 **SEA-11 — A budget is reported, not hidden.** The search examines at
 most a stated number of maps and says how many it examined and whether the
 space it covers was exhausted. A result with `exhausted` false says less than
@@ -1325,7 +1351,7 @@ search.
 ### Which of these can fail on supplied data
 
 SEA-5, and only SEA-5. It compares a chain this library built against a map and
-a collision it did not. SEA-1 to SEA-4 and SEA-6 to SEA-13 are obligations on
+a collision it did not. SEA-1 to SEA-4 and SEA-6 to SEA-14 are obligations on
 the library's own conduct: they say what the search and its enumerator may
 claim, not what the data is. A review weighing this milestone should look first
 at SEA-5 and at the provenance of the two published objects it compares against,

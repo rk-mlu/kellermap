@@ -18,6 +18,7 @@ lint:
 
 typecheck:
 	uv run mypy src
+	uv run mypy --strict scripts
 
 # Standardlauf. Der slow-Marker ist in pyproject.toml per addopts abgewaehlt.
 test:

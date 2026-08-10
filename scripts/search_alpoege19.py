@@ -180,7 +180,7 @@ def report(
     start: int,
     ceiling: int,
     spare: int,
-) -> tuple[int, Reduction | None, tuple[int, ...] | None]:
+) -> tuple[int, Reduction | None]:
     """Search with a doubling budget, printing what each round cost."""
     print(f"--- {label} ---")
     print(

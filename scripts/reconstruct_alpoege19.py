@@ -1,9 +1,18 @@
 """Render the seventeen-step reduction to the published map in plain SymPy.
 
 The third of the ``reconstruct_`` scripts and the second independent rendering
-of a reduction this repository holds. Like the other two it does not import
-``kellermap``: it applies the step formula directly, so that the library has
+of a reduction this repository holds. Like the other two it applies the step
+formula directly rather than calling the library, so that the library has
 something other than itself to agree with.
+
+One qualification, because the docstring said otherwise and an audit was right
+to object. This script imports no name from ``kellermap``, but it executes
+``tests/data.py`` to read the published map, and *that* module imports
+``kellermap`` to build a ``PolynomialMap``. The arithmetic below is
+independent; the data is read through the library's own type. What the module
+supplies is nineteen expressions and three points, so nothing the library
+computes enters the comparison -- but the claim to import nothing was too
+strong.
 
 It reads the published map from ``tests/data.py``, which the source archive
 does not carry. From a checkout it runs; from an unpacked sdist it says what is
@@ -75,7 +84,13 @@ ALPOEGE_POINTS = (
 FRESH = "fresh"
 CARRIED = "carried"
 
-STEPS = (
+# ``("fresh", variable, value)`` or ``("carried", variable)``. The length tells
+# the two apart, and the tag is there for a reader; a check on the tag alone
+# leaves the value unreachable as far as a type checker is concerned.
+Slot = tuple[str, sp.Symbol, sp.Expr] | tuple[str, sp.Symbol]
+Plan = tuple[sp.Symbol, Slot, Slot, int]
+
+STEPS: tuple[Plan, ...] = (
     (x, (FRESH, w1, y**2 * z), (FRESH, w2, x**3 * y), 1),
     (y, (CARRIED, w2), (FRESH, w4, y * z), 3),
     (x, (CARRIED, w4), (FRESH, w5, x**2 * y), 3),
@@ -139,7 +154,7 @@ def apply_steps() -> tuple[
 
     for target, left, right, coefficient in STEPS:
         for slot in (left, right):
-            if slot[0] == FRESH and slot[1] not in components:
+            if len(slot) == 3 and slot[1] not in components:
                 components[slot[1]] = slot[1] + slot[2]
                 order.append(slot[1])
 
@@ -168,7 +183,7 @@ def transport() -> list[dict[sp.Symbol, sp.Expr]]:
 
     for _, left, right, _coefficient in STEPS:
         for slot in (left, right):
-            if slot[0] == FRESH and slot[1] not in seen:
+            if len(slot) == 3 and slot[1] not in seen:
                 seen.add(slot[1])
                 for point in points:
                     point[slot[1]] = sp.nsimplify(
@@ -179,7 +194,7 @@ def transport() -> list[dict[sp.Symbol, sp.Expr]]:
 
 
 def _degree(components: dict[sp.Symbol, sp.Expr], order: list[sp.Symbol]) -> int:
-    return max(sp.Poly(components[v], *order).total_degree() for v in order)
+    return int(max(sp.Poly(components[v], *order).total_degree() for v in order))
 
 
 def main() -> int:

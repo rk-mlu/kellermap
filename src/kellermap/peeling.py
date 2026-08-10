@@ -34,10 +34,11 @@ from dataclasses import dataclass
 from itertools import combinations, combinations_with_replacement
 
 import sympy as sp
+from sympy.polys.polyerrors import CoercionFailed
+from sympy.polys.rings import ring as polynomial_ring
 
 from .bcw import BCWStep, Carried, Fresh
 from .bcw.step import Factor
-from .linear import over_field
 from .polynomial_map import PolynomialMap
 from .reduction import Reduction
 
@@ -133,15 +134,21 @@ def undo(
     ):
         return None
 
-    reached = PolynomialMap(
-        tuple(variable for variable, _ in kept),
-        tuple(component for _, component in kept),
+    # Rebuilding from expressions would infer the coefficient domain and the
+    # monomial order afresh: a map over ``QQ`` came back over ``ZZ`` and
+    # compared unequal to the one it came from, and ``grlex`` came back as
+    # whatever the expressions suggested. Peeling changes which coordinates
+    # there are and nothing else, so the ring is built from the old one.
+    reduced, *_ = polynomial_ring(
+        ", ".join(str(variable) for variable, _ in kept),
+        current.ring.domain,
+        current.ring.order,
     )
 
-    # Rebuilding from expressions infers the coefficient domain afresh, and a
-    # map over ``QQ`` would come back over ``ZZ`` and compare unequal to the
-    # one it came from. Peeling changes the coordinates, not the domain.
-    return over_field(reached) if current.ring.domain.is_Field else reached
+    return PolynomialMap.from_ring(
+        reduced,
+        tuple(reduced.from_expr(component) for _, component in kept),
+    )
 
 
 def factor(
@@ -156,7 +163,10 @@ def factor(
     components once the map has been conjugated by a diagonal ``D``, so undoing
     it adds some non-zero constant times that product back. The constant is not
     guessed: the terms carrying a dropped coordinate have to vanish, which
-    fixes it, and ``None`` says no constant does.
+    fixes it, and ``None`` says no constant of the coefficient domain does. A
+    parameter of that domain is a constant here: ``T`` in ``ZZ[T]`` is a legal
+    coefficient by BCW-11, and only a quotient involving a *coordinate* is
+    refused.
 
     ``dropped`` may hold two coordinates, and one of them settles the constant.
     Whether it also suits the other is decided by ``undo``, which requires
@@ -183,8 +193,19 @@ def factor(
         return None
 
     ratio = sp.cancel(-here / there)
+    if ratio == 0:
+        return None
 
-    return None if ratio == 0 or ratio.free_symbols else ratio
+    # Konversion statt Inspektion, wie BCW-3, BCW-11 und TRA-2. Ein Test auf
+    # ``free_symbols`` wuerde ``T`` in ``ZZ[T]`` fuer eine Koordinate halten und
+    # einen Koeffizienten ablehnen, den BCW-11 ausdruecklich zulaesst.
+    domain = current.ring.domain
+    try:
+        return sp.sympify(domain.to_sympy(domain.from_sympy(ratio)))
+    except (CoercionFailed, sp.SympifyError, TypeError, ValueError):
+        # ``ValueError`` gehoert dazu: ein Bruchkoerper meldet einen nicht
+        # konvertierbaren Ausdruck so und nicht mit ``CoercionFailed``.
+        return None
 
 
 def _squared(current: PolynomialMap, target: sp.Symbol, fresh: sp.Symbol) -> bool:
@@ -320,6 +341,11 @@ def peel(
     Nothing is supplied but the two maps: no value pool, no names, no sign
     convention (REV-1). What comes back is a chain built by ``BCWStep.build``
     and verified, together with the diagonal ``D`` of SEA-5, or nothing.
+
+    Nothing about the ring changes along the way: the coefficient domain and
+    the monomial order of the target are carried into every intermediate map,
+    and a constant of that domain -- a parameter such as ``T`` in ``ZZ[T]``
+    included -- is a legal coefficient by BCW-11.
 
     ``spare`` bounds the steps that remove no coordinate, as it does for the
     forward search. ``pairs`` bounds the steps that remove two, which is the

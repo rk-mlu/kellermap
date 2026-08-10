@@ -79,18 +79,6 @@ the group `EA_n(k)` acting on them, the group `GL_n(k)` beside it, collisions,
 chains of certified identities, and the naming of fresh generators. None of it
 is specific to one reduction method.
 
-`search.py` and `peeling.py` sit at the top level and are the exception that
-proves the rule: they look for a sequence of `BCWStep`, so they are as specific
-as the subpackage is. They are not inside it because they are not certificates.
-Nothing either of them returns is evidence of anything until it has been built
-and verified -- `peel` rebuilds forwards with `BCWStep.build` before it hands
-back a `Reduction` -- and putting them beside the certificates would blur
-exactly the line the milestone spent its length keeping sharp.
-
-`examples.py` is data and carries no obligations. It is in the package because
-the maps in it may be distributed, and the one that may not is in
-`tests/data.py` instead.
-
 Only `BCWStep` is. A chain of certified identities is not a notion of the 1982
 paper, and a second reduction method would reuse `Reduction`, `Collision` and
 `ReductionContext` unchanged — which is exactly the misnomer the subpackage
@@ -101,6 +89,18 @@ operation theirs.
 Keeping the subpackage one level down also removes an ambiguity the code
 carried while the package itself was called `bcw`: `BCW` now always means the
 1982 paper.
+
+`search.py` and `peeling.py` are specific to one reduction method as well: both
+look for a sequence of `BCWStep`. They are outside the subpackage because they
+are not certificates. Neither returns evidence of anything. A `SearchOutcome`
+and a `PeelOutcome` hold a chain that has been built and verified, or nothing,
+and `peel` builds its chain forwards with `BCWStep.build` before it returns
+one. Looking for a factorization and certifying one are separate questions, and
+the directory says so.
+
+`examples.py` is fixed data and carries no obligations. It is inside the
+package because the maps in it may be distributed. The one that may not is in
+`tests/data.py`, which the source archive excludes.
 
 ## Main Objects
 

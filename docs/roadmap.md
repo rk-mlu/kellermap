@@ -397,7 +397,8 @@ handle the case where `H` is the identity; BCW-10 is added. It is done when a
 step with one fresh variable and a step with none both build and verify, and
 when the three clauses of BCW-10 have failing cases in the tests.
 
-**WP 3** covers transport. A point gains one coordinate per `Fresh` slot. The
+**WP 3** covers transport. A point gains one coordinate per fresh generator,
+which was one per `Fresh` slot until BCW-12 made the two differ. The
 image moves only at `m = 0`, and then to `c_index - c_u * c_w`. That case did
 not exist in 0.2 and is the most likely place for an error, so it is tested on
 its own.
@@ -743,7 +744,8 @@ Two things it forced. The `w2` step of the published chain is recorded here
 rather than in the package that runs the search, because it stands whether or
 not the search succeeds. And
 SEA-5 is amended: the published map is reached up to conjugation by a diagonal
-`D` of ones and minus ones, which the search reports. `contracts.md` carries
+`D` of ones and minus ones, which the search then reported and which WP 10
+withdrew altogether. `contracts.md` carries
 the reason and the verified identity relating the two sign conventions.
 
 It is done when it recovers a chain to `alpoege15` from Alpoege's normalized map

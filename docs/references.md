@@ -258,7 +258,8 @@ be rechecked before the number is used outside this repository.
 
 Retrieved 3 August 2026 from <https://rhicksrad.github.io/jacobian-degree3/>,
 a research note posted by the GitHub user *rhicksrad* and dated 20 July 2026.
-It is held in `tests/test_alpoege19.py`.
+It is held in `tests/data.py`, which the source archive does not carry; see
+below.
 
 The note carries no authority here, and says as much about itself: it is
 self-published, was worked out with an LLM, and states that it inherits the
@@ -280,7 +281,7 @@ suite solves that system, whose termination it checks rather than assumes, and
 compares the result with the published table afterwards. The two routes are
 independent and agree.
 
-The components in `tests/test_alpoege19.py` were transcribed from the note's
+The components in `tests/data.py` were transcribed from the note's
 rendered text, which loses exponents — `w32` is `w3^2`. On 3 August 2026 the
 transcription was checked against the machine-readable
 [degree3_map.json](https://rhicksrad.github.io/jacobian-degree3/degree3_map.json)
@@ -306,7 +307,7 @@ introduction, on the evidence that the component of `w2` reads `w9` and `w13`.
 That is withdrawn in 0.4: the component of `w2` is the residue of a later step
 and not an introduced value, so it says nothing about when `w2` arrived. With
 the introduced value in its place, every dependency points to a smaller index.
-`tests/test_alpoege19.py` records both.
+`tests/data.py` holds the values and `tests/test_alpoege19.py` records both.
 
 The note arrives independently at the Schur-complement route this library uses
 for the determinant. On this map the difference is not a nicety: the carrier

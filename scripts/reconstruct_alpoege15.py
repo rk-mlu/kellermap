@@ -319,7 +319,7 @@ def main() -> int:
 def _degree(components: tuple[sp.Expr, ...]) -> int:
     variables = X[: len(components)]
 
-    return max(sp.Poly(e, *variables).total_degree() for e in components)
+    return int(max(sp.Poly(e, *variables).total_degree() for e in components))
 
 
 if __name__ == "__main__":

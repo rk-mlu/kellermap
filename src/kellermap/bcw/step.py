@@ -282,8 +282,9 @@ class BCWStep:
         # Nach dem Namen und nicht nach Symbol.__eq__: Symbol("v") und
         # Symbol("v", positive=True) sind fuer SymPy verschieden und fuer
         # einen PolyRing derselbe Generator.
-        if len({symbol.name for symbol in fresh}) != len(fresh) and (
-            slots[0].polynomial != slots[1].polynomial  # type: ignore[union-attr]
+        if len({symbol.name for symbol in fresh}) != len(fresh) and not agree(
+            slots[0].polynomial,  # type: ignore[union-attr]
+            slots[1].polynomial,  # type: ignore[union-attr]
         ):
             raise ValueError(
                 "Two fresh slots naming one variable must carry the same "

@@ -13,7 +13,7 @@ from pathlib import Path
 from types import ModuleType
 
 from kellermap import PolynomialMap, Reduction
-from kellermap.bcw import Carried
+from kellermap.bcw import BCWStep, Carried
 
 ROOT = Path(__file__).resolve().parent.parent
 
@@ -59,6 +59,13 @@ def describe(reduction: Reduction, published: PolynomialMap) -> str:
     ]
 
     for step in reduction.steps:
+        # ``Reduction`` holds ``Step``, and only a ``BCWStep`` has slots and a
+        # coefficient. A chain that begins with a linear normalization has
+        # both kinds in it, so the narrowing is real and not a formality.
+        if not isinstance(step, BCWStep):
+            lines.append(f"    ({type(step).__name__},),")
+            continue
+
         slots = []
         for slot in (step.left, step.right):
             if isinstance(slot, Carried):
@@ -79,7 +86,10 @@ def describe(reduction: Reduction, published: PolynomialMap) -> str:
     lines.append(f"# dimensions:         {reduction.dimensions()}")
     lines.append(f"# degrees:            {reduction.degrees()}")
 
-    coefficients = ", ".join(str(step.coefficient) for step in reduction.steps)
+    coefficients = ", ".join(
+        str(step.coefficient) if isinstance(step, BCWStep) else "-"
+        for step in reduction.steps
+    )
     lines.append(f"# coefficients:       {coefficients}")
 
     return "\n".join(lines)

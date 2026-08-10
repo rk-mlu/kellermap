@@ -28,7 +28,7 @@ import sympy as sp
 from kellermap import Collision, PolynomialMap, over_field
 from kellermap.bcw import BCWStep, Carried, Fresh
 from kellermap.peeling import moves, peel, undo
-from kellermap.search import enumerate_candidates
+from kellermap.search import enumerate_candidates, search
 
 x1, x2, x3 = sp.symbols("x1 x2 x3")
 u, v = sp.symbols("u v")
@@ -279,3 +279,42 @@ def test_a_fresh_slot_contributes_nothing_to_the_image(
     assert moved.image[: LOUD.dimension] == collision.image
     assert moved.image[LOUD.dimension :] == (0, 0)
     assert moved.verify(step.target) is None
+
+
+@pytest.mark.parametrize("coefficient", COEFFICIENTS)
+def test_the_forward_search_reports_no_result_for_a_weighted_chain(
+    coefficient: sp.Expr,
+) -> None:
+    """SEA-14, und der Unterschied zu SEA-7.
+
+    Ein gewichteter Schritt liegt ausserhalb des Vorwaertsraums, weil eine
+    Division kein Gewicht unterbringt. Das ist kein aufgeschobener Fall,
+    sondern ein durchsuchter Raum ohne die Kette -- also kein Fehler, sondern
+    ein Ergebnis, und der Abtrag findet sie.
+    """
+    step = two_fresh(SOURCE, coefficient)
+    pool = {
+        step.target.variables[index]: sp.expand(
+            step.target.components[index] - step.target.variables[index]
+        )
+        for index in step.target.carrier_indices
+        if step.target.variables[index] not in SOURCE.variables
+    }
+
+    forwards = search(SOURCE, step.target, pool, budget=200)
+
+    assert (forwards.reduction is not None) == (coefficient == 1)
+    assert peel(SOURCE, step.target, spare=1).reduction is not None
+
+
+def test_the_forward_search_reports_no_result_for_a_self_fresh_chain() -> None:
+    """Dieselbe Grenze fuer BCW-12.
+
+    Ein Kandidat traegt zwei Faktoren und SEA-8 gibt jedem einen Namen aus dem
+    Vorrat, also kann eine Koordinate nicht beide Plaetze fuellen.
+    """
+    step = self_fresh(SOURCE, sp.Integer(1))
+    pool = {u: sp.expand(x2**2)}
+
+    assert search(SOURCE, step.target, pool, budget=200).reduction is None
+    assert peel(SOURCE, step.target, spare=1).reduction is not None
