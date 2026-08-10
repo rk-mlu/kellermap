@@ -348,3 +348,46 @@ says more than one implementation checked against itself.
 Recomputed independently of the chain, as cross-checks rather than as part of
 the certificate: degree 3, determinant 1, the unipotent carrier block, and the
 three images.
+
+### The chain to the nineteen-dimensional map
+
+Reconstructed by an external audit of this project in August 2026, and verified
+here before it was written down. What that verification consisted of, and what
+it is worth:
+
+- `scripts/reconstruct_alpoege19.py` applies the step formula in plain SymPy,
+  without this library, and checks the seventeen step identities, the
+  dimensions, the degrees, the nineteen components and the fifty-seven
+  coordinates of the three transported points.
+- `tests/test_alpoege19.py` builds the same chain with `BCWStep`, verifies it
+  under BCW-1 to BCW-12, and compares the endpoint with the published map and
+  the transported collision with the published points.
+- A negative control changes one coefficient. The chain still builds and still
+  verifies; it arrives somewhere else. That is what makes the endpoint the
+  evidence rather than `verify()`.
+
+The audit is a source and not an authority, the same way the published map is.
+Nothing here rests on its having been right; what it did was hand this project
+a chain to check, and the checking is recorded above.
+
+The chain needs three things that Chapter II, Proposition (3.1) does not have,
+and all three are marked as extensions in `contracts.md`: a factor taken from a
+coordinate an earlier step introduced (BCW-10, in the library since 0.3), a
+coefficient on the removed product (BCW-11), and a step whose two slots name one
+fresh coordinate (BCW-12). The coefficients cannot be moved into a change of
+coordinates: the diagonal that would absorb them needs `1/7` at step seven where
+the earlier steps force `1/9`, and `1` at step nine where they force `1/2`.
+
+What this repository did **not** do is find the chain. The search of 0.4 reaches
+it under none of the settings tried, and `roadmap.md` records where it stops and
+why. The distinction matters for what may be claimed: a certified factorization
+of the published map, not a procedure that recovers it unaided.
+
+The order the coordinates were introduced in is
+
+    w1, w2, w4, w5, w8, w7, w9, w13, w16, w15, w14, w6, w12, w3, w11, w10,
+
+which is not the numbering of the published map. That numbering is a valid
+topological order of the final carrier values and not a chronology; this page
+said otherwise until the chain settled it, and the paragraph that did is left
+standing in `roadmap.md`, withdrawn rather than deleted.

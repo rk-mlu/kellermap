@@ -1063,7 +1063,21 @@ pool and the chain is inexpressible rather than unfound — the same failure
 `alpoege15` shows when its own missing value is withheld, and it looks identical
 from outside.
 
-**WP 12** removes the `[0.4]` markers from `contracts.md`, adds the translation
+**WP 12** carries a test group that neither WP 10 nor WP 11 would have caught
+on its own. Two faults of this milestone were found by an audit and by an
+assembly rather than by a test: `peeling.moves` never offered two `Carried`
+slots on one coordinate, which BCW-6 has admitted since 0.3, and
+`BCWStep.transport` appended a coordinate per `Fresh` slot rather than per
+fresh generator. Each time every obligation of the step type had a test and
+nothing asked whether the *rest* of the library admits the same shapes.
+
+`tests/test_admissible_shapes.py` asks that. Five shapes -- two fresh, one fresh
+and one carried, one fresh in both slots, two carried, one carried in both slots
+-- against three coefficients, and for each combination the constructor,
+`verify`, `transport`, the exhibited factors, and both enumerators. A new
+admissible shape goes in the list; if a test then falls over, that is the point.
+
+It also removes the `[0.4]` markers from `contracts.md`, adds the translation
 and the search to `architecture.md`, records the provenance of the recovered
 sequence in `references.md`, updates `CHANGELOG.md`, and sets the version.
 
