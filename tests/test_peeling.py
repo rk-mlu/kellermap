@@ -527,3 +527,43 @@ def test_a_parameter_of_the_domain_is_a_legal_coefficient() -> None:
     assert outcome.reduction is not None
     assert outcome.reduction.steps[0].coefficient == parameter
     assert outcome.reduction.target.reordered(target.variables) == target
+
+
+def test_a_move_is_offered_once_per_constant() -> None:
+    """Mehrere gemeinsame Monome geben oft dieselbe Konstante.
+
+    Jedes gab bis 0.4.0rc2 einen eigenen Zug: an der Wurzel der
+    veroeffentlichten Abbildung sechsunddreissig Kandidaten gegen sechzehn
+    verschiedene, zehn davon dreifach. Ein externes Audit hat es gezaehlt.
+    """
+    source = over_field(PolynomialMap((x, y), (x + x**5 + x**7, y + x**2)))
+    target = BCWStep.build(source, 0, Carried(1), Carried(1), 1).target
+
+    offered = list(moves(target, spare=1))
+
+    assert offered
+    assert len(offered) == len(set(offered))
+
+
+def test_a_state_is_walked_once() -> None:
+    """Unabhaengige Schritte vertauschen, also fuehren viele Wege zur selben
+    Karte, und der Teilbaum darunter ist jedes Mal derselbe.
+
+    Was ausser der Karte in den Schluessel gehoert, ist das noch Verfuegbare:
+    dieselbe Karte mit einem Ersatzschritt uebrig ist nicht derselbe Zustand.
+    """
+    p, q = sp.symbols("p q")
+    source = over_field(PolynomialMap((x, y), (x + x**2 * y**3, y + x**3 * y**2)))
+    first = BCWStep.build(source, 0, Fresh(x * y, u), Fresh(x * y**2, v), 1).target
+    target = BCWStep.build(first, 1, Fresh(x * y**2, p), Fresh(x * y, q), 1).target
+
+    # Die beiden Schritte liegen auf verschiedenen Komponenten und vertauschen,
+    # also fuehren zwei Wege zur selben Karte. Ein Ziel, das nicht erreichbar
+    # ist, laesst den Abtrag den Raum ganz ablaufen und dabei darauf stossen.
+    elsewhere = over_field(PolynomialMap((x, y), (x + y**5, y + x**5)))
+
+    exhausted = peel(elsewhere, target, budget=2000)
+
+    assert exhausted.reduction is None
+    assert exhausted.exhausted
+    assert peel(source, target, budget=200).reduction is not None

@@ -319,10 +319,17 @@ def moves(
             # removed something: every monomial the two share gives the one
             # constant that cancels it, and only a constant that shortens the
             # component is offered.
-            for monomial, coefficient in here.items():
-                if monomial not in shared:
-                    continue
-                candidate = sp.cancel(-coefficient / shared[monomial])
+            #
+            # Several shared monomials often give the same constant, and each
+            # gave a move of its own until 0.4.0rc2: thirty-six candidates at
+            # the root of the published map against sixteen distinct ones, ten
+            # of them threefold.
+            constants = {
+                sp.cancel(-coefficient / shared[monomial])
+                for monomial, coefficient in here.items()
+                if monomial in shared
+            }
+            for candidate in constants:
                 shortened = sp.expand(components[target] + candidate * product)
                 if shortened != 0 and len(sp.Add.make_args(shortened)) < size:
                     yield Undo(target, (left, right), (), candidate)
@@ -358,6 +365,11 @@ def peel(
     """
     remaining = [budget]
     deepest = [0]
+    # A map reached twice with the same allowances leads to the same subtree,
+    # and independent steps commute, so the same map is reached by every order
+    # of them. What has to be in the key besides the map is what the walk still
+    # may spend: the same map with a spare step left is not the same state.
+    seen: set[tuple[PolynomialMap, int, int]] = set()
 
     def walk(
         current: PolynomialMap,
@@ -367,6 +379,12 @@ def peel(
     ) -> PeelOutcome | None:
         if remaining[0] <= 0:
             return None
+
+        state = (current, spare_left, pairs_left)
+        if state in seen:
+            return None
+        seen.add(state)
+
         remaining[0] -= 1
         deepest[0] = max(deepest[0], len(path))
 

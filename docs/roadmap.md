@@ -436,8 +436,13 @@ ourselves.
 
 # Version 0.4
 
-**Status: in progress.** `docs/contracts.md` states the obligations, marked
-`[0.4]`, and was written before the implementation as it was for 0.2 and 0.3.
+**Status: complete.** `docs/contracts.md` states the obligations, written before
+the implementation as for 0.2 and 0.3.
+
+This page is the plan and the reasons for it. It says what each work package
+was for and why the ones that were inserted exist. What an obligation requires
+is in `contracts.md`, and why a piece of code is shaped as it is belongs in its
+module; repeating either here would put one thing in two places.
 
 ## The step sequence of the 19-dimensional map
 
@@ -445,6 +450,12 @@ One release goal, and it is a search. The published nineteen-dimensional cubic
 map has been fixed input since 0.2. 0.3 gave its reduction a language, by
 admitting steps that reuse a carrier, but its step sequence is unpublished and
 recovering it is the milestone.
+
+It ends with the factorization certified, by three routes: a chain of `BCWStep`
+in the test suite, an independent rendering in plain SymPy, and the backward
+search, which reaches the map in eighteen examined maps. An external audit
+reconstructed a chain first, and `references.md` records the order of events
+and what may be claimed because of it.
 
 An earlier plan for this milestone also carried the Reduction Theorem — degree
 reduction, homogenization, unipotent reduction and a general pipeline. That is
@@ -454,108 +465,31 @@ the milestones after it move down by one.
 
 ### What is known and what is not
 
-Both ends are fixed. The source is Alpöge's three-dimensional map of degree 7,
+Both ends are fixed. The source is Alpoege's three-dimensional map of degree 7,
 the same map from which `bcw17` and `alpoege15` are derived; the target is the
-published nineteen-dimensional map in `tests/test_alpoege19.py`. The source
-describes seventeen elementary steps with sixteen carrier variables. Since the
-dimension grows from 3 to 19, `sum(m) == 16` over seventeen steps, so at least
-one step has `m = 0`. That is a constraint on the search and a check on its
-result.
+published nineteen-dimensional map, held in `tests/data.py`. The source
+describes seventeen elementary steps with sixteen carrier variables, so
+`sum(m) == 16` over seventeen steps.
 
-What is not known is the sequence. The source publishes the map but not its
-factorization.
+That is more of a constraint than it looks. Write `a` for the steps introducing
+two generators, `b` for those introducing one and `c` for those introducing
+none: `2a + b = 16` and `S = 16 - a + c`. Alpoege's map has no carriers, so a
+`Carried` slot has nothing to point at and the first step must introduce two --
+`a >= 1`, and a seventeen-step chain then needs `c = a + 1 >= 2`. With
+`spare = 2` the structure is pinned: `a = 1`, `b = 14`, `c = 2`. The chain has
+exactly that shape.
 
-**The numbering is not the introduction order.** *Settled in work package 10,
-by an external audit that reconstructed the chain.* The order is
+The carrier values are readable off the target, as they were for `bcw17` and
+`alpoege15`. What the search has to find is their order, the co-factor each was
+paired with, the component each step acted on, and -- since WP 10 -- the
+constant each step scaled its product by.
 
-    w1, w2, w4, w5, w8, w7, w9, w13, w16, w15, w14, w6, w12, w3, w11, w10,
-
-which this repository verified independently against `tests/data.py`: the
-seventeen steps reproduce all nineteen components and all fifty-seven
-coordinates of the three collision points, with the three images agreeing.
-
-The paragraph below is what this page argued before that, and it is left
-standing because the reasoning was sound and the conclusion was wrong. It shows
-what a hypothesis marked as a hypothesis is worth.
-
-The numbering, on the other hand, is probably the introduction order after all.
-This page said it was not, on the evidence that the fifth component uses `w13`
-and `w9` and so cannot come fifth. That component is `w2`'s, and the `w2`
-finding below shows it to be a residue rather than an introduced value. With
-that corrected, every dependency points to a smaller index — `w6 <- w1`,
-`w8 <- w4`, `w10 <- w2`, `w11 <- w3`, `w12 <- w6`, `w14 <- w7`, `w15 <- w8` —
-so `w1` to `w16` is a valid introduction order and the only evidence against it
-has been explained away.
-
-That is a hypothesis and not a result: it is one valid order among some
-7.26e10, and consistency is not proof. It is, however, the order an author
-numbering carriers as they introduce them would produce, and nothing in the data
-contradicts it. WP 7 tries it first.
-
-What *is* readable is every factor. A `Fresh` slot introduces `X_u + P`, so the
-sixteen carrier values `components[3 + j] - w_j` are the sixteen factors the
-seventeen steps supplied. They are written out under SEA-8 in `contracts.md`.
-The search therefore does not look for the factors. It looks for their order,
-for the co-factor each was paired with, and for the component each step acted
-on.
-
-The carriers constrain the order, and less than this page assumed. Their
-dependency graph is acyclic — `tests/test_alpoege19.py` already relies on that
-when it reconstructs the collision by iterating `w_j = -P_j` from zero — so a
-topological order of that graph is a necessary condition on the introduction
-order. Whether it narrows the search to a handful of orders was left here as a
-measurement. WP 5 made it, and the answer is no:
-
-    12 108 096 000 topological orders.
-
-That figure is superseded, and by the `w2` finding below rather than by a
-recount. It was computed from the *published* carrier values, and the published
-value of `w2` is not an introduced value. It names `w13` and `w9` only because
-it is a residue; the value `w2` was introduced with, `x^3 y`, names no carrier
-at all. With that corrected, `w2` is a root rather than a link in a chain:
-
-    72 648 576 000 topological orders.
-
-Nine of the sixteen values then depend on no other carrier, and the rest form
-short chains: `w1 → w6 → w12`, `w4 → w8 → w15`, `w3 → w11`, `w7 → w14`, and
-`w2 → w10`. The first number was wrong in the direction that flatters the
-search, which is worth naming: a graph read off a published map over-constrains
-wherever a step has rewritten a carrier.
-
-Neither figure changes the conclusion, and the conclusion is what the
-measurement was for. The order is a filter the search can apply and not a filter
-the search can rest on. It is in fact not a filter the search applies at all: a
-pool value naming `w1` does not convert into the ring until `w1` is a generator,
-so the dependency enforces itself in the arithmetic. The graph is a property of
-the answer rather than a lever on the way to it, which is the more useful
-correction of the two.
-
-One step of the sequence is known. The component of `w2` is not an introduced
-carrier value but the residue of a later step: with `w13` and `w9` in the two
-slots, carrying `x^2` and `x y`, the formula leaves exactly
-`-w13 w9 - w13 x y - w9 x^2` once `x^3 y` is removed, and `x^3 y` is the product
-of those two carried values. So `w2` was introduced carrying `x^3 y`, and a
-later step took it out again with two `Carried` slots. That step has `m = 0`,
-which the arithmetic requires: the dimension grows by 16 over 17 steps. It is
-also the only carrier of the published map that shows the signature of a
-residue, a monomial in two carrier variables. `tests/test_alpoege19.py` verifies
-the identity, a perturbation of it, and the uniqueness.
-
-The finding has a consequence for the search. The value `x^3 y` is not in the
-pool read off the target, so the step that introduced `w2` is reachable only
-through its partner. The condition under which a read pool carries at all — that
-every step has a factor no later step overwrites — is named under SEA-8 in
-`contracts.md`, together with the degree bound that makes it plausible here and
-the reason that bound does not generalize.
-
-One further reading is *not* established and is recorded here so that it is not
-assumed by accident. Fifteen of the sixteen carrier components of the published map have
-two terms, `w2` has four, and every carrier value is a clean product. That is consistent
-with no step ever having targeted a carrier component, hence with all seventeen
-steps acting on components 0, 1 or 2 — which would narrow the search
-considerably. It does not follow from the shapes alone, and `alpoege15` is a
-counterexample to the general pattern: its step seven targets component 10. WP 6
-tests it rather than presupposing it.
+**The numbering is not the introduction order.** Settled in work package 10 by
+an external audit that reconstructed a chain, and verified here. The order is
+`w1, w2, w4, w5, w8, w7, w9, w13, w16, w15, w14, w6, w12, w3, w11, w10`. This
+page argued the opposite for several packages, on grounds that were sound and a
+conclusion that was not; `references.md` records both readings and which one
+the data settled.
 
 ### Three decisions taken before the implementation
 
@@ -632,24 +566,25 @@ for the duration and moved to `0.4.0rc1` in one step at the end.
 | 7 | 0.3.7 | The forward search against a given target | yes |
 | 8 | 0.3.8 | `examples.py` and `tests/data.py`: fixed data by provenance | yes |
 | 9 | 0.3.9 | The backward search: peeling a chain off a target | yes |
-| 10 | 0.3.10 | The coefficient and the repeated fresh slot | no |
+| 10 | 0.3.10 | The coefficient and the repeated fresh slot | yes |
 | 11 | 0.3.11 | `alpoege19` as a verified `Reduction` | yes |
 | 12 | 0.3.12 | Documentation and release | yes |
 
-The plan had seven, and five packages were inserted rather than appended. WP 10
-came from an external audit, which reconstructed the chain and showed that the
-certificate language could not express it. WP 4
-came out of WP 3, which turned up the one breach of the ASCII agreement in the
-tree and found no gate to attribute it to. WP 5 came out of the measurement WP 6
-was to make: the enumerator the plan implied turned out to be unaffordable, and
-the obligations that narrow it belong on the page before the code exists rather
-than beside it afterwards. WP 9 came out of WP 7, whose forward search exhausts
-its space without a chain and whose failure is not diagnosable from the inside.
-WP 8 was agreed while WP 7 ran and had no place in this table until now; it goes
-*before* the backward search because it reshapes how fixed data is reached and
-the backward search is what would otherwise reach it the old way and be
-rewritten. Each time the packages behind moved down by one and nothing about
-their content changed.
+The plan had seven, and five were inserted rather than appended. Each time the
+packages behind moved down by one and nothing about their content changed.
+
+- **WP 4** came out of WP 3, which turned up the one breach of the ASCII
+  agreement in the tree and found no gate to attribute it to.
+- **WP 5** came out of the measurement WP 6 was to make. The enumerator the
+  plan implied was unaffordable, and the obligations narrowing it belong on the
+  page before the code exists.
+- **WP 8** goes before the backward search because it reshapes how fixed data
+  is reached, and the backward search is what would otherwise reach it the old
+  way and be rewritten.
+- **WP 9** came out of WP 7, whose forward search exhausts its space without a
+  chain and whose failure is not diagnosable from the inside.
+- **WP 10** came from an external audit, which reconstructed a chain and showed
+  that the certificate language could not express it.
 
 Every work package leaves the repository green.
 
@@ -736,357 +671,101 @@ The reading recorded above — that all seventeen steps of the published chain
 acted on components 0, 1 or 2 — moves to WP 7, where a search either uses it or
 does not.
 
-**WP 7** is the forward search, under SEA-1 to SEA-13. It recovers a known chain
-from its own endpoints before being pointed at the unknown one, and it reports
-what it examined and whether it finished.
+**WP 7** is the forward search, under SEA-1 to SEA-14. It is given a pool of
+values read off the target's carriers, because nothing in the source says what
+a fresh coordinate may carry. It recovers a chain to `alpoege15` in 62 maps,
+and only once the pool is handed the value coordinate 10 was introduced with:
+the published component is the residue of a later step, so without that value
+the chain is inexpressible rather than unfound. That failure looks exactly like
+an empty space, which is why WP 9 exists.
 
-Two things it forced. The `w2` step of the published chain is recorded here
-rather than in the package that runs the search, because it stands whether or
-not the search succeeds. And
-SEA-5 is amended: the published map is reached up to conjugation by a diagonal
-`D` of ones and minus ones, which the search then reported and which WP 10
-withdrew altogether. `contracts.md` carries
-the reason and the verified identity relating the two sign conventions.
-
-It is done when it recovers a chain to `alpoege15` from Alpoege's normalized map
-and the published fifteen-dimensional one. That criterion was met late: WP 7 was
-first marked complete on the strength of small examples, and the reference
-recovery only followed while preparing the run. It found a chain in 62 maps, with
-`D` the identity, and the chain is *not* the recorded one — its degrees run
-`7, 6, 5, 4, 4, 4, 4, 3` against the recorded `7, 7, 7, 7, 5, 4, 4, 3`. A chain,
-not the chain, which is what "No optimality of the sequence" already says.
-
-Two rules bound the walk, both decisions rather than facts: the degree never
-rises, and the dimension never passes the target's. SEA-12 says so. Moves are
-tried lower degree and fewer terms first, and that ordering is not what took the
-reference recovery from "nothing at 400 maps" to "found at 62" — supplying the
-missing carrier value did. A set of already-visited maps was tried alongside it
-and removed again: two orders that introduce the same generators list them in
-the order they arrived, so the maps differ and the set almost never fires.
-
-SEA-11 and SEA-13 came out of it as well: the budget and the depth are
-reported, and a fresh factor the pool does not hold takes a free name at the
-cost of a counted rewrite. The second is measured rather than assumed to help:
-recovering `alpoege15` costs 62 maps with `rewrites=0` and does not finish
-within 400 with `rewrites=1`.
-
-The package closes without reaching the nineteen-dimensional map, and the way it
-fails is why WP 9 exists. Two runs on the maintainer's machine exhausted the
-space without a chain, the second after the `spare` correction and with the same
-count to the map, 68425, because the walk never got past six steps. A forward
-search that exhausts an empty space cannot say which of its rules emptied it.
-The scan that closed the pool question is the pattern to follow: rather than
-searching harder, compute the thing directly. WP 9 does that from the other end.
 
 **WP 8** sorts the fixed data by where it came from, which is a question of
-licence and of what an audit can see, not of convenience.
+licence and of what an audit can see rather than of convenience.
+`kellermap.examples` takes the maps the project may distribute; `tests/data.py`
+takes the nineteen-dimensional one, whose licence could not be established, and
+the source archive excludes it.
 
-`src/kellermap/examples.py` takes the maps the project may distribute: Alpoege's
-three-dimensional map, which every chain starts from and which now has a
-citable, licensed presentation; the seventeen- and fifteen-dimensional maps,
-which are the maintainer's own hand computation; and the small maps that are
-currently written out in more than one place. Each carries a line saying where
-it came from.
+Two counted criteria decide what is an example: written out more than once, and
+a Keller map. The tree held 119 distinct `PolynomialMap` constructions, 25 of
+them repeated, and the determinant sorted those into thirteen Keller maps and
+six that are not. The six stay where they are used -- they are written the way
+they are *because* they are not Keller maps, and a module named `examples`
+beside this library would say otherwise about them.
 
-Two criteria decide what goes in, and both are measured rather than judged: a
-map belongs there if it is written out **more than once**, and if it **is a
-Keller map**. The tree holds 119 distinct `PolynomialMap` constructions, 25 of
-them written more than once, and the determinant sorts those 25 as follows.
-
-Repeated and Keller, so in scope:
-
-| uses | map | determinant |
-| --- | --- | --- |
-| 13 | `(x + y, x - y)` | -2 |
-| 5 | `(X1 - X3 X4, X2, X3, X4)` | 1 |
-| 4 | `(T x + y, x)` over `k[T]` | -1 |
-| 3 | `(x1 + x2^2 x3^2, x2, x3)` | 1 |
-| 3 | `(x + y^2, y)` | 1 |
-| 3 | `(x + y^3, y)` | 1 |
-| 2 | Alpoege's three-dimensional map | -2 |
-| 2 | `(X1, X2, X3 + X2^2, X4 + X2^2)` | 1 |
-| 2 | `(x, y + x^2)` | 1 |
-| 2 | `(2 X1 + X2^2, X2)` | 2 |
-| 2 | `(x + y, y)` | 1 |
-| 2 | `(x + T y^2, y)` over `k[T]` | 1 |
-| 2 | `(x1 + 1, x2, x3)` | 1 |
-
-Repeated and *not* Keller, so out of scope:
-
-| uses | map | determinant |
-| --- | --- | --- |
-| 6 | `(x + x^2 y^3, y)` | `1 + 2 x y^3` |
-| 5 | `(x1^2, x2, x3)` | `2 x1` |
-| 3 | `(X1 + X2^2, X2 + X1^2)` | `1 - 4 X1 X2` |
-| 2 | `(x^2, y)` | `2 x` |
-| 2 | `(x^2, y, z)` | `2 x` |
-| 2 | `(X3 x, y)` | `X3` |
-
-The second table is the point of the second criterion. Those maps are written
-the way they are *because* they are not Keller maps -- they exercise degree
-growth, non-injectivity and a non-constant determinant -- and a module named
-`examples` next to a library about Keller maps would say otherwise. They stay
-where they are used.
-
-Two of them are worth tidying locally all the same, and that is a different
-change from this one. All six uses of `(x + x^2 y^3, y)` are in
-`tests/test_search.py` and want one fixture there. `(x1^2, x2, x3)` is written
-five times across three modules; whether that earns a shared test helper is a
-judgement, not a rule, and the package may leave it alone.
-
-The identity map is a third case and belongs to neither table. It is not one
-object repeated but a family, so what removes the repetition is a constructor
-and not a constant: `PolynomialMap.identity(variables)`, added in this package.
-
-The count that argues for it: forty-one places write the identity out, six of
-them in `src/kellermap` itself, in two spellings. `PolynomialMap(V, V)` occurs
-twenty-one times and repeats its own variable list, where a typo in the second
-copy gives a map that is not the identity and still constructs.
-`from_ring(ring, ring.gens)` occurs twenty times, repeats nothing and keeps its
-ring explicit; it stays as it is, and the constructor covers only the spelling
-that repeated something.
-
-The entries are functions rather than module-level constants, so that importing
-`kellermap` does not build a fifteen- and a seventeen-dimensional map nobody
-asked for, and so that the caller decides the coefficient domain.
-
-The package runs in two commits, and the repository is green after each. The
-first adds `examples.py` with the small maps and Alpoege's, and changes no call
-site, so that the naming can be read before forty places depend on it. Between
-the two commits those maps stand in two places, which is what this package is
-against; it is bounded, named here, and closed by the second commit. The
-fifteen- and seventeen-dimensional maps are not duplicated even briefly: they
-*move* in the second commit rather than appearing first and being removed
-afterwards, because a seventeen-dimensional map written twice is a different
-risk from `(x + y, y)` written twice.
-
-`tests/data.py` takes the nineteen-dimensional map, which stays out of the
-wheel. Its licence cannot be established, and `AGENTS.md` says not to vendor
-such data. It is also the one datum whose externality the milestone's result
-rests on, so having it visibly outside the distributed package costs nothing and
-saves an auditor a question.
-
-One thing has to be right in that package and is easy to get wrong. Shipping a
-map does not change who computed it, so `SUPPLIED`, BCW-9 and SEA-5 mean exactly
-what they meant before. But a reader who finds `bcw17` under `src/` sees the
+Distributing a map does not change who computed it, so `SUPPLIED`, BCW-9 and
+SEA-5 keep their meaning. A reader who finds `bcw17` under `src/` would see the
 library checking against itself unless the module says otherwise, so every
-entry names its origin and points at `references.md`. `contracts.md` gains a
-short statement that the module is fixed data, carries no obligations of its
-own, and does not move the line between what this library derives and what is
-given to it.
+entry names its origin and points at `references.md`.
 
-The scripts lose their `read()` detour for the two maps that move into the
-package and keep it for the one that does not, which puts the distinction in the
-code rather than only in a document.
 
-**WP 9** searches backwards, and the measurement that motivates it is on this
-page rather than in a commit message. A step that introduces a fresh coordinate
-leaves it in exactly two components: its own, as `X_u + P`, and the residue of
-the component it targeted. A coordinate occurring anywhere else was used by a
-later step and cannot be the last one introduced. Six of the sixteen carriers of
-the published map satisfy that, and `tests/test_alpoege19.py` records which.
+**WP 9** searches backwards, and exists because a forward search that empties
+its own space cannot say which of its rules emptied it.
 
-Six candidates for the last step against the hundred and forty the forward
-enumerator offers at a map of that size is the whole argument. Peeling also
-needs no value pool: the factors fall out of the arithmetic instead of being
-supplied, so SEA-8 and SEA-13 and the failure modes they carry do not apply to
-it. Nor does it need a sign choice — the sign is decided by whether the
-coordinate actually disappears.
+A step leaves its fresh coordinate in exactly two components: its own, as
+`X_u + P`, and the residue of the one it targeted. A coordinate occurring
+anywhere else was read by a later step and cannot be the last introduced. That
+is REV-2, and it is what makes the direction cheap -- six candidates for the
+last step of the published map against the hundred and forty the forward
+enumerator offers. Peeling needs no value pool and no names: the factors fall
+out of the arithmetic, and so does the coefficient, which a linear condition
+fixes rather than a search. REV-1 to REV-9 state the rest.
 
-An exploratory peel reaches dimension 14 from 19 and finds the `m = 0` step on
-`w2` for the third time, by a third method. It also places that step four steps
-before the end, which withdraws the assumption
-`scripts/search_alpoege19.py` was making.
+A peel is not a certificate. What it produces is a structure, named rather than
+indexed; the chain is rebuilt forwards with `BCWStep.build`, verified, and only
+then a `Reduction`. It recovers `alpoege15` in eight maps against sixty-two
+forwards, and without the value the forward search cannot do without.
 
-The measurement that shapes the surface is the sign. A step subtracts the
-product of its two slot components, so undoing it adds that product back --
-except that the published map is not in this library's sign convention, and the
-difference is the `D` of SEA-5. Peeling with `+` alone stops at dimension 18,
-with `-` alone at 17, and with both at 15. The signs are mixed and each one is
-a linear equation over GF(2) for `D`, so peeling produces the constraints on it
-while running, where the forward search had to solve for it at the end. REV-4
-records this.
 
-Peeling is a different operation from building, so it gets its own obligations.
-A chain found backwards is rebuilt forwards and verified, and the endpoint
-comparison of SEA-5 is unchanged.
+**WP 10** widens the certificate language to what the published chain uses. An
+external audit reconstructed that chain while WP 9 ran, and this repository
+verified it independently: seventeen steps reproducing all nineteen components
+and all fifty-seven coordinates of the three collision points.
 
-What it cost and what it bought, measured. Recovering the fifteen-dimensional
-map takes **8 maps and under a second**, against 62 maps forwards -- and,
-which matters more, without a value pool: the forward search manages that
-recovery only when handed a value the published map no longer carries.
-Against the nineteen-dimensional map the space is **exhausted after 376 maps
-in three minutes**, where the forward search needed 68425 maps and two and a
-half hours to say the same thing about a different space. Neither holds a
-chain. At the time of writing the direction had not found the sequence; it had
-made the question cheap enough to ask repeatedly. What was in the way turned out
-to be neither the rules nor the budget but the coefficient domain: the driver
-built its source over `QQ` and the published map is over `ZZ`, so the search
-could not have arrived however long it ran. An external audit of `0.4.0rc1`
-found that. Over `ZZ` the peel reaches the published map in eighteen examined
-maps, and `tests/test_alpoege19.py` holds it.
+Two things in it no `BCWStep` could express. Its steps carry coefficients, and
+its fifteenth step puts one fresh coordinate in both slots. BCW-11 and BCW-12
+state them, BCW-1 and BCW-2 are amended, and both are marked as extensions
+beyond Proposition (3.1) as carrier reuse already is. The coefficients cannot
+be moved into a change of coordinates: the diagonal that would absorb them
+needs `1/7` at step seven where the earlier steps force `1/9`.
 
-Widening the backward space is cheap, and two widenings were tried. Computing
-the product of a step's two slot components once per pair instead of once per
-candidate takes the exhausted run from 196 to 74 seconds, which made a second
-step that introduces no generator affordable: `spare=2` exhausts as well, 1100
-maps in 297 seconds, and reaches exactly the same depth of six.
+The package removes as much as it adds. With the coefficient in the step, the
+family is closed under conjugation by a diagonal, so a chain reaching a target
+only up to `D` is expressible as one reaching it exactly. SEA-5 returns to
+plain equality and the diagonal is withdrawn from it. That also settles a
+question 0.5 would have inherited: searching without a target leaves nothing to
+compare against, and the benchmark half of 0.5 compares the dimension reached,
+which is invariant under a diagonal and a reordering anyway.
 
-What blocks it at six is measured and is not a matter of budget. The map there
-has dimension 14 and degree 7, and six of its coordinates satisfy REV-2 --
-`w2`, `w9`, `w11`, `w13`, `w14`, `w15`. Not one of them has a partner: for
-every carrier of that map and both signs, undoing leaves the coordinate
-standing. The rules exclude the chain rather than the budget hiding it.
 
-REV-2 is not the suspect. A coordinate introduced last is read by nobody, so it
-occurs in its own component and in the residue of the one its step targeted,
-and in no third. The condition is exact for the last coordinate rather than a
-heuristic, and widening it would admit coordinates that cannot be last without
-admitting any that can.
+**WP 11** points the searches at the nineteen-dimensional map and records the
+chain as a verified `Reduction`, with the collision transported through all
+seventeen steps and a negative control on the coefficients. It adds
+`scripts/reconstruct_alpoege19.py`, the second independent rendering of a
+reduction this repository holds.
 
-The suspect was SEA-5's diagonal, and it was the right suspect. `D` was
-restricted to ones and minus ones, so undoing admitted the factors `+1` and
-`-1` and nothing else. A diagonal change of coordinates with arbitrary non-zero
-entries is just as much an isomorphism, and under it the product term picks up
-`d_i / (d_u d_v)`, any non-zero constant. That constant is fixed by the
-requirement that the dropped coordinates vanish, which is linear in it, so it
-is solved rather than tried.
+The peel reaches the map in eighteen examined maps -- but not in this package.
+The driver built its source with `over_field`, over `QQ`, while the published
+map is over `ZZ`, and `PolynomialMap` counts the coefficient domain as part of
+its identity, so the search could not have arrived however long it ran. The
+audit of `0.4.0rc1` found that; `references.md` records what may and may not be
+claimed as a result.
 
-The widening took the peel from **depth six to depth eleven** against the
-published map, and the space is no longer exhausted. Recovering the
-fifteen-dimensional map still costs 8 maps. SEA-5 and REV-4 record the change;
-REV-2 is untouched.
 
-`spare` was then corrected, and the correction came from the maintainer rather
-than from a measurement. Write `a` for the steps introducing two generators,
-`b` for those introducing one and `c` for those introducing none. Then
-`2a + b = 16` and the chain has `S = 16 - a + c` steps. Alpoege's map has no
-carriers, so a `Carried` slot has nothing to point at and the first step must
-introduce two: `a >= 1`. A seventeen-step chain therefore needs `c = a + 1 >= 2`.
+**WP 12** removes the milestone markers from `contracts.md`, brings
+`architecture.md` and `references.md` up to date, writes the changelog entry and
+moves the version.
 
-`spare=1` could not have found a seventeen-step chain whatever the budget, and
-the reason I chose it -- sixteen generators over seventeen steps, so at least
-one step introduces none -- silently assumed every other step introduces
-exactly one. With `spare=2` the structure is pinned: `a = 1`, `b = 14`,
-`c = 2`, and the peel reaches **depth sixteen** of the seventeen.
+It also carries a test group that neither WP 10 nor WP 11 would have produced.
+Two faults of this milestone were found by an audit and by an assembly rather
+than by a test: `peeling.moves` never offered two `Carried` slots on one
+coordinate, which BCW-6 has admitted since 0.3, and `BCWStep.transport`
+appended a coordinate per `Fresh` slot rather than per fresh generator. Each
+time every obligation of the step type had a test and nothing asked whether the
+*rest* of the library admits the same shapes.
+`tests/test_admissible_shapes.py` asks that, and a new admissible shape goes in
+its list.
 
-One coordinate short, and the shortfall has a shape. At depth sixteen the map
-has four coordinates and only `w3` is removable, with no carrier left to pair
-it with. A last step introducing one coordinate has a `Carried` slot whose
-component is unchanged by that step, which makes it a carrier of the source as
-well -- so a source without carriers cannot be reached that way, and a peel
-standing at one coordinate more than the source is finished. That prune is in
-`peeling.py`, and it is a statement about the source that was handed in rather
-than a rule about Keller maps.
-
-The move order decides more than anything else here. With coordinate-removing
-steps offered one at a time first, the fifteen-dimensional recovery does not
-come through in 1500 maps; with the steps that remove two offered first, it
-takes 8. A step that removes two coordinates gets twice as far for the same
-depth.
-
-**WP 10** widens the certificate language to what the published chain actually
-uses. An external audit reconstructed that chain while WP 9 was running, and
-this repository verified the reconstruction independently: seventeen steps
-reproducing all nineteen components, all fifty-seven coordinates of the three
-collision points, and the same image for each. Its structure is `a = 1`,
-`b = 14`, `c = 2`, which is what the carrier arithmetic had predicted.
-
-Two things it uses that no `BCWStep` could express. Its steps carry explicit
-coefficients -- `3, -3, 7, 9, 6, -1, -6` among them -- and its fifteenth step
-puts one fresh coordinate in both slots: `F_x -> F_x - 3 (w3 + x y^2)^2`. Both
-are extensions beyond Proposition (3.1), and both are marked as such, as carrier
-reuse is. BCW-11 and BCW-12 state them, and BCW-1 and BCW-2 are amended.
-
-The coefficient cannot be moved into a change of coordinates. Solving the
-diagonal that would absorb the coefficients gives two contradictions: step 7
-needs `1/7` where the earlier steps force `1/9`, and step 9 needs `1` where they
-force `1/2`.
-
-The package *removes* as much as it adds. With the coefficient in the step, the
-family of steps is closed under conjugation by a diagonal, so a chain that
-reached a target only up to `D` is itself expressible as one that reaches it
-exactly. SEA-5 goes back to plain equality, the diagonal is withdrawn from it,
-and the multiplicative system in `peeling` that solved for `D` disappears -- the
-constant it solved for is the step's coefficient. `conjugate` and
-`diagonal_matching` stay as tools and carry no obligation.
-
-That also settles a question 0.5 would otherwise have inherited. Searching
-without a fixed target leaves nothing to compare against, so no diagonal and no
-reordering arise, and the benchmark half of 0.5 compares the dimension reached,
-which is invariant under both anyway.
-
-One defect was fixed ahead of the package because it stood against an obligation
-that already existed: `peeling` enumerated slot pairs with `combinations`, so it
-never offered the two `Carried` slots naming one coordinate that BCW-6 has
-admitted since 0.3.
-
-What the package moved, measured. The peel against the published map went from
-depth sixteen to depth **seventeen**, which is the whole chain, and it now
-reaches dimension three -- 4767 times in 15000 maps, at three-dimensional maps
-that are not Alpoege's. The chain is inside the space for the first time; what
-is left is finding it there.
-
-Three prunes went in with it. A peel may not raise the degree above the
-source's, which is not a decision but follows from the degree never rising
-forwards. The source comparison moved into the walk, where it costs one
-equality instead of replaying the whole path. And REV-8 from WP 9 still applies.
-
-The reports changed with the diagonal. `describe` prints a coefficient per step
-where it printed the entries of `D`, and `flips` is gone: what used to be spread
-across a diagonal is now one number per step, which is also what a reader of
-`reconstruct_alpoege19.py` will need.
-
-**WP 11** points it at the nineteen-dimensional map.
-`scripts/search_alpoege19.py` drives the run: it reads Alpoege's map and the
-published one from the test modules rather than copying them, builds the pool
-with `w2` corrected, and searches with a doubling budget so that a long run
-prints a trail. It is not a gate and not a second independent computation, and
-its docstring says so — the two `reconstruct_` scripts stand apart from the
-library on purpose, and this one drives it.
-
-Its exit status distinguishes the three outcomes SEA-6 and SEA-11 keep apart:
-a chain found, a space exhausted without one, and a budget that ran out. Only
-the middle one says anything about what does not exist, and only about the
-space this search covers.
-
-The run costs about 1.5 maps per second, against 6 for the fifteen-dimensional
-recovery, so it belongs on a machine rather than in a session.
-
-If a chain is found, it becomes a `Reduction` in `tests/test_alpoege19.py`, the
-transported collision replaces the `lift` reconstruction as the primary route to
-the three points, and `scripts/reconstruct_alpoege19.py` carries the recovered
-sequence in plain SymPy as the independent second computation, joining the gates
-in `Makefile` and `AGENTS.md`.
-
-If none is found, WP 10 records what was searched and what was ruled out, and the
-milestone ships the search without the result. SEA-6 exists so that this outcome
-can be reported without being overstated. It would not be a successful milestone,
-and it would not be a false one either.
-
-One thing the run cannot tell us by failing: whether `w2` is the only carrier a
-later step rewrote. If another was, its introduced value is missing from the
-pool and the chain is inexpressible rather than unfound — the same failure
-`alpoege15` shows when its own missing value is withheld, and it looks identical
-from outside.
-
-**WP 12** carries a test group that neither WP 10 nor WP 11 would have caught
-on its own. Two faults of this milestone were found by an audit and by an
-assembly rather than by a test: `peeling.moves` never offered two `Carried`
-slots on one coordinate, which BCW-6 has admitted since 0.3, and
-`BCWStep.transport` appended a coordinate per `Fresh` slot rather than per
-fresh generator. Each time every obligation of the step type had a test and
-nothing asked whether the *rest* of the library admits the same shapes.
-
-`tests/test_admissible_shapes.py` asks that. Five shapes -- two fresh, one fresh
-and one carried, one fresh in both slots, two carried, one carried in both slots
--- against three coefficients, and for each combination the constructor,
-`verify`, `transport`, the exhibited factors, and both enumerators. A new
-admissible shape goes in the list; if a test then falls over, that is the point.
-
-It also removes the `[0.4]` markers from `contracts.md`, adds the translation
-and the search to `architecture.md`, records the provenance of the recovered
-sequence in `references.md`, updates `CHANGELOG.md`, and sets the version.
 
 ## Contract amendments
 

@@ -4,6 +4,39 @@ Notable changes per release. Dates are release dates; the milestone plan and
 its reasoning live in `docs/roadmap.md`, the binding obligations of the
 verification surface in `docs/contracts.md`.
 
+## 0.4.0rc2
+
+Three release blockers and four further findings from the audit of `0.4.0rc1`.
+
+### Fixed
+
+- `BCWStep.transport` scaled the removed product by the coefficient in `G` but
+  not in the image, so a transported collision image was wrong whenever a
+  carried coordinate had a non-zero image. Every collision image in the suite
+  had zeros there, and a product with a zero does not remember a factor.
+- `scripts/search_alpoege19.py` built its source over `QQ` while the published
+  map is over `ZZ`, so the search could not reach it however long it ran. Over
+  `ZZ` the peel reaches it in eighteen examined maps. The claim that this
+  repository had not found the chain is withdrawn.
+- The source archive no longer carries `tests/data.py`. Distributing it
+  contradicted this project's own rule while the documentation said otherwise.
+- `peel` carries the coefficient domain and the monomial order of the target
+  into every intermediate map instead of re-inferring them, and admits a
+  parameter of that domain as a coefficient, which BCW-11 always allowed.
+- BCW-12 compares its two factors canonically, so two spellings of one
+  polynomial are one polynomial.
+- `moves` offers one candidate per distinct constant rather than one per shared
+  monomial, and `peel` walks a state once. Thirty-six candidates at the root of
+  the published map became sixteen.
+
+### Added
+
+- SEA-14 names the boundary of the forward search: no coefficient other than
+  one, and no step whose two slots are one fresh coordinate. Reporting no
+  result for either is SEA-6 and not a deferral under SEA-7. Peeling has
+  neither restriction.
+- `mypy --strict scripts` is a gate.
+
 ## 0.4.0rc1
 
 The linear part completed, two searches for a step sequence, and the certified
