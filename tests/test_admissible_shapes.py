@@ -52,6 +52,18 @@ SOURCE = over_field(
 # collision and not a pair of points with a hopeful name.
 POINTS = ((1, 0, 0), (-1, 0, 0))
 
+# Dieselbe Quelle, aber mit Traegerkomponenten, die am Kollisionspunkt nicht
+# null werden. Genau daran ist ein Fehler haengen geblieben, den kein Test
+# fand: ``_moved_image`` liess den Koeffizienten weg, und solange die
+# getragenen Bildkoordinaten null sind, faellt das nicht auf, weil das Produkt
+# ohnehin verschwindet. Ein externes Audit hat ihn gemeldet.
+LOUD = over_field(
+    PolynomialMap(
+        (x1, x2, x3),
+        (x1**2 + 3 * (x2 + 1) * (x3 + 2) + x2**4 + x3**6, x2 + 1, x3 + 2),
+    )
+)
+
 
 def two_fresh(source: PolynomialMap, coefficient: sp.Expr) -> BCWStep:
     return BCWStep.build(source, 0, Fresh(x2**2, u), Fresh(x3**2, v), 1, coefficient)
@@ -223,3 +235,47 @@ def test_the_forward_enumerator_offers_the_ones_it_claims(
     assert isinstance(candidates, list)
     if coefficient == 1 and expected == 2:
         assert candidates
+
+
+@pytest.mark.parametrize("coefficient", COEFFICIENTS)
+def test_the_transported_image_is_scaled_by_the_coefficient(
+    coefficient: sp.Expr,
+) -> None:
+    """``G`` skaliert das entfernte Produkt, also auch im Bild.
+
+    Der Test, den es haette geben muessen. Die Kollisionsbilder der bisherigen
+    Tests hatten in den getragenen Koordinaten eine Null, und ein Produkt mit
+    einer Null merkt sich keinen Faktor. Hier sind sie ``1`` und ``2``, also
+    schlaegt jeder vergessene Koeffizient durch.
+    """
+    collision = Collision.at(LOUD, POINTS)
+    step = BCWStep.build(LOUD, 0, Carried(1), Carried(2), 1, coefficient)
+
+    moved = step.transport(collision)
+
+    assert collision.image[1] != 0
+    assert collision.image[2] != 0
+    assert moved.image[0] == sp.expand(
+        collision.image[0] - coefficient * collision.image[1] * collision.image[2]
+    )
+    assert moved.verify(step.target) is None
+
+
+@pytest.mark.parametrize("coefficient", COEFFICIENTS)
+def test_a_fresh_slot_contributes_nothing_to_the_image(
+    coefficient: sp.Expr,
+) -> None:
+    """Und ohne getragenen Platz aendert der Koeffizient das Bild nicht.
+
+    Die Gegenprobe: eine frische Koordinate wird im Bild mit null aufgefuellt,
+    also ist das Produkt null, und kein Koeffizient rettet es. Ohne diese
+    Haelfte waere der Test oben mit einer zu allgemeinen Regel vereinbar.
+    """
+    collision = Collision.at(LOUD, POINTS)
+    step = BCWStep.build(LOUD, 0, Fresh(x2**2, u), Fresh(x3**2, v), 1, coefficient)
+
+    moved = step.transport(collision)
+
+    assert moved.image[: LOUD.dimension] == collision.image
+    assert moved.image[LOUD.dimension :] == (0, 0)
+    assert moved.verify(step.target) is None

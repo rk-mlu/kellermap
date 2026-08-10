@@ -916,8 +916,13 @@ recovery only when handed a value the published map no longer carries.
 Against the nineteen-dimensional map the space is **exhausted after 376 maps
 in three minutes**, where the forward search needed 68425 maps and two and a
 half hours to say the same thing about a different space. Neither holds a
-chain. The direction did not find the sequence; it made the question cheap
-enough to ask repeatedly.
+chain. At the time of writing the direction had not found the sequence; it had
+made the question cheap enough to ask repeatedly. What was in the way turned out
+to be neither the rules nor the budget but the coefficient domain: the driver
+built its source over `QQ` and the published map is over `ZZ`, so the search
+could not have arrived however long it ran. An external audit of `0.4.0rc1`
+found that. Over `ZZ` the peel reaches the published map in eighteen examined
+maps, and `tests/test_alpoege19.py` holds it.
 
 Widening the backward space is cheap, and two widenings were tried. Computing
 the product of a step's two slot components once per pair instead of once per

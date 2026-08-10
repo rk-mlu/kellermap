@@ -71,8 +71,27 @@ introduced:
 - `alpoege15`, this project's own reduction of Alpöge's map to dimension 15,
   is derived and verified.
 
-Searching for a reduction rather than verifying a presented one is 0.4.
-`CHANGELOG.md` lists what each release changed.
+The fourth milestone searches for a reduction rather than verifying a presented
+one, and reaches the published nineteen-dimensional Keller map of degree three:
+
+- `TranslationStep` completes the linear normalization for maps outside `MA^0`.
+- `search()` walks from the source and is told what a fresh coordinate may
+  carry. `peel()` walks from the target and is told nothing else; it recovers
+  the fifteen-dimensional reduction in eight maps and the nineteen-dimensional
+  one in eighteen.
+- A step may scale the product it removes and may put one fresh coordinate in
+  both slots. Both go beyond Proposition (3.1), both are marked as extensions,
+  and the published chain needs both.
+- That chain is a verified `Reduction` in the test suite, an independent
+  rendering in plain SymPy, and a search result — three routes to the same
+  seventeen steps.
+
+**Next, 0.5.** Searching without a target. The question changes from "does this
+chain reach that map" to "how few new dimensions does it take to reach degree
+three", which is an optimisation and not a comparison: no target means no
+reordering and no change of coordinates to reconcile, and what is compared
+against the literature is the dimension reached. `docs/roadmap.md` carries the
+plan; `CHANGELOG.md` lists what each release changed.
 
 ---
 

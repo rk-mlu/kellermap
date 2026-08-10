@@ -736,7 +736,9 @@ class BCWStep:
 
         The coordinate a slot contributes is ``0`` for a ``Fresh`` slot, since
         the fill is zero, and the image's own coordinate ``j`` for
-        ``Carried(j)``.
+        ``Carried(j)``. The product is scaled by the coefficient, because ``G``
+        scales it: BCW-11 changed ``G`` and this is one of the places that had
+        to follow.
         """
         left, right = (
             sp.Integer(0) if isinstance(slot, Fresh) else padded[slot.index]
@@ -744,7 +746,9 @@ class BCWStep:
         )
 
         image = list(padded)
-        image[self._index] = sp.expand(image[self._index] - left * right)
+        image[self._index] = sp.expand(
+            image[self._index] - self._coefficient * left * right
+        )
 
         return tuple(image)
 

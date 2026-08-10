@@ -5,6 +5,11 @@ of a reduction this repository holds. Like the other two it does not import
 ``kellermap``: it applies the step formula directly, so that the library has
 something other than itself to agree with.
 
+It reads the published map from ``tests/data.py``, which the source archive
+does not carry. From a checkout it runs; from an unpacked sdist it says what is
+missing and stops. That is the same decision as everywhere else in this
+project: the map is not ours to distribute.
+
 It differs from them in one respect, and the difference is deliberate.
 ``reconstruct_bcw17.py`` and ``reconstruct_alpoege15.py`` carry their own copy
 of the map they end at, because that map is the project's own hand computation
@@ -104,8 +109,13 @@ def published() -> ModuleType:
     root = Path(__file__).resolve().parent.parent
     path = root / "tests" / "data.py"
     spec = importlib.util.spec_from_file_location("published_map", path)
-    if spec is None or spec.loader is None:
-        raise RuntimeError(f"Cannot read the published map from {path}.")
+    if spec is None or spec.loader is None or not path.exists():
+        raise FileNotFoundError(
+            f"{path} is not here. The nineteen-dimensional map is somebody "
+            "else's mathematics and its licence could not be established, so "
+            "this project does not distribute it: the file is in the "
+            "repository and excluded from the source archive."
+        )
 
     module = importlib.util.module_from_spec(spec)
     sys.path.insert(0, str(root))
@@ -173,7 +183,12 @@ def _degree(components: dict[sp.Symbol, sp.Expr], order: list[sp.Symbol]) -> int
 
 
 def main() -> int:
-    data = published()
+    try:
+        data = published()
+    except FileNotFoundError as missing:
+        print(missing)
+        return 2
+
     components, order, dimensions, degrees, identities = apply_steps()
     points = transport()
 

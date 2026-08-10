@@ -378,10 +378,23 @@ fresh coordinate (BCW-12). The coefficients cannot be moved into a change of
 coordinates: the diagonal that would absorb them needs `1/7` at step seven where
 the earlier steps force `1/9`, and `1` at step nine where they force `1/2`.
 
-What this repository did **not** do is find the chain. The search of 0.4 reaches
-it under none of the settings tried, and `roadmap.md` records where it stops and
-why. The distinction matters for what may be claimed: a certified factorization
-of the published map, not a procedure that recovers it unaided.
+The search finds a chain too, and this paragraph said the opposite until an
+external audit of `0.4.0rc1` showed why. `scripts/search_alpoege19.py` built its
+source with `over_field`, over `QQ`, while the published map is over `ZZ`;
+`PolynomialMap` counts the coefficient domain as part of its identity and every
+step preserves it, so the search could not have arrived however long it ran.
+Over `ZZ` the peel reaches the published map in **eighteen examined maps**.
+
+What it finds is not the audited chain but another of seventeen steps, with the
+coordinates introduced in a different order. Both are chains and neither is
+*the* chain, which is what "No optimality of the sequence" has said since the
+first milestone.
+
+So two things may be claimed and one may not. The factorization is certified
+here, and it is also reachable by this library's own search. That the search
+would have found it without the audit is *not* claimed: the audit came first,
+and the ordering of events is a fact about this project rather than about the
+mathematics.
 
 The order the coordinates were introduced in is
 

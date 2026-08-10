@@ -10,11 +10,10 @@ The linear part completed, two searches for a step sequence, and the certified
 factorization of the published nineteen-dimensional Keller map of degree three.
 
 That factorization is the result of the milestone, and what it is worth is
-stated precisely in `docs/references.md`: the chain was reconstructed by an
-external audit of this project and verified here, twice and independently, once
-in plain SymPy and once as a chain of `BCWStep`. This repository did not find
-it. The searches below reach it under none of the settings tried, and where
-they stop is recorded in `docs/roadmap.md`.
+stated precisely in `docs/references.md`. A chain was reconstructed by an
+external audit of this project and verified here twice and independently, once
+in plain SymPy and once as a chain of `BCWStep`. The backward search then found
+a second one, of seventeen steps like the first, in eighteen examined maps.
 
 ### Added
 

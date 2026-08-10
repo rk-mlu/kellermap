@@ -104,11 +104,9 @@ or follows from the arithmetic.
 * The coefficient of each step is solved rather than searched, so it costs
   nothing.
 
-At the time of writing the peel reaches depth seventeen -- the full length of
-the chain -- and arrives at three-dimensional maps that are not Alpoege's, some
-thousands of times in thirty thousand. The chain is inside this space. Finding
-it is a matter of budget and of the order the moves are tried in, and no longer
-of what the language can say.
+The peel finds the chain in **eighteen maps**, in a few seconds. It is not the
+chain the audit reconstructed but another valid one of seventeen steps, which
+is what "a chain, not the chain" has meant since WP 1.
 
 A first round below 68425 maps is wasted. The run of 8 August 2026 exhausted a
 strictly smaller space at that count -- the search then stopped at the last
@@ -139,7 +137,6 @@ from kellermap import (  # noqa: E402
     PolynomialMap,
     Reduction,
     examples,
-    over_field,
     peel,
     search,
 )
@@ -153,13 +150,15 @@ def setup() -> tuple[PolynomialMap, PolynomialMap, dict[sp.Symbol, sp.Expr]]:
     carriers = published.variables[3:]
     alpoege = examples.alpoege()
     rename = dict(zip(alpoege.variables, published.variables[:3], strict=True))
-    source = over_field(
-        PolynomialMap(
-            published.variables[:3],
-            tuple(
-                sp.expand(component.subs(rename)) for component in alpoege.components
-            ),
-        )
+    # Ueber ``ZZ`` und nicht ueber ``QQ``. ``PolynomialMap`` zaehlt den
+    # Koeffizientenbereich zu seiner Identitaet, jeder Schritt erhaelt ihn, und
+    # das veroeffentlichte Ziel liegt ueber ``ZZ`` -- eine Quelle ueber ``QQ``
+    # kann es daher nie erreichen. Das ``over_field`` an dieser Stelle war ein
+    # Reflex von mir und hat die Suche ein ganzes Release lang um ihren Erfolg
+    # gebracht; ein externes Audit hat es gefunden.
+    source = PolynomialMap(
+        published.variables[:3],
+        tuple(sp.expand(component.subs(rename)) for component in alpoege.components),
     )
 
     pool = {

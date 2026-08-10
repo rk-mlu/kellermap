@@ -49,9 +49,20 @@ nachrechnen.
 import pytest
 import sympy as sp
 
-from kellermap import Collision, PolynomialMap, Reduction, examples
+from kellermap import Collision, PolynomialMap, Reduction, examples, peel
 from kellermap.bcw import BCWStep, Carried, Fresh
-from tests.data import (  # noqa: F401
+
+pytest.importorskip(
+    "tests.data",
+    reason=(
+        "The nineteen-dimensional map is somebody else's mathematics and its "
+        "licence could not be established, so this project does not "
+        "distribute it. tests/data.py is in the repository and excluded from "
+        "the source archive; without it this module has nothing to check."
+    ),
+)
+
+from tests.data import (  # noqa: E402, F401
     ALPOEGE19,
     ALPOEGE_IMAGE,
     ALPOEGE_POINTS,
@@ -635,3 +646,51 @@ def test_a_wrong_coefficient_does_not_reach_the_published_map() -> None:
 
     assert chain.verify() is None
     assert chain.target.reordered(VARIABLES) != ALPOEGE19
+
+
+@pytest.mark.slow
+def test_the_peel_finds_a_chain_to_this_map() -> None:
+    """Die Suche erreicht die veroeffentlichte Abbildung, ohne Hilfe.
+
+    Achtzehn gepruefte Karten. Sie bekommt Quelle und Ziel und sonst nichts:
+    keinen Wertevorrat, keine Namen, keine Vorzeichenkonvention (REV-1). Was
+    sie einschraenkt, ist aus dem Ziel abgelesen oder folgt aus der Arithmetik;
+    ``spare`` und ``pairs`` stehen auf den Werten, die sich daraus ergeben.
+
+    Bis 0.4.0rc1 fand sie nichts, und der Grund war kein mathematischer: der
+    Treiber baute die Quelle mit ``over_field`` ueber ``QQ``, das Ziel liegt
+    ueber ``ZZ``, und ``PolynomialMap`` zaehlt den Koeffizientenbereich zu
+    seiner Identitaet. Ein externes Audit hat es gefunden. Dieser Test haelt
+    fest, dass der Bereich uebereinstimmt und die Suche ankommt.
+    """
+    source = alpoege_in_published_coordinates()
+
+    assert source.ring.domain == ALPOEGE19.ring.domain
+
+    outcome = peel(source, ALPOEGE19, budget=200, spare=2, pairs=1)
+
+    assert outcome.reduction is not None
+    assert outcome.reduction.verify() is None
+    assert len(outcome.reduction.steps) == 17
+    assert outcome.reduction.target.reordered(VARIABLES) == ALPOEGE19
+
+
+@pytest.mark.slow
+def test_the_chain_the_peel_finds_is_not_the_recorded_one() -> None:
+    """Eine Kette, nicht die Kette.
+
+    Beide haben siebzehn Schritte und dieselbe Struktur -- einer fuehrt zwei
+    Koordinaten ein, zwei fuehren keine ein -- und sie fuehren die Koordinaten
+    in verschiedener Reihenfolge ein. Ein Test, der die gefundene festschreibt,
+    stuende der eigenen Verpflichtung im Weg; dieser haelt fest, dass es mehr
+    als eine gibt.
+    """
+    found = peel(
+        alpoege_in_published_coordinates(), ALPOEGE19, budget=200, spare=2, pairs=1
+    ).reduction
+    recorded = build()
+
+    assert found is not None
+    assert len(found.steps) == len(recorded.steps)
+    assert found.target.variables != recorded.target.variables
+    assert found.target.reordered(VARIABLES) == recorded.target.reordered(VARIABLES)

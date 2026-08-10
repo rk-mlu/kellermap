@@ -129,4 +129,9 @@ exclude = [
     "min_env",
     "dist",
     ".venv",
+    # Fremde Mathematik ohne ermittelbare Lizenz. Das Wheel enthielt sie nie,
+    # das Quellarchiv schon, und damit widersprach die Auslieferung der eigenen
+    # Regel aus AGENTS.md. Wer die Abbildung hat, legt sie unter diesem Pfad ab;
+    # ohne sie ueberspringen die betroffenen Tests sich selbst und sagen warum.
+    "tests/data.py",
 ]
