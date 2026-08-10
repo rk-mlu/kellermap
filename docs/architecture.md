@@ -60,10 +60,16 @@ kellermap/
 ├── linear.py             Transvection, Transposition, Dilation,
 │                         LinearAutomorphism, over_field
 ├── collision.py          Collision
-├── reduction.py          Step, LinearStep, Reduction, Provenance
+├── reduction.py          Step, LinearStep, TranslationStep, Reduction,
+│                         Provenance
 ├── context.py            ReductionContext
 ├── variables.py          VariableFactory, IndexedVariableFactory,
 │                         FixedVariableFactory
+├── search.py             search, peel's counterpart from the source:
+│                         Candidate, enumerate_candidates, anchors,
+│                         conjugate, diagonal_matching
+├── peeling.py            peel, Undo, moves, factor
+├── examples.py           the Keller maps written out more than once
 ├── errors.py             VerificationError
 └── bcw/                  BCWStep
 ```
@@ -72,6 +78,18 @@ The top level holds what any work on Keller maps needs: the maps themselves,
 the group `EA_n(k)` acting on them, the group `GL_n(k)` beside it, collisions,
 chains of certified identities, and the naming of fresh generators. None of it
 is specific to one reduction method.
+
+`search.py` and `peeling.py` sit at the top level and are the exception that
+proves the rule: they look for a sequence of `BCWStep`, so they are as specific
+as the subpackage is. They are not inside it because they are not certificates.
+Nothing either of them returns is evidence of anything until it has been built
+and verified -- `peel` rebuilds forwards with `BCWStep.build` before it hands
+back a `Reduction` -- and putting them beside the certificates would blur
+exactly the line the milestone spent its length keeping sharp.
+
+`examples.py` is data and carries no obligations. It is in the package because
+the maps in it may be distributed, and the one that may not is in
+`tests/data.py` instead.
 
 Only `BCWStep` is. A chain of certified identities is not a notion of the 1982
 paper, and a second reduction method would reuse `Reduction`, `Collision` and
@@ -465,6 +483,37 @@ over different coefficient domains are different objects here, and the
 arithmetic must not widen one quietly.
 
 ---
+
+## Looking for a step sequence
+
+Two directions, and they have almost nothing in common beyond what they return.
+
+`search(source, target, pool)` walks from the source. It has to be told what a
+fresh coordinate may carry, because nothing in the source says: the pool is
+read off the target's carriers, and SEA-8 and SEA-13 bound how far a factor may
+depart from it. Its cost is that a value the target no longer carries -- a
+coordinate some later step rewrote -- makes the chain inexpressible rather than
+merely unfound, which is a failure that looks exactly like an empty space.
+
+`peel(source, target)` walks from the target and is told nothing else. A step
+that introduces `X_u` leaves it in exactly two components, its own and the
+residue of the one it acted on, so a coordinate occurring anywhere else was
+read by a later step and cannot be the last introduced. That is REV-2, and it
+is the whole reason the direction is cheap: six candidates for the last step of
+the published nineteen-dimensional map against the hundred and forty the
+forward enumerator offers. The factors fall out of the arithmetic instead of
+being supplied, and so does the coefficient, which is fixed by a linear
+condition rather than searched.
+
+A peel is not a certificate. What it produces is a structure: target, slots,
+dropped coordinates and a constant, all named rather than indexed. The chain is
+rebuilt forwards with `BCWStep.build`, verified, and only then a `Reduction`.
+That the two agree is checked and not assumed, which is REV-5 and the reason
+peeling could be added without touching what a certificate means.
+
+Neither direction found the chain to the published map. Both are bounded by
+rules that are decisions rather than facts, and every one of those rules is
+named in `contracts.md` so that a failure can be attributed to one.
 
 ## Certificates
 

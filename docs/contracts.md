@@ -14,24 +14,27 @@ Error messages cite the identifier that failed, so that an independent review
 can address findings to a numbered obligation rather than to a line of code.
 Identifiers are never reused; a withdrawn obligation stays listed as withdrawn.
 
-An obligation marked `[0.4]` is stated but not yet implemented. The marker is
-removed when the milestone closes. It is a statement of intent that the
-implementation is measured against, not a description of the current code, and
-a review of an unfinished milestone should read it as such. Obligations
-without a marker are implemented.
+An obligation marked with a milestone number is stated but not yet
+implemented, and the marker is removed when the milestone closes. It is a
+statement of intent that the implementation is measured against, not a
+description of the current code, and a review of an unfinished milestone should
+read it as such. Obligations without a marker are implemented.
 
-**Status as of `0.3.0`:** every unmarked obligation on this page is
+**Status as of `0.4.0`:** every obligation on this page is
 implemented, and the test suite covers every statement of the package. Where
 the implementation forced a change, this page was amended deliberately and the
 amendment is visible in the wording — the clearest cases are COL-4 and BCW-3,
 which moved from obligations of `verify()` to constructor invariants, and
 LIN-2, which was narrowed to what is actually checkable.
 
-**Milestone `0.4`, in progress.** The milestone adds `TranslationStep`, which
-completes Chapter II, Proposition (1.1), and a search that recovers the step
-sequence of the published 19-dimensional map. Its obligations carry the `[0.4]`
-marker. Four statements on this page were corrected at the same time, and the
-corrections are visible in the wording: the milestone number in RC-7 and under
+**Milestone `0.4`, closed.** The milestone added `TranslationStep`, which
+completes Chapter II, Proposition (1.1); two searches for a step sequence, one
+from the source and one from the target; and the certified factorization of the
+published 19-dimensional map. Its obligations carried the `[0.4]` marker while
+it ran and carry none now.
+
+Four statements on this page were corrected while it ran, and the corrections
+are visible in the wording: the milestone number in RC-7 and under
 "No progress measure", the scope of the `filtration_level` row in the error
 table, and the withdrawal of the non-obligation "No search".
 
@@ -54,7 +57,8 @@ obligation checked earlier in the same `verify()` rules them out — BCW-5,
 BCW-7, LIN-2, LIN-3, the `MA^1` clause of LIN-6, and, since 0.4, TRA-3, TRA-4
 and the `MA^0` clause of TRA-6. They carry
 `# pragma: no cover` with the reason written beside them. Writing a test for
-them would mean forcing the object into a state it cannot reach. Each type states which of
+them would mean forcing the object into a state it cannot reach. Each type
+states which of
 its obligations can fail on supplied data and which are self-checks of the
 library's own arithmetic; a review should weigh them differently.
 
@@ -244,7 +248,7 @@ Chapter II, Proposition (1.1) does so does not make the operation theirs.
 `filtration_level` reports `math.inf` where a step establishes no `EA` level,
 following `ElementaryAutomorphism.filtration_degree()` on the identity.
 
-**`[0.4]`** This is the `EA` bound the step establishes for its target. It is
+This is the `EA` bound the step establishes for its target. It is
 not the filtration degree of the transformation the step applies, and the two
 must not be conflated. `TranslationStep` is where they visibly differ: the
 translation `X |-> X - c` has filtration degree `-1`, since its displacement
@@ -363,7 +367,7 @@ disagreed with the non-obligation "No search" on the same page. 0.4 searches for
 one step sequence against a known target; 0.5 searches without one. The
 obligations of the search are stated under [Search](#search) below.
 
-**`[0.4]`** The search of 0.4 does not use a `ReductionContext`, because by
+The search of 0.4 does not use a `ReductionContext`, because by
 SEA-3 it is given the names of the fresh generators rather than allocating
 them. This changes nothing about RC-1 to RC-7. The context remains the route
 for a reduction that allocates its own names, which is every chain the test
@@ -492,17 +496,18 @@ expressions. Version 0.3 amended this only in replacing the fixed `2` by `m`.
 At `m = 0` the stabilization and `H` are both trivial and it reads
 `target == G ∘ source`.
 
-**`[0.4]`** Version 0.4 amends it again, in `G`. Until now `G` subtracted
+Version 0.4 amends it again, in `G`. Until now `G` subtracted
 `X_u X_v`; it now subtracts `coefficient * X_u X_v`, so the step removes
 `coefficient * P Q` from the target component. BCW-11 says why. Nothing that
 verified before stops verifying: the coefficient defaults to one, and a step
 built without it is exactly the earlier step.
 
-**BCW-2 — Dimension and generators.** `target.dimension == source.dimension + m`;
+**BCW-2 — Dimension and generators.** `target.dimension == source.dimension +
+m`;
 the generators of `target` are those of `source` followed by `variables`, in
 slot order; each fresh variable satisfies RC-4 against `source.ring`.
 
-**`[0.4]`** `m` counts the *distinct* fresh variables, and each is appended
+`m` counts the *distinct* fresh variables, and each is appended
 once, in the order of its first slot. Until 0.4 the two readings agreed,
 because two `Fresh` slots had to name different variables. BCW-12 lifts that,
 and then a step whose two slots are one fresh variable introduces one generator
@@ -517,7 +522,8 @@ stopped verifying: a step with two `Fresh` slots is exactly the earlier step.
 **BCW-3 — The factors are free of the fresh variables.** No polynomial of a
 `Fresh` slot involves any of the fresh variables. Two consequences depend on
 this: the factors of `H` commute, so their order is immaterial, and `H^-1` is
-the componentwise negation, which is what `transport()` uses. A `Carried` slot satisfies this automatically, because its value comes from a
+the componentwise negation, which is what `transport()` uses. A `Carried` slot
+satisfies this automatically, because its value comes from a
 component of the source.
 
 Enforced at construction, and by conversion rather than by inspection: `P` and
@@ -631,7 +637,7 @@ formula and can fail. For a `CONSTRUCTED` step it compares the implementation
 against itself and cannot: it is a self-check, not evidence. `Reduction`
 propagates the weaker provenance of its steps.
 
-**BCW-11 — The coefficient is part of the step and is recorded.** `[0.4]`
+**BCW-11 — The coefficient is part of the step and is recorded.**
 `G` subtracts `coefficient * X_u X_v`, for a non-zero constant of the
 coefficient domain, and the step reports it. It defaults to one.
 
@@ -651,7 +657,7 @@ converted into the coefficient domain, so a coefficient involving a generator
 cannot be built. Zero is refused, because a step that removes nothing is the
 identity written at length.
 
-**BCW-12 — Both slots may be one fresh variable.** `[0.4]` Two `Fresh` slots
+**BCW-12 — Both slots may be one fresh variable.** Two `Fresh` slots
 may name the same variable, and then they must carry the same polynomial. `G`
 subtracts `coefficient * X_u^2`, and `H` displaces `X_u` once.
 
@@ -721,7 +727,8 @@ That the factors multiply to the declared matrix is *not* checked, because it
 is not checkable: `LinearAutomorphism.matrix()` is that product, and no second,
 independently declared matrix is stored to compare it against. That is
 deliberate, for the reason `BCWStep` derives `G` and `H` rather than storing
-them — storing both a factorization and the automorphisms built from it would allow
+them — storing both a factorization and the automorphisms built from it would
+allow
 the two to disagree.
 
 **LIN-3 — Determinant bookkeeping.** `target.determinant() ==
@@ -749,7 +756,7 @@ and presupposes the first. Without it the target simply fails to reach `MA^1`,
 which is true but points one stage past the cause; `normalize()` refuses such a
 source outright rather than building a step that fails its own verification.
 
-**`[0.4]`** The first factor is `TranslationStep`, and the refusal names it.
+The first factor is `TranslationStep`, and the refusal names it.
 Until 0.4 the message named a step that did not exist, which was honest about
 the gap and useless for closing it. `normalize()` still refuses; it does not
 insert a translation of its own. Proposition (1.1) has three factors and a
@@ -768,7 +775,7 @@ target.
 
 ## TranslationStep
 
-**`[0.4]`** The first factor of BCW Chapter II, Proposition (1.1). A `Step`, so
+The first factor of BCW Chapter II, Proposition (1.1). A `Step`, so
 that a `Reduction` can begin at a map that does not fix the origin. Implemented
 in work package 2 of this milestone.
 
@@ -937,7 +944,7 @@ verified transport of a genuine collision is a machine-checked proof that
 steps establish. It answers, from the certificate alone, why the target lies in
 the filtration stage it does.
 
-**`[0.4]`** A `TranslationStep` reports `math.inf` by TRA-5 and therefore does
+A `TranslationStep` reports `math.inf` by TRA-5 and therefore does
 not lower it, as a `LinearStep` does not. A chain that begins at a map outside
 `MA^0` reports the same level as the same chain begun one step later, which is
 the intended reading: the level describes the target, and the translation is
@@ -953,7 +960,7 @@ return new `Reduction` objects; nothing mutates.
 
 ## Search
 
-**`[0.4]`** Assembling a `Reduction` rather than checking one that is presented.
+Assembling a `Reduction` rather than checking one that is presented.
 The milestone target is the step sequence of the published 19-dimensional map,
 which its source does not publish.
 
@@ -1035,7 +1042,7 @@ found.target.reordered(published.variables) == published
 checked separately from `verify()`, and the only place where the run can be
 contradicted by data this library did not compute.
 
-**`[0.4]`** The diagonal is withdrawn from this clause. Between work packages 7
+The diagonal is withdrawn from this clause. Between work packages 7
 and 10 it read `conjugate(found.target.reordered(...), D) == published` for a
 diagonal `D` the search reported. BCW-11 makes it unnecessary: with the
 coefficient inside the step, the family of steps is closed under conjugation by
@@ -1104,14 +1111,14 @@ plausible chain or silently reporting no result. A case it handles and does not
 solve reports no result, which is a different outcome and is spelled
 differently.
 
-**SEA-11 — A budget is reported, not hidden.** `[0.4]` The search examines at
+**SEA-11 — A budget is reported, not hidden.** The search examines at
 most a stated number of maps and says how many it examined and whether the
 space it covers was exhausted. A result with `exhausted` false says less than
 SEA-6 already allows: not merely that nothing was found, but that the search
 did not finish looking.
 
 **SEA-13 — A factor outside the pool costs a rewrite, and rewrites are
-counted.** `[0.4]` A fresh slot whose factor is a pool value, up to sign, takes
+counted.** A fresh slot whose factor is a pool value, up to sign, takes
 that name. A fresh slot whose factor is *not* a pool value may take any unused
 name, and at most `rewrites` slots in a chain may do so.
 
@@ -1132,7 +1139,7 @@ within 400 with `rewrites=1`, on the same complete pool. Allowing a rewrite is
 not a small loosening.
 
 **SEA-12 — The walk is bounded by stated rules, and they are decisions.**
-`[0.4]` The degree never rises along a chain, the dimension never passes the
+ The degree never rises along a chain, the dimension never passes the
 target's, and at most `spare` steps introduce no generator. None is a fact
 about Keller maps. Nothing obliges a step to lower the degree — see "No
 progress measure" — and the first rule is adopted because degrees do not rise
@@ -1328,7 +1335,7 @@ which `references.md` records.
 
 ## Peeling
 
-**`[0.4]`** Assembling a chain from the far end. The forward search of SEA-1 to
+Assembling a chain from the far end. The forward search of SEA-1 to
 SEA-13 exhausts its space against the published nineteen-dimensional map
 without a chain and cannot say which of its rules emptied the space. Peeling
 runs the other way, and the reason it is a separate surface rather than a flag
@@ -1366,7 +1373,7 @@ components. The constant is fixed by the requirement that the dropped
 coordinates vanish, which is linear in it, so it is computed and each step
 reports the value it used.
 
-**`[0.4]`** That constant is the `coefficient` of BCW-11 and nothing else. Until
+That constant is the `coefficient` of BCW-11 and nothing else. Until
 work package 10 it was an entry of the diagonal of SEA-5, solved for and carried
 alongside the chain, because the step had nowhere to put it. It now goes into
 the step the peel rebuilds, and the multiplicative system that turned the
@@ -1398,7 +1405,7 @@ compute.
 a peel that stops says nothing unless it says how far it got and whether it
 finished looking.
 
-**REV-8 — What the source admits bounds the last step.** `[0.4]` A last step
+**REV-8 — What the source admits bounds the last step.** A last step
 that introduces one coordinate has a `Carried` slot, and that slot is never the
 component the step acts on, so its component is the same before and after --
 which makes it a carrier of the source as well. A source without carriers
@@ -1413,7 +1420,7 @@ number of steps. Alpoege's map has no carriers, so `a >= 1`, and a chain of the
 seventeen steps its source describes then needs `c = a + 1 >= 2`. A peel
 allowing one such step cannot find that chain whatever its budget.
 
-**REV-9 — What is left to change bounds what is left to do.** `[0.4]` An undo
+**REV-9 — What is left to change bounds what is left to do.** An undo
 changes exactly one component. Every coordinate that survives the whole peel is
 a coordinate of the source, so each of those whose component still differs from
 the source's needs at least one more step aimed at it. At most `d + spare`
@@ -1524,12 +1531,12 @@ was there to protect: `BCWStep` and `Reduction` still verify and do not search,
 and SEA-1 keeps the search outside every certificate. Three narrower
 non-obligations take its place.
 
-**No completeness.** `[0.4]` A search that reports no chain has not shown that
+**No completeness.** A search that reports no chain has not shown that
 none exists. It has shown that this search, with these arguments, did not find
 one. Nothing in the package converts the one statement into the other, and a
 negative result should not be quoted as if it did.
 
-**No completeness of the enumerator either.** `[0.4]` The enumerator is complete
+**No completeness of the enumerator either.** The enumerator is complete
 relative to its value pool, and relative to nothing else. It does not offer
 every `(P, Q)` whose product is a subsum of a component: that space is infinite
 before SEA-9 normalizes it and exponential in the number of terms afterwards.
@@ -1543,14 +1550,14 @@ endpoint against a map this library did not compute. The worst outcome is a
 milestone that ships the search without the sequence, which the roadmap provides
 for.
 
-**No optimality of the sequence.** `[0.4]` A chain the search finds is one that
+**No optimality of the sequence.** A chain the search finds is one that
 verifies and reaches the target. Nothing claims it is the shortest such chain,
 the one the published source used, or the one with the fewest fresh generators.
 Recovering *a* sequence that produces the published map is the milestone target;
 recovering *the* sequence its author wrote down is not something the published
 data makes checkable.
 
-**No claim from reordering.** `[0.4]` `reordered()` establishes nothing. It puts
+**No claim from reordering.** `reordered()` establishes nothing. It puts
 two presentations of one map into one order so that they can be compared at all,
 and SEA-4 says why that is not a step. The comparison afterwards is what carries
 the weight.
@@ -1567,7 +1574,7 @@ practice a carrier does survive, because no step changes a component it does
 not target, but `Reduction` still cannot express a step that refers to a map
 earlier in the chain. Nothing in 0.3 requires that.
 
-**`[0.4]`** The search of 0.4 relies on this and does not widen it. The
+The search of 0.4 relies on this and does not widen it. The
 published nineteen-dimensional map shares sixteen carriers across seventeen
 steps, and whether every one of them survives to the step that reuses it is a
 property of that sequence, not something this page can assert in advance. If the

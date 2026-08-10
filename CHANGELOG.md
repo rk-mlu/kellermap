@@ -4,6 +4,70 @@ Notable changes per release. Dates are release dates; the milestone plan and
 its reasoning live in `docs/roadmap.md`, the binding obligations of the
 verification surface in `docs/contracts.md`.
 
+## 0.4.0rc1
+
+The linear part completed, two searches for a step sequence, and the certified
+factorization of the published nineteen-dimensional Keller map of degree three.
+
+That factorization is the result of the milestone, and what it is worth is
+stated precisely in `docs/references.md`: the chain was reconstructed by an
+external audit of this project and verified here, twice and independently, once
+in plain SymPy and once as a chain of `BCWStep`. This repository did not find
+it. The searches below reach it under none of the settings tried, and where
+they stop is recorded in `docs/roadmap.md`.
+
+### Added
+
+- `TranslationStep` — the first factor of Chapter II, Proposition (1.1),
+  which completes the linear normalization for maps outside `MA^0`.
+  Obligations TRA-1 to TRA-8.
+- `search(source, target, pool)` — a forward search for a step sequence,
+  under SEA-1 to SEA-13, with `enumerate_candidates`, `anchors` and
+  `Candidate`.
+- `peel(source, target)` — a backward search, taking a chain off the target.
+  It needs neither a value pool nor supplied names, and recovers the
+  fifteen-dimensional reduction in eight maps where the forward search needs
+  sixty-two and a value the published map no longer carries. Obligations REV-1
+  to REV-9.
+- `BCWStep` takes a `coefficient` (BCW-11) and admits two `Fresh` slots naming
+  one variable (BCW-12). Both are extensions beyond Proposition (3.1), marked
+  as such, and both are needed by the published chain.
+- `PolynomialMap.reordered()` — the generator order of a chain is the order
+  its steps introduced them, and a target may name them differently.
+- `PolynomialMap.identity()` — the identity was written out forty-one times,
+  twenty-one of them repeating their own variable list.
+- `kellermap.examples` — the Keller maps this repository writes out more than
+  once, chosen by two counted criteria.
+- `tests/test_alpoege19.py` and `scripts/reconstruct_alpoege19.py` — the
+  chain as a verified `Reduction` and as an independent rendering.
+- `tests/test_admissible_shapes.py` — every admissible shape of a step
+  through every operation. Two faults of this milestone were found by an audit
+  and by an assembly rather than by a test, and both were of that kind.
+- `tests/test_ascii.py` — a gate for the agreement that Python files are pure
+  ASCII, which had one breach in the tree and no gate to attribute it to.
+
+### Changed
+
+- SEA-5 compares the endpoint by plain equality again. It allowed a diagonal
+  `D` between work packages 7 and 10, first of signs and then of arbitrary
+  non-zero constants; BCW-11 made it unnecessary, because a scalar the step
+  can carry needs nowhere else to live.
+- `m` counts distinct fresh variables, which matters only once two slots may
+  name one.
+- `Collision.transport` appends one coordinate per fresh generator rather than
+  per `Fresh` slot.
+- The fixed maps moved to where their provenance puts them:
+  `kellermap.examples` for the ones this project may distribute, `tests/data.py`
+  for the nineteen-dimensional map, whose licence could not be established.
+
+### Withdrawn
+
+- The reading that the numbering `w1` to `w16` of the published map is the
+  order the coordinates were introduced in. It is a topological order of the
+  final carrier values and not a chronology; the chain settled it, and the
+  paragraph that argued otherwise stays in `docs/roadmap.md`, withdrawn rather
+  than deleted.
+
 ## 0.3.0
 
 Steps that reuse a carrier. A step no longer always introduces two new

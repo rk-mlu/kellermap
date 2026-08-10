@@ -617,8 +617,8 @@ and the note under the `Step` protocol in `contracts.md` carry the reasoning.
 ## Work packages
 
 Twelve work packages, with internal version numbers `0.3.1` to `0.3.12` and
-tags `wp/0.3.n`. None of them is a release. `pyproject.toml` stays at `0.3.0`
-for the duration and moves to `0.4.0rc1` in one step at the end.
+tags `wp/0.3.n`. None of them is a release. `pyproject.toml` stayed at `0.3.0`
+for the duration and moved to `0.4.0rc1` in one step at the end.
 
 | WP | Internal | Content | Done |
 | --- | --- | --- | --- |
@@ -633,7 +633,7 @@ for the duration and moves to `0.4.0rc1` in one step at the end.
 | 9 | 0.3.9 | The backward search: peeling a chain off a target | yes |
 | 10 | 0.3.10 | The coefficient and the repeated fresh slot | no |
 | 11 | 0.3.11 | `alpoege19` as a verified `Reduction` | yes |
-| 12 | 0.3.12 | Documentation and release | no |
+| 12 | 0.3.12 | Documentation and release | yes |
 
 The plan had seven, and five packages were inserted rather than appended. WP 10
 came from an external audit, which reconstructed the chain and showed that the
