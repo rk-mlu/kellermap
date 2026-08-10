@@ -204,12 +204,18 @@ def _squared(current: PolynomialMap, target: sp.Symbol, fresh: sp.Symbol) -> boo
     return any(monomial[position] >= 2 for monomial in component.monoms())
 
 
-def moves(current: PolynomialMap, spare: int, pairs: int = 16) -> Iterator[Undo]:
+def moves(
+    current: PolynomialMap,
+    spare: int,
+    pairs: int = 16,
+    last: bool = True,
+) -> Iterator[Undo]:
     """Yield the steps that could have been the last one, in a fixed order.
 
-    Steps removing two coordinates first, then those removing one, then those
-    removing none; the first kind only while ``pairs`` allows and the last only
-    while ``spare`` allows. The order
+    Steps removing two coordinates come first while ``pairs`` is plentiful and
+    last while it is scarce; steps removing none come last of all. A step
+    removing two is offered only while ``pairs`` allows and ``last`` is set, one
+    removing none only while ``spare`` allows. The order
     discards nothing -- every move is still walked -- and it decides which
     chain is reached first, which is what a bounded budget makes visible. A
     step that removes two coordinates gets twice as far for the same depth.
@@ -226,13 +232,23 @@ def moves(current: PolynomialMap, spare: int, pairs: int = 16) -> Iterator[Undo]
         not in sp.expand(current.components[position] - variable).free_symbols
     )
 
-    for first, second in combinations(tuple(peelable), 2) if pairs > 0 else ():
-        if peelable[first] != peelable[second]:
-            continue
-        target = peelable[first]
-        found = factor(current, target, (first, second), (first, second))
-        if found is not None:
-            yield Undo(target, (first, second), (first, second), found)
+    doubles = []
+    if pairs > 0 and last:
+        for first, second in combinations(tuple(peelable), 2):
+            if peelable[first] != peelable[second]:
+                continue
+            target = peelable[first]
+            found = factor(current, target, (first, second), (first, second))
+            if found is not None:
+                doubles.append(Undo(target, (first, second), (first, second), found))
+
+    # Ist die Erlaubnis reichlich, kommen sie zuerst: ein Zug, der zwei
+    # Koordinaten entfernt, kommt fuer dieselbe Tiefe doppelt so weit. Ist sie
+    # knapp, kommen sie zuletzt -- bei ``pairs = 1`` ist der eine solche Schritt
+    # nach REV-8 der letzte des Abtrags, und ihn zuerst zu versuchen gibt die
+    # einzige Erlaubnis frueh aus.
+    if pairs > 1:
+        yield from doubles
 
     for fresh, target in peelable.items():
         # BCW-12: eine frische Koordinate darf beide Plaetze fuellen. ``G``
@@ -251,6 +267,9 @@ def moves(current: PolynomialMap, spare: int, pairs: int = 16) -> Iterator[Undo]
             found = factor(current, target, (carried, fresh), (fresh,))
             if found is not None:
                 yield Undo(target, (carried, fresh), (fresh,), found)
+
+    if pairs <= 1:
+        yield from doubles
 
     if spare <= 0:
         return
@@ -335,11 +354,18 @@ def peel(
                 if found is not None:
                     return found
 
-        for step in moves(current, spare_left, pairs_left):
+        for step in moves(
+            current,
+            spare_left,
+            pairs_left,
+            last=current.dimension <= source.dimension + 2 or pairs_left > 1,
+        ):
             reached = undo(current, step)
             if reached is None or reached.dimension < source.dimension:
                 continue
             if _stranded(source, reached):
+                continue
+            if _unfinishable(source, reached, spare_left - (0 if step.dropped else 1)):
                 continue
             # Vorwaerts faellt der Grad nie -- die neuen Terme haben Grad
             # hoechstens ``1 + deg Q <= deg(P Q)``, solange kein Faktor konstant
@@ -366,6 +392,31 @@ def peel(
     return PeelOutcome(
         None, budget - max(remaining[0], 0), deepest[0], remaining[0] > 0
     )
+
+
+def _unfinishable(source: PolynomialMap, reached: PolynomialMap, spare: int) -> bool:
+    """Return whether too many components still differ for the steps that are left.
+
+    An undo changes exactly one component, the one its step acted on. Every
+    coordinate that survives the whole peel is a coordinate of the source, so
+    each of those whose component still differs needs at least one more step
+    aimed at it. The steps left are bounded: ``d`` coordinates have to go and a
+    step removes at least one unless it is a spare, so at most ``d + spare``
+    steps remain.
+
+    Cheap, sound, and it bites late, which is where the search spends its time:
+    a peel two steps from the end with all three of the source's components
+    still wrong cannot get there.
+    """
+    remaining = reached.dimension - source.dimension + spare
+    position = {variable: index for index, variable in enumerate(reached.variables)}
+    differing = sum(
+        1
+        for variable, component in zip(source.variables, source.components, strict=True)
+        if sp.expand(reached.components[position[variable]] - component) != 0
+    )
+
+    return differing > remaining
 
 
 def _stranded(source: PolynomialMap, reached: PolynomialMap) -> bool:

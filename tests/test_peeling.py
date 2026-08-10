@@ -142,15 +142,29 @@ def test_the_wrong_factor_does_not_undo(
 # --------------------------------------------------------------------------
 
 
-def test_steps_removing_two_coordinates_come_first(
+def test_steps_removing_two_coordinates_go_where_the_allowance_is(
     one_step: tuple[PolynomialMap, PolynomialMap],
 ) -> None:
-    """Sie kommen fuer dieselbe Tiefe doppelt so weit."""
+    """Zuerst, wenn die Erlaubnis reichlich ist; zuletzt, wenn sie knapp ist.
+
+    Reichlich: ein Zug, der zwei Koordinaten entfernt, kommt fuer dieselbe
+    Tiefe doppelt so weit. Knapp: bei ``pairs = 1`` ist der eine solche Schritt
+    nach REV-8 der letzte des Abtrags, und ihn zuerst zu versuchen gibt die
+    einzige Erlaubnis frueh aus.
+
+    Gemessen an ``alpoege15``, wo die eine Reihenfolge in acht Karten findet und
+    die andere in zweitausend nicht.
+    """
     _, target = one_step
 
-    offered = list(moves(target, spare=0))
+    plentiful = list(moves(target, spare=0, pairs=16))
+    scarce = list(moves(target, spare=0, pairs=1))
 
-    assert len(offered[0].dropped) == 2
+    assert len(plentiful[0].dropped) == 2
+    assert len(scarce[-1].dropped) == 2
+    assert not any(
+        len(step.dropped) == 2 for step in moves(target, spare=0, last=False)
+    )
 
 
 def test_without_a_spare_no_step_that_removes_nothing_is_offered() -> None:

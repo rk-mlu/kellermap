@@ -1413,6 +1413,18 @@ number of steps. Alpoege's map has no carriers, so `a >= 1`, and a chain of the
 seventeen steps its source describes then needs `c = a + 1 >= 2`. A peel
 allowing one such step cannot find that chain whatever its budget.
 
+**REV-9 — What is left to change bounds what is left to do.** `[0.4]` An undo
+changes exactly one component. Every coordinate that survives the whole peel is
+a coordinate of the source, so each of those whose component still differs from
+the source's needs at least one more step aimed at it. At most `d + spare`
+steps remain, where `d` is how many coordinates still have to go, because a
+step removes at least one unless it is a spare. A peel with more differing
+components than remaining steps is discarded.
+
+Sound rather than heuristic, and it bites late, which is where a peel spends
+its time. Two steps from the end with all three of the source's components
+still wrong, there is nowhere to go.
+
 **REV-7 — No completeness, again.** A peel that reaches no chain has shown that
 this peel, under REV-2 and its budget, found none. REV-2 is a decision about
 where to look and not a fact about Keller maps, so a chain outside it is
@@ -1423,7 +1435,7 @@ enumerator either" already asks for.
 
 REV-3, whose second half is a real check on the map being peeled, and REV-5,
 which compares a rebuilt chain against the target. REV-1, REV-2, REV-4 and
-REV-6 to REV-8 are obligations on the library's own conduct.
+REV-6 to REV-9 are obligations on the library's own conduct.
 
 REV-4 is worth a second look by a reviewer all the same. The constant it solves
 for is now a coefficient inside a certificate rather than a presentation
