@@ -39,7 +39,7 @@ along with it. Since 0.3 the same holds for a fifteen-dimensional one.
 
 ## Project Status
 
-Current version: **0.4.0rc2**
+Current version: **0.4.0rc3**
 
 The first milestone covered the algebraic foundations:
 
@@ -83,8 +83,8 @@ one, and reaches the published nineteen-dimensional Keller map of degree three:
   both slots. Both go beyond Proposition (3.1), both are marked as extensions,
   and the published chain needs both.
 - That chain is a verified `Reduction` in the test suite, an independent
-  rendering in plain SymPy, and a search result — three routes to the same
-  seventeen steps.
+  rendering in plain SymPy, and a search result. The search finds a different
+  seventeen-step chain, which is the point: a chain, not the chain.
 
 **Next, 0.5.** Searching without a target. The question changes from "does this
 chain reach that map" to "how few new dimensions does it take to reach degree

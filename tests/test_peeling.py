@@ -567,3 +567,93 @@ def test_a_state_is_walked_once() -> None:
     assert exhausted.reduction is None
     assert exhausted.exhausted
     assert peel(source, target, budget=200).reduction is not None
+
+
+# --------------------------------------------------------------------------
+# Der m = 0 Zweig rechnet im Ring
+# --------------------------------------------------------------------------
+
+
+def test_a_constant_outside_the_domain_is_not_a_move() -> None:
+    """Ueber ``ZZ`` ist ``1/2`` keine Konstante, auch wenn sie so aussieht.
+
+    Gegenbeispiel eines externen Audits. Die beiden gemeinsamen Monome geben
+    ``1`` und ``1/2``; der zweite wurde als Zug ausgegeben, und der Abtrag
+    stuerzte beim Rueckrechnen ab, weil das Ergebnis nicht mehr ueber ``ZZ``
+    lag. Die gueltige Kette war die ganze Zeit im Raum.
+    """
+    a, b, s = sp.symbols("a b s")
+    source = PolynomialMap((s, a, b, x), (s + a * x + x**3, a, b + 2 * x, x))
+    step = BCWStep.build(source, 0, Carried(1), Carried(2), 1, 1)
+
+    assert source.ring.domain.is_ZZ
+    assert step.verify() is None
+    assert all(candidate.factor == 1 for candidate in moves(step.target, spare=1))
+
+    outcome = peel(source, step.target, spare=1)
+
+    assert outcome.reduction is not None
+    assert outcome.reduction.steps[0].coefficient == 1
+
+
+def test_a_parameter_coefficient_is_found_at_m_zero() -> None:
+    """``S*a*x - T*a*x`` ist ein Monom und nicht zwei Summanden.
+
+    Zweites Gegenbeispiel desselben Audits. Die Kuerzung wurde an
+    ``sp.Add.make_args`` gemessen, also sah dieser Schritt nicht wie eine
+    Kuerzung aus, und der Abtrag meldete einen erschoepften Raum nach einem
+    einzigen Zustand. Im Ring gezaehlt ist es ein Term mit Koeffizient
+    ``S - T``.
+    """
+    a, b, s = sp.symbols("a b s")
+    parameters = sp.symbols("S T")
+    source = PolynomialMap(
+        (s, a, b, x),
+        (s + (parameters[0] - parameters[1]) * a * x + x**3, a, b + x, x),
+    )
+    step = BCWStep.build(source, 0, Carried(1), Carried(2), 1, -parameters[1])
+
+    assert str(source.ring.domain) == "ZZ[S,T]"
+    assert step.verify() is None
+
+    outcome = peel(source, step.target, spare=1)
+
+    assert outcome.reduction is not None
+    assert outcome.reduction.steps[0].coefficient == -parameters[1]
+    assert outcome.reduction.target.reordered(step.target.variables) == step.target
+
+
+def test_the_order_of_the_moves_does_not_depend_on_the_hash_seed() -> None:
+    """``moves`` sagt eine feste Reihenfolge zu, und ein ``set`` hat keine.
+
+    Die deduplizierten Konstanten wurden unmittelbar aus einer Menge heraus
+    ausgegeben, also entschied ``PYTHONHASHSEED``, welcher Zug zuerst kam --
+    und bei knappem Budget damit, welche Kette gefunden wird. Sie werden jetzt
+    kanonisch sortiert. Dieser Test prueft die Zusage im Prozess; die
+    Unabhaengigkeit vom Seed selbst ist ausserhalb messbar.
+    """
+    a, b, s = sp.symbols("a b s")
+    first, second = sp.symbols("S T")
+    source = PolynomialMap(
+        (s, a, b, x),
+        (
+            s
+            + (first + second) * a * x
+            + (first - second) * a * b
+            + first * x**3
+            + x**5,
+            a,
+            b + x,
+            x,
+        ),
+    )
+    target = BCWStep.build(source, 0, Carried(1), Carried(2), 1, -second).target
+
+    constants = [
+        candidate.factor
+        for candidate in moves(target, spare=1)
+        if not candidate.dropped
+    ]
+
+    assert constants == sorted(constants, key=sp.default_sort_key)
+    assert [str(constant) for constant in constants] == ["-S", "-S - 2*T", "-S - 2*T"]

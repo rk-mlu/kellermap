@@ -4,6 +4,36 @@ Notable changes per release. Dates are release dates; the milestone plan and
 its reasoning live in `docs/roadmap.md`, the binding obligations of the
 verification surface in `docs/contracts.md`.
 
+## 0.4.0rc3
+
+One release blocker and the remaining findings from the audit of `0.4.0rc2`.
+
+### Fixed
+
+- The `m = 0` branch of `moves` computed in expressions rather than in the ring
+  of the map, and was wrong in both directions. Over `ZZ` it offered a constant
+  of `1/2`, which is not a constant there, and the peel then crashed on a map
+  it could not build -- with the valid chain already in the space. Over
+  `ZZ[S, T]` it measured the shortening with `sp.Add.make_args`, counting
+  `S*a*x - T*a*x` as two summands where the ring sees one term with coefficient
+  `S - T`, so a valid step looked like no shortening at all and the space was
+  reported exhausted after one state. The branch now works on `PolyElement`
+  throughout, converts every quotient into the coefficient domain and discards
+  what does not lie there.
+- The deduplicated constants were iterated straight out of a `set`, so
+  `PYTHONHASHSEED` decided which move came first and, on a tight budget, which
+  chain was found. They are sorted canonically.
+- BCW-8 gave the transported image as `c_index - c_u * c_w` after introducing
+  the coefficient, in the contract and in the docstring. Both now carry the
+  weight.
+- Documentation from before `0.4.0rc2`: `architecture.md` said no direction had
+  found the chain and described `m` as the number of `Fresh` slots;
+  `references.md` said the sequence was missing; `peeling.py` and
+  `search_alpoege19.py` still spoke of the withdrawn diagonal, and the latter
+  claimed a first round below 68425 maps was wasted, where eighteen now
+  suffice. The README called three routes "the same seventeen steps", and the
+  search finds a different valid seventeen-step chain.
+
 ## 0.4.0rc2
 
 Three release blockers and four further findings from the audit of `0.4.0rc1`.

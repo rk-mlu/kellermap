@@ -20,8 +20,8 @@ What it does:
   itself;
 * searches with a doubling budget, printing what each round cost and how far
   it got;
-* on success prints the chain step by step, together with the diagonal ``D``
-  of SEA-5, in a form that can be read into ``tests/test_alpoege19.py``.
+* on success prints the chain step by step, with the coefficient each step
+  carries, in a form that can be read into ``tests/test_alpoege19.py``.
 
 Why ``w2`` is replaced, and why only the forward phase needs it: its published
 component is the residue of a later step rather than an introduced value, so
@@ -108,12 +108,13 @@ The peel finds the chain in **eighteen maps**, in a few seconds. It is not the
 chain the audit reconstructed but another valid one of seventeen steps, which
 is what "a chain, not the chain" has meant since WP 1.
 
-A first round below 68425 maps is wasted. The run of 8 August 2026 exhausted a
-strictly smaller space at that count -- the search then stopped at the last
-introduction, so no chain could *end* with a step that introduces nothing, and
-this map needs at least one. The space searched now contains that one and
-cannot be smaller. The episode is also why an exhausted space is reported
-together with the rules that defined it.
+Eighteen maps are enough for the peel, so the default first round is far larger
+than it needs to be and the doubling never runs. It was sized for the forward
+search, which exhausted a space of 68425 maps in August 2026 without a chain --
+a space that could not contain one, because the walk stopped at the last
+introduction and this map needs a step that introduces nothing after it. That
+episode is why an exhausted space is reported together with the rules that
+defined it.
 
 The exit status is 0 if a chain was found, 2 if the space was exhausted
 without one, and 1 if the budget ran out first. The three are different

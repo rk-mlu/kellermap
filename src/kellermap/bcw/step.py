@@ -702,11 +702,13 @@ class BCWStep:
         component ``index`` by the product of the two slot values at that
         image. A ``Fresh`` slot contributes ``0`` there, so for ``m >= 1``
         the product vanishes and the image is unchanged apart from padding.
-        Only at ``m = 0`` does the image move, to ``c_index - c_u * c_w``.
+        Only at ``m = 0`` does the image move, to
+        ``c_index - coefficient * c_u * c_w``, with the coefficient of
+        BCW-11.
 
         Any constant fill would do, as long as the points share it; zero is
         fixed by the contract, because a fill ``(s, t)`` merely moves the
-        image component ``index`` to ``c_index - s t``.
+        image component ``index`` to ``c_index - coefficient * s * t``.
         """
         collision.verify(self._source)
 

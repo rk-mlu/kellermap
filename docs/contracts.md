@@ -601,15 +601,23 @@ a  |-->  (a, -P(a), -Q(a)),        c  |-->  (c, 0, 0)
 which is `H^-1` applied to the padded point and `G` applied to the padded
 image. Any constant fill would do — the points must merely share it — and the
 contract fixes zero, because a non-zero fill `(s, t)` moves the image component
-`index` to `c_index - s*t` and buys nothing.
+`index` to `c_index - coefficient * s * t` and buys nothing.
 
 A `Carried` slot appends nothing to a point, because it adds no
 coordinate. It does affect the image. `G` reduces component `index` of the
-padded image by the product of the two slot values at that image: `0` for a
-`Fresh` slot, and `c_j` for `Carried(j)`. So for `m ≥ 1` at least one of the
-two factors is zero and the image is unchanged apart from padding, as before.
-Only at `m = 0` can the image move, and it then moves to
-`c_index - c_u * c_w`. This is the only respect in which reusing a coordinate
+padded image by the weighted product of the two slot values at that image: `0`
+for a `Fresh` slot, and `c_j` for `Carried(j)`. So for `m ≥ 1` at least one of
+the two factors is zero and the image is unchanged apart from padding, as
+before. Only at `m = 0` can the image move, and it then moves to
+
+```
+c_index - coefficient * c_u * c_w
+```
+
+with the `coefficient` of BCW-11. The weight was missing here and in the
+implementation until `0.4.0rc2`, and no test caught it because every collision
+image in the suite had zeros in its carried coordinates, where a product
+remembers no factor. This is the only respect in which reusing a coordinate
 differs from introducing one, beyond the saved dimension.
 
 ### Supplied versus constructed

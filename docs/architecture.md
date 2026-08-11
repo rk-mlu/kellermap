@@ -511,7 +511,9 @@ rebuilt forwards with `BCWStep.build`, verified, and only then a `Reduction`.
 That the two agree is checked and not assumed, which is REV-5 and the reason
 peeling could be added without touching what a certificate means.
 
-Neither direction found the chain to the published map. Both are bounded by
+Peeling reaches the published nineteen-dimensional map in eighteen examined
+maps; the forward search does not reach it under any setting tried, and SEA-14
+says which chains are outside it in principle. Both directions are bounded by
 rules that are decisions rather than facts, and every one of those rules is
 named in `contracts.md` so that a failure can be attributed to one.
 
@@ -538,8 +540,9 @@ identity check would then compare one of them against the other.
 A step is given two slots, and each supplies one factor. `Fresh(P, u)`
 introduces a new generator `u`, whose component in the target is `u + P`.
 `Carried(j)` reuses coordinate `j` of the source, which already has the form
-`X_j + P`. `m` is the number of `Fresh` slots, so a step introduces two, one
-or no generators.
+`X_j + P`. `m` is the number of *distinct* fresh variables -- two slots may
+name one, in which case the step introduces it once -- so a step introduces
+two, one or no generators.
 
 Reusing a coordinate is not in the paper. It is admitted because the identity
 holds for every `m`, and because a reduction that reuses carriers reaches a

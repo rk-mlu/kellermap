@@ -298,9 +298,10 @@ with sixteen carrier variables, so not two per step, and the carriers `x^2`,
 `xy`, `y^2`, `yz`, `xz`, `x^2 y`, `xy^2`, `y^2 z` are building blocks used by
 more than one step. Since 0.3 a `BCWStep` can express such a step.
 
-What is missing is the sequence. The note publishes the map but not its
-factorization, so it cannot be read off the way BCW17's can. Reconstructing it
-is a search problem and therefore 0.4.
+What the note does not publish is the sequence. It gives the map but not its
+factorization, so the factorization cannot be read off the way BCW17's can.
+Reconstructing it was the work of 0.4, and "The chain to the
+nineteen-dimensional map" below records how it was done and by whom.
 
 This paragraph used to add that the `w`-numbering is not the order of
 introduction, on the evidence that the component of `w2` reads `w9` and `w13`.

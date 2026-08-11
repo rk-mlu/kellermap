@@ -14,13 +14,12 @@ Undoing needs no inverse. A step subtracts the product of its two slot
 components, so ``F_i = F'_i +- F'_a F'_b`` recovers the map before it, and every
 peeled coordinate must then occur in no remaining component.
 
-The sign is not fixed, and that is the one place where peeling still has to
-look outwards. This library's ``G`` always subtracts, but the published map is
-not in that convention, and the difference is the diagonal ``D`` of SEA-5.
-Peeling that map with ``+`` alone stops at dimension 18 and with ``-`` alone at
-17, while both together reach 15. Each step peeled with ``-`` is one linear
-equation ``d_i d_a d_b = -1`` over GF(2), so the constraints on ``D`` accumulate
-while the peel runs rather than having to be solved for afterwards.
+The constant a step removed is not fixed and is not guessed. It is solved: the
+requirement that the peeled coordinates vanish is linear in it. That constant
+is the ``coefficient`` of BCW-11 and goes into the step the peel rebuilds. It
+was an entry of a diagonal ``D`` between work packages 7 and 10, because the
+step had nowhere to put a scalar; BCW-11 gave it one, and SEA-5 went back to
+plain equality.
 
 A peel is not a certificate. What it produces is a structure; the chain is
 rebuilt forwards with ``BCWStep.build``, verified, and only then a
@@ -34,7 +33,7 @@ from dataclasses import dataclass
 from itertools import combinations, combinations_with_replacement
 
 import sympy as sp
-from sympy.polys.polyerrors import CoercionFailed
+from sympy.polys.polyerrors import CoercionFailed, ExactQuotientFailed
 from sympy.polys.rings import ring as polynomial_ring
 
 from .bcw import BCWStep, Carried, Fresh
@@ -160,8 +159,8 @@ def factor(
     """Return the constant that makes the dropped coordinates cancel.
 
     A step subtracts ``d_i / (d_u d_v)`` times the product of its slot
-    components once the map has been conjugated by a diagonal ``D``, so undoing
-    it adds some non-zero constant times that product back. The constant is not
+    components, so undoing it adds some non-zero constant times that product
+    back. The constant is not
     guessed: the terms carrying a dropped coordinate have to vanish, which
     fixes it, and ``None`` says no constant of the coefficient domain does. A
     parameter of that domain is a constant here: ``T`` in ``ZZ[T]`` is a legal
@@ -295,25 +294,32 @@ def moves(
     if spare <= 0:
         return
 
-    components = dict(zip(current.variables, current.components, strict=True))
-    sizes = {
-        variable: len(sp.Add.make_args(sp.expand(component)))
-        for variable, component in components.items()
-    }
-    # Das Produkt der beiden Platzkomponenten haengt weder vom Ziel noch vom
-    # Vorzeichen ab. Es einmal je Paar zu rechnen statt einmal je Kandidat ist
+    # Von hier an wird im Ring der Karte gerechnet und nicht in Ausdruecken.
+    # Ausdruecke haben zweimal getaeuscht: ``S*a*x - T*a*x`` sind zwei
+    # Summanden und ein Monom mit Koeffizient ``S - T``, also sah ein Schritt
+    # nicht wie eine Kuerzung aus; und ein Quotient wie ``1/2`` sieht wie eine
+    # Konstante aus, liegt aber nicht in ``ZZ``, was den Abtrag zum Absturz
+    # brachte. Beides hat ein externes Audit gefunden.
+    ring = current.ring
+    domain = ring.domain
+    polynomials = dict(zip(current.variables, current.to_polynomials(), strict=True))
+    sizes = {variable: len(value.terms()) for variable, value in polynomials.items()}
+
+    # Das Produkt der beiden Platzkomponenten haengt weder vom Ziel noch von der
+    # Konstanten ab. Es einmal je Paar zu rechnen statt einmal je Kandidat ist
     # bei neunzehn Koordinaten der Unterschied zwischen einer und vierzig
     # Multiplikationen dichter Polynome.
+    #
     # With replacement: BCW-6 admits both slots naming the same coordinate, and
     # ``combinations`` alone would never offer ``G = X_i - X_j**2``. The step
     # type has accepted it since 0.3; the peel did not enumerate it.
     for left, right in combinations_with_replacement(carriers, 2):
-        product = sp.expand(components[left] * components[right])
-        shared = sp.Poly(product, *current.variables).as_dict()
+        product = polynomials[left] * polynomials[right]
+        shared = dict(product.terms())
         for target, size in sizes.items():
             if size <= 2 or target in (left, right):
                 continue
-            here = sp.Poly(components[target], *current.variables).as_dict()
+
             # A step that introduces nothing cancels no coordinate, so the
             # constant is not fixed by REV-3. What fixes it is that the step
             # removed something: every monomial the two share gives the one
@@ -322,17 +328,38 @@ def moves(
             #
             # Several shared monomials often give the same constant, and each
             # gave a move of its own until 0.4.0rc2: thirty-six candidates at
-            # the root of the published map against sixteen distinct ones, ten
-            # of them threefold.
-            constants = {
-                sp.cancel(-coefficient / shared[monomial])
-                for monomial, coefficient in here.items()
-                if monomial in shared
-            }
-            for candidate in constants:
-                shortened = sp.expand(components[target] + candidate * product)
-                if shortened != 0 and len(sp.Add.make_args(shortened)) < size:
-                    yield Undo(target, (left, right), (), candidate)
+            # the root of the published map against sixteen distinct ones.
+            constants = set()
+            for monomial, coefficient in polynomials[target].terms():
+                if monomial not in shared:
+                    continue
+                try:
+                    constants.add(-domain.exquo(coefficient, shared[monomial]))
+                except (
+                    CoercionFailed,
+                    ExactQuotientFailed,
+                    NotImplementedError,
+                    ZeroDivisionError,
+                ):
+                    # Der Quotient liegt nicht in der Koeffizientendomaene. Ein
+                    # Schritt mit ihm ist ueber diesem Ring keiner.
+                    continue
+
+            # Sortiert und nicht in der Reihenfolge einer Menge: ``moves``
+            # sagt zu, die Zuege in fester Reihenfolge auszugeben, und die
+            # Iteration ueber ein ``set`` haengt am Hash-Seed. Bei knappem
+            # Budget entscheidet das, welche Kette zuerst gefunden wird.
+            for candidate in sorted(
+                constants, key=lambda value: sp.default_sort_key(domain.to_sympy(value))
+            ):
+                shortened = polynomials[target] + candidate * product
+                if shortened and len(shortened.terms()) < size:
+                    yield Undo(
+                        target,
+                        (left, right),
+                        (),
+                        sp.sympify(domain.to_sympy(candidate)),
+                    )
 
 
 def peel(
@@ -347,7 +374,8 @@ def peel(
 
     Nothing is supplied but the two maps: no value pool, no names, no sign
     convention (REV-1). What comes back is a chain built by ``BCWStep.build``
-    and verified, together with the diagonal ``D`` of SEA-5, or nothing.
+    and verified, or nothing. The endpoint equals the target exactly; there is
+    no diagonal to reconcile, because each step carries its own constant.
 
     Nothing about the ring changes along the way: the coefficient domain and
     the monomial order of the target are carried into every intermediate map,
