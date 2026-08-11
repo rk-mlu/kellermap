@@ -412,7 +412,7 @@ class BCWStep:
     provenance: Provenance
 
     @classmethod
-    def build(cls, source, index, left, right, filtration_level=1, coefficient=1): ...
+    def build(cls, source, index, left, right, level=1, coefficient=1): ...
 
     @property
     def P(self) -> sp.Expr: ...
@@ -468,12 +468,14 @@ variables of either map; those are `source.variables` and `target.variables`.
 If both a factorization and the automorphisms built from it were stored, the
 two could disagree. Write `A` and `B` for the *coordinates* of the two slots:
 the fresh generator for a `Fresh` slot, and `X_j` for a `Carried(j)` slot.
-Then
+Then, writing `level` for `filtration_level` so the sketch fits the page,
 
-    G:  X_index  |-->  X_index - A*B
-    H:  one factor per Fresh slot,  u |--> u + P
+    G:  X_index  |-->  X_index - coefficient * A * B
+    H:  one factor per fresh generator,  u |--> u + P
 
-and `H` is the identity when `m = 0`.
+and `H` is the identity when `m = 0`. The coefficient is BCW-11 and defaults to
+one; per *generator* and not per slot is BCW-12, where two `Fresh` slots naming
+one variable displace it once.
 
 ### Why one type and not two
 
@@ -1468,22 +1470,28 @@ Sound rather than heuristic, and it bites late, which is where a peel spends
 its time. Two steps from the end with all three of the source's components
 still wrong, there is nowhere to go.
 
-**REV-10 — A step that left no trace of its constant is out of reach.** A step
+**REV-10 — At `m = 0` only constants that cancel a monomial are tried.** A step
 introducing no coordinate is undone by adding `constant * F_a * F_b` back, and
-nothing else in the map says what the constant was. It is read off a monomial
-the step left behind in the component it acted on. If the removed product
-cancelled that component's terms exactly, there is no such monomial, every
-constant gives a map, and the peel would be guessing rather than solving.
+nothing in the map fixes the constant: every value gives a map, and REV-3 has
+no dropped coordinate to work with. What the peel does instead is enumerate the
+constants that make one of the target component's monomials vanish, taking each
+monomial the component shares with the product in turn.
 
-Such a step is therefore outside the space, and this clause is here because
-that is a bound on the search and not a fact about Keller maps. An example, due
-to an external audit: `(s + a*b + x**3, a, b, x)` and the step on `s` with both
-slots carried, whose target is `(s + x**3, a, b, x)`. The step verifies; the
-peel does not find it.
+That is a bound on the search and not a fact about Keller maps, which is why it
+is written here rather than left in the code. Two ways a step falls outside it,
+both found by external audits:
 
-The bound applies only where the coordinate count does not change. A step that
-introduces one has its constant fixed by REV-3, in every monomial carrying the
-coordinate it dropped.
+- The removed product cancelled the target component's terms exactly, so the
+  two share no monomial at all and nothing is tried. Example:
+  `(s + a*b + x**3, a, b, x)` and the step on `s` with both slots carried,
+  whose target is `(s + x**3, a, b, x)`.
+- The two do share a monomial, but the step's own constant is not one that
+  cancels any of them. Example: the same source with `2*a*b`, whose target
+  keeps `a*b`; the step has constant `1` and the peel tries only `-1`.
+
+Both steps verify and neither is found. The bound applies only where the
+coordinate count does not change: a step that introduces one has its constant
+fixed by REV-3, in every monomial carrying the coordinate it dropped.
 
 **REV-7 — No completeness, again.** A peel that reaches no chain has shown that
 this peel, under REV-2 and its budget, found none. REV-2 is a decision about

@@ -864,12 +864,14 @@ that does not use this library, so the check can fail; what the agreement
 shows is that two implementations of the same formulas compute the same thing,
 not that the result matches a published map.
 
-The fourth is a published cubic map in dimension 19, kept as fixed input. Its
-reduction reuses carrier variables across steps, which `BCWStep` has been able
-to express since 0.3. What is missing is the ordered sequence of steps: the
-source publishes the map but not its factorization, and this project has not
-reconstructed one. It is in the suite as an independent second instance and as
-a target for the search in 0.4.
+The fourth is a published cubic map in dimension 19, kept as fixed input. The
+source publishes the map and not its factorization, so the ordered sequence of
+steps had to be reconstructed, and 0.4 did that: the suite holds a chain of
+seventeen `BCWStep` ending at the map exactly, and `peel` finds a second valid
+chain of seventeen steps in eighteen examined maps. Its steps reuse carriers,
+carry coefficients, and one of them puts a single fresh coordinate in both
+slots -- BCW-10, BCW-11 and BCW-12, all three extensions beyond the paper.
+`references.md` records who reconstructed what and in which order.
 
 Searching for a factorization rather than verifying a presented one is 0.4
 throughout.

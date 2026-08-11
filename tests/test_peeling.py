@@ -736,3 +736,66 @@ def test_a_ratio_outside_the_domain_is_not_a_constant() -> None:
     assert made_up.ring.domain.is_ZZ
     assert factor(made_up, s, (b, a), (a,)) is None
     assert factor(over_field(made_up), s, (b, a), (a,)) == sp.Rational(1, 2)
+
+
+def test_a_source_coordinate_matching_the_pattern_is_not_peeled() -> None:
+    """REV-2 ist ein Muster, keine Gewissheit.
+
+    ``z`` steht hier zufaellig in genau zwei Komponenten, wird also probeweise
+    abgetragen -- und die Karte danach enthaelt die Quelle nicht mehr. Alles
+    Weitere setzt voraus, dass sie es tut, und lief in einen ``KeyError``. Der
+    richtige Zug steht spaeter in derselben Liste und wurde nie erreicht.
+    Gegenbeispiel eines externen Audits.
+    """
+    source = PolynomialMap((x, y, z), (x + y**3, y, z + y))
+    step = BCWStep.build(source, 0, Carried(2), Fresh(y**2, u), 0)
+
+    assert step.verify() is None
+
+    outcome = peel(source, step.target, budget=20, pairs=1)
+
+    assert outcome.reduction is not None
+    assert outcome.reduction.target.reordered(step.target.variables) == step.target
+
+
+def test_a_candidate_that_does_not_verify_is_discarded() -> None:
+    """Eine erfolglose Suche gibt keinen Zertifikatsfehler nach aussen.
+
+    Der Abtrag baut hier einen Kandidaten mit einem Faktor vom Grad null. ``H``
+    liegt dann in ``EA^-1``, und BCW-6 lehnt das zu Recht ab -- die Vermutung
+    war falsch, also faellt der Kandidat weg. Der Fehler schlug bis 0.4.0rc4
+    aus ``peel`` heraus. Nullfaktoren bleiben dabei zulaessig: der
+    Self-Fresh-Fall oben braucht sie.
+    """
+    source = PolynomialMap((x, y), (x + y**3, y))
+    target = PolynomialMap(
+        (x, y, u, v),
+        (x + y**3 - (u + 1) * (v + y), y, u + 1, v + y),
+    )
+
+    outcome = peel(source, target, budget=20)
+
+    assert outcome.reduction is None
+    assert outcome.exhausted
+
+
+def test_a_constant_that_cancels_no_monomial_is_not_tried() -> None:
+    """Die zweite Haelfte von REV-10.
+
+    Ziel und Produkt teilen hier das Monom ``a*b``, aber der Koeffizient des
+    Schritts ist ``1`` und der einzige Kandidat, der ein Monom zum Verschwinden
+    braechte, ist ``-1``. Der Schritt ist gueltig und wird nicht gefunden.
+    Gegenbeispiel eines externen Audits, hier als Grenze festgehalten.
+    """
+    a, b, s = sp.symbols("a b s")
+    source = PolynomialMap((s, a, b, x), (s + 2 * a * b + x**3, a, b, x))
+    step = BCWStep.build(source, 0, Carried(1), Carried(2), 1, 1)
+
+    assert step.verify() is None
+    assert step.target.components == (s + a * b + x**3, a, b, x)
+    assert {candidate.factor for candidate in moves(step.target, spare=1)} == {-1}
+
+    outcome = peel(source, step.target, spare=1)
+
+    assert outcome.reduction is None
+    assert outcome.exhausted

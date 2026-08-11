@@ -4,6 +4,38 @@ Notable changes per release. Dates are release dates; the milestone plan and
 its reasoning live in `docs/roadmap.md`, the binding obligations of the
 verification surface in `docs/contracts.md`.
 
+## 0.4.0rc5
+
+Two crash paths out of `peel`, one search bound stated too narrowly, and four
+documentation contradictions, all from the audit of `0.4.0rc4`.
+
+### Fixed
+
+- `peel` raised `KeyError` on a valid one-step chain. REV-2 is a pattern and
+  not a certainty: a coordinate of the *source* can occur in exactly two
+  components by coincidence, is then peeled on trial, and the map that results
+  no longer contains the source, which everything downstream assumed it did.
+  A state missing a source generator is now discarded before anything reads it.
+- `peel` let a `VerificationError` escape. It rebuilds each candidate forwards,
+  and a candidate whose factor has order zero puts `H` in `EA^-1`, which BCW-6
+  rightly refuses. The guess was wrong, so the candidate is dropped; an
+  unsuccessful search must not report a certificate failure. Zero factors stay
+  admissible, since the self-fresh case of `0.4.0rc4` needs them.
+
+### Changed
+
+- REV-10 states the actual bound on the `m = 0` branch. It said only that a
+  step cancelling its target's terms exactly leaves nothing to read the
+  constant from. The branch tries the constants that cancel one of the shared
+  monomials, so a step whose own constant cancels none of them is out of reach
+  as well — `(s + 2ab + x**3, ...)` to `(s + ab + x**3, ...)` with coefficient
+  one, where only `-1` is tried. Both examples are in the clause and in the
+  tests.
+- `architecture.md`, the module text of `tests/test_alpoege19.py` and the class
+  sketch in `contracts.md` no longer say the step sequence is missing or write
+  `G` unweighted, and the `moves` docstring no longer claims that an `m = 0`
+  move must shorten its target.
+
 ## 0.4.0rc4
 
 One release blocker, two functional findings and the documentation

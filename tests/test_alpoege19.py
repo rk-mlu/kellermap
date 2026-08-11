@@ -1,8 +1,9 @@
 """Die 19-dimensionale kubische Keller-Abbildung aus einer fremden Quelle.
 
-Feste Eingabe wie BCW17, und aus demselben Grund: die Schrittfolge liegt nicht
-vor. Anders als bei BCW17 laesst sie sich hier auch nicht ablesen -- die Quelle
-veroeffentlicht die Abbildung, nicht ihre Faktorisierung.
+Feste Eingabe wie BCW17, und aus demselben Grund: die Quelle veroeffentlicht
+die Abbildung, nicht ihre Faktorisierung. Anders als bei BCW17 laesst sich die
+Schrittfolge auch nicht ablesen. Sie wurde in 0.4 rekonstruiert und steht
+unten.
 
 Bis 0.4 stand hier, die ``w``-Nummerierung sei nicht die
 Einfuehrungsreihenfolge, weil ``G5`` die spaeteren ``w13`` und ``w9`` benutzt.
@@ -19,9 +20,10 @@ das: ``x^2``, ``xy``, ``y^2``, ``yz``, ``xz``, ``x^2 y``, ``xy^2``, ``y^2 z``
 sind Bausteine, die mehr als ein Schritt benutzt. Seit 0.3 kann ``BCWStep``
 einen solchen Schritt ausdruecken.
 
-Was fehlt, ist die Schrittfolge. Die Quelle veroeffentlicht die Abbildung, aber
-nicht ihre Faktorisierung. Sie zu rekonstruieren ist eine Suchaufgabe und damit
-Meilenstein 0.4. Bis dahin steht die Abbildung hier als feste Eingabe.
+Die Schrittfolge zu rekonstruieren war Meilenstein 0.4. ``STEPS`` unten haelt
+sie, und ``test_the_peel_finds_a_chain_to_this_map`` zeigt, dass die
+Rueckwaertssuche eine zweite gueltige Kette findet. Herkunft und Reihenfolge
+der Ereignisse: ``docs/references.md``.
 
 Die Kollision wird nicht aus der Tabelle der Quelle uebernommen, sondern aus
 ``w_j = -P_j`` rekonstruiert und danach mit der Tabelle verglichen. Beide Wege

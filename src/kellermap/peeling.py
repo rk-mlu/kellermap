@@ -37,6 +37,7 @@ from sympy.polys.polyerrors import CoercionFailed, ExactQuotientFailed
 
 from .bcw import BCWStep, Carried, Fresh
 from .bcw.step import Factor
+from .errors import VerificationError
 from .polynomial_map import PolynomialMap, clone_ring
 from .reduction import Reduction
 
@@ -258,9 +259,12 @@ def moves(
     chain is reached first, which is what a bounded budget makes visible. A
     step that removes two coordinates gets twice as far for the same depth.
 
-    A step that introduces nothing is admitted only where undoing it makes its
-    target component shorter, which is what a step that removed a product
-    leaves behind.
+    A step that introduces nothing has no dropped coordinate to fix its
+    constant, so the constants tried are those that cancel one of the monomials
+    the target component shares with the product. REV-10 says what that leaves
+    out; the requirement that the component get *shorter* was dropped in
+    0.4.0rc4, because undoing adds a product back and the component usually
+    grows.
     """
     peelable = removable(current)
     carriers = tuple(
@@ -460,6 +464,14 @@ def peel(
             reached = undo(current, step)
             if reached is None or reached.dimension < source.dimension:
                 continue
+            # REV-2 ist ein Muster und keine Gewissheit: eine Koordinate der
+            # Quelle kann zufaellig in genau zwei Komponenten stehen und wird
+            # dann probeweise abgetragen. Die Karte danach kann die Quelle nicht
+            # mehr enthalten, und alles Weitere setzt voraus, dass sie es tut.
+            # Frueher lief ``_unfinishable`` in einen ``KeyError``; ein externes
+            # Audit hat das gebaut.
+            if not set(source.variables) <= set(reached.variables):
+                continue
             if _stranded(source, reached):
                 continue
             if _unfinishable(source, reached, spare_left - (0 if step.dropped else 1)):
@@ -623,15 +635,23 @@ def _forward(
     ]
     level = 1 if all(order >= 2 for order in orders) else 0
 
-    built = BCWStep.build(
-        current,
-        current.variables.index(step.target),
-        factors[0],
-        factors[1],
-        level,
-        step.factor,
-    )
-    built.verify()
+    # Der Schritt wird hier vermutet und nicht behauptet. Schlaegt der Bau oder
+    # die Pruefung fehl, so war die Vermutung falsch und der Kandidat faellt
+    # weg -- eine erfolglose Suche darf keinen Zertifikatsfehler nach aussen
+    # geben. Das Beispiel eines externen Audits: ein Faktor vom Grad null macht
+    # ``H`` zu einem Element von ``EA^-1``, und BCW-6 lehnt das zu Recht ab.
+    try:
+        built = BCWStep.build(
+            current,
+            current.variables.index(step.target),
+            factors[0],
+            factors[1],
+            level,
+            step.factor,
+        )
+        built.verify()
+    except (ValueError, VerificationError):
+        return None
 
     # Nicht erreichbar, und als Selbstpruefung behalten: der Schritt stammt aus
     # dem Rueckrechnen von ``after`` und baut es daher wieder auf.
