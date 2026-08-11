@@ -43,6 +43,18 @@ contradictions from the audit of `0.4.0rc3`.
   `step.py` describe `m` as the number of distinct fresh variables, and the
   class sketch in `contracts.md` carries the coefficient. `step.py` names all
   three extensions beyond Proposition (3.1) and cites BCW-1 to BCW-12.
+- The sentence saying the two derived rows carry different standing, with the
+  label in the first column saying which. Both are labelled `derived` and both
+  mean the same by it; what differs is when each became derivable, and what a
+  derivation establishes is a separate question that the provenance section
+  answers for each.
+- `references.md` and the 0.5 plan record that the coefficient ring is part of
+  the search space rather than a matter of presentation. The linear
+  normalization divides by the determinant, so `bcw17` and `alpoege15` carry
+  genuine fractions and live over `QQ`, while the nineteen-dimensional map was
+  never normalized and is over `ZZ` throughout its chain. A step preserves the
+  domain, so the source fixes what is reachable, and a benchmark figure has to
+  say which space it belongs to.
 - The benchmark table in `references.md` names the two derived maps by their
   functions in `kellermap.examples` rather than by the test modules they lived
   in before 0.4, marks the nineteen-dimensional row as present from a checkout

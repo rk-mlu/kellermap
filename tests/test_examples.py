@@ -180,3 +180,30 @@ def test_the_reductions_reduce_alpoeges_map() -> None:
     assert source.degree() == 7
     assert examples.bcw17().degree() == examples.alpoege15().degree() == 3
     assert source.dimension < examples.alpoege15().dimension
+
+
+def test_the_reference_reductions_are_over_a_field_and_the_source_is_not() -> None:
+    """Der Koeffizientenbereich folgt aus der Normalisierung, nicht aus Stil.
+
+    Die lineare Normalisierung von Kapitel II, Proposition (1.1), dividiert
+    durch die Determinante, also tragen ``bcw17`` und ``alpoege15`` echte
+    Brueche und leben ueber ``QQ``. Alpoeges Abbildung selbst ist nicht
+    normalisiert und liegt ueber ``ZZ``.
+
+    Ein ``BCWStep`` erhaelt den Bereich, also legt der Bereich der Quelle den
+    aller erreichbaren Abbildungen fest. Das ist eine Aussage ueber den
+    Suchraum, und ``roadmap.md`` fuehrt sie fuer 0.5 aus.
+    """
+    source = examples.alpoege()
+
+    assert source.ring.domain.is_ZZ
+    assert source.determinant() == -2
+
+    for reduction in (examples.bcw17(), examples.alpoege15()):
+        assert reduction.ring.domain.is_QQ
+        assert reduction.determinant() == 1
+        assert any(
+            sp.Rational(coefficient).q != 1
+            for component in reduction.to_polynomials()
+            for coefficient in component.coeffs()
+        )

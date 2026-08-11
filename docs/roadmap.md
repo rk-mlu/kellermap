@@ -828,6 +828,30 @@ Benchmark against published reductions of the current reference examples.
 Reproducing known dimensions with machine-verifiable certificates is the first
 correctness target. Improving them is a secondary scientific goal.
 
+### The coefficient ring is part of the search space
+
+A decision this milestone has to take deliberately, because 0.4 took it by
+accident twice and paid for it both times.
+
+A `BCWStep` preserves the coefficient domain, so the domain of the source fixes
+the domain of everything reachable from it. Over `ZZ` a step coefficient must be
+an integer; over `QQ` it need not, and the space is larger. The reference
+examples fall on both sides: `bcw17` and `alpoege15` begin with the linear
+normalization of Chapter II, Proposition (1.1), which divides by the
+determinant and leaves genuine fractions, so both are over `QQ`. The
+nineteen-dimensional map was never normalized, keeps the determinant `-2`, and
+is over `ZZ` with integer coefficients throughout its chain.
+
+So normalizing first is not only a decision about the shape of the first step.
+It commits the search to `QQ`, and a search that then reports a dimension is
+reporting it for a different space than an unnormalized one would. Which space
+a benchmark figure belongs to has to be said with the figure.
+
+What 0.4 paid: a driver built its source over `QQ` against a target over `ZZ`
+and could not have arrived however long it ran, and the backward search
+re-inferred the domain from expressions and lost it. Both were found by
+audits.
+
 This milestone targets research results rather than user-interface features.
 
 ---

@@ -132,14 +132,17 @@ the source archive, which excludes `tests/data.py`: it is somebody else's
 mathematics and its licence could not be established. Without the file the
 tests that need it skip themselves and say why.
 
-The two rows belonging to this project carry different standing, and the label
-in the first column says which. The seventeen-dimensional map is *derived*
-since version 0.2: the suite verifies a chain of eight steps from Alpöge's map
-to it — the linear normalization and seven `BCWStep` — and transports the
-collision along; the provenance section below says what in that is evidence and
-what is a self-check. The fifteen-dimensional one is *derived* since 0.3, when
-steps that reuse a carrier became expressible. What that does and does not
-establish differs from the case above, and the section on it below says how.
+The two rows belonging to this project are both marked *derived*, and both mean
+the same thing by it: the suite builds each of them from Alpöge's map and
+verifies the chain. They differ in when that became possible. The
+seventeen-dimensional map has been derived since version 0.2, by a chain of
+eight steps — the linear normalization and seven `BCWStep` — with the collision
+transported along. The fifteen-dimensional one has been derived since 0.3, when
+steps that reuse a carrier became expressible.
+
+What a derivation does and does not establish is a separate question from
+whether there is one, and the two cases differ there. The provenance section
+below says what is evidence and what is a self-check, for each.
 
 Both maps moved into `kellermap.examples` in 0.4, which changes where they are
 written and not who computed them.
@@ -147,8 +150,22 @@ written and not who computed them.
 The rows are not directly comparable. BCW reduce in two stages, first to
 degree 3 and then to cubic homogeneous form; the 24-variable map has completed
 both, the others only the first. A conservative Bass–Connell–Wright route on
-the same source is reported at 79 variables. The dimension-19 map keeps the
-determinant −2, so it has not been linearly normalized.
+the same source is reported at 79 variables.
+
+The determinant column also records a difference in the coefficient ring, and
+it is not a matter of presentation. The two derived maps begin with the linear
+normalization of Chapter II, Proposition (1.1), which divides by the
+determinant, so they carry genuine fractions — `1/2`, `-1/2`, `-3/2` — and live
+over `QQ`. The dimension-19 map keeps the determinant −2, so it was never
+normalized, and it and its whole chain are over `ZZ` with integer coefficients
+throughout.
+
+Since a `BCWStep` preserves the coefficient domain, the domain of the source
+fixes the domain of everything reachable from it. Normalizing first is
+therefore a choice about the search space and not only about the shape of the
+first step: over `ZZ` a step coefficient must be an integer, over `QQ` it need
+not. Milestone 0.5 searches without a fixed target and has to make that choice
+deliberately; `roadmap.md` records it.
 
 Comparing them meaningfully needs certificates, which 0.2 introduced.
 Reproducing the dimension-19 map's own step sequence was the target of 0.4 and
