@@ -35,6 +35,12 @@ documentation contradictions, all from the audit of `0.4.0rc4`.
   sketch in `contracts.md` no longer say the step sequence is missing or write
   `G` unweighted, and the `moves` docstring no longer claims that an `m = 0`
   move must shorten its target.
+- The 0.5 plan records where a peel spends its time, measured under
+  `cProfile`: in SymPy expression work rather than in coefficient arithmetic.
+  Working in the ring throughout, which `undo` still does not, is the lever.
+  `gmpy2` is not: measured with and without, it gains about six per cent, less
+  than the variation between two runs, and adopting it would double the
+  configurations the release chain has to cover for a gain in the noise.
 
 ## 0.4.0rc4
 

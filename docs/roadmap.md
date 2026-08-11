@@ -828,6 +828,44 @@ Benchmark against published reductions of the current reference examples.
 Reproducing known dimensions with machine-verifiable certificates is the first
 correctness target. Improving them is a secondary scientific goal.
 
+### Where the time goes
+
+Measured before 0.5 begins, so that the effort goes where it pays. A peel
+against the published nineteen-dimensional map costs about 3.8 seconds under
+`cProfile`, and the profile is flat in an informative way:
+
+| | share |
+| --- | --- |
+| `undo`, of which `from_expr` is half | 1.30 s |
+| `_forward`, of which `verify` is most | 1.33 s |
+| `moves` | 0.75 s |
+| SymPy's expression cache, 150 730 calls | 0.94 s |
+| `expand` | 0.67 s |
+
+The time is in SymPy expression work — `expand`, `from_expr`, the cache — and
+not in the arithmetic of individual coefficients. `from_expr` runs 2840 times
+and `expand` 4378 times for eighteen examined maps.
+
+So the lever is to work in the ring throughout. The `m = 0` branch of `moves`
+already does, since `0.4.0rc3`; `undo` still goes through expressions and
+rebuilds a `PolynomialMap` from them at every step. Moving it to `PolyElement`
+is a change to this project's own code, which can be measured and verified,
+and it should come before any wider search.
+
+What is *not* the lever: `gmpy2`. SymPy uses it for `ZZ` and `QQ` when it is
+installed, and the maintainer asked whether it would help. Measured with and
+without, on the same machine: `peel` on the fifteen-dimensional map 0.73 s
+against 0.67 s, on the nineteen-dimensional one 0.94 s against 0.89 s, and the
+full suite varies more between two runs of one configuration than between the
+two configurations. The coefficients here are `1/2`, `-3`, `7`, `9`, and Python
+is already fast on numbers that size; `gmpy2` wins on large ones.
+
+It is also not free to adopt. `GROUND_TYPES` is global rather than per ring, so
+a test computing over `QQ` would run through different code depending on the
+environment, and the three reconstruction scripts are exact rational arithmetic
+whose independence two audits have examined. The release chain would double its
+configurations for a gain in the noise.
+
 ### A second source
 
 Alpöge's map is one starting point. arXiv:2608.00222v1 §3.5 gives another
