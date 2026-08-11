@@ -43,6 +43,12 @@ contradictions from the audit of `0.4.0rc3`.
   `step.py` describe `m` as the number of distinct fresh variables, and the
   class sketch in `contracts.md` carries the coefficient. `step.py` names all
   three extensions beyond Proposition (3.1) and cites BCW-1 to BCW-12.
+- A second family of counterexamples is recorded in `references.md`:
+  arXiv:2608.00222v1, whose §3.5 gives another three-dimensional Keller map.
+  Its component degrees, its determinant and a collision were recomputed here;
+  its fiber count was not. It is over `QQ` and unnormalized, and its collision
+  is not rational, so it is a different search space and would need a
+  `Collision` over a number field. The 0.5 plan names it as a second source.
 - The sentence saying the two derived rows carry different standing, with the
   label in the first column saying which. Both are labelled `derived` and both
   mean the same by it; what differs is when each became derivable, and what a

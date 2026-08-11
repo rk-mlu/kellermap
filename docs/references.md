@@ -76,6 +76,61 @@ dimension `n >= 3` — append identity coordinates — while `n = 2` remains ope
   Isabelle/HOL. It covers the published counterexample, not the
   seventeen-dimensional reduction of it used here.
 
+### A second family of counterexamples
+
+Shuhong Gao, *Counterexamples to the Jacobian conjecture in dimensions greater
+than two*, arXiv:2608.00222v1, 31 July 2026.
+
+The paper gives a self-contained account of the tangent-sweep mechanism that
+Speyer isolated in Alpöge's map, and generalizes it from plane curves to
+direction fields on hypersurfaces, producing counterexamples in every dimension
+above two and, in each dimension, of arbitrarily large geometric degree. Five
+explicit maps are worked out. Its §3.5 gives a second three-dimensional one,
+built on a rational quartic curve with two cusps and a node.
+
+The paper carries an AI disclosure: the idea and framework are the author's,
+and a language model assisted in the proofs and the writing. Recorded because
+provenance is recorded, not because it changes what a verified identity is
+worth.
+
+That map, called `G` there, was checked here against the paper's own claims,
+and the checks are worth listing because they are what a second source is for:
+
+| Claim of Theorem 3.5 | Recomputed here |
+| --- | --- |
+| component degrees 4, 11, 12 | 4, 11, 12 |
+| Jacobian determinant identically 2 | 2 |
+| generic fiber of four points | a fiber of three exhibited, see below |
+
+The fiber count itself was not recomputed. What was recomputed is a collision,
+which is what makes the map a counterexample and what this project can check:
+over the target `(0, 1, 1)` the three points
+
+    (0, 1/2, -1/4),
+    (±2√23·i/23, 1/6 ± 2√23·i/3, -253/6 ± √23·i/3)
+
+are distinct and share their image. The paper's own sample point `(0, 1/2,
+-1/4)` over `(0, 1, 1)` is the first of them.
+
+Two properties matter for how this map could be used, and neither is a defect:
+
+- Its coefficients include `3/8`, `9/4` and `43/2`, so it is over `QQ`, and its
+  determinant is 2, so it is not normalized. Alpöge's map is over `ZZ` with
+  determinant −2, and the two derived reductions are over `QQ` with determinant
+  1. This is a third combination, and since a step preserves the coefficient
+  domain it is a different search space again.
+- The collision above is not rational: two of its three points live over
+  `Q(√-23)`. Alpöge's collision is rational, and every `Collision` in this
+  repository so far has been. Carrying this one would need the coefficient
+  domain to be a number field, which nothing here has required yet.
+
+Gallagher's family, reference [12] of the same paper, contains an instance of
+geometric degree four as well; the author states that the map above was
+obtained independently.
+
+Not vendored. The licence of the preprint could not be established, and the
+rule of `AGENTS.md` applies to it as it does to the nineteen-dimensional map.
+
 ### Historical note
 
 **Rodríguez Díaz, L. O.** *On the Origin of the Jacobian Conjecture.* Comptes

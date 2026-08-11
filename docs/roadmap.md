@@ -828,6 +828,25 @@ Benchmark against published reductions of the current reference examples.
 Reproducing known dimensions with machine-verifiable certificates is the first
 correctness target. Improving them is a secondary scientific goal.
 
+### A second source
+
+Alpöge's map is one starting point. arXiv:2608.00222v1 §3.5 gives another
+three-dimensional Keller map, of component degrees 4, 11 and 12 and Jacobian
+determinant 2, built on a rational quartic with two cusps and a node.
+`references.md` records what of it was recomputed here and what was not.
+
+It is a harder source in every respect that matters to a search. Degree 12
+against Alpöge's 7 means more displacement to divide at every step. It is over
+`QQ` and unnormalized, which is a third combination and, by the section below,
+a third search space. And the collision that makes it a counterexample is not
+rational — two of its three points live over `Q(√-23)` — so carrying it would
+need a `Collision` over a number field, which nothing here has needed.
+
+That last point is the one to decide before the map is used rather than after.
+A reduction can be built and verified without a collision; what a collision
+buys is the check that the chain preserves non-injectivity, and BCW-8 is the
+obligation that would have to hold over the larger domain.
+
 ### The coefficient ring is part of the search space
 
 A decision this milestone has to take deliberately, because 0.4 took it by
