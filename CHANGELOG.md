@@ -43,6 +43,11 @@ contradictions from the audit of `0.4.0rc3`.
   `step.py` describe `m` as the number of distinct fresh variables, and the
   class sketch in `contracts.md` carries the coefficient. `step.py` names all
   three extensions beyond Proposition (3.1) and cites BCW-1 to BCW-12.
+- The benchmark table in `references.md` names the two derived maps by their
+  functions in `kellermap.examples` rather than by the test modules they lived
+  in before 0.4, marks the nineteen-dimensional row as present from a checkout
+  and not from the source archive, and reports the step sequence of that map as
+  reproduced rather than as the target of a milestone still running.
 
 ## 0.4.0rc3
 

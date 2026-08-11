@@ -37,8 +37,8 @@ numbers from it:
 conjecture. X, 20 July 2026.
 <https://x.com/__alpoge__/status/2079028340955197566>
 
-The map in `tests/test_polynomial_map.py` and the normalization input in
-`tests/test_bcw17.py` are this map:
+The map in `tests/test_polynomial_map.py` and the normalization input of
+`examples.bcw17()` are this map:
 
     F(x, y, z) = ( (1+xy)^3 z + y^2 (1+xy) (4+3xy),
                    y + 3x (1+xy)^2 z + 3x y^2 (4+3xy),
@@ -117,24 +117,32 @@ file it rests on. Nothing in this project depends on the year.
 ## Related cubic Keller-map benchmarks
 
 Useful as comparison and as benchmark targets for milestone 0.5. Note that
-these are *different* reductions, not alternative descriptions of the map in
-`tests/test_bcw17.py`.
+these are *different* reductions, not alternative descriptions of
+`examples.bcw17()`.
 
 | Source | Dimension | Shape | Determinant | In the suite |
 | --- | --- | --- | --- | --- |
-| this project, `alpoege15` (derived) | 15 | degree 3 | 1 | yes |
-| this project, `tests/test_bcw17.py` (derived) | 17 | degree 3 | 1 | yes |
-| <https://rhicksrad.github.io/jacobian-degree3/> | 19 | degree 3 | −2 | yes |
+| this project, `examples.alpoege15()` (derived) | 15 | degree 3 | 1 | yes |
+| this project, `examples.bcw17()` (derived) | 17 | degree 3 | 1 | yes |
+| <https://rhicksrad.github.io/jacobian-degree3/> | 19 | degree 3 | −2 | yes* |
 | <https://github.com/wtho704/explicit-cubic-homogeneous-jacobian-counterexample> | 24 | cubic homogeneous | 1 | no |
+
+\* The nineteen-dimensional map is in the suite from a checkout and not from
+the source archive, which excludes `tests/data.py`: it is somebody else's
+mathematics and its licence could not be established. Without the file the
+tests that need it skip themselves and say why.
 
 The two rows belonging to this project carry different standing, and the label
 in the first column says which. The seventeen-dimensional map is *derived*
 since version 0.2: the suite verifies a chain of eight steps from Alpöge's map
-to it and transports the collision along; the provenance section below says
-what in that is evidence and what is a self-check. The fifteen-dimensional one
-is *derived* since 0.3, when steps that reuse a carrier became expressible.
-What that does and does not establish differs from the case above, and the
-section on it below says how.
+to it — the linear normalization and seven `BCWStep` — and transports the
+collision along; the provenance section below says what in that is evidence and
+what is a self-check. The fifteen-dimensional one is *derived* since 0.3, when
+steps that reuse a carrier became expressible. What that does and does not
+establish differs from the case above, and the section on it below says how.
+
+Both maps moved into `kellermap.examples` in 0.4, which changes where they are
+written and not who computed them.
 
 The rows are not directly comparable. BCW reduce in two stages, first to
 degree 3 and then to cubic homogeneous form; the 24-variable map has completed
@@ -142,9 +150,11 @@ both, the others only the first. A conservative Bass–Connell–Wright route on
 the same source is reported at 79 variables. The dimension-19 map keeps the
 determinant −2, so it has not been linearly normalized.
 
-Comparing them meaningfully needs the certificates that milestone 0.2
-introduces. Reproducing the dimension-19 map's own step sequence with
-machine-verifiable certificates is the target of 0.4; reproducing published
+Comparing them meaningfully needs certificates, which 0.2 introduced.
+Reproducing the dimension-19 map's own step sequence was the target of 0.4 and
+is done: the suite holds it as a verified `Reduction`, `peel` finds a second
+valid chain of seventeen steps in eighteen examined maps, and "The chain to the
+nineteen-dimensional map" below records how and by whom. Reproducing published
 dimensions more generally is the first target of 0.5, and improving them is
 secondary.
 
@@ -210,8 +220,9 @@ that earlier steps had already bought — `x1²` and `x1x2`, each of which BCW17
 buys twice. Degree 3, Jacobian determinant 1, the same three-point collision,
 with the first thirteen coordinates of each point identical to BCW17's.
 
-It is held in `tests/test_alpoege15.py`, with a second and independent
-rendering of the same chain in `scripts/reconstruct_alpoege15.py`, as
+It is held in `kellermap.examples`, with the chain in
+`tests/test_alpoege15.py` and a second and independent rendering of it in
+`scripts/reconstruct_alpoege15.py`, as
 `reconstruct_bcw17.py` does for the seventeen-dimensional map.
 
 Since 0.3 the suite derives it: a `Reduction` of eight steps, two of which
@@ -319,7 +330,7 @@ while `sp.Matrix(F.jacobian()).det()` did not finish in a quarter of an hour.
 
 ## Provenance of the fixed test data
 
-`tests/test_bcw17.py` contains a 17-dimensional map whose components this
+`examples.bcw17()` returns a 17-dimensional map whose components this
 library did not produce. Since version 0.2 the suite derives it: a `Reduction`
 of eight steps from Alpöge's map — the linear normalization of Chapter II,
 Proposition (1.1), then seven
