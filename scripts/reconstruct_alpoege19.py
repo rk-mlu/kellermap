@@ -5,14 +5,11 @@ of a reduction this repository holds. Like the other two it applies the step
 formula directly rather than calling the library, so that the library has
 something other than itself to agree with.
 
-One qualification, because the docstring said otherwise and an audit was right
-to object. This script imports no name from ``kellermap``, but it executes
-``tests/data.py`` to read the published map, and *that* module imports
-``kellermap`` to build a ``PolynomialMap``. The arithmetic below is
-independent; the data is read through the library's own type. What the module
-supplies is nineteen expressions and three points, so nothing the library
-computes enters the comparison -- but the claim to import nothing was too
-strong.
+It reads the published map from ``tests/data.py``, which holds SymPy constants
+and imports nothing from ``kellermap``. That was not so until ``0.4.0rc4``: the
+module built a ``PolynomialMap``, so the data reached this script through the
+very code it is meant to check, and an audit was right to say the independence
+was incomplete. The map is now built in the test module instead.
 
 It reads the published map from ``tests/data.py``, which the source archive
 does not carry. From a checkout it runs; from an unpacked sdist it says what is

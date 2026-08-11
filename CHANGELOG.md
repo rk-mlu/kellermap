@@ -4,6 +4,46 @@ Notable changes per release. Dates are release dates; the milestone plan and
 its reasoning live in `docs/roadmap.md`, the binding obligations of the
 verification surface in `docs/contracts.md`.
 
+## 0.4.0rc4
+
+One release blocker, two functional findings and the documentation
+contradictions from the audit of `0.4.0rc3`.
+
+### Fixed
+
+- `undo` rebuilt the reduced ring from the printed names of its generators, so
+  `Symbol("x", positive=True)` came back as `Symbol("x")` and a component no
+  longer converted, while `Symbol("x space")` was parsed into two generators.
+  The ring is cloned with the generator objects.
+- `factor` read the constant off the coefficient of the dropped coordinate to
+  the first power only, so a step whose two slots are one fresh coordinate
+  carrying zero -- where the coordinate appears only squared -- looked
+  unreachable. Any monomial carrying the coordinate gives the same constant,
+  and the one of highest degree is taken, chosen canonically so that the term
+  order cannot decide it.
+- The `m = 0` branch required undoing to shorten the target component. That is
+  one case taken for all: undoing adds a product back, so the component usually
+  grows, and the requirement only held where the forward step had grown it.
+  Removed; it costs seven more moves at the root of the published map and
+  changes neither run.
+- `tests/data.py` holds SymPy constants and imports nothing from `kellermap`,
+  so `scripts/reconstruct_alpoege19.py` reads the published map without the
+  code it checks. The `PolynomialMap` is built in the test module.
+
+### Added
+
+- REV-10 states a bound the code had and the page did not: a step introducing
+  no coordinate whose removed product cancelled its target's terms exactly
+  leaves no monomial to read the constant from, so every constant fits and the
+  peel would be guessing. Such a step is outside the space.
+
+### Changed
+
+- `contracts.md`, `roadmap.md`, `architecture.md` and the module text of
+  `step.py` describe `m` as the number of distinct fresh variables, and the
+  class sketch in `contracts.md` carries the coefficient. `step.py` names all
+  three extensions beyond Proposition (3.1) and cites BCW-1 to BCW-12.
+
 ## 0.4.0rc3
 
 One release blocker and the remaining findings from the audit of `0.4.0rc2`.

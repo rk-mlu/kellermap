@@ -50,10 +50,9 @@ the data does not support. It broke nothing while it was there: a chain found
 under a wrong assumption is still checked against the published map itself.
 
 The run has two phases. It peels the published map from the far end first,
-because that direction needs neither the value pool nor the names, reaches
-depth eleven against this map where the forward search stops at six, and
-exhausts its spaces in minutes rather than hours. If the peel finds nothing,
-the forward search follows.
+because that direction needs neither the value pool nor the names and reaches
+this map in eighteen examined maps, where the forward search does not reach it
+at all. If the peel finds nothing, the forward search follows.
 
 Run with::
 
@@ -147,7 +146,7 @@ def setup() -> tuple[PolynomialMap, PolynomialMap, dict[sp.Symbol, sp.Expr]]:
     """Return the source, the published target, and the value pool."""
     data = read("data")
 
-    published = data.ALPOEGE19
+    published = PolynomialMap(data.VARIABLES, data.COMPONENTS)
     carriers = published.variables[3:]
     alpoege = examples.alpoege()
     rename = dict(zip(alpoege.variables, published.variables[:3], strict=True))

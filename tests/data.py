@@ -11,11 +11,16 @@ ausgelieferten Pakets liegt, macht diese Aeusserlichkeit sichtbar, statt sie
 einem Leser als Verzeichnisfrage zu ueberlassen.
 
 Herkunft und was die Uebereinstimmung belegt: ``docs/references.md``.
+
+Reine SymPy-Konstanten, ohne ``kellermap``. Der Grund steht in
+``scripts/reconstruct_alpoege19.py``: dieses Skript rechnet die Reduktion
+unabhaengig von der Bibliothek nach und liest die Zielabbildung von hier. Baute
+dieses Modul die ``PolynomialMap``, so ginge die Konversion der Daten durch
+genau den Code, gegen den geprueft werden soll. Die ``PolynomialMap`` entsteht
+im Testmodul. Ein externes Audit hat darauf hingewiesen.
 """
 
 import sympy as sp
-
-from kellermap import PolynomialMap
 
 x, y, z = sp.symbols("x y z")
 
@@ -87,7 +92,6 @@ COMPONENTS = (
     x * z + w16,
 )
 
-ALPOEGE19 = PolynomialMap(VARIABLES, COMPONENTS)
 
 R = sp.Rational
 

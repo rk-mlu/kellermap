@@ -63,7 +63,6 @@ pytest.importorskip(
 )
 
 from tests.data import (  # noqa: E402, F401
-    ALPOEGE19,
     ALPOEGE_IMAGE,
     ALPOEGE_POINTS,
     CARRIERS,
@@ -92,6 +91,11 @@ from tests.data import (  # noqa: E402, F401
     y,
     z,
 )
+
+# ``tests/data.py`` holds SymPy constants and nothing else, so that
+# ``scripts/reconstruct_alpoege19.py`` can read the map without the library it
+# checks. The map itself is built here.
+ALPOEGE19 = PolynomialMap(VARIABLES, COMPONENTS)
 
 # Die drei Punkte aus der Quelle, zum Vergleich mit der Rekonstruktion.
 

@@ -349,7 +349,8 @@ before the implementation as it was for 0.2.
 
 A step is given two *factor slots*. Each slot supplies one factor, either by
 introducing a new generator (`Fresh`) or by reusing a coordinate of the source
-that already carries the value (`Carried`). The number of `Fresh` slots is `m`,
+that already carries the value (`Carried`). The number of distinct fresh
+variables is `m`,
 so `m ∈ {0, 1, 2}`, and two `Fresh` slots are exactly the step of 0.2.
 
 Two things in the earlier plan for this milestone were dropped during
@@ -744,8 +745,9 @@ seventeen steps and a negative control on the coefficients. It adds
 `scripts/reconstruct_alpoege19.py`, the second independent rendering of a
 reduction this repository holds.
 
-The peel reaches the map in eighteen examined maps -- but not in this package.
-The driver built its source with `over_field`, over `QQ`, while the published
+The peel reaches the map in eighteen examined maps, though not while this
+package ran. The driver built its source with `over_field`, over `QQ`, while
+the published
 map is over `ZZ`, and `PolynomialMap` counts the coefficient domain as part of
 its identity, so the search could not have arrived however long it ran. The
 audit of `0.4.0rc1` found that; `references.md` records what may and may not be

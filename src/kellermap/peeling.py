@@ -34,11 +34,10 @@ from itertools import combinations, combinations_with_replacement
 
 import sympy as sp
 from sympy.polys.polyerrors import CoercionFailed, ExactQuotientFailed
-from sympy.polys.rings import ring as polynomial_ring
 
 from .bcw import BCWStep, Carried, Fresh
 from .bcw.step import Factor
-from .polynomial_map import PolynomialMap
+from .polynomial_map import PolynomialMap, clone_ring
 from .reduction import Reduction
 
 
@@ -134,15 +133,17 @@ def undo(
         return None
 
     # Rebuilding from expressions would infer the coefficient domain and the
-    # monomial order afresh: a map over ``QQ`` came back over ``ZZ`` and
-    # compared unequal to the one it came from, and ``grlex`` came back as
-    # whatever the expressions suggested. Peeling changes which coordinates
-    # there are and nothing else, so the ring is built from the old one.
-    reduced, *_ = polynomial_ring(
-        ", ".join(str(variable) for variable, _ in kept),
-        current.ring.domain,
-        current.ring.order,
-    )
+    # monomial order afresh: a map over ``QQ`` came back over ``ZZ``, and
+    # ``grlex`` came back as whatever the expressions suggested. Peeling
+    # changes which coordinates there are and nothing else, so the ring is
+    # cloned from the old one.
+    #
+    # With the generator objects and not with their printed names. Naming them
+    # gave plain symbols back, so ``Symbol("x", positive=True)`` in a component
+    # no longer matched the ``Symbol("x")`` of the ring and the conversion
+    # failed; a name that is not an identifier was reparsed into several
+    # generators. Both found by an external audit.
+    reduced = clone_ring(current.ring, tuple(variable for variable, _ in kept))
 
     return PolynomialMap.from_ring(
         reduced,
@@ -174,37 +175,54 @@ def factor(
     Until 0.4 this tried ``+1`` and ``-1``. That was too narrow -- see
     ``conjugate`` and ``roadmap.md`` -- and solving costs less than trying two.
     """
-    components = dict(zip(current.variables, current.components, strict=True))
-    product = sp.expand(components[slots[0]] * components[slots[1]])
+    ring = current.ring
+    domain = ring.domain
+    polynomials = dict(zip(current.variables, current.to_polynomials(), strict=True))
+    product = polynomials[slots[0]] * polynomials[slots[1]]
+    position = current.variables.index(dropped[0])
 
-    # One dropped coordinate settles it. A second would give a second equation
-    # for the same constant, and checking that the two agree would duplicate
-    # what ``undo`` does anyway: it requires *every* dropped coordinate to have
-    # vanished, so a constant that suits only the first is rejected there.
-    coordinate = dropped[0]
-    here = sp.expand(components[target]).coeff(coordinate, 1)
-    there = product.coeff(coordinate, 1)
-
-    # Nicht erreichbar: die Komponente eines Platzes ist ``X + P`` und nie
-    # null, also ist das Produkt in jeder Platzkoordinate linear mit einem
-    # Koeffizienten ungleich null.
-    if there == 0:  # pragma: no cover - a slot component is never zero
+    # Der Rest der Zielkomponente ist frei von der abgetragenen Koordinate,
+    # also gibt *jedes* Monom des Produkts, das sie enthaelt, dieselbe
+    # Konstante. Genommen wird das mit dem hoechsten Grad darin: bei zwei
+    # verschiedenen frischen Koordinaten ist das Grad eins wie bisher, und bei
+    # zwei Plaetzen auf einer Koordinate mit Faktor null ist ``(u + 0)**2 =
+    # u**2`` das einzige, das sie ueberhaupt enthaelt. Auf Grad eins allein zu
+    # sehen liess diesen Fall unauffindbar erscheinen; ein externes Audit hat
+    # ihn gebaut.
+    carrying = [
+        (monomial, coefficient)
+        for monomial, coefficient in product.terms()
+        if monomial[position]
+    ]
+    # Nicht erreichbar: einer der beiden Plaetze *ist* die abgetragene
+    # Koordinate, ihre Komponente ist ``X_u + P``, und die andere ist nie null,
+    # also enthaelt das Produkt sie.
+    if not carrying:  # pragma: no cover - a slot component is never zero
         return None
 
-    ratio = sp.cancel(-here / there)
-    if ratio == 0:
+    # Kanonisch und nicht das erste passende: hoechster Grad in der Koordinate,
+    # bei Gleichstand das groesste Monom der Ringordnung. Welches genommen wird,
+    # darf nicht an der Reihenfolge der Terme haengen.
+    monomial, there = max(carrying, key=lambda term: (term[0][position], term[0]))
+    here = dict(polynomials[target].terms()).get(monomial)
+    if here is None:
         return None
 
-    # Konversion statt Inspektion, wie BCW-3, BCW-11 und TRA-2. Ein Test auf
-    # ``free_symbols`` wuerde ``T`` in ``ZZ[T]`` fuer eine Koordinate halten und
-    # einen Koeffizienten ablehnen, den BCW-11 ausdruecklich zulaesst.
-    domain = current.ring.domain
     try:
-        return sp.sympify(domain.to_sympy(domain.from_sympy(ratio)))
-    except (CoercionFailed, sp.SympifyError, TypeError, ValueError):
-        # ``ValueError`` gehoert dazu: ein Bruchkoerper meldet einen nicht
-        # konvertierbaren Ausdruck so und nicht mit ``CoercionFailed``.
+        ratio = -domain.exquo(here, there)
+    except (
+        CoercionFailed,
+        ExactQuotientFailed,
+        NotImplementedError,
+        ZeroDivisionError,
+    ):
+        # Der Quotient liegt nicht in der Koeffizientendomaene. Konversion statt
+        # Inspektion, wie BCW-3, BCW-11 und TRA-2: ein Test auf ``free_symbols``
+        # wuerde ``T`` in ``ZZ[T]`` fuer eine Koordinate halten und einen
+        # Koeffizienten ablehnen, den BCW-11 ausdruecklich zulaesst.
         return None
+
+    return None if not ratio else sp.sympify(domain.to_sympy(ratio))
 
 
 def _squared(current: PolynomialMap, target: sp.Symbol, fresh: sp.Symbol) -> bool:
@@ -316,15 +334,21 @@ def moves(
     for left, right in combinations_with_replacement(carriers, 2):
         product = polynomials[left] * polynomials[right]
         shared = dict(product.terms())
-        for target, size in sizes.items():
-            if size <= 2 or target in (left, right):
+        for target in sizes:
+            if target in (left, right):
                 continue
 
             # A step that introduces nothing cancels no coordinate, so the
-            # constant is not fixed by REV-3. What fixes it is that the step
-            # removed something: every monomial the two share gives the one
-            # constant that cancels it, and only a constant that shortens the
-            # component is offered.
+            # constant is not fixed by REV-3. What fixes it is a monomial the
+            # step left behind: every monomial the two share gives the one
+            # constant that cancels it. Where the removed product cancelled the
+            # component's terms exactly, the two share nothing, every constant
+            # gives a map, and the step is out of reach -- REV-10 says so.
+            #
+            # A candidate used to have to shorten the component. That was one
+            # case taken for all of them: undoing an m = 0 step adds a product
+            # back, so the component usually grows, and the requirement only
+            # held where the forward step had grown it.
             #
             # Several shared monomials often give the same constant, and each
             # gave a move of its own until 0.4.0rc2: thirty-six candidates at
@@ -353,7 +377,7 @@ def moves(
                 constants, key=lambda value: sp.default_sort_key(domain.to_sympy(value))
             ):
                 shortened = polynomials[target] + candidate * product
-                if shortened and len(shortened.terms()) < size:
+                if shortened and shortened != polynomials[target]:
                     yield Undo(
                         target,
                         (left, right),

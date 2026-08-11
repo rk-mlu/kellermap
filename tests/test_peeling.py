@@ -657,3 +657,82 @@ def test_the_order_of_the_moves_does_not_depend_on_the_hash_seed() -> None:
 
     assert constants == sorted(constants, key=sp.default_sort_key)
     assert [str(constant) for constant in constants] == ["-S", "-S - 2*T", "-S - 2*T"]
+
+
+def test_a_step_that_left_no_trace_of_its_constant_is_out_of_reach() -> None:
+    """REV-10, und eine Grenze des Suchraums statt eines Fehlers.
+
+    Der Schritt entfernt ``a*b`` genau, also bleibt in der Zielkomponente kein
+    Monom, das die Konstante verriete. Jede Konstante gibt eine Abbildung; der
+    Abtrag muesste raten. Gegenbeispiel eines externen Audits, hier als Grenze
+    festgehalten -- der Schritt ist gueltig und wird nicht gefunden.
+    """
+    a, b, s = sp.symbols("a b s")
+    source = PolynomialMap((s, a, b, x), (s + a * b + x**3, a, b, x))
+    step = BCWStep.build(source, 0, Carried(1), Carried(2), 1, 1)
+
+    assert step.verify() is None
+    assert step.target.components == (s + x**3, a, b, x)
+
+    outcome = peel(source, step.target, spare=1)
+
+    assert outcome.reduction is None
+    assert outcome.exhausted
+
+
+def test_a_self_fresh_step_with_a_zero_factor_is_found() -> None:
+    """Die Konstante steckt dann in ``u**2`` und nicht in ``u``.
+
+    ``factor`` sah nur auf den Grad eins, also war dieser Schritt unauffindbar
+    und der Kommentar nannte den Fall unerreichbar. Ein Nullfaktor ist kein
+    Sonderfall: eine getragene Koordinate ohne Wert kommt in denselben Karten
+    vor, und der Konstruktor laesst beides zu.
+    """
+    source = over_field(PolynomialMap((x, y), (x + y**3, y)))
+    step = BCWStep.build(source, 0, Fresh(0, u), Fresh(0, u), 1, 3)
+
+    assert step.verify() is None
+
+    outcome = peel(source, step.target)
+
+    assert outcome.reduction is not None
+    assert outcome.reduction.steps[0].coefficient == 3
+    assert outcome.reduction.target.reordered(step.target.variables) == step.target
+
+
+def test_the_generators_keep_their_identity() -> None:
+    """Der Ring wird geklont und nicht aus gedruckten Namen neu geparst.
+
+    ``Symbol("x", positive=True)`` und ``Symbol("x")`` sind fuer SymPy zwei
+    Symbole, also passte eine Komponente nicht mehr in den neu gebauten Ring;
+    ``Symbol("x space")`` wurde sogar in zwei Generatoren zerlegt. Beides von
+    einem externen Audit gebaut.
+    """
+    for first, second in (
+        (sp.Symbol("x", positive=True), sp.Symbol("y", real=True)),
+        (sp.Symbol("x space"), sp.Symbol("y")),
+    ):
+        source = over_field(
+            PolynomialMap((first, second), (first + second**3, second)),
+        )
+        step = BCWStep.build(source, 0, Fresh(second, u), Fresh(second**2, v), 0)
+
+        outcome = peel(source, step.target, budget=20)
+
+        assert outcome.reduction is not None
+        assert outcome.reduction.target.variables[:2] == (first, second)
+
+
+def test_a_ratio_outside_the_domain_is_not_a_constant() -> None:
+    """Auch fuer Zuege, die eine Koordinate abtragen, entscheidet die Domaene.
+
+    Von Hand gebaut und kein Schritt: das kanonische Monom traegt im Produkt
+    den Koeffizienten zwei und in der Zielkomponente eins, und ueber ``ZZ``
+    gibt es dazu keine Konstante.
+    """
+    a, b, s = sp.symbols("a b s")
+    made_up = PolynomialMap((s, a, b, x), (s - a * b, a + x, 2 * b + x**3, x))
+
+    assert made_up.ring.domain.is_ZZ
+    assert factor(made_up, s, (b, a), (a,)) is None
+    assert factor(over_field(made_up), s, (b, a), (a,)) == sp.Rational(1, 2)

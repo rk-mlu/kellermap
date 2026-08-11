@@ -36,14 +36,19 @@ reduction acts on component 11, which step four introduced.
 A step is given two *factor slots*. Each slot supplies one factor. ``Fresh``
 introduces a new generator that carries the factor; ``Carried`` reuses a
 coordinate of the source that already carries it. ``m`` is the number of
-``Fresh`` slots, so ``m`` is 0, 1 or 2.
+*distinct* fresh variables, so ``m`` is 0, 1 or 2.
 
-Two ``Fresh`` slots are the step of the paper. Reusing a coordinate is not in
-the paper. It is admitted here because the identity above holds for every
-``m``, and because a reduction that reuses carriers reaches a lower dimension:
-the fifteen-dimensional reduction of Alpoege's map does so twice.
+``G`` subtracts ``coefficient * X_u X_v``, for a non-zero constant of the
+coefficient domain that defaults to one.
 
-See ``docs/contracts.md``, BCW-1 to BCW-10.
+Three of these go beyond the paper, which has two different new coordinates and
+an unweighted ``G``: reusing a coordinate (BCW-10), the coefficient (BCW-11),
+and two ``Fresh`` slots naming one variable (BCW-12). Each is admitted because
+the identity above holds for it, and each is needed. Reusing a carrier takes
+the reduction of Alpoege's map from seventeen dimensions to fifteen, and the
+published nineteen-dimensional chain needs the other two.
+
+See ``docs/contracts.md``, BCW-1 to BCW-12.
 """
 
 from __future__ import annotations

@@ -408,10 +408,11 @@ class BCWStep:
     left: Factor
     right: Factor
     filtration_level: int
+    coefficient: sp.Expr
     provenance: Provenance
 
     @classmethod
-    def build(cls, source, index, left, right, filtration_level=1): ...
+    def build(cls, source, index, left, right, filtration_level=1, coefficient=1): ...
 
     @property
     def P(self) -> sp.Expr: ...
@@ -454,7 +455,8 @@ earned nothing. Dropping it also removed the last parameter typed `Iterable`
 on `BCWStep`, and with it the one place where a one-shot iterable could be
 consumed twice.
 
-`m` is the number of `Fresh` slots, so `m ∈ {0, 1, 2}`. `variables` is the
+`m` is the number of *distinct* fresh variables, so `m ∈ {0, 1, 2}`; two
+slots may name one, and it is then introduced once. `variables` is the
 fresh generators in slot order. These are the new generators only, not the
 variables of either map; those are `source.variables` and `target.variables`.
 
@@ -1466,6 +1468,23 @@ Sound rather than heuristic, and it bites late, which is where a peel spends
 its time. Two steps from the end with all three of the source's components
 still wrong, there is nowhere to go.
 
+**REV-10 — A step that left no trace of its constant is out of reach.** A step
+introducing no coordinate is undone by adding `constant * F_a * F_b` back, and
+nothing else in the map says what the constant was. It is read off a monomial
+the step left behind in the component it acted on. If the removed product
+cancelled that component's terms exactly, there is no such monomial, every
+constant gives a map, and the peel would be guessing rather than solving.
+
+Such a step is therefore outside the space, and this clause is here because
+that is a bound on the search and not a fact about Keller maps. An example, due
+to an external audit: `(s + a*b + x**3, a, b, x)` and the step on `s` with both
+slots carried, whose target is `(s + x**3, a, b, x)`. The step verifies; the
+peel does not find it.
+
+The bound applies only where the coordinate count does not change. A step that
+introduces one has its constant fixed by REV-3, in every monomial carrying the
+coordinate it dropped.
+
 **REV-7 — No completeness, again.** A peel that reaches no chain has shown that
 this peel, under REV-2 and its budget, found none. REV-2 is a decision about
 where to look and not a fact about Keller maps, so a chain outside it is
@@ -1476,7 +1495,7 @@ enumerator either" already asks for.
 
 REV-3, whose second half is a real check on the map being peeled, and REV-5,
 which compares a rebuilt chain against the target. REV-1, REV-2, REV-4 and
-REV-6 to REV-9 are obligations on the library's own conduct.
+REV-6 to REV-10 are obligations on the library's own conduct.
 
 REV-4 is worth a second look by a reviewer all the same. The constant it solves
 for is now a coefficient inside a certificate rather than a presentation
