@@ -23,7 +23,7 @@ plain equality.
 
 A peel is not a certificate. What it produces is a structure; the chain is
 rebuilt forwards with ``BCWStep.build``, verified, and only then a
-``Reduction``. See ``docs/contracts.md``, REV-1 to REV-11.
+``Reduction``. See ``docs/contracts.md``, REV-1 to REV-12.
 """
 
 from __future__ import annotations
@@ -397,6 +397,7 @@ def peel(
     budget: int = 20000,
     spare: int = 1,
     pairs: int = 16,
+    rising: int = 0,
 ) -> PeelOutcome:
     """Take ``target`` apart until ``source`` is left, then rebuild forwards.
 
@@ -410,6 +411,11 @@ def peel(
     and a constant of that domain -- a parameter such as ``T`` in ``ZZ[T]``
     included -- is a legal coefficient by BCW-11.
 
+    ``rising`` bounds how far above the source's degree an intermediate map may
+    go (REV-12). Zero admits chains whose degree never rises, which is what the
+    reference reductions do; a larger value buys chains that go up before they
+    come down, at the cost of a wider space.
+
     ``spare`` bounds the steps that remove no coordinate, as it does for the
     forward search. ``pairs`` bounds the steps that remove two, which is the
     arithmetic of REV-8 turned into a rule: with ``a`` steps introducing two
@@ -419,8 +425,19 @@ def peel(
     chains are looked for, and a chain outside them is unreachable rather than
     absent. ``budget`` bounds the maps examined.
     """
+    # REV-11 vor der Suche und nicht in ihr. Bis 0.4.0rc6 stand der Test im
+    # Abstieg und verhinderte nur die leere ``Reduction``; die Suche lief
+    # weiter und konnte zur Quelle zurueckkehren, also eine zyklische Kette
+    # ausgeben, wo eine Nichtantwort zugesagt war. Ein externes Audit hat das
+    # gebaut.
+    if _same_generators(target, source) and target.reordered(source.variables) == (
+        source
+    ):
+        return PeelOutcome(None, 0, 0, True)
+
     remaining = [budget]
     deepest = [0]
+    cut_off = [False]
     # A map reached twice with the same allowances leads to the same subtree,
     # and independent steps commute, so the same map is reached by every order
     # of them. What has to be in the key besides the map is what the walk still
@@ -434,6 +451,10 @@ def peel(
         pairs_left: int,
     ) -> PeelOutcome | None:
         if remaining[0] <= 0:
+            # Hier scheitert ein Zustand am Budget, und nur hier. ``exhausted``
+            # aus ``remaining > 0`` abzuleiten verwechselte ein genau
+            # aufgebrauchtes Budget mit einer abgeschnittenen Suche.
+            cut_off[0] = True
             return None
 
         state = (current, spare_left, pairs_left)
@@ -475,11 +496,12 @@ def peel(
                 continue
             if _unfinishable(source, reached, spare_left - (0 if step.dropped else 1)):
                 continue
-            # Vorwaerts faellt der Grad nie -- die neuen Terme haben Grad
-            # hoechstens ``1 + deg Q <= deg(P Q)``, solange kein Faktor konstant
-            # ist, und Konstanten sind ausgeschlossen. Rueckwaerts steigt er
-            # also nie ueber den der Quelle.
-            if reached.degree() > source.degree():
+            # REV-12, und eine Entscheidung wie die anderen. Der Kommentar
+            # hier nannte sie beweisbar: die neuen Terme haetten Grad hoechstens
+            # ``1 + deg Q``, also falle der Grad vorwaerts nie. Das ist falsch,
+            # sobald ein Faktor selbst schon in der Karte steht -- ein externes
+            # Audit hat eine Kette gebaut, deren Grade ``3, 4, 3`` laufen.
+            if reached.degree() > source.degree() + rising:
                 continue
 
             reachable.append((_size(reached), step, reached))
@@ -502,9 +524,7 @@ def peel(
     if outcome is not None:
         return outcome
 
-    return PeelOutcome(
-        None, budget - max(remaining[0], 0), deepest[0], remaining[0] > 0
-    )
+    return PeelOutcome(None, budget - max(remaining[0], 0), deepest[0], not cut_off[0])
 
 
 def _size(reached: PolynomialMap) -> tuple[int, int]:

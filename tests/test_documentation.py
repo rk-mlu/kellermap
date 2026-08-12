@@ -7,7 +7,7 @@ stehen. Niemand faellt darueber, weil nichts sie nachrechnet.
 
 Die Tests hier rechnen sie nach. Sie pruefen nicht, ob ein Text gut ist -- das
 kann kein Test --, sondern ob die Behauptungen darin noch stimmen: ob eine
-zitierte Verpflichtung existiert, ob eine Zusammenfassung wie ``REV-1 to REV-11``
+zitierte Verpflichtung existiert, ob eine Zusammenfassung wie ``REV-1 to REV-12``
 die tatsaechliche Zahl nennt, ob eine Signatur im normativen Entwurf zur
 gebauten passt, und ob eine Formel den Koeffizienten traegt, den ``G`` seit
 BCW-11 hat.
@@ -103,8 +103,8 @@ def test_every_open_ended_range_reaches_the_last_obligation(path: Path) -> None:
     """
     text = path.read_text(encoding="utf-8")
     claiming = re.compile(
-        r"(?:see|under|states?|cover(?:s|ed)?|obligations? of)[^.]{0,40}?"
-        r"([A-Z]{2,4})-1 to ([A-Z]{2,4})-(\d+)",
+        r"(?:see|siehe|under|cover(?:s|ed)?|obligations? of)"
+        r"\s*[^.]{0,40}?\b([A-Z]{2,4})-1 (?:to|bis) ([A-Z]{2,4})-(\d+)\b",
         re.IGNORECASE,
     )
     stale = [

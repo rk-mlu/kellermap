@@ -526,7 +526,9 @@ has to inherit to qualify.
 
 Two kinds exist. `LinearStep` composes an element of `GL_n(k)` on the left.
 `BCWStep` is one application of Proposition (3.1): with `H = (…, X_u + P,
-X_v + Q)` and `G = (…, X_i - X_u X_v, …)`,
+X_v + Q)` and `G = (…, X_i - coefficient * X_u X_v, …)`, where the classical
+case of the paper is `coefficient = 1` and BCW-11 admits any non-zero constant
+of the coefficient domain,
 
     F' = G ∘ F^[m] ∘ H.
 

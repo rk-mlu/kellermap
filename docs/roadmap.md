@@ -710,7 +710,7 @@ is REV-2, and it is what makes the direction cheap -- six candidates for the
 last step of the published map against the hundred and forty the forward
 enumerator offers. Peeling needs no value pool and no names: the factors fall
 out of the arithmetic, and so does the coefficient, which a linear condition
-fixes rather than a search. REV-1 to REV-11 state the rest.
+fixes rather than a search. REV-1 to REV-12 state the rest.
 
 A peel is not a certificate. What it produces is a structure, named rather than
 indexed; the chain is rebuilt forwards with `BCWStep.build`, verified, and only
@@ -827,6 +827,26 @@ What is added:
 Benchmark against published reductions of the current reference examples.
 Reproducing known dimensions with machine-verifiable certificates is the first
 correctness target. Improving them is a secondary scientific goal.
+
+### A work package for the language of the tests
+
+`AGENTS.md` has said since 0.2 that everything in the repository is English,
+with test docstrings and test comments as the one exception, German by existing
+convention. That exception should go, and its own work package early in 0.5 is
+where it goes.
+
+The reason is what the milestone has cost in audits. Six external audits read
+this repository, and each of them read the tests: a test is the sharpest
+statement of what an obligation means, and half of them are unreadable to a
+reviewer who does not read German. The exception was cheap when the tests were
+a private check and is not any more.
+
+It is a work package rather than a sweep because it touches every test module
+and because a translation is a place to introduce errors quietly. The
+docstrings say what a test establishes, several of them record what was wrong
+before and why, and rendering that in English is writing rather than
+substitution. The order matters too: it should come before 0.5 adds tests, so
+that no module is written twice.
 
 ### Where the time goes
 

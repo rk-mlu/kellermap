@@ -4,6 +4,34 @@ Notable changes per release. Dates are release dates; the milestone plan and
 its reasoning live in `docs/roadmap.md`, the binding obligations of the
 verification surface in `docs/contracts.md`.
 
+## 0.4.0rc7
+
+Three findings from the audit of `0.4.0rc6`.
+
+### Fixed
+
+- `peel(F, F)` returned a verified cyclic chain. `0.4.0rc6` moved REV-11 into
+  the descent, where it stopped the empty `Reduction` and not the search, which
+  could then return to the source: two `m = 0` steps with coefficients `1` and
+  `-1`, correct as mathematics and against the clause. Equal endpoints are now
+  answered before the search begins.
+- `exhausted` came from `remaining > 0`, which confuses a budget spent exactly
+  with a search cut off. It is now set only where a state actually fails on the
+  budget.
+
+### Changed
+
+- The degree bound is REV-12 and takes an argument. The code carried it with a
+  proof beside it, and the proof was wrong: the new terms of a step have degree
+  at most `1 + deg Q` when the factors are new, and not when a factor is a
+  component the map already has. The audit built a chain of degrees `3, 4, 3`,
+  refused at `rising = 0` and found at `rising = 1`. The bound stays as a
+  stated decision, and the rules the driver prints on exhaustion name it.
+- `tests/test_documentation.py` reads German ranges and the tuple form of `G`,
+  both of which it missed; the module docstring of `tests/test_peeling.py`, the
+  formula in `architecture.md` and a comment in `search_alpoege19.py` were what
+  it missed them in.
+
 ## 0.4.0rc6
 
 Two findings from the audit of `0.4.0rc5`, and a gate so that the

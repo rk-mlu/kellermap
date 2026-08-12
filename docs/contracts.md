@@ -1146,7 +1146,7 @@ shape the step type admits.
 
 Peeling has neither restriction. It solves for the coefficient instead of
 dividing, and reads a fresh coordinate's name off the target instead of a pool,
-so REV-1 to REV-11 cover what SEA-14 excludes. A chain outside the forward search
+so REV-1 to REV-12 cover what SEA-14 excludes. A chain outside the forward search
 is not outside this library.
 
 **SEA-11 — A budget is reported, not hidden.** The search examines at
@@ -1505,6 +1505,24 @@ This is a clause about the shape of the answer and not about the mathematics.
 `source == target` says the reduction is the identity, which is true and which
 this library has no way to write down.
 
+**REV-12 — How far the degree may rise is a decision, not a theorem.** An
+intermediate map of a peel may exceed the source's degree by at most `rising`,
+which defaults to zero: chains whose degree never rises going forwards. A
+larger value buys chains that go up before they come down.
+
+The code carried this bound with a proof beside it, and the proof was wrong.
+It read: the new terms of a step have degree at most `1 + deg Q <= deg(P Q)`
+while no factor is constant, so the degree never rises. That holds when the
+factors are new, and fails when a factor is a component the map already has. An
+external audit built the chain, of degrees `3, 4, 3`: it steps up and comes back
+down, and is refused at `rising = 0` and found at `rising = 1`.
+
+The bound stays because it is what keeps a peel from wandering upwards
+indefinitely, and because the reference reductions do not need it lifted. It is
+now a stated decision like `spare` and `pairs`, and it contradicts nothing: "A
+certificate certifies correctness, not progress" says a chain need not descend,
+and this says which chains this search looks at.
+
 **REV-7 — No completeness, again.** A peel that reaches no chain has shown that
 this peel, under REV-2 and its budget, found none. REV-2 is a decision about
 where to look and not a fact about Keller maps, so a chain outside it is
@@ -1515,7 +1533,7 @@ enumerator either" already asks for.
 
 REV-3, whose second half is a real check on the map being peeled, and REV-5,
 which compares a rebuilt chain against the target. REV-1, REV-2, REV-4 and
-REV-6, REV-7 and REV-9 to REV-11 are obligations on the library's own conduct.
+REV-6, REV-7 and REV-9 to REV-12 are obligations on the library's own conduct.
 
 REV-4 is worth a second look by a reviewer all the same. The constant it solves
 for is now a coefficient inside a certificate rather than a presentation

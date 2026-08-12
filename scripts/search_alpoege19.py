@@ -229,6 +229,7 @@ def unpicking(
     ceiling: int,
     spare: int,
     pairs: int,
+    rising: int = 0,
 ) -> tuple[int, Reduction | None]:
     """Peel with a doubling budget, printing what each round cost."""
     print("--- peeling the published map from the far end ---")
@@ -251,10 +252,11 @@ def unpicking(
 
         if outcome.exhausted:
             print("The space this peel covers holds no chain. The rules that")
-            print(f"defined it: spare={spare}; pairs={pairs}; a coordinate is peeled")
-            print("only where")
-            print("it occurs in exactly two components; the constant is the one")
-            print("that makes it vanish.")
+            print(f"defined it: spare={spare}; pairs={pairs}; rising={rising};")
+            print("a coordinate is peeled only where it occurs in exactly two")
+            print("components (REV-2); a constant is tried only where it cancels")
+            print("a monomial (REV-10); the degree stays within rising of the")
+            print("source's (REV-12).")
             print(f"The longest chain it reached was {outcome.deepest} steps.")
             print("That is not a statement that no chain exists; see REV-7.")
             return 2, None
@@ -283,9 +285,9 @@ def main(
     print(f"pairs:  {pairs} step(s) may introduce two")
     print()
 
-    # Peeling first. It needs neither the pool nor the names, it reaches depth
-    # eleven against this map where the forward search stops at six, and its
-    # spaces are exhausted in minutes rather than hours.
+    # Peeling first. It needs neither the pool nor the names, and it reaches
+    # this map in eighteen examined maps, where the forward search does not
+    # reach it at all.
     status, chain = unpicking(source, published, start, ceiling, spare, pairs)
     if chain is None:
         print()

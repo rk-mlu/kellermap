@@ -1,4 +1,4 @@
-"""Abtragen: eine Kette vom Ziel her, REV-1 bis REV-7.
+"""Abtragen: eine Kette vom Ziel her, REV-1 bis REV-12.
 
 Ein Abtrag ist kein Zertifikat. Was hier geprueft wird, ist die Mechanik --
 Entfernbarkeit, das Rueckrechnen, das Vorzeichen -- und die Bruecke zurueck:
@@ -862,3 +862,62 @@ def test_a_target_on_other_generators_is_a_non_answer() -> None:
 
     assert outcome.reduction is None
     assert outcome.exhausted
+
+
+def test_equal_endpoints_do_not_yield_a_cycle() -> None:
+    """REV-11 vor der Suche und nicht in ihr.
+
+    Bis 0.4.0rc6 verhinderte der Test im Abstieg nur die leere ``Reduction``.
+    Die Suche lief weiter und konnte zur Quelle zurueckkehren: eine zyklische
+    Kette aus zwei ``m = 0``-Schritten mit den Koeffizienten ``1`` und ``-1``,
+    mathematisch richtig und gegen die eigene Zusage. Gegenbeispiel eines
+    externen Audits.
+    """
+    a, b, s = sp.symbols("a b s")
+    source = PolynomialMap((s, a, b, x), (s + a * b, a + x, b, x))
+
+    outcome = peel(source, source, budget=100, spare=2, pairs=0)
+
+    assert outcome.reduction is None
+    assert outcome.exhausted
+    assert outcome.examined == 0
+
+
+def test_a_budget_spent_exactly_is_not_a_cut_off() -> None:
+    """``exhausted`` sagt, ob die Suche fertig gesehen hat, nicht ob Budget uebrig ist.
+
+    Hier gibt es genau einen Zustand und keinen Zug. Mit Budget eins war der
+    Raum bis 0.4.0rc6 nicht erschoepft und mit Budget zwei schon, obwohl in
+    beiden Faellen alles gesehen wurde.
+    """
+    source = PolynomialMap((x, y), (x + y**3, y))
+    elsewhere = PolynomialMap((x, y), (x + y**5, y))
+
+    tight = peel(source, elsewhere, budget=1)
+    loose = peel(source, elsewhere, budget=2)
+
+    assert tight.examined == loose.examined == 1
+    assert tight.exhausted and loose.exhausted
+
+
+def test_the_degree_may_rise_along_a_valid_chain() -> None:
+    """REV-12, und die Widerlegung eines Beweises, den ich danebengeschrieben hatte.
+
+    Er lautete: die neuen Terme haben Grad hoechstens ``1 + deg Q``, also faellt
+    der Grad vorwaerts nie. Das gilt fuer neue Faktoren und faellt, sobald ein
+    Faktor eine Komponente ist, die die Karte schon hat. Diese Kette laeuft
+    ``3, 4, 3``. Gegenbeispiel eines externen Audits.
+    """
+    a, b, s = sp.symbols("a b s")
+    source = PolynomialMap((s, a, b, x, y), (s + x**3, a + x**2, b + y**2, x, y))
+    first = BCWStep.build(source, 0, Carried(1), Carried(2), 1, 1)
+    second = BCWStep.build(
+        first.target, 0, Fresh(a + x**2, u), Fresh(b + y**2, v), 0, -1
+    )
+
+    assert first.verify() is None
+    assert second.verify() is None
+    assert (source.degree(), first.target.degree(), second.target.degree()) == (3, 4, 3)
+
+    assert peel(source, second.target, spare=1, pairs=1).reduction is None
+    assert peel(source, second.target, spare=1, pairs=1, rising=1).reduction is not None
