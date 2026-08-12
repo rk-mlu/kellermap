@@ -23,7 +23,7 @@ plain equality.
 
 A peel is not a certificate. What it produces is a structure; the chain is
 rebuilt forwards with ``BCWStep.build``, verified, and only then a
-``Reduction``. See ``docs/contracts.md``, REV-1 to REV-7.
+``Reduction``. See ``docs/contracts.md``, REV-1 to REV-11.
 """
 
 from __future__ import annotations
@@ -243,21 +243,21 @@ def _squared(current: PolynomialMap, target: sp.Symbol, fresh: sp.Symbol) -> boo
     return any(monomial[position] >= 2 for monomial in component.monoms())
 
 
-def moves(
-    current: PolynomialMap,
-    spare: int,
-    pairs: int = 16,
-    last: bool = True,
-) -> Iterator[Undo]:
+def moves(current: PolynomialMap, spare: int, pairs: int = 16) -> Iterator[Undo]:
     """Yield the steps that could have been the last one, in a fixed order.
 
     Steps removing two coordinates come first while ``pairs`` is plentiful and
-    last while it is scarce; steps removing none come last of all. A step
-    removing two is offered only while ``pairs`` allows and ``last`` is set, one
-    removing none only while ``spare`` allows. The order
+    last while it is scarce; steps removing none come last of all. The order
     discards nothing -- every move is still walked -- and it decides which
     chain is reached first, which is what a bounded budget makes visible. A
     step that removes two coordinates gets twice as far for the same depth.
+
+    Until ``0.4.0rc5`` a step removing two was also suppressed unless the map
+    was within two coordinates of the source, on the reasoning that with one
+    such step allowed it must be the last peeled. That is false where its
+    factor uses a coordinate an earlier step introduced, and it made ``pairs``
+    mean a position as well as a count. An external audit built the
+    counterexample.
 
     A step that introduces nothing has no dropped coordinate to fix its
     constant, so the constants tried are those that cancel one of the monomials
@@ -275,7 +275,7 @@ def moves(
     )
 
     doubles = []
-    if pairs > 0 and last:
+    if pairs > 0:
         for first, second in combinations(tuple(peelable), 2):
             if peelable[first] != peelable[second]:
                 continue
@@ -444,10 +444,14 @@ def peel(
         remaining[0] -= 1
         deepest[0] = max(deepest[0], len(path))
 
-        if current.dimension == source.dimension:
+        if current.dimension == source.dimension and _same_generators(current, source):
             # Der Vergleich hier und nicht in ``_rebuild``: dort kostet er das
             # nochmalige Rueckrechnen des ganzen Pfades, hier eine Gleichheit.
-            if current.reordered(source.variables) == source:
+            # Ein leerer Pfad heisst, dass Quelle und Ziel dieselbe Karte sind.
+            # Eine ``Reduction`` ohne Schritte gibt es nach RED-1 nicht, also
+            # ist die Kette der Laenge null nicht darstellbar und wird als
+            # erschoepfter Raum gemeldet -- kein Fehler, siehe REV-11.
+            if path and current.reordered(source.variables) == source:
                 found = _rebuild(
                     source, target, path, budget - remaining[0], deepest[0]
                 )
@@ -455,12 +459,7 @@ def peel(
                     return found
 
         reachable = []
-        for step in moves(
-            current,
-            spare_left,
-            pairs_left,
-            last=current.dimension <= source.dimension + 2 or pairs_left > 1,
-        ):
+        for step in moves(current, spare_left, pairs_left):
             reached = undo(current, step)
             if reached is None or reached.dimension < source.dimension:
                 continue
@@ -551,6 +550,19 @@ def _unfinishable(source: PolynomialMap, reached: PolynomialMap, spare: int) -> 
     )
 
     return differing > remaining
+
+
+def _same_generators(reached: PolynomialMap, source: PolynomialMap) -> bool:
+    """Return whether the two maps are built on the same generators.
+
+    ``reordered`` raises on anything but a permutation, so it cannot be the
+    test for whether the peel has arrived: two maps of one dimension over
+    different generators are a legitimate pair of arguments and a legitimate
+    non-answer.
+    """
+    return {variable.name for variable in reached.variables} == {
+        variable.name for variable in source.variables
+    }
 
 
 def _stranded(source: PolynomialMap, reached: PolynomialMap) -> bool:

@@ -4,6 +4,41 @@ Notable changes per release. Dates are release dates; the milestone plan and
 its reasoning live in `docs/roadmap.md`, the binding obligations of the
 verification surface in `docs/contracts.md`.
 
+## 0.4.0rc6
+
+Two findings from the audit of `0.4.0rc5`, and a gate so that the
+documentation stops being checked one place at a time.
+
+### Fixed
+
+- `peel(F, F)` raised `ValueError` from a public function. Equal endpoints are
+  legitimate arguments, and the answer is the chain of no steps, which RED-1
+  makes unrepresentable. It is now reported as an exhausted space, which
+  REV-11 states. The same holds for a target of the source's dimension over
+  different generators, which used to reach `reordered` and raise.
+- `pairs=1` suppressed every step introducing two coordinates unless the map
+  was within two coordinates of the source, so it meant a position as well as
+  a count. That reasoning fails when such a step's factor uses a coordinate an
+  earlier step introduced, and a valid chain with exactly one of them was
+  reported as an exhausted space. The position filter is gone; `pairs` is the
+  count it always claimed to be.
+
+### Added
+
+- `tests/test_documentation.py` checks what the prose claims about the code:
+  that every cited obligation exists, that a range presented as a whole family
+  reaches its last member, that the class sketch in `contracts.md` mentions
+  every parameter the constructor takes, and that no formula writes `G`
+  without its coefficient. It found the unweighted `G` in the public docstring
+  and four stale ranges on its first run.
+
+### Changed
+
+- The licence of arXiv:2608.00222 is CC BY 4.0, which the arXiv listing states.
+  `references.md` said it could not be established, written from habit rather
+  than from looking. The decision not to vendor the map stands on its own
+  reasons.
+
 ## 0.4.0rc5
 
 Two crash paths out of `peel`, one search bound stated too narrowly, and four

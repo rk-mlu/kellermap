@@ -710,7 +710,7 @@ is REV-2, and it is what makes the direction cheap -- six candidates for the
 last step of the published map against the hundred and forty the forward
 enumerator offers. Peeling needs no value pool and no names: the factors fall
 out of the arithmetic, and so does the coefficient, which a linear condition
-fixes rather than a search. REV-1 to REV-9 state the rest.
+fixes rather than a search. REV-1 to REV-11 state the rest.
 
 A peel is not a certificate. What it produces is a structure, named rather than
 indexed; the chain is rebuilt forwards with `BCWStep.build`, verified, and only

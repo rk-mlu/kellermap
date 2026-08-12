@@ -498,7 +498,7 @@ class BCWStep:
 
     @property
     def G(self) -> ElementaryAutomorphism:  # noqa: N802
-        """Return ``X_index |-> X_index - A * B``, the left factor.
+        """Return ``X_index |-> X_index - coefficient * A * B``, the left factor.
 
         ``A`` and ``B`` are the coordinates of the two slots: the fresh
         generator for a ``Fresh`` slot, and ``X_j`` for a ``Carried(j)`` slot.

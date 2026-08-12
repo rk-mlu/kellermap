@@ -1146,7 +1146,7 @@ shape the step type admits.
 
 Peeling has neither restriction. It solves for the coefficient instead of
 dividing, and reads a fresh coordinate's name off the target instead of a pool,
-so REV-1 to REV-9 cover what SEA-14 excludes. A chain outside the forward search
+so REV-1 to REV-11 cover what SEA-14 excludes. A chain outside the forward search
 is not outside this library.
 
 **SEA-11 — A budget is reported, not hidden.** The search examines at
@@ -1493,6 +1493,18 @@ Both steps verify and neither is found. The bound applies only where the
 coordinate count does not change: a step that introduces one has its constant
 fixed by REV-3, in every monomial carrying the coordinate it dropped.
 
+**REV-11 — Equal endpoints are a non-answer and not an error.** A peel that
+finds the source already at the target has no step to build, and RED-1 requires
+a `Reduction` to have at least one so that its source and target are defined.
+The chain of no steps is therefore not representable, and `peel` reports an
+exhausted space rather than raising. The same holds for a target of the source's
+dimension over different generators: a legitimate pair of arguments and a
+legitimate non-answer.
+
+This is a clause about the shape of the answer and not about the mathematics.
+`source == target` says the reduction is the identity, which is true and which
+this library has no way to write down.
+
 **REV-7 — No completeness, again.** A peel that reaches no chain has shown that
 this peel, under REV-2 and its budget, found none. REV-2 is a decision about
 where to look and not a fact about Keller maps, so a chain outside it is
@@ -1503,7 +1515,7 @@ enumerator either" already asks for.
 
 REV-3, whose second half is a real check on the map being peeled, and REV-5,
 which compares a rebuilt chain against the target. REV-1, REV-2, REV-4 and
-REV-6 to REV-10 are obligations on the library's own conduct.
+REV-6, REV-7 and REV-9 to REV-11 are obligations on the library's own conduct.
 
 REV-4 is worth a second look by a reviewer all the same. The constant it solves
 for is now a coefficient inside a certificate rather than a presentation

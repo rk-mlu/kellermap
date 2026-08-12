@@ -162,9 +162,11 @@ def test_steps_removing_two_coordinates_go_where_the_allowance_is(
 
     assert len(plentiful[0].dropped) == 2
     assert len(scarce[-1].dropped) == 2
-    assert not any(
-        len(step.dropped) == 2 for step in moves(target, spare=0, last=False)
-    )
+
+    # Und ``pairs`` ist eine Anzahl und keine Position: mit null solchen Zuegen
+    # wird keiner angeboten, mit einem sehr wohl, gleich wo die Karte steht.
+    assert not any(len(step.dropped) == 2 for step in moves(target, spare=0, pairs=0))
+    assert any(len(step.dropped) == 2 for step in scarce)
 
 
 def test_without_a_spare_no_step_that_removes_nothing_is_offered() -> None:
@@ -326,11 +328,14 @@ def test_a_step_that_removes_nothing_does_not_use_its_own_target() -> None:
     assert all(step.target not in step.slots for step in moves(target, spare=1))
 
 
-def test_a_step_that_removes_nothing_must_shorten_its_target() -> None:
-    """Sonst waere jedes Produkt zweier Traeger ein Zug.
+def test_a_step_that_removes_nothing_is_offered_per_cancelling_constant() -> None:
+    """Sonst waere jedes Produkt zweier Traeger mit jeder Konstanten ein Zug.
 
-    Das Rueckrechnen macht die Komponente laenger statt kuerzer, wenn dort
-    nichts entfernt wurde.
+    Der Name und die Begruendung dieses Tests standen bis 0.4.0rc6 auf einer
+    Bedingung, die 0.4.0rc4 entfernt hat: dass das Rueckrechnen die Komponente
+    verkuerzen muss. Es verlaengert sie meistens. Was tatsaechlich begrenzt,
+    steht in REV-10 -- angeboten werden die Konstanten, die eines der
+    gemeinsamen Monome streichen.
     """
     source = over_field(PolynomialMap((x, y, z), (x + x**5, y + x**2, z + x**3)))
     target = BCWStep.build(source, 0, Carried(1), Carried(2), 1).target
@@ -796,6 +801,64 @@ def test_a_constant_that_cancels_no_monomial_is_not_tried() -> None:
     assert {candidate.factor for candidate in moves(step.target, spare=1)} == {-1}
 
     outcome = peel(source, step.target, spare=1)
+
+    assert outcome.reduction is None
+    assert outcome.exhausted
+
+
+def test_a_pair_step_far_from_the_source_is_still_offered() -> None:
+    """``pairs`` zaehlt die Zuege und schreibt ihre Lage nicht vor.
+
+    Bis 0.4.0rc5 wurde ein Zug, der zwei Koordinaten entfernt, unterdrueckt,
+    solange die Karte mehr als zwei Koordinaten ueber der Quelle stand -- mit
+    der Begruendung, bei einer einzigen Erlaubnis muesse er der letzte
+    abgetragene sein. Das ist falsch, wenn sein Faktor eine Koordinate benutzt,
+    die ein frueherer Schritt eingefuehrt hat: dann laesst er sich nicht nach
+    vorn vertauschen. ``pairs=1`` hiess damit auch eine Lage, und der Raum galt
+    faelschlich als erschoepft. Gegenbeispiel eines externen Audits.
+    """
+    a, b = sp.symbols("a b")
+    source = PolynomialMap((x, y, z), (x + y**8, y, z + y**2))
+    first = BCWStep.build(source, 0, Carried(2), Fresh(y**6, u), 1)
+    second = BCWStep.build(first.target, 0, Fresh(u * y, a), Fresh(y**2, b), 1)
+
+    assert first.verify() is None
+    assert second.verify() is None
+    assert [step.m for step in (first, second)] == [1, 2]
+
+    outcome = peel(source, second.target, budget=2000, spare=0, pairs=1)
+
+    assert outcome.reduction is not None
+    assert outcome.reduction.target.reordered(second.target.variables) == second.target
+
+
+def test_a_chain_of_no_steps_is_not_representable() -> None:
+    """REV-11. Gleiche Endpunkte sind zulaessige Eingabe und keine Kette.
+
+    RED-1 verlangt mindestens einen Schritt, damit Quelle und Ziel einer
+    ``Reduction`` definiert sind. Ein Abtrag, der die Quelle schon am Ziel
+    findet, hat also nichts zu bauen -- und meldete bis 0.4.0rc5 einen
+    ``ValueError`` aus einer oeffentlichen Funktion.
+    """
+    source = PolynomialMap((x, y), (x + y**3, y))
+
+    outcome = peel(source, source, budget=10)
+
+    assert outcome.reduction is None
+    assert outcome.exhausted
+
+
+def test_a_target_on_other_generators_is_a_non_answer() -> None:
+    """Und kein ``ValueError`` aus ``reordered``.
+
+    Zwei Karten derselben Dimension ueber verschiedenen Generatoren sind ein
+    zulaessiges Paar von Argumenten. Bis 0.4.0rc5 entschied das Budget, ob ein
+    Ergebnis oder ein Fehler kam.
+    """
+    source = PolynomialMap((x, y), (x + y**3, y))
+    elsewhere = PolynomialMap((u, v), (u + v**3, v))
+
+    outcome = peel(source, elsewhere, budget=10)
 
     assert outcome.reduction is None
     assert outcome.exhausted
