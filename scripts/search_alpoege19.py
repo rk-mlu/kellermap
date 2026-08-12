@@ -56,7 +56,7 @@ at all. If the peel finds nothing, the forward search follows.
 
 Run with::
 
-    python scripts/search_alpoege19.py [start_budget] [max_budget] [spare]
+    python scripts/search_alpoege19.py [start] [ceiling] [spare] [pairs] [rising]
 
 ``spare`` is the number of steps a chain may take that introduce no generator,
 and it bounds the length of a chain: every other step consumes a name, so a
@@ -98,8 +98,9 @@ or follows from the arithmetic.
   (REV-2), and a step whose two slots are one fresh coordinate only where that
   coordinate occurs squared (BCW-12). Both are signatures of what a step leaves
   behind, read off the map.
-* The degree may not rise above the source's, which is not a decision: it never
-  rises going forwards.
+* No intermediate map exceeds ``degree(source) + rising``. A ceiling and a
+  decision, not a theorem: the degree of a valid chain can go up before it
+  comes down, which REV-12 records after an audit built one.
 * The coefficient of each step is solved rather than searched, so it costs
   nothing.
 
@@ -238,7 +239,9 @@ def unpicking(
 
     while budget <= ceiling:
         began = time.monotonic()
-        outcome = peel(source, target, budget=budget, spare=spare, pairs=pairs)
+        outcome = peel(
+            source, target, budget=budget, spare=spare, pairs=pairs, rising=rising
+        )
         spent = time.monotonic() - began
         print(
             f"budget {budget:>9}: examined {outcome.examined:>9}, "
@@ -276,6 +279,7 @@ def main(
     ceiling: int = 8_000_000,
     spare: int = 2,
     pairs: int = 1,
+    rising: int = 0,
 ) -> int:
     source, published, pool = setup()
 
@@ -283,12 +287,13 @@ def main(
     print(f"target: dimension {published.dimension}, degree {published.degree()}")
     print(f"spare:  {spare} step(s) may introduce no generator")
     print(f"pairs:  {pairs} step(s) may introduce two")
+    print(f"rising: {rising} above the source's degree is allowed")
     print()
 
     # Peeling first. It needs neither the pool nor the names, and it reaches
     # this map in eighteen examined maps, where the forward search does not
     # reach it at all.
-    status, chain = unpicking(source, published, start, ceiling, spare, pairs)
+    status, chain = unpicking(source, published, start, ceiling, spare, pairs, rising)
     if chain is None:
         print()
         status, chain = report(
@@ -316,5 +321,5 @@ def main(
 
 
 if __name__ == "__main__":
-    arguments = [int(value) for value in sys.argv[1:5]]
+    arguments = [int(value) for value in sys.argv[1:6]]
     raise SystemExit(main(*arguments))

@@ -719,3 +719,60 @@ def test_the_diagonal_is_read_off_an_overdetermined_system() -> None:
 
     assert found == (1, -1, 1)
     assert conjugate(moved, found) == source
+
+
+def test_the_forward_search_raises_nothing_when_it_finds_nothing(
+    flat: PolynomialMap,
+) -> None:
+    """Dieselben drei Faelle wie beim Abtrag, und dieselbe Zusage.
+
+    ``search(F, F)`` warf den internen Fehler von RED-1, ein gleichdimensionales
+    Ziel auf anderen Generatoren einen ``ValueError`` aus ``reordered``, und ein
+    genau aufgebrauchtes Budget galt als abgeschnittene Suche. Ein externes
+    Audit hat alle drei gebaut; ``contracts.md`` sagt seit 0.3 zu, dass eine
+    erfolglose Suche nichts wirft.
+    """
+    elsewhere = PolynomialMap(sp.symbols("p q"), sp.symbols("p q"))
+
+    assert search(flat, flat, {}).reduction is None
+    assert search(flat, flat, {}).exhausted
+    assert search(flat, elsewhere, {}).reduction is None
+    assert search(flat, elsewhere, {}).exhausted
+
+
+def test_a_budget_spent_exactly_is_not_a_cut_off(flat: PolynomialMap) -> None:
+    target = PolynomialMap(
+        flat.variables, (flat.components[0] + x**5, flat.components[1])
+    )
+
+    tight = search(flat, target, {}, budget=1)
+    loose = search(flat, target, {}, budget=2)
+
+    assert tight.examined == loose.examined == 1
+    assert tight.exhausted and loose.exhausted
+
+
+def test_a_negative_bound_is_refused_by_the_search(flat: PolynomialMap) -> None:
+    for bound in ("budget", "spare", "rewrites", "selection_limit"):
+        with pytest.raises(ValueError, match="must not be negative"):
+            search(flat, flat, {}, **{bound: -1})
+
+
+def test_a_chain_over_other_generators_is_a_non_answer() -> None:
+    """Und kein ``ValueError`` aus ``reordered``.
+
+    Die Kette entsteht hier wirklich -- Quelle und Ziel haben dieselbe Gestalt
+    --, nur ueber anderen Generatoren. ``reordered`` lehnt das zu Recht ab, und
+    die Suche meldet es als Nichtantwort, wie REV-11 es fuer den Abtrag sagt.
+    """
+    first, second = sp.symbols("p q")
+    source = over_field(PolynomialMap((x, y), (x + x**2 * y**3, y)))
+    target = BCWStep.build(source, 0, Fresh(x * y, u), Fresh(x * y**2, v), 1).target
+    elsewhere = over_field(
+        PolynomialMap((first, second), (first + first**2 * second**3, second)),
+    )
+
+    outcome = search(elsewhere, target, {u: first * second, v: first * second**2})
+
+    assert outcome.reduction is None
+    assert outcome.exhausted

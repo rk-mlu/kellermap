@@ -4,6 +4,41 @@ Notable changes per release. Dates are release dates; the milestone plan and
 its reasoning live in `docs/roadmap.md`, the binding obligations of the
 verification surface in `docs/contracts.md`.
 
+## 0.4.0rc8
+
+Five blockers and two smaller findings from the audit of `0.4.0rc7`.
+
+### Fixed
+
+- `search_alpoege19.py` took `rising` and did not pass it to `peel`, while
+  printing it among the rules that defined the space. A run reported an
+  exhausted space where the chain was three maps away. That is a false negative
+  research report, and it came from a textual replacement of mine that matched
+  nothing and was not checked.
+- `exhausted` was wrong in both searches. In `peel` the visited-state cache was
+  consulted after the budget check, so a state seen long before could fail on
+  the budget; in `search` it still came from `remaining > 0`. Both now set the
+  flag only where an unexamined state fails.
+- `search` raised where `peel` had been taught not to: `search(F, F)` gave the
+  internal error of RED-1, and a target of the source's dimension over other
+  generators gave a `ValueError` from `reordered`. Both are non-answers, as
+  REV-11 says and as `contracts.md` has promised since 0.3.
+- REV-11 compared generators by their printed names, so `Symbol("x",
+  positive=True)` and `Symbol("x", real=True)` passed as one map and
+  `reordered` refused them. The symbols are compared.
+- `budget`, `spare`, `pairs`, `rising`, `rewrites` and `selection_limit` are
+  checked for negative values. A negative budget produced `examined = -1`.
+- The CI job named for Python 3.14 ran 3.10. `uv run` takes its version from
+  `.python-version` unless told otherwise, so `make check` ignored the matrix.
+  `UV_PYTHON` is set for both, and a step asserts the interpreter before the
+  gates run.
+
+### Changed
+
+- REV-12 is stated as a ceiling rather than a direction. Saying `rising = 0`
+  admits "chains whose degree never rises" was wrong: a chain of degrees
+  `4, 3, 4` is admitted there, because none of them exceeds four.
+
 ## 0.4.0rc7
 
 Three findings from the audit of `0.4.0rc6`.

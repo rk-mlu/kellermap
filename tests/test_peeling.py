@@ -921,3 +921,57 @@ def test_the_degree_may_rise_along_a_valid_chain() -> None:
 
     assert peel(source, second.target, spare=1, pairs=1).reduction is None
     assert peel(source, second.target, spare=1, pairs=1, rising=1).reduction is not None
+
+
+def test_exhausted_does_not_depend_on_budget_once_the_space_is_seen() -> None:
+    """``exhausted`` haengt daran, ob etwas ungeprueft blieb, und sonst nichts.
+
+    Bis 0.4.0rc7 wurde der Zustandsspeicher nach der Budgetpruefung befragt,
+    also scheiterte ein laengst bekannter Zustand am Budget und der Raum galt
+    als unerschoepft, obwohl alles gesehen war. Ein externes Audit hat das an
+    zwei vertauschbaren Zuegen gemessen.
+
+    Geprueft wird hier die Eigenschaft und nicht jenes Beispiel: sobald ein
+    Budget den Raum ganz sieht, aendern groessere Budgets weder ``examined``
+    noch ``exhausted``. Das Beispiel des Audits liess sich nach der Korrektur
+    nicht mehr nachbauen -- was die Korrektur nahelegt und nicht beweist,
+    weshalb hier die Eigenschaft steht.
+    """
+    source = over_field(PolynomialMap((x, y), (x + x**2 * y**3, y)))
+    target = BCWStep.build(source, 0, Fresh(x * y, u), Fresh(x * y**2, v), 1).target
+    elsewhere = over_field(PolynomialMap((x, y), (x + y**5, y)))
+
+    settled = [peel(elsewhere, target, budget=size) for size in range(1, 12)]
+    once = next(outcome for outcome in settled if outcome.exhausted)
+
+    assert all(
+        outcome.examined == once.examined and outcome.exhausted
+        for outcome in settled
+        if outcome.examined >= once.examined
+    )
+
+
+def test_generators_of_one_name_are_told_apart() -> None:
+    """``Symbol("x", positive=True)`` und ``Symbol("x", real=True)`` sind zwei.
+
+    Der Vorabtest von REV-11 verglich die gedruckten Namen, hielt sie fuer
+    dieselbe Karte und rief ``reordered``, das zu Recht ablehnte -- also ein
+    ``ValueError`` genau dort, wo REV-11 eine Nichtantwort zusagt.
+    """
+    positive, real = sp.Symbol("x", positive=True), sp.Symbol("x", real=True)
+    source = PolynomialMap((positive, y), (positive + y**3, y))
+    target = PolynomialMap((real, y), (real + y**3, y))
+
+    outcome = peel(source, target, budget=10)
+
+    assert outcome.reduction is None
+    assert outcome.exhausted
+
+
+def test_a_negative_bound_is_refused() -> None:
+    """Ein negatives Budget gab ``examined = -1``, was nichts zaehlt."""
+    source = PolynomialMap((x, y), (x + y**3, y))
+
+    for bound in ("budget", "spare", "pairs", "rising"):
+        with pytest.raises(ValueError, match="must not be negative"):
+            peel(source, source, **{bound: -1})

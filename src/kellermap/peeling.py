@@ -411,10 +411,11 @@ def peel(
     and a constant of that domain -- a parameter such as ``T`` in ``ZZ[T]``
     included -- is a legal coefficient by BCW-11.
 
-    ``rising`` bounds how far above the source's degree an intermediate map may
-    go (REV-12). Zero admits chains whose degree never rises, which is what the
-    reference reductions do; a larger value buys chains that go up before they
-    come down, at the cost of a wider space.
+    ``rising`` is a ceiling on the degree of every intermediate map, at
+    ``degree(source) + rising``, and not a statement about direction (REV-12).
+    At zero a chain of degrees ``4, 3, 4`` is still admitted, since none of them
+    exceeds four; a larger value admits chains that go above the source before
+    coming back down, at the cost of a wider space.
 
     ``spare`` bounds the steps that remove no coordinate, as it does for the
     forward search. ``pairs`` bounds the steps that remove two, which is the
@@ -425,6 +426,8 @@ def peel(
     chains are looked for, and a chain outside them is unreachable rather than
     absent. ``budget`` bounds the maps examined.
     """
+    _non_negative(budget=budget, spare=spare, pairs=pairs, rising=rising)
+
     # REV-11 vor der Suche und nicht in ihr. Bis 0.4.0rc6 stand der Test im
     # Abstieg und verhinderte nur die leere ``Reduction``; die Suche lief
     # weiter und konnte zur Quelle zurueckkehren, also eine zyklische Kette
@@ -450,16 +453,19 @@ def peel(
         spare_left: int,
         pairs_left: int,
     ) -> PeelOutcome | None:
-        if remaining[0] <= 0:
-            # Hier scheitert ein Zustand am Budget, und nur hier. ``exhausted``
-            # aus ``remaining > 0`` abzuleiten verwechselte ein genau
-            # aufgebrauchtes Budget mit einer abgeschnittenen Suche.
-            cut_off[0] = True
-            return None
-
+        # Der bekannte Zustand zuerst: er kostet nichts und ist keine
+        # abgeschnittene Suche. Die Reihenfolge andersherum liess ein
+        # Duplikat am Budget scheitern und meldete den Raum als
+        # unerschoepft, obwohl alles gesehen war.
         state = (current, spare_left, pairs_left)
         if state in seen:
             return None
+
+        if remaining[0] <= 0:
+            # Hier scheitert ein Zustand am Budget, und nur hier.
+            cut_off[0] = True
+            return None
+
         seen.add(state)
 
         remaining[0] -= 1
@@ -572,6 +578,18 @@ def _unfinishable(source: PolynomialMap, reached: PolynomialMap, spare: int) -> 
     return differing > remaining
 
 
+def _non_negative(**bounds: int) -> None:
+    """Raise unless every bound is a non-negative integer.
+
+    A negative budget produced ``examined = -1``, which is not a count of
+    anything. Checked rather than clamped, because a caller who passes one has
+    made a mistake and should hear about it.
+    """
+    wrong = {name: value for name, value in bounds.items() if value < 0}
+    if wrong:
+        raise ValueError(f"These bounds must not be negative: {wrong}.")
+
+
 def _same_generators(reached: PolynomialMap, source: PolynomialMap) -> bool:
     """Return whether the two maps are built on the same generators.
 
@@ -579,10 +597,13 @@ def _same_generators(reached: PolynomialMap, source: PolynomialMap) -> bool:
     test for whether the peel has arrived: two maps of one dimension over
     different generators are a legitimate pair of arguments and a legitimate
     non-answer.
+
+    The symbols themselves and not their printed names. ``Symbol("x",
+    positive=True)`` and ``Symbol("x", real=True)`` print alike and are two
+    generators, so comparing names let a pair through that ``reordered`` then
+    refused. An external audit built it.
     """
-    return {variable.name for variable in reached.variables} == {
-        variable.name for variable in source.variables
-    }
+    return set(reached.variables) == set(source.variables)
 
 
 def _stranded(source: PolynomialMap, reached: PolynomialMap) -> bool:

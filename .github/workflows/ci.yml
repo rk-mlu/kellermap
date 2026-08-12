@@ -61,7 +61,19 @@ jobs:
       # als ein fehlschlagendes `uv sync --locked` weiter unten.
       - run: make lock-check
       - run: uv sync --locked --python ${{ matrix.python-version }}
+      # UV_PYTHON gilt fuer jedes `uv run` im Makefile. Ohne es nahm `uv run`
+      # die Version aus `.python-version`, also 3.10 -- der 3.14-Job hat vier
+      # Releases lang 3.10 geprueft und 3.14 behauptet. Ein externes Audit hat
+      # es gemessen.
+      - name: Check the interpreter is the one under test
+        run: |
+          uv run python -c "import sys; print(sys.version)"
+          uv run python -c "import sys; assert '.'.join(map(str, sys.version_info[:2])) == '${{ matrix.python-version }}', sys.version"
+        env:
+          UV_PYTHON: ${{ matrix.python-version }}
       - run: make check
+        env:
+          UV_PYTHON: ${{ matrix.python-version }}
 
   minimum-dependencies:
     # Die Untergrenze aus pyproject.toml gegenpruefen: sympy>=1.13 stand vier

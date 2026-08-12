@@ -603,7 +603,14 @@ def search(
     """
     names = tuple(pool)
     values = {name: sp.expand(pool[name]) for name in names}
+    if min(budget, spare, rewrites, selection_limit) < 0:
+        raise ValueError(
+            "budget, spare, rewrites and selection_limit must not be negative; "
+            f"got {budget}, {spare}, {rewrites}, {selection_limit}."
+        )
+
     remaining = [budget]
+    cut_off = [False]
     deepest = [0]
     order = target.variables
 
@@ -615,6 +622,11 @@ def search(
         rewrites: int,
     ) -> SearchOutcome | None:
         if remaining[0] <= 0:
+            # Hier scheitert eine Karte am Budget, und nur hier. ``exhausted``
+            # aus ``remaining > 0`` abzuleiten verwechselte ein genau
+            # aufgebrauchtes Budget mit einer abgeschnittenen Suche -- derselbe
+            # Fehler wie im Abtrag, von demselben Audit gefunden.
+            cut_off[0] = True
             return None
         remaining[0] -= 1
         deepest[0] = max(deepest[0], len(steps))
@@ -671,7 +683,7 @@ def search(
         return outcome
 
     return SearchOutcome(
-        None, budget - max(remaining[0], 0), deepest[0], remaining[0] > 0
+        None, budget - max(remaining[0], 0), deepest[0], not cut_off[0]
     )
 
 
@@ -792,8 +804,18 @@ def _finish(
     examined: int,
     deepest: int,
 ) -> SearchOutcome | None:
-    """Check the endpoint, and report the chain with its ``D`` if it matches."""
-    if current.dimension != target.dimension:
+    """Check the endpoint, and report the chain if it matches.
+
+    A chain of no steps is not representable under RED-1, and two maps of one
+    dimension over different generators are a legitimate pair of arguments;
+    both are non-answers rather than errors, as they are for a peel. See
+    REV-11, which the forward search follows for the same reason: a search that
+    finds nothing raises nothing.
+    """
+    if current.dimension != target.dimension or not steps:
+        return None
+
+    if set(current.variables) != set(order):
         return None
 
     if current.reordered(order) != target:

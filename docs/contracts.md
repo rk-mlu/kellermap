@@ -1507,8 +1507,10 @@ this library has no way to write down.
 
 **REV-12 — How far the degree may rise is a decision, not a theorem.** An
 intermediate map of a peel may exceed the source's degree by at most `rising`,
-which defaults to zero: chains whose degree never rises going forwards. A
-larger value buys chains that go up before they come down.
+which defaults to zero. It is a ceiling and not a direction: at `rising = 0` no
+intermediate map exceeds `degree(source)`, which still admits a chain of
+degrees `4, 3, 4` because none of those exceeds four. A larger value admits
+chains that go above the source before coming back down.
 
 The code carried this bound with a proof beside it, and the proof was wrong.
 It read: the new terms of a step have degree at most `1 + deg Q <= deg(P Q)`
