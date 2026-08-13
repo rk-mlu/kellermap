@@ -9,6 +9,8 @@ Die Kontrolle an echten Daten steht in ``test_bcw17.py`` und
 ``test_alpoege15.py``, wo die bekannten Schritte liegen.
 """
 
+from collections.abc import Callable
+
 import pytest
 import sympy as sp
 
@@ -984,6 +986,71 @@ def test_an_endpoint_that_moves_the_origin_is_settled_before_the_walk() -> None:
             assert search(first, second, {}, budget=budget).exhausted
             assert peel(first, second, budget=budget).examined == 0
             assert peel(first, second, budget=budget).exhausted
+
+
+@pytest.mark.parametrize(
+    ("label", "target_of"),
+    [
+        ("settled", lambda source: source),
+        ("walked", lambda source: source.extend(2)),
+    ],
+)
+def test_the_arguments_are_checked_whatever_the_endpoints_do(
+    label: str,
+    target_of: Callable[[PolynomialMap], PolynomialMap],
+) -> None:
+    """Dieselbe Ausnahme, ob ``settled`` antwortet oder der Walk laeuft.
+
+    Bis 0.4.0rc11 stand ``settled`` vor der Argumentpruefung. Bei gleichen
+    Endpunkten kehrte es zurueck, bevor der Vorrat angesehen wurde, also gab
+    ``search(F, F, None)`` ein Ergebnis, waehrend derselbe Vorrat gegen
+    Endpunkte, die gelaufen werden mussten, warf. Ob ein Aufruf gueltig ist,
+    darf nicht davon abhaengen, wie weit die Suche kommt. Ein externes Audit
+    hat es gebaut.
+
+    Der Parameter ``label`` steht nur im Testnamen und macht sichtbar, welcher
+    der beiden Wege gemeldet wird, wenn einer bricht.
+    """
+    source = PolynomialMap((x, y), (x + y**3, y))
+    target = target_of(source)
+
+    with pytest.raises(TypeError, match="must be a mapping"):
+        search(source, target, None)  # type: ignore[arg-type]
+
+    with pytest.raises(TypeError, match="must be symbols"):
+        search(source, target, {"w": x * y})  # type: ignore[dict-item]
+
+    with pytest.raises(ValueError, match="must be fresh"):
+        search(source, target, {x: x * y})
+
+    with pytest.raises(ValueError, match="distinct by name"):
+        search(
+            source,
+            target,
+            {sp.Symbol("w"): x * y, sp.Symbol("w", positive=True): x * y**2},
+        )
+
+    with pytest.raises(TypeError, match="must be polynomial maps"):
+        search(None, target, {})  # type: ignore[arg-type]
+
+    with pytest.raises(TypeError, match="must be polynomial maps"):
+        search(source, None, {})  # type: ignore[arg-type]
+
+    with pytest.raises(ValueError, match="must not be negative"):
+        search(source, target, {}, budget=-1)
+
+
+def test_a_fresh_pool_name_is_accepted() -> None:
+    """Die Gegenkontrolle: die Pruefung darf nicht alles ablehnen.
+
+    RC-4 verlangt Symbole, paarweise verschieden nach Namen und disjunkt zu
+    ``reserved_names`` des Quellrings. Ein Name, der das erfuellt, hat
+    durchzugehen -- auch dann, wenn ``settled`` gleich danach antwortet.
+    """
+    source = PolynomialMap((x, y), (x + y**3, y))
+
+    assert search(source, source, {sp.Symbol("w"): x * y}).exhausted
+    assert search(source, source.extend(2), {sp.Symbol("w"): x * y}).examined > 0
 
 
 def test_a_reachable_extension_is_not_settled_away() -> None:

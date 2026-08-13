@@ -38,7 +38,7 @@ from sympy.polys.polyerrors import CoercionFailed, ExactQuotientFailed
 from .bcw import BCWStep, Carried, Fresh
 from .bcw.step import Factor
 from .errors import VerificationError
-from .guards import counts, same_generators, settled
+from .guards import counts, maps, same_generators, settled
 from .polynomial_map import PolynomialMap, clone_ring
 from .reduction import Reduction
 
@@ -427,6 +427,11 @@ def peel(
     chains are looked for, and a chain outside them is unreachable rather than
     absent. ``budget`` bounds the maps examined.
     """
+    # Vor ``settled``, damit die Gueltigkeit der Argumente nicht davon
+    # abhaengt, ob REV-11 frueh antwortet. ``peel(None, F)`` warf einen
+    # ``AttributeError`` aus ``settled`` heraus, der die Implementierung
+    # nennt und nicht das falsche Argument.
+    maps(source=source, target=target)
     counts(budget=budget, spare=spare, pairs=pairs, rising=rising)
 
     # REV-11 vor der Suche und nicht in ihr. Bis 0.4.0rc6 stand der Test im

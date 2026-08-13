@@ -910,6 +910,15 @@ class Reduction:
             except VerificationError as failure:
                 raise failure.located_at(position) from failure
 
+        # Kann nicht scheitern, und steht trotzdem hier. ``target`` ist
+        # ``steps[-1].target``, und der letzte Schritt hat seine Ausgabe nach
+        # STEP-2 schon dagegen geprueft: die Zeile vergleicht gegen dieselbe
+        # Karte ein zweites Mal. Eine Mutationsprobe hat es gezeigt -- als
+        # einzige der acht Transportpruefungen liess sie sich entfernen, ohne
+        # dass ein Test dafuer zu schreiben waere, der etwas anderes prueft als
+        # STEP-2. Sie bleibt als Selbstpruefung der eigenen Arithmetik, und
+        # RED-5 sagt jetzt, dass diese Klausel an vorgelegten Daten nicht
+        # scheitern kann.
         carried.verify(self.target)
 
         return carried

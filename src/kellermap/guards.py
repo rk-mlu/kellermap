@@ -5,16 +5,81 @@ forward search and the peel search in opposite directions and share almost
 nothing, but they take the same kind of arguments and they answer the same two
 questions before they spend anything:
 
-* are the bounds numbers a walk can count with (SEA-12);
+* are the arguments the kinds of thing a walk can work with (SEA-3, SEA-12);
 * do the two endpoints leave a chain to look for at all (REV-11).
 
 Keeping one copy is not tidiness. The bound check existed in both modules with
 different messages and different coverage -- one refused a negative
 ``selection_limit`` where the other did not -- and an audit of ``0.4.0rc8``
 found the gap by calling the enumerator directly.
+
+The order matters as much as the content. Every check here runs before
+``settled``, because ``settled`` can answer and return, and an argument that is
+only rejected after it would be rejected or accepted depending on the
+endpoints. An audit of ``0.4.0rc11`` found exactly that: ``search(F, F, None)``
+returned an outcome while the same pool against endpoints that had to be walked
+raised. Whether a call is valid is not allowed to depend on how far the walk
+gets.
 """
 
+from collections.abc import Mapping
+from typing import Any
+
+import sympy as sp
+
+from .canonical import agree
 from .polynomial_map import PolynomialMap
+from .variables import reserved_names
+
+
+def maps(**named: Any) -> None:
+    """Raise unless every named argument is a ``PolynomialMap``.
+
+    First, because everything after it reads ``dimension``, ``ring`` and
+    ``variables``. Passing ``None`` raised ``AttributeError`` from inside
+    ``settled``, which names an implementation detail rather than the argument
+    that was wrong, and which the error table of ``api.md`` does not promise.
+    """
+    wrong = {
+        name: type(value).__name__
+        for name, value in named.items()
+        if not isinstance(value, PolynomialMap)
+    }
+    if wrong:
+        raise TypeError(f"These arguments must be polynomial maps: {wrong}.")
+
+
+def fresh_names(pool: Mapping[sp.Symbol, sp.Expr], source: PolynomialMap) -> None:
+    """Raise unless the names of a value pool satisfy RC-4 for the source.
+
+    SEA-3 hands the fresh generators to the search rather than letting it
+    allocate them, and says each of them satisfies RC-4 against the source's
+    ring, as it would if a context had produced it. That obligation was written
+    down and not checked: a pool naming a generator of the source was accepted,
+    and the search then looked for steps introducing a coordinate that already
+    existed.
+
+    Distinctness is by *name* and not by symbol. Two keys of one dictionary are
+    distinct as objects, but ``Symbol("w")`` and ``Symbol("w", positive=True)``
+    are two keys with one name, and a ring cannot tell them apart.
+    """
+    if not isinstance(pool, Mapping):
+        raise TypeError(f"The value pool must be a mapping; got {type(pool).__name__}.")
+
+    not_symbols = [name for name in pool if not isinstance(name, sp.Symbol)]
+    if not_symbols:
+        raise TypeError(f"The pool names must be symbols; got {not_symbols}.")
+
+    names = [str(symbol.name) for symbol in pool]
+    repeated = sorted({name for name in names if names.count(name) > 1})
+    if repeated:
+        raise ValueError(f"The pool names must be distinct by name: {repeated}.")
+
+    taken = sorted(set(names) & reserved_names(source.ring))
+    if taken:
+        raise ValueError(
+            f"The pool names must be fresh for the source's ring: {taken}."
+        )
 
 
 def counts(**bounds: int) -> None:
@@ -85,7 +150,16 @@ def settled(source: PolynomialMap, target: PolynomialMap) -> bool:
       directions, and membership of ``MA^0`` is carried along a chain.
     * the Jacobian determinants differ. BCW-7 requires a step to preserve the
       determinant, because every element of ``EA_n(k)`` has determinant one.
-      This check is last because it is the only one that computes anything.
+      The comparison goes through ``canonical.agree``, which is the one answer
+      this package gives to what equality of two expressions means. Both values
+      come out of a ring and are normalized already, so this is defensive; a
+      second, cheaper answer to the same question is how the original defect
+      arose.
+
+    The last two compute something; the four before them read structure. That
+    is the order they are checked in. Until ``0.4.0rc12`` this paragraph said
+    the determinant was the only one that computes anything, which passes over
+    ``is_in_MA``.
     * the endpoints are the same map, up to the order of its coordinates. The
       chain that reaches it has no steps, and RED-1 makes that unrepresentable.
 
@@ -112,7 +186,7 @@ def settled(source: PolynomialMap, target: PolynomialMap) -> bool:
     if source.is_in_MA(0) != target.is_in_MA(0):
         return True
 
-    if source.determinant() != target.determinant():
+    if not agree(source.determinant(), target.determinant()):
         return True
 
     if target.dimension > source.dimension:

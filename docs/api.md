@@ -1188,6 +1188,12 @@ True
 | a collision whose points and image differ in length | `ValueError` |
 | an obligation of `contracts.md` failing | `VerificationError` |
 | variables or components of the wrong type | `TypeError` |
+| a source or target of a search that is not a `PolynomialMap` | `TypeError` |
+| a value pool that is not a mapping, or a pool name that is not a symbol | `TypeError` |
+| pool names sharing a name, or taking one reserved by the source's ring | `ValueError` |
+
+The last three are checked before anything else a search does, so that they do
+not depend on whether REV-11 answers the pair from its endpoints.
 
 ```python
 >>> PolynomialMap((x, y), (sp.sin(x), y))

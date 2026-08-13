@@ -287,19 +287,56 @@ def test_LIN5_the_image_moves(  # noqa: N802
 
 
 def test_transport_rejects_a_foreign_collision(normalization: LinearStep) -> None:
-    """STEP-3: was hereinkommt, wird zuerst gegen die Quelle geprueft."""
+    """STEP-3: was hereinkommt, wird zuerst gegen die Quelle geprueft.
+
+    Quelle und Ziel eines linearen Schrittes haben dieselbe Dimension, also
+    unterscheidet die Laenge der gemeldeten Punkte die beiden Pruefungen nicht.
+    Das Bild tut es: die Quelle schickt die Punkte nach ``(-1/4, 0, 0)``, das
+    Ziel nach ``(0, 0, -1/4)``. Ohne diese Zeile blieb der Test gruen, wenn die
+    Eingabepruefung entfernt wurde, weil die Ausgabepruefung denselben Fall
+    eine Zeile spaeter auffing.
+    """
     wrong = Collision(ALPOEGE_POINTS, (0, 0, 0))
 
     with pytest.raises(VerificationError) as failure:
         normalization.transport(wrong)
 
     assert failure.value.obligation == "COL-3"
+    assert "(-1/4, 0, 0)" in str(failure.value), str(failure.value)
 
 
 def test_transport_verifies_the_result(
     normalization: LinearStep, collision: Collision
 ) -> None:
     assert normalization.transport(collision).verify(normalization.target) is None
+
+
+def test_transport_rejects_its_own_wrong_result(collision: Collision) -> None:
+    """STEP-2 und LIN-5: die Ausgabe wird geprueft, und das ist erreichbar.
+
+    ``transport`` ruft ``verify()`` des Schrittes nicht auf, und ein
+    ``LinearStep`` nimmt sein Ziel entgegen -- das ist es, was LIN-1 zu einer
+    echten Pruefung macht. Bei einem gelieferten Schritt mit falschem Ziel ist
+    die Ausgabepruefung deshalb das Einzige, was zwischen einem falschen
+    Zertifikat und einer scheinbar maschinengeprueften Aussage ueber das Ziel
+    steht.
+
+    Bis 0.4.0rc13 unterschied kein Test die beiden Pruefungen. Eine
+    Mutationsprobe hat es gezeigt: jede liess sich einzeln entfernen, ohne
+    dass die Sammlung rot wurde.
+    """
+    honest = LinearStep.normalize(ALPOEGE)
+    wrong = PolynomialMap(
+        honest.target.variables,
+        (honest.target.components[0] + 1,) + honest.target.components[1:],
+    )
+    supplied = LinearStep(ALPOEGE, wrong, honest.transformation)
+
+    with pytest.raises(VerificationError) as failure:
+        supplied.transport(collision)
+
+    assert failure.value.obligation == "COL-3"
+    assert "(-1/4, 0, 0)" not in str(failure.value), str(failure.value)
 
 
 # --------------------------------------------------------------------------
@@ -372,6 +409,30 @@ def test_RED5_a_transport_failure_names_its_step(
         Reduction([normalization, detached]).transport(collision)
 
     assert failure.value.step == 1
+
+
+def test_RED5_a_foreign_collision_is_not_blamed_on_the_first_step(  # noqa: N802
+    normalization: LinearStep,
+) -> None:
+    """Der Fold prueft die Eingabe selbst, und das ist an der Meldung zu sehen.
+
+    Die Pruefung am Fold und die des ersten Schrittes vergleichen gegen
+    dieselbe Karte: RED-2 verlangt, dass ``steps[0].source`` die Quelle der
+    Kette ist. Was sie unterscheidet, ist die Lokalisierung. Faellt die
+    Kollision erst im ersten Schritt, wird der Fehler mit ``step = 0``
+    versehen, also einem Schritt zugeschrieben, an dem nichts falsch ist -- der
+    Aufrufer hat die falsche Kollision gebracht.
+
+    Eine Mutationsprobe hat gezeigt, dass die Zeile am Fold sich bis 0.4.0rc13
+    entfernen liess, ohne dass etwas rot wurde.
+    """
+    wrong = Collision(ALPOEGE_POINTS, (0, 0, 0))
+
+    with pytest.raises(VerificationError) as failure:
+        Reduction([normalization]).transport(wrong)
+
+    assert failure.value.obligation == "COL-3"
+    assert failure.value.step is None
 
 
 def test_a_reduction_does_not_concatenate_with_other_types(

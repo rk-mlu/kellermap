@@ -10,6 +10,7 @@ kein spaeterer Schritt sie mehr anfasst.
 """
 
 import math
+import re
 
 import pytest
 import sympy as sp
@@ -577,11 +578,80 @@ def test_BCW8_the_number_of_points_is_preserved() -> None:  # noqa: N802
     assert len(built.transport(collision)) == len(collision)
 
 
+def reported_arity(failure: VerificationError) -> int:
+    """Return how many coordinates the message of ``failure`` reports.
+
+    Both checks in ``transport`` raise COL-3, so the obligation alone does not
+    say which one fired, and a control that only reads it stays green when one
+    of the two is removed -- the other catches the same input one line later.
+    The two speak about maps of different dimension, and that is what tells
+    them apart.
+    """
+    point = re.search(r"\(([^)]*)\)", str(failure))
+
+    assert point is not None, str(failure)
+
+    return len(point.group(1).split(","))
+
+
+@pytest.fixture
+def collidable() -> BCWStep:
+    """Ein Schritt, dessen Quelle wirklich eine Kollision hat.
+
+    ``SIMPLE`` hat keine: ``x2`` und ``x3`` bleiben stehen, also erzwingt
+    Gleichheit der Bilder Gleichheit der Punkte. Fuer die Ausgabepruefung wird
+    aber eine echte Kollision gebraucht, sonst faellt schon die Eingabe.
+    """
+    source = over_field(PolynomialMap((x1, x2, x3), (x1**2, x2, x3)))
+
+    return BCWStep.build(source, 0, Fresh(x2**2, x4), Fresh(x3**2, x5), 1)
+
+
 def test_transport_rejects_a_collision_of_another_map(step: BCWStep) -> None:
+    """STEP-3: geprueft wird die Eingabe, und zwar gegen die Quelle.
+
+    Die Quelle hat drei Koordinaten, das Ziel fuenf. Meldet der Fehler drei,
+    hat die Eingabepruefung angeschlagen.
+    """
     with pytest.raises(VerificationError) as failure:
         step.transport(Collision(((1, 2, 3), (-1, 2, 3)), (0, 0, 0)))
 
     assert failure.value.obligation == "COL-3"
+    assert reported_arity(failure.value) == 3
+
+
+def test_transport_verifies_its_own_result(collidable: BCWStep) -> None:
+    """STEP-2 und BCW-8: die Ausgabe wird geprueft, und das ist erreichbar.
+
+    ``transport`` ruft ``verify()`` des Schrittes nicht auf. Bei einem
+    gelieferten Schritt mit falschem Ziel ist die Ausgabepruefung deshalb das
+    Einzige, was zwischen einem falschen Zertifikat und einer scheinbar
+    maschinengeprueften Nichtinjektivitaet des Ziels steht.
+
+    Bis 0.4.0rc13 unterschied kein Test die beiden Pruefungen. Eine
+    Mutationsprobe ueber ``contracts.md`` hat es gezeigt: jede der beiden
+    liess sich einzeln entfernen, ohne dass die Sammlung rot wurde, weil die
+    andere denselben Fall auffing.
+    """
+    genuine = Collision.at(collidable.source, ((1, 2, 3), (-1, 2, 3)))
+    wrong = PolynomialMap(
+        collidable.target.variables,
+        (collidable.target.components[0] + 1,) + collidable.target.components[1:],
+    )
+    supplied = BCWStep(
+        collidable.source,
+        wrong,
+        collidable.index,
+        collidable.left,
+        collidable.right,
+        collidable.filtration_level,
+    )
+
+    with pytest.raises(VerificationError) as failure:
+        supplied.transport(genuine)
+
+    assert failure.value.obligation == "COL-3"
+    assert reported_arity(failure.value) == 5
 
 
 # --------------------------------------------------------------------------

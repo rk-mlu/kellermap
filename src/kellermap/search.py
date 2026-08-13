@@ -32,7 +32,7 @@ from sympy.polys.rings import PolyElement
 
 from .bcw import BCWStep, Carried, Fresh
 from .bcw.step import Factor
-from .guards import counts, settled
+from .guards import counts, fresh_names, maps, settled
 from .polynomial_map import PolynomialMap
 from .reduction import Reduction
 
@@ -608,12 +608,19 @@ def search(
     is not a proof that nothing exists (SEA-6), and with ``exhausted`` false it
     is not even a statement about the space this search covers.
     """
+    # Vor ``settled``, und zwar alles davon. ``settled`` kann antworten und
+    # zurueckkehren; ein Argument, das erst danach geprueft wird, ist je nach
+    # Endpunkten gueltig oder nicht. Ein externes Audit hat das gebaut:
+    # ``search(F, F, None)`` gab ein Ergebnis, derselbe Vorrat gegen Endpunkte,
+    # die gelaufen werden mussten, warf.
+    maps(source=source, target=target)
     counts(
         budget=budget,
         spare=spare,
         rewrites=rewrites,
         selection_limit=selection_limit,
     )
+    fresh_names(pool, source)
 
     # REV-11 vor der Suche und nicht in ihr, wie im Abtrag. Bis 0.4.0rc8 stand
     # der Test nur in ``_finish``, also im Abstieg: der Nichtantwort-Fall stand

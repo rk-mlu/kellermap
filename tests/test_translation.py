@@ -264,15 +264,55 @@ def test_transport_moves_the_image_and_not_the_points(square: PolynomialMap) -> 
     assert carried.image == (1, 0)
 
 
-def test_transport_refuses_a_collision_of_another_map(
-    square: PolynomialMap, keller: PolynomialMap
-) -> None:
-    """STEP-3: geprueft wird vorher, nicht nur nachher."""
-    step = TranslationStep.normalize(keller)
-    foreign = Collision.at(square, ((1, 0), (-1, 0)))
+def test_transport_refuses_a_collision_of_another_map(square: PolynomialMap) -> None:
+    """STEP-3: geprueft wird vorher, nicht nur nachher.
 
-    with pytest.raises(VerificationError):
+    Die Verschiebung laesst die Dimension stehen, also unterscheidet die Laenge
+    der gemeldeten Punkte die Eingabe- von der Ausgabepruefung nicht. Das Bild
+    tut es: die Quelle schickt die beiden Punkte nach ``(2, 1)``, das um
+    ``-shift`` verschobene Ziel nach ``(1, 0)``. Ohne die letzte Zeile blieb
+    der Test gruen, wenn die Eingabepruefung entfernt wurde, weil die
+    Ausgabepruefung denselben Fall eine Zeile spaeter auffing.
+
+    Die Quelle ist hier ``square`` und nicht ``keller``: ``keller`` haelt den
+    Ursprung fest, seine Normalisierung verschiebt um null, und Quelle und Ziel
+    sind dann dieselbe Karte. Ein Test daran koennte die beiden Pruefungen gar
+    nicht unterscheiden.
+    """
+    step = TranslationStep.normalize(square)
+    foreign = Collision(((1, 0), (-1, 0)), (0, 0))
+
+    with pytest.raises(VerificationError) as failure:
         step.transport(foreign)
+
+    assert failure.value.obligation == "COL-3"
+    assert "(2, 1)" in str(failure.value), str(failure.value)
+
+
+def test_transport_refuses_its_own_wrong_result(square: PolynomialMap) -> None:
+    """STEP-2 und TRA-7: die Ausgabe wird geprueft, und das ist erreichbar.
+
+    ``transport`` ruft ``verify()`` des Schrittes nicht auf, und ein
+    ``TranslationStep`` nimmt sein Ziel entgegen. Bei einem gelieferten Schritt
+    mit falschem Ziel ist die Ausgabepruefung das Einzige, was einen falschen
+    Transport aufhaelt.
+
+    Bis 0.4.0rc13 war sie durch keinen Test von der Eingabepruefung
+    unterschieden; eine Mutationsprobe ueber ``contracts.md`` hat es gezeigt.
+    """
+    honest = TranslationStep.normalize(square)
+    genuine = Collision.at(square, ((1, 0), (-1, 0)))
+    wrong = PolynomialMap(
+        honest.target.variables,
+        (honest.target.components[0] + 1,) + honest.target.components[1:],
+    )
+    supplied = TranslationStep(square, wrong, honest.shift)
+
+    with pytest.raises(VerificationError) as failure:
+        supplied.transport(genuine)
+
+    assert failure.value.obligation == "COL-3"
+    assert "(2, 1)" not in str(failure.value), str(failure.value)
 
 
 # --------------------------------------------------------------------------

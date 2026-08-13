@@ -769,10 +769,16 @@ wrong tool there because it does not clear a denominator.
 procedure for rational functions, which is exactly the class the coefficient
 domains of this project fall into. Coordinates are put into that form as they
 enter, so equality and hashing stay consistent with each other. The remaining
-`Expr`-level comparisons in the package — the two determinant checks and the
+`Expr`-level comparisons in the package — the three determinant checks and the
 pivot tests in `factorize` — use the same function, defensively rather than out
 of need: their values come out of a ring and are normalized already. Having a
 second, cheaper answer to the same question is how the original defect arose.
+
+The third of the three is the one in `guards.settled`, added in `0.4.0rc11`.
+It compared with `!=` until `0.4.0rc12`, which produced no wrong answer for
+values that come out of a ring, and which was a second answer to the question
+this section exists to have one answer to. An audit found it by reading rather
+than by testing.
 
 
 `PolyRing` is the canonical polynomial representation of the project.

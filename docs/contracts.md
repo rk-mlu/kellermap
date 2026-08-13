@@ -62,6 +62,27 @@ states which of
 its obligations can fail on supplied data and which are self-checks of the
 library's own arithmetic; a review should weigh them differently.
 
+One clause runs on every call, always passes, and still cannot fail: the
+verification of the folded collision against `target` in RED-5. `target` is
+`steps[-1].target`, and the last step has already verified its own output
+against that same map under STEP-2, so the fold compares twice. It is kept as a
+self-check and is marked as one in the code.
+
+There is a third gap, narrower than either and harder to see. A check can be
+reachable, executed on every run, and still be pinned by nothing: if removing
+it leaves every test passing, then nothing in the repository distinguishes a
+codebase that keeps the promise from one that does not. Coverage cannot report
+this, because the line does run. `scripts/mutation_probe.py` asks the question
+directly — it breaks one fragment, runs the suite, and restores the source.
+Its first run, for `0.4.0rc13`, found ten clauses in that state, of which the
+RED-5 clause above was the one that turned out to be redundant rather than
+uncontrolled. The other nine were the eight collision checks inside the four
+`transport` methods, which masked each other, and the two peel bounds REV-8 and
+REV-9, whose removal changes no result and only the count of maps examined.
+
+The script is not a gate. A miss is a question and not a defect, and answering
+it sometimes means writing on this page rather than writing a test.
+
 `architecture.md` explains why the design is what it is. `api.md` shows what
 the implemented surface does, with executed examples. This page states what
 the implementation is required to guarantee.
@@ -956,6 +977,20 @@ against `target`. By STEP-4 the number of distinct points is preserved, so a
 verified transport of a genuine collision is a machine-checked proof that
 `target` is not injective.
 
+Of the three parts, the first can fail on supplied data and the third cannot.
+A caller brings the collision, so the check against `source` is the one that
+catches a collision of the wrong map — and it is the fold's own and not the
+first step's, because a failure there would otherwise be located at step 0 and
+blame a step at which nothing is wrong. The check against `target` compares
+against `steps[-1].target`, which the last step has already verified its output
+against under STEP-2; it is a self-check.
+
+`transport()` does not call `verify()`. On a supplied step whose target is
+wrong, the output check inside that step is therefore the only thing between a
+false certificate and an apparently machine-checked non-injectivity of its
+target. That is reachable, and since `0.4.0rc13` it has a control of its own
+for each step type.
+
 **RED-6 — Filtration.** `filtration_level()` is the minimum of the levels the
 steps establish. It answers, from the certificate alone, why the target lies in
 the filtration stage it does.
@@ -1029,7 +1064,16 @@ that cannot be replayed is not a certificate anyone else can check.
 **SEA-3 — Fresh generators are data.** The names of the fresh generators are
 supplied to the search. It decides which name belongs to which step, not what
 the names are. Each satisfies RC-4 against the source's ring, as it would if a
-context had produced it.
+context had produced it: a symbol, distinct from the others by name, and not a
+name the source's ring has already taken.
+
+Checked since `0.4.0rc12`, and before that written down and assumed. A pool
+naming a generator of the source was accepted, and the search then looked for
+steps introducing a coordinate that already existed. The check runs before
+REV-11 is consulted, so that whether a pool is valid does not depend on whether
+the endpoints settle the pair. An audit of `0.4.0rc11` found both halves: the
+missing check, and that the checks which did exist ran after `settled` and were
+therefore skipped whenever it answered.
 
 **SEA-4 — Reordering is presentation, and is not a step.** Implemented in work
 package 3 of this milestone, ahead of the search, so that a failure there

@@ -550,6 +550,32 @@ def test_a_move_is_offered_once_per_constant() -> None:
     assert len(offered) == len(set(offered))
 
 
+def test_the_two_bounds_prune() -> None:
+    """REV-8 und REV-9 schneiden messbar ab, und der Test merkt es, wenn nicht.
+
+    Beide Schranken sind fundiert und keine Heuristik, also darf ihr Entfernen
+    kein Ergebnis aendern -- nur die Zahl der untersuchten Karten. Genau
+    deshalb faellt ihr Ausfall durch keinen Test auf, der nur Ergebnisse
+    prueft, und eine Mutationsprobe hat das bis 0.4.0rc13 bestaetigt: beide
+    liessen sich abschalten, ohne dass die Sammlung rot wurde.
+
+    Die Zahl unten ist gemessen und keine Schaetzung. Ohne REV-9 sind es 50,
+    ohne REV-8 57, ohne beide 58. Sie steht hier, damit auffaellt, wenn eine
+    der beiden aufhoert zu schneiden.
+    """
+    source = over_field(PolynomialMap((x, y), (x + x**2 * y**3, y + x**3 * y**2)))
+    first = BCWStep.build(source, 0, Fresh(x * y, u), Fresh(x * y**2, v), 1).target
+    p, q = sp.symbols("p q")
+    target = BCWStep.build(first, 1, Fresh(x * y**2, p), Fresh(x * y, q), 1).target
+    elementary = over_field(PolynomialMap((x, y), (x + y**5, y)))
+
+    outcome = peel(elementary.compose(source), target, budget=5000)
+
+    assert outcome.reduction is None
+    assert outcome.exhausted
+    assert outcome.examined == 49
+
+
 def test_a_state_is_walked_once() -> None:
     """Unabhaengige Schritte vertauschen, also fuehren viele Wege zur selben
     Karte, und der Teilbaum darunter ist jedes Mal derselbe.
@@ -885,6 +911,30 @@ def test_a_target_on_other_generators_is_a_non_answer() -> None:
     assert outcome.reduction is None
     assert outcome.exhausted
     assert outcome.examined == 0
+
+
+def test_the_endpoints_are_checked_before_they_are_read() -> None:
+    """``peel(None, F)`` warf einen ``AttributeError`` aus ``settled`` heraus.
+
+    Der nennt eine Implementierung -- ``NoneType`` hat kein ``dimension`` --
+    und nicht das Argument, das falsch war, und die Fehlertabelle in
+    ``api.md`` sagt fuer einen falschen Argumenttyp einen ``TypeError`` zu.
+    Ein externes Audit hat es gebaut.
+
+    Beide Faelle stehen hier: einer, den ``settled`` beantworten wuerde, und
+    einer, den der Abtrag laufen muesste. Die Ausnahme hat dieselbe zu sein.
+    """
+    source = PolynomialMap((x, y), (x + y**3, y))
+
+    for target in (source, source.extend(2)):
+        with pytest.raises(TypeError, match="must be polynomial maps"):
+            peel(None, target)  # type: ignore[arg-type]
+
+        with pytest.raises(TypeError, match="must be polynomial maps"):
+            peel(source, None)  # type: ignore[arg-type]
+
+    assert peel(source, source).exhausted
+    assert peel(source, source.extend(2), budget=20).examined > 0
 
 
 def test_a_bound_that_is_not_a_whole_number_is_refused_by_the_peel() -> None:

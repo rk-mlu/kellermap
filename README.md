@@ -39,7 +39,7 @@ along with it. Since 0.3 the same holds for a fifteen-dimensional one.
 
 ## Project Status
 
-Current version: **0.4.0rc11**
+Current version: **0.4.0rc13**
 
 The first milestone covered the algebraic foundations:
 

@@ -4,6 +4,114 @@ Notable changes per release. The milestone plan and its reasoning live in
 `docs/roadmap.md`, the binding obligations of the verification surface in
 `docs/contracts.md`.
 
+## 0.4.0rc13
+
+No audit finding. This candidate comes from a systematic pass over
+`docs/contracts.md` asking, for every obligation, whether anything would notice
+if it stopped holding. The last three audits each found one clause that was
+written down and assumed, and looking for the fourth by reading seemed less
+likely to work than looking for all of them by measuring.
+
+The method is a mutation probe: break one fragment of the source, run the fast
+suite, restore. `CAUGHT` means the promise has a control. `MISSED` means the
+suite is indifferent to whether it is kept. Coverage cannot answer this, because
+a check with no control still runs.
+
+The first run produced ten misses out of twelve probes.
+
+### Fixed
+
+- All eight collision verifications inside the four `transport` methods were
+  uncontrolled. Each `transport` checks its input against the step's source and
+  its output against the step's target, and the two mask each other: remove
+  either one and the other catches the same bad collision one line later, with
+  a different message and against a different map. Three tests already existed
+  for this and read only the obligation, which is `COL-3` for both. They now
+  read which map the failure names -- by the arity of the reported point where
+  the dimensions differ, by the reported image where they do not.
+- The output check of a `transport` had no control at all, and it is the one
+  that matters most. `transport()` does not call `verify()`, so on a supplied
+  step whose target is wrong that check is the only thing between a false
+  certificate and an apparently machine-checked non-injectivity of its target.
+  Reachable, and now controlled for `BCWStep`, `LinearStep` and
+  `TranslationStep`.
+- REV-8 and REV-9, the two bounds that prune the peel, could both be switched
+  off without a single test failing. They are sound rather than heuristic, so
+  removing them changes no result -- only how many maps are examined, which
+  nothing asserted. Measured on the chain in `test_a_state_is_walked_once`: 49
+  maps with both, 50 without REV-9, 57 without REV-8, 58 without either. The
+  count is now pinned.
+- `test_transport_refuses_a_collision_of_another_map` in `tests/test_translation.py`
+  used a source whose normalization shifts by zero, so its source and target
+  were the same map and no test written against it could have distinguished the
+  two checks. It now uses a source that moves.
+
+### Added
+
+- `scripts/mutation_probe.py`, holding the twelve probes of this run so that
+  the numbers above can be reproduced and so that a later change to the same
+  lines can be asked the same question. It is not a gate: it rebuilds the
+  source tree between probes, takes about ten seconds each, and a miss is a
+  question rather than a defect.
+
+### Changed
+
+- `docs/contracts.md` names a third gap beside the two it already named. Full
+  statement coverage is not full obligation coverage, which the page said; and
+  full obligation coverage is not the same as every obligation being pinned,
+  which it did not.
+- RED-5 states which of its three parts can fail on supplied data. The check of
+  the folded collision against `target` cannot: `target` is `steps[-1].target`
+  and the last step has already verified its output against it under STEP-2.
+  It is kept as a self-check and marked as one in the code. This was the one
+  miss of the ten that wanted a sentence on the contract page rather than a
+  test.
+- The fold's check of its *input* is not redundant, and the reason is
+  localization: without it the same collision fails inside step 0 and the error
+  is located there, blaming a step at which nothing is wrong. That is what its
+  new control reads.
+
+## 0.4.0rc12
+
+Three findings from the audit of `0.4.0rc11`. The first is a contract that was
+written down and not checked; the other two are a claim and a comparison that
+had drifted from the rest of the package.
+
+### Fixed
+
+- The arguments of `search` and `peel` were validated after `settled`, so
+  whether a call was valid depended on whether REV-11 answered the pair from
+  its endpoints. `search(F, F, None)` returned an outcome while the same pool
+  against endpoints that had to be walked raised, and `peel(None, F)` raised
+  `AttributeError` from inside `settled` -- an implementation detail rather
+  than the argument that was wrong, and not what the error table of `api.md`
+  promises. Every check now runs first, and the regressions run each of them
+  twice: once against endpoints `settled` answers and once against endpoints
+  the walk has to cross.
+- SEA-3 requires each pool name to satisfy RC-4 against the source's ring.
+  That was written down and assumed. A pool naming a generator of the source
+  was accepted, and the search then looked for steps introducing a coordinate
+  that already existed. The names are now checked for being symbols, for being
+  pairwise distinct *by name* -- `Symbol("w")` and `Symbol("w", positive=True)`
+  are two dictionary keys and one name -- and for being disjoint from
+  `reserved_names` of the source's ring. `api.md` lists the three new rows.
+- `settled` compared determinants with `!=`. `architecture.md` gives
+  `canonical.agree` as the one answer this package has to what equality of two
+  expressions means, and the BCW, linear and translation steps already use it.
+  No wrong answer could be produced for values that come out of a ring, which
+  is exactly the argument that section warns against: a second, cheaper answer
+  to the same question is how the original defect arose. Measured after the
+  change: `settled` on the largest pair in the project is 0.66 ms warm, and
+  `scripts/search_alpoege19.py` runs in 2.4 seconds as before.
+
+### Changed
+
+- The docstring of `settled` called the determinant the only check that
+  computes anything, passing over `is_in_MA` directly above it. It now says
+  two, which is what the rc11 changelog entry already said.
+- `architecture.md` counted two `Expr`-level determinant comparisons. There
+  have been three since `0.4.0rc11`.
+
 ## 0.4.0rc11
 
 One finding from the audit of `0.4.0rc10`, and the correction of a claim I
