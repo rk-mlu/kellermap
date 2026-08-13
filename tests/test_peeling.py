@@ -854,6 +854,9 @@ def test_a_target_on_other_generators_is_a_non_answer() -> None:
     Zwei Karten derselben Dimension ueber verschiedenen Generatoren sind ein
     zulaessiges Paar von Argumenten. Bis 0.4.0rc5 entschied das Budget, ob ein
     Ergebnis oder ein Fehler kam.
+
+    Seit 0.4.0rc9 steht die Antwort vor dem Abstieg fest und kostet keine
+    Karte. Vorher wurde eine untersucht, um dasselbe zu sagen.
     """
     source = PolynomialMap((x, y), (x + y**3, y))
     elsewhere = PolynomialMap((u, v), (u + v**3, v))
@@ -862,6 +865,22 @@ def test_a_target_on_other_generators_is_a_non_answer() -> None:
 
     assert outcome.reduction is None
     assert outcome.exhausted
+    assert outcome.examined == 0
+
+
+def test_a_bound_that_is_not_a_whole_number_is_refused_by_the_peel() -> None:
+    """``examined`` sagt ``int`` zu, und ``budget=1.5`` gab ``examined = 1.5``.
+
+    ``True`` steht daneben, weil ``bool`` eine Unterklasse von ``int`` ist.
+    Beide Faelle teilt der Abtrag mit der Vorwaertssuche, seit die Pruefung an
+    einer Stelle steht.
+    """
+    source = PolynomialMap((x, y), (x + y**3, y))
+
+    for bound in ("budget", "spare", "pairs", "rising"):
+        for value in (1.5, True):
+            with pytest.raises(TypeError, match="must be integers"):
+                peel(source, source.extend(2), **{bound: value})
 
 
 def test_equal_endpoints_do_not_yield_a_cycle() -> None:

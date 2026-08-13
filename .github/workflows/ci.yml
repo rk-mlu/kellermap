@@ -74,6 +74,28 @@ jobs:
       - run: make check
         env:
           UV_PYTHON: ${{ matrix.python-version }}
+      # Die beiden folgenden Gates stehen in AGENTS.md unter den Freigabe-
+      # Pruefungen, standen aber nur im `release`-Ziel und liefen deshalb von
+      # Hand oder gar nicht. Das Makefile hat dasselbe fuer `reconstruct`
+      # festgehalten -- ein Nachweis, den niemand faehrt, ist keiner -- und die
+      # Feststellung gilt eine Ebene hoeher weiter.
+      #
+      # Beide laufen in der Matrix und nicht in einem eigenen Job. Die Quote
+      # kann sich zwischen den Interpretern unterscheiden, sobald ein Zweig an
+      # der Version haengt, und dann soll die Version dranstehen, auf der sie
+      # faellt. Gemessen: 100 Prozent auf 3.10 und auf 3.14, und die drei
+      # Rekonstruktionen zusammen unter zehn Sekunden.
+      - name: Coverage gate (fail_under = 100)
+        run: make coverage
+        env:
+          UV_PYTHON: ${{ matrix.python-version }}
+      # Die zweiten, von der Bibliothek unabhaengigen Rechnungen. Sie sind das
+      # einzige Gate, das eine Abweichung zwischen zwei Implementierungen
+      # derselben Formeln finden kann.
+      - name: Independent reconstructions
+        run: make reconstruct
+        env:
+          UV_PYTHON: ${{ matrix.python-version }}
 
   minimum-dependencies:
     # Die Untergrenze aus pyproject.toml gegenpruefen: sympy>=1.13 stand vier
@@ -112,3 +134,6 @@ jobs:
           echo "$HOME/.local/bin" >> "$GITHUB_PATH"
       - run: uv python install 3.10
       - run: make build-test
+      # Die Metadaten so lesen, wie PyPI sie liest. Stand bisher nur im
+      # `release`-Ziel, obwohl dieser Job die Artefakte ohnehin gebaut hat.
+      - run: make dist-check

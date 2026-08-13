@@ -1,8 +1,140 @@
 # Changelog
 
-Notable changes per release. Dates are release dates; the milestone plan and
-its reasoning live in `docs/roadmap.md`, the binding obligations of the
-verification surface in `docs/contracts.md`.
+Notable changes per release. The milestone plan and its reasoning live in
+`docs/roadmap.md`, the binding obligations of the verification surface in
+`docs/contracts.md`.
+
+## 0.4.0rc9
+
+Three findings from a review of `0.4.0rc8` here, before the external audit of
+it arrived. All three are about the checks and not about the mathematics: each
+is a gate that was assumed to cover something it did not.
+
+### Fixed
+
+- `tests/test_documentation.py` examined eight of the nine obligation families.
+  `STEP` was missing from `FAMILIES`, and both filters sieve against that set,
+  so every citation of that family had been unchecked since 0.3 --
+  `reduction.py` carries one. An invented `STEP` number passed the gate; it now
+  fails. The set is compared for equality with the families the contract page
+  defines rather than for inclusion, so a new family cannot be omitted the same
+  way.
+- The check for a range presented as a whole family reached two of the eleven
+  such summaries in the repository. It looked for a signal word within forty
+  characters containing no full stop, and `docs/contracts.md` contains two, so
+  all three docstrings of the form "See ``docs/contracts.md``, X-1 to X-n" lay
+  outside the window. It now works one sentence at a time and reaches all
+  eleven, an enumeration to its end rather than to its first range, and a range
+  wrapped across a line. Measured before and after; nothing in the repository
+  fails either way.
+- The CI ran neither the coverage gate nor the reconstruction scripts. Both are
+  release gates in `AGENTS.md`, both stood only in the `release` target, and so
+  both ran by hand or not at all -- the Makefile records the same finding for
+  `reconstruct` one level down. They are steps of the matrix job now, because
+  the coverage figure can differ between interpreters and should name the one
+  it falls on. Measured: 100 per cent on 3.10 and on 3.14, and the three
+  reconstructions together under ten seconds. `dist-check` joins the packaging
+  job, which was already building the artefacts it reads.
+
+### Changed
+
+- Every check in `tests/test_documentation.py` has a negative control: a text
+  with the fault written into it, and one with the permitted form. Writing them
+  is what found the two items above. The module reads itself, so the faulty
+  examples are assembled rather than written out.
+- The signal words for a claiming range live in the expression alone. They
+  stood there and in a docstring, and the two had drifted: `state` was in the
+  docstring and not in the expression, `siehe` and `obligations of` the other
+  way round. The expression gained `state` and word boundaries -- without the
+  leading one, `state` matches inside `overstated` and the check reported one
+  of its own negative controls.
+- The version is checked in the three places that carry it: `pyproject.toml`,
+  the project status in `README.md`, and the newest heading here. Three
+  hand-maintained copies of one number, with nothing comparing them.
+
+## 0.4.0rc9
+
+Three findings from the audit of `0.4.0rc8`, and three from a review here
+before it arrived. None is about the mathematics: every one is a check that
+was believed to cover something it did not.
+
+### Fixed
+
+- REV-11 was only half implemented in `search`. Its test stood in `_finish`,
+  that is in the descent, so a pair whose answer was fixed before the walk
+  still had its `exhausted` flag decided by the budget: `search(F, F)`
+  reported an unexhausted space at a budget of one and an exhausted one at
+  four. The omission is invisible on a source with no steps that introduce no
+  generator, since there is nothing to descend into, which is why the earlier
+  regression did not show it. Both cases of REV-11 are now settled from the
+  endpoints, before either walk begins, in `search` and in `peel`. `peel` gains
+  the second case, so a target of the source's dimension over other generators
+  no longer costs an examined map to say the same thing.
+- `scripts/search_alpoege19.py` hung on `start=0`. Zero doubles to zero, so
+  `while budget <= ceiling: budget *= 2` never ended and the run printed
+  nothing. Both drivers in the file had that loop written out and both hung.
+  The budgets come from `rounds()` now, which refuses a first budget below one
+  and a ceiling below it. The check is in the script and not in the library:
+  zero is a legal budget of `search` and `peel`, which examine nothing and say
+  so.
+- `enumerate_candidates` is public and did not check `selection_limit`. The
+  same negative value was refused through `search` and accepted directly.
+- `budget`, `spare`, `pairs`, `rising`, `rewrites` and `selection_limit` are
+  checked for being whole numbers and not only for being non-negative.
+  `budget=1.5` produced `examined = 1.5`, which contradicts the `int` that
+  `PeelOutcome` and `SearchOutcome` declare. `True` is refused with it, since
+  `bool` is a subclass of `int`.
+- `tests/test_documentation.py` examined eight of the nine obligation families.
+  `STEP` was missing from `FAMILIES`, and both filters sieve against that set,
+  so every citation of that family had been unchecked since 0.3 --
+  `reduction.py` carries one. An invented `STEP` number passed the gate; it now
+  fails. The set is compared for equality with the families the contract page
+  defines rather than for inclusion, since inclusion is what let the omission
+  through.
+- The check for a range presented as a whole family reached two of the eleven
+  such summaries in the repository. It looked for a signal word within forty
+  characters containing no full stop, and `docs/contracts.md` contains two, so
+  all three docstrings of the form "See ``docs/contracts.md``, X-1 to X-n" lay
+  outside the window. It works one sentence at a time now and reaches all
+  eleven, an enumeration to its end rather than to its first range, and a range
+  wrapped across a line. Measured before and after; nothing in the repository
+  fails either way.
+- The CI ran neither the coverage gate nor the reconstruction scripts. Both are
+  release gates in `AGENTS.md`, both stood only in the `release` target, and so
+  both ran by hand or not at all -- the Makefile records the same finding for
+  `reconstruct` one level down. They are steps of the matrix job now, because
+  the coverage figure can differ between interpreters and should name the one
+  it falls on. Measured: 100 per cent on 3.10 and on 3.14, and the three
+  reconstructions together under ten seconds. `dist-check` joins the packaging
+  job, which was already building the artefacts it reads.
+
+### Added
+
+- `kellermap/guards.py`, holding the two questions both walks answer before
+  they spend anything: whether the bounds are countable numbers, and whether
+  the endpoints leave a chain to look for. Both checks existed twice before,
+  with different messages, and both copies had drifted -- which is how the two
+  findings above came about, one release apart.
+- `tests/test_scripts.py`. The search drivers had no test at all; the audit
+  said so, and the hang is what a first one catches.
+
+### Changed
+
+- Every check in `tests/test_documentation.py` has a negative control: a text
+  with the fault written into it, and one with the permitted form. Writing them
+  is what found two of the findings above. The module reads itself, so the
+  faulty examples are assembled rather than written out.
+- The signal words for a claiming range live in the expression alone. They
+  stood there and in a docstring, and the two had drifted: `state` was in the
+  docstring and not in the expression, `siehe` and `obligations of` the other
+  way round. The expression gained `state` and word boundaries -- without the
+  leading one, `state` matches inside `overstated` and the check reported one
+  of its own negative controls.
+- The version is checked in the three places that carry it: `pyproject.toml`,
+  the project status in `README.md`, and the newest heading here.
+- REV-11 and SEA-12 in `docs/contracts.md` say what is settled before a walk
+  and what the bounds have to be. Both were true of `peel` and stated as if
+  they were true of everything.
 
 ## 0.4.0rc8
 

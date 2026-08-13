@@ -32,6 +32,7 @@ from sympy.polys.rings import PolyElement
 
 from .bcw import BCWStep, Carried, Fresh
 from .bcw.step import Factor
+from .guards import counts, settled
 from .polynomial_map import PolynomialMap
 from .reduction import Reduction
 
@@ -261,7 +262,13 @@ def enumerate_candidates(
     Complete relative to the pool and to nothing else. A step whose fresh
     factor is outside the pool is unreachable here, not merely unfound; see
     "No completeness of the enumerator either" in ``docs/contracts.md``.
+
+    ``selection_limit`` is checked here and not only in ``search``. This
+    function is public, and until 0.4.0rc9 a negative limit passed through it
+    and still produced candidates.
     """
+    counts(selection_limit=selection_limit)
+
     values = tuple(pool)
     carriers = {
         _value(source, Carried(index)): index for index in source.carrier_indices
@@ -601,13 +608,24 @@ def search(
     is not a proof that nothing exists (SEA-6), and with ``exhausted`` false it
     is not even a statement about the space this search covers.
     """
+    counts(
+        budget=budget,
+        spare=spare,
+        rewrites=rewrites,
+        selection_limit=selection_limit,
+    )
+
+    # REV-11 vor der Suche und nicht in ihr, wie im Abtrag. Bis 0.4.0rc8 stand
+    # der Test nur in ``_finish``, also im Abstieg: der Nichtantwort-Fall stand
+    # schon vor Beginn fest, und trotzdem entschied das Budget, ob der Raum als
+    # erschoepft gemeldet wurde. Sichtbar wird das erst an einer Quelle mit
+    # ``m = 0``-Zweigen, denn ohne sie hat der Abstieg nichts zu tun. Ein
+    # externes Audit hat sie gebaut.
+    if settled(source, target):
+        return SearchOutcome(None, 0, 0, True)
+
     names = tuple(pool)
     values = {name: sp.expand(pool[name]) for name in names}
-    if min(budget, spare, rewrites, selection_limit) < 0:
-        raise ValueError(
-            "budget, spare, rewrites and selection_limit must not be negative; "
-            f"got {budget}, {spare}, {rewrites}, {selection_limit}."
-        )
 
     remaining = [budget]
     cut_off = [False]

@@ -758,6 +758,118 @@ def test_a_negative_bound_is_refused_by_the_search(flat: PolynomialMap) -> None:
             search(flat, flat, {}, **{bound: -1})
 
 
+def test_a_bound_that_is_not_a_whole_number_is_refused(flat: PolynomialMap) -> None:
+    """``examined`` sagt ``int`` zu, und ``budget=1.5`` gab ``examined = 1.5``.
+
+    ``True`` steht daneben, weil ``bool`` eine Unterklasse von ``int`` ist: ein
+    Budget von einer Karte, fast sicher ein Tippfehler und nicht die Absicht.
+    Ein externes Audit hat den Fliesskommafall gemessen.
+    """
+    for bound in ("budget", "spare", "rewrites", "selection_limit"):
+        for value in (1.5, True):
+            with pytest.raises(TypeError, match="must be integers"):
+                search(flat, flat.extend(2), {}, **{bound: value})
+
+
+def test_the_enumerator_refuses_a_bad_limit_of_its_own(flat: PolynomialMap) -> None:
+    """Der Aufzaehler ist oeffentlich und wurde nicht ueber ``search`` geprueft.
+
+    Bis 0.4.0rc9 lieferte ``selection_limit=-1`` still Kandidaten, waehrend
+    derselbe Wert an ``search`` einen ``ValueError`` gab. Ein externes Audit hat
+    den direkten Aufruf gemacht.
+    """
+    with pytest.raises(ValueError, match="must not be negative"):
+        enumerate_candidates(flat, [x], selection_limit=-1)
+
+    with pytest.raises(TypeError, match="must be integers"):
+        enumerate_candidates(flat, [x], selection_limit=1.5)
+
+    # Null ist erlaubt und heisst etwas: jeder Quotient hat mehr Terme als die
+    # Schranke, also wird er ungeteilt angeboten. Der Test schreibt nur fest,
+    # dass die Pruefung ihn nicht mit einer negativen Zahl verwechselt.
+    assert enumerate_candidates(flat, [x], selection_limit=0)
+
+
+@pytest.fixture
+def with_idle_moves() -> PolynomialMap:
+    """Eine Keller-Abbildung, an der es ``m = 0``-Zuege gibt.
+
+    Zwei Traeger, ``a`` fuer ``x**2`` und ``b`` fuer ``y**2``, und eine
+    Komponente, die deren Produkt enthaelt. Ohne solche Zuege hat der Abstieg
+    nichts zu tun und eine fehlende Vorabantwort faellt nicht auf -- das ist
+    der Grund, warum ``flat`` den Befund unten nicht zeigt.
+    """
+    a, b, s = sp.symbols("a b s")
+
+    return PolynomialMap(
+        (s, a, b, x, y),
+        (s + x**2 * y**2 + x**4, a + x**2, b + y**2, x, y),
+    )
+
+
+def test_equal_endpoints_are_settled_before_the_search(
+    with_idle_moves: PolynomialMap,
+) -> None:
+    """REV-11 vor der Suche und nicht in ihr, wie im Abtrag.
+
+    Bis 0.4.0rc8 stand der Test nur in ``_finish``, also im Abstieg. Der
+    Nichtantwort-Fall stand damit schon vor Beginn fest, und trotzdem entschied
+    das Budget, ob ``exhausted`` wahr wurde: mit Budget eins falsch, mit Budget
+    vier wahr. Ein externes Audit hat die Abbildung gebaut, an der es sichtbar
+    ist.
+    """
+    assert with_idle_moves.determinant() == 1
+
+    for budget in (0, 1, 4, 100):
+        outcome = search(with_idle_moves, with_idle_moves, {}, budget=budget)
+
+        assert outcome.reduction is None
+        assert outcome.examined == 0
+        assert outcome.deepest == 0
+        assert outcome.exhausted
+
+
+def test_a_target_of_one_dimension_on_other_generators_is_settled_too(
+    with_idle_moves: PolynomialMap,
+) -> None:
+    """Der zweite Fall von REV-11, und er kostet jetzt ebenfalls nichts.
+
+    Gleiche Dimension heisst, dass jeder Schritt keinen Generator einfuehrt,
+    und ein solcher Schritt laesst die Generatoren in Ruhe. Keine Kette kann
+    von der einen Menge in die andere.
+    """
+    p, q, r, t, w = sp.symbols("p q r t w")
+    elsewhere = PolynomialMap(
+        (p, q, r, t, w),
+        (p + t**2 * w**2 + t**4, q + t**2, r + w**2, t, w),
+    )
+
+    outcome = search(with_idle_moves, elsewhere, {}, budget=100)
+
+    assert outcome.reduction is None
+    assert outcome.examined == 0
+    assert outcome.exhausted
+
+
+def test_a_different_target_of_one_dimension_is_still_searched(
+    with_idle_moves: PolynomialMap,
+) -> None:
+    """Die Gegenkontrolle: der Vorabtest darf die Suche nicht verschlucken.
+
+    Dieselben Generatoren, dieselbe Dimension, eine andere Karte. Hier gibt es
+    etwas zu suchen, und der Abstieg hat zu laufen.
+    """
+    a, b, s = sp.symbols("a b s")
+    elsewhere = PolynomialMap(
+        (s, a, b, x, y),
+        (s + x**2 * y**2, a + x**2, b + y**2, x, y),
+    )
+
+    outcome = search(with_idle_moves, elsewhere, {}, budget=100)
+
+    assert outcome.examined > 0
+
+
 def test_a_chain_over_other_generators_is_a_non_answer() -> None:
     """Und kein ``ValueError`` aus ``reordered``.
 

@@ -69,6 +69,7 @@ kellermap/
 │                         Candidate, enumerate_candidates, anchors,
 │                         conjugate, diagonal_matching
 ├── peeling.py            peel, Undo, moves, factor
+├── guards.py             what both walks check before they begin
 ├── examples.py           the Keller maps written out more than once
 ├── errors.py             VerificationError
 └── bcw/                  BCWStep
@@ -97,6 +98,15 @@ and a `PeelOutcome` hold a chain that has been built and verified, or nothing,
 and `peel` builds its chain forwards with `BCWStep.build` before it returns
 one. Looking for a factorization and certifying one are separate questions, and
 the directory says so.
+
+`guards.py` holds the two questions both of them answer before they spend
+anything: whether the bounds are numbers a walk can count with, and whether the
+endpoints leave a chain to look for at all (REV-11). It is a module rather than
+a helper in either file because the two searches share nothing else, and
+because the alternative was tried: both checks existed twice, with different
+messages, and the copies drifted. One refused a negative `selection_limit`
+where the other did not, and one made the REV-11 test before the walk where the
+other made it inside. Both gaps were found by audits, one release apart.
 
 `examples.py` is fixed data and carries no obligations. It is inside the
 package because the maps in it may be distributed. The one that may not is in

@@ -126,6 +126,7 @@ from __future__ import annotations
 
 import sys
 import time
+from collections.abc import Iterator
 from pathlib import Path
 
 import sympy as sp
@@ -173,6 +174,34 @@ def setup() -> tuple[PolynomialMap, PolynomialMap, dict[sp.Symbol, sp.Expr]]:
     return source, published, pool
 
 
+def rounds(start: int, ceiling: int) -> Iterator[int]:
+    """Yield the budgets of a doubling run, smallest first.
+
+    ``start`` has to be at least one. Zero doubles to zero, so
+    ``while budget <= ceiling: budget *= 2`` never ends and the run hangs
+    without printing a round. Both drivers had that loop written out and both
+    hung; an external audit stopped a run after a second. Zero is a legal
+    budget of ``search`` and of ``peel`` -- it examines nothing and says so --
+    which is why the check belongs here and not there.
+
+    ``ceiling`` has to reach ``start``. Below it the loop body never runs, and
+    the driver then reports no chain within a ceiling it never tried.
+    """
+    if start < 1:
+        raise ValueError(f"The first budget must be at least one; got {start}.")
+
+    if ceiling < start:
+        raise ValueError(
+            f"The ceiling must not lie below the first budget; got {ceiling} "
+            f"and {start}."
+        )
+
+    budget = start
+    while budget <= ceiling:
+        yield budget
+        budget *= 2
+
+
 def report(
     label: str,
     source: PolynomialMap,
@@ -188,9 +217,9 @@ def report(
         f"given: a pool of {len(pool)} values, w2 corrected to "
         f"{pool[target.variables[4]]}"
     )
-    budget, outcome = start, None
+    outcome = None
 
-    while budget <= ceiling:
+    for budget in rounds(start, ceiling):
         began = time.monotonic()
         outcome = search(source, target, pool, budget=budget, spare=spare)
         spent = time.monotonic() - began
@@ -213,8 +242,6 @@ def report(
             print("That is not a statement that no chain exists; see SEA-6.")
             return 2, None
 
-        budget *= 2
-
     print(f"No chain within {ceiling} maps. The budget ran out, so this says less")
     print("than an exhausted space would: the search did not finish looking.")
     if outcome is not None:
@@ -235,9 +262,9 @@ def unpicking(
     """Peel with a doubling budget, printing what each round cost."""
     print("--- peeling the published map from the far end ---")
     print("given: the source and the target, and nothing else (REV-1)")
-    budget, outcome = start, None
+    outcome = None
 
-    while budget <= ceiling:
+    for budget in rounds(start, ceiling):
         began = time.monotonic()
         outcome = peel(
             source, target, budget=budget, spare=spare, pairs=pairs, rising=rising
@@ -263,8 +290,6 @@ def unpicking(
             print(f"The longest chain it reached was {outcome.deepest} steps.")
             print("That is not a statement that no chain exists; see REV-7.")
             return 2, None
-
-        budget *= 2
 
     print(f"No chain within {ceiling} maps. The budget ran out, so this says less")
     print("than an exhausted space would: the peel did not finish looking.")

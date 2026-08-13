@@ -1200,6 +1200,15 @@ its `w2` component is the residue of exactly such a step. An exhausted space
 says something only about the rules that defined it, which is why they are
 written down here rather than left in the code.
 
+Every one of these bounds is a whole non-negative number, and a caller who
+passes anything else hears about it rather than receiving a result built on it.
+A negative budget produced `examined = -1` and a fractional one produced
+`examined = 1.5`, neither of which is the count `SearchOutcome` and
+`PeelOutcome` declare. `True` is refused with them, since `bool` is a subclass
+of `int` and a budget of one map is almost certainly a slip. `enumerate_candidates`
+is public and makes the same check on `selection_limit`; until `0.4.0rc9` it did
+not, so the same value was refused through `search` and accepted directly.
+
 ### Candidates
 
 The search enumerates the arguments of `BCWStep.build` — a target component and
@@ -1501,9 +1510,29 @@ exhausted space rather than raising. The same holds for a target of the source's
 dimension over different generators: a legitimate pair of arguments and a
 legitimate non-answer.
 
+Both cases are decided from the endpoints alone, so both are answered before a
+walk begins and neither costs an examined map. That is a clause about the
+answer and not only about the timing: a case that is settled in advance must
+not have its `exhausted` flag depend on the budget. It did. Until `0.4.0rc8`
+the forward search made this test in its descent, so `search(F, F)` reported an
+unexhausted space at a budget of one and an exhausted space at a budget of
+four, for a pair whose answer was fixed before either. An external audit built
+the map that shows it: a source without steps that introduce no generator has
+nothing to descend into, and the omission stays invisible.
+
+The clause binds `search` and `peel` alike. It is written here rather than in
+the SEA family because it is one rule, and a second statement of it is a second
+thing that can drift.
+
 This is a clause about the shape of the answer and not about the mathematics.
 `source == target` says the reduction is the identity, which is true and which
 this library has no way to write down.
+
+The second case is a statement about steps and not a convenience: a step never
+removes a coordinate, so equal dimensions mean every step in a chain introduces
+none, and such a step leaves the generator set alone. No chain crosses from one
+set of generators to another. Where the dimensions differ, nothing is settled
+in advance and the walk decides.
 
 **REV-12 — How far the degree may rise is a decision, not a theorem.** An
 intermediate map of a peel may exceed the source's degree by at most `rising`,

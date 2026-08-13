@@ -38,6 +38,7 @@ from sympy.polys.polyerrors import CoercionFailed, ExactQuotientFailed
 from .bcw import BCWStep, Carried, Fresh
 from .bcw.step import Factor
 from .errors import VerificationError
+from .guards import counts, same_generators, settled
 from .polynomial_map import PolynomialMap, clone_ring
 from .reduction import Reduction
 
@@ -426,16 +427,18 @@ def peel(
     chains are looked for, and a chain outside them is unreachable rather than
     absent. ``budget`` bounds the maps examined.
     """
-    _non_negative(budget=budget, spare=spare, pairs=pairs, rising=rising)
+    counts(budget=budget, spare=spare, pairs=pairs, rising=rising)
 
     # REV-11 vor der Suche und nicht in ihr. Bis 0.4.0rc6 stand der Test im
     # Abstieg und verhinderte nur die leere ``Reduction``; die Suche lief
     # weiter und konnte zur Quelle zurueckkehren, also eine zyklische Kette
     # ausgeben, wo eine Nichtantwort zugesagt war. Ein externes Audit hat das
     # gebaut.
-    if _same_generators(target, source) and target.reordered(source.variables) == (
-        source
-    ):
+    #
+    # Seit 0.4.0rc9 deckt der Vorabtest beide Faelle von REV-11 ab und nicht
+    # nur den ersten. Das Ziel ueber anderen Generatoren kostete vorher eine
+    # untersuchte Karte, um dasselbe zu sagen.
+    if settled(source, target):
         return PeelOutcome(None, 0, 0, True)
 
     remaining = [budget]
@@ -471,7 +474,7 @@ def peel(
         remaining[0] -= 1
         deepest[0] = max(deepest[0], len(path))
 
-        if current.dimension == source.dimension and _same_generators(current, source):
+        if current.dimension == source.dimension and same_generators(current, source):
             # Der Vergleich hier und nicht in ``_rebuild``: dort kostet er das
             # nochmalige Rueckrechnen des ganzen Pfades, hier eine Gleichheit.
             # Ein leerer Pfad heisst, dass Quelle und Ziel dieselbe Karte sind.
@@ -576,34 +579,6 @@ def _unfinishable(source: PolynomialMap, reached: PolynomialMap, spare: int) -> 
     )
 
     return differing > remaining
-
-
-def _non_negative(**bounds: int) -> None:
-    """Raise unless every bound is a non-negative integer.
-
-    A negative budget produced ``examined = -1``, which is not a count of
-    anything. Checked rather than clamped, because a caller who passes one has
-    made a mistake and should hear about it.
-    """
-    wrong = {name: value for name, value in bounds.items() if value < 0}
-    if wrong:
-        raise ValueError(f"These bounds must not be negative: {wrong}.")
-
-
-def _same_generators(reached: PolynomialMap, source: PolynomialMap) -> bool:
-    """Return whether the two maps are built on the same generators.
-
-    ``reordered`` raises on anything but a permutation, so it cannot be the
-    test for whether the peel has arrived: two maps of one dimension over
-    different generators are a legitimate pair of arguments and a legitimate
-    non-answer.
-
-    The symbols themselves and not their printed names. ``Symbol("x",
-    positive=True)`` and ``Symbol("x", real=True)`` print alike and are two
-    generators, so comparing names let a pair through that ``reordered`` then
-    refused. An external audit built it.
-    """
-    return set(reached.variables) == set(source.variables)
 
 
 def _stranded(source: PolynomialMap, reached: PolynomialMap) -> bool:
