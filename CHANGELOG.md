@@ -4,53 +4,46 @@ Notable changes per release. The milestone plan and its reasoning live in
 `docs/roadmap.md`, the binding obligations of the verification surface in
 `docs/contracts.md`.
 
-## 0.4.0rc9
+## 0.4.0rc10
 
-Three findings from a review of `0.4.0rc8` here, before the external audit of
-it arrived. All three are about the checks and not about the mathematics: each
-is a gate that was assumed to cover something it did not.
+Three findings from the audit of `0.4.0rc9`. One of them is a defect I
+introduced in that candidate.
 
 ### Fixed
 
-- `tests/test_documentation.py` examined eight of the nine obligation families.
-  `STEP` was missing from `FAMILIES`, and both filters sieve against that set,
-  so every citation of that family had been unchecked since 0.3 --
-  `reduction.py` carries one. An invented `STEP` number passed the gate; it now
-  fails. The set is compared for equality with the families the contract page
-  defines rather than for inclusion, so a new family cannot be omitted the same
-  way.
-- The check for a range presented as a whole family reached two of the eleven
-  such summaries in the repository. It looked for a signal word within forty
-  characters containing no full stop, and `docs/contracts.md` contains two, so
-  all three docstrings of the form "See ``docs/contracts.md``, X-1 to X-n" lay
-  outside the window. It now works one sentence at a time and reaches all
-  eleven, an enumeration to its end rather than to its first range, and a range
-  wrapped across a line. Measured before and after; nothing in the repository
-  fails either way.
-- The CI ran neither the coverage gate nor the reconstruction scripts. Both are
-  release gates in `AGENTS.md`, both stood only in the `release` target, and so
-  both ran by hand or not at all -- the Makefile records the same finding for
-  `reconstruct` one level down. They are steps of the matrix job now, because
-  the coverage figure can differ between interpreters and should name the one
-  it falls on. Measured: 100 per cent on 3.10 and on 3.14, and the three
-  reconstructions together under ten seconds. `dist-check` joins the packaging
-  job, which was already building the artefacts it reads.
+- `settled()` decided two endpoint invariants and searched three more. A
+  target of lower dimension, a target missing one of the source's generators,
+  and a target over a different coefficient domain are each impossible for a
+  chain of `BCWStep` to reach, and each was reported as an unexhausted space
+  at a budget of zero and as an exhausted one at a budget of one. All four
+  invariants are now decided before either walk, in `search` and in `peel`,
+  and REV-11 lists them with the property of a step each one rests on. The
+  domain case is the one that has cost most: a driver built its source with
+  `over_field` while the target lay over `ZZ`, and the forward search ran for
+  hours in a space that could not contain the answer.
+- `CHANGELOG.md` carried two `## 0.4.0rc9` sections. The first held the
+  findings from the review here and the second the merged set including the
+  audit of `0.4.0rc8`, so the first was contained in the second. It came from
+  writing the merged section without removing the one it replaced. The
+  version check stayed green because it compares the first heading it finds,
+  and it now also requires that no release appears twice. The audit found
+  this; the check that would have found it is the one the audit suggested.
+- `docs/references.md` attributed the filtration `MA_n^d(k)` to p. 304 of the
+  paper. It is on p. 303; p. 304 opens with the decomposition of `GA_n(k)` and
+  then defines the elementary automorphisms, `EA_n(k)` and the stable
+  extension. `MA_n(k)` itself is p. 302. Read off the scan page by page. The
+  three are separate rows now, since one row covering three pages is how they
+  came to be confused. Every other citation of p. 304 in the repository is
+  about elementary automorphisms and stands.
 
 ### Changed
 
-- Every check in `tests/test_documentation.py` has a negative control: a text
-  with the fault written into it, and one with the permitted form. Writing them
-  is what found the two items above. The module reads itself, so the faulty
-  examples are assembled rather than written out.
-- The signal words for a claiming range live in the expression alone. They
-  stood there and in a docstring, and the two had drifted: `state` was in the
-  docstring and not in the expression, `siehe` and `obligations of` the other
-  way round. The expression gained `state` and word boundaries -- without the
-  leading one, `state` matches inside `overstated` and the check reported one
-  of its own negative controls.
-- The version is checked in the three places that carry it: `pyproject.toml`,
-  the project status in `README.md`, and the newest heading here. Three
-  hand-maintained copies of one number, with nothing comparing them.
+- `test_a_chain_over_other_generators_is_a_non_answer` used a source over
+  generators the target did not have. The wider `settled()` answers that pair
+  before the walk, so the test no longer reached the endpoint comparison it
+  exists for. It now puts the source under the target and gives the pool names
+  the target does not carry, which is a chain of the right dimension over the
+  wrong generators and reaches that comparison again.
 
 ## 0.4.0rc9
 

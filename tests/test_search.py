@@ -22,6 +22,7 @@ from kellermap import (
     enumerate_candidates,
     examples,
     over_field,
+    peel,
     search,
 )
 from kellermap.bcw import BCWStep, Carried, Fresh
@@ -873,18 +874,68 @@ def test_a_different_target_of_one_dimension_is_still_searched(
 def test_a_chain_over_other_generators_is_a_non_answer() -> None:
     """Und kein ``ValueError`` aus ``reordered``.
 
-    Die Kette entsteht hier wirklich -- Quelle und Ziel haben dieselbe Gestalt
-    --, nur ueber anderen Generatoren. ``reordered`` lehnt das zu Recht ab, und
-    die Suche meldet es als Nichtantwort, wie REV-11 es fuer den Abtrag sagt.
+    Die Kette entsteht hier wirklich: die Quelle steht unter dem Ziel, der
+    Vorrat traegt aber andere Namen als das Ziel. Der Abstieg baut also eine
+    Kette der richtigen Dimension ueber der falschen Generatormenge, und
+    ``reordered`` lehnt sie zu Recht ab.
+
+    Bis 0.4.0rc9 stand hier eine Quelle ueber voellig anderen Generatoren.
+    Dieser Fall wird seit 0.4.0rc10 von ``settled`` vor der Suche beantwortet und
+    erreicht den Endpunktvergleich nicht mehr, also pruefte der Test die
+    Stelle nicht mehr, die er pruefen soll. Ein externes Audit hat die
+    Erweiterung von ``settled`` veranlasst; die Luecke, die sie hier reisst,
+    schliesst diese Fassung.
     """
     first, second = sp.symbols("p q")
     source = over_field(PolynomialMap((x, y), (x + x**2 * y**3, y)))
     target = BCWStep.build(source, 0, Fresh(x * y, u), Fresh(x * y**2, v), 1).target
-    elsewhere = over_field(
-        PolynomialMap((first, second), (first + first**2 * second**3, second)),
-    )
 
-    outcome = search(elsewhere, target, {u: first * second, v: first * second**2})
+    assert set(source.variables) <= set(target.variables)
+
+    outcome = search(source, target, {first: x * y, second: x * y**2})
 
     assert outcome.reduction is None
     assert outcome.exhausted
+
+
+def test_an_endpoint_no_step_can_reach_is_settled_before_the_walk() -> None:
+    """Drei Invarianten, die ein ``BCWStep`` nicht aendern kann.
+
+    Ein Schritt fuehrt zwei, eine oder keine Koordinate ein und entfernt
+    keine; er nimmt Faktoren und Koeffizient aus dem Koeffizientenbereich
+    seiner Quelle; und er behaelt jede Koordinate, die er bekommen hat. Damit
+    steht die Nichtantwort in allen drei Faellen vor dem Walk fest.
+
+    Bis 0.4.0rc9 wurden sie budgetabhaengig durchsucht: mit Budget null hiess
+    der Raum unerschoepft, mit Budget eins erschoepft, obwohl beide Male
+    nichts zu entscheiden war. Ein externes Audit hat die Tabelle gemessen.
+    """
+    p, q = sp.symbols("p q")
+    source = PolynomialMap((x, y), (x + y**3, y))
+    smaller = PolynomialMap((x,), (x,))
+    without_y = PolynomialMap((x, p, q), (x + p**3, p, q))
+    over_qq = over_field(source)
+
+    assert source.ring.domain != over_qq.ring.domain
+
+    for target in (smaller, without_y, over_qq):
+        for budget in (0, 1, 200):
+            outcome = search(source, target, {}, budget=budget)
+            unpicked = peel(source, target, budget=budget)
+
+            assert outcome.examined == unpicked.examined == 0
+            assert outcome.exhausted and unpicked.exhausted
+
+
+def test_a_reachable_extension_is_not_settled_away() -> None:
+    """Die Gegenkontrolle: der Vorabtest darf keine echte Suche verschlucken.
+
+    Mehr Koordinaten, gleicher Bereich, die Generatoren der Quelle alle
+    enthalten -- hier ist etwas zu suchen, und beide Richtungen haben zu
+    laufen.
+    """
+    source = over_field(PolynomialMap((x, y), (x + x**2 * y**3, y)))
+    target = BCWStep.build(source, 0, Fresh(x * y, u), Fresh(x * y**2, v), 1).target
+
+    assert search(source, target, {u: x * y, v: x * y**2}).examined > 0
+    assert peel(source, target, budget=50).examined > 0

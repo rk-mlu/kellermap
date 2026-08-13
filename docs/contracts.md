@@ -1528,11 +1528,33 @@ This is a clause about the shape of the answer and not about the mathematics.
 `source == target` says the reduction is the identity, which is true and which
 this library has no way to write down.
 
-The second case is a statement about steps and not a convenience: a step never
-removes a coordinate, so equal dimensions mean every step in a chain introduces
-none, and such a step leaves the generator set alone. No chain crosses from one
-set of generators to another. Where the dimensions differ, nothing is settled
-in advance and the walk decides.
+What can be settled in advance is fixed by what a `BCWStep` cannot change, and
+there are four such invariants of the endpoints:
+
+* the dimension never falls, since a step introduces two coordinates, one, or
+  none, and removes none;
+* the coefficient domain never changes, since a step takes its factors and its
+  coefficient from the domain of its source, and `PolynomialMap` counts the
+  domain as part of its identity;
+* every generator of the source is a generator of every map reachable from it,
+  since a step keeps the coordinates it was given and adds fresh ones. At equal
+  dimensions this is the case of two maps over different generators;
+* a chain of no steps is not representable, which decides the case of equal
+  endpoints.
+
+The list is the whole of what the endpoints decide, and it is not a
+convenience. Each entry is a claim about steps, and a claim that is wrong would
+turn a reachable target into a non-answer. Where none of the four applies, the
+walk decides and nothing is settled in advance.
+
+The list grew in `0.4.0rc10` from two entries to four. An audit of `0.4.0rc9`
+measured the missing ones: a target of lower dimension, a target missing one of
+the source's generators, and a target over a different coefficient domain were
+each reported as an unexhausted space at a budget of zero and as an exhausted
+one at a budget of one, for pairs whose answer was fixed before either. The
+third of them has cost more than a flag: a driver built its source with
+`over_field` while the target lay over `ZZ`, and the forward search ran for
+hours in a space that could not contain the answer.
 
 **REV-12 — How far the degree may rise is a decision, not a theorem.** An
 intermediate map of a peel may exceed the source's degree by at most `rising`,

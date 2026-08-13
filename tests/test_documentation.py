@@ -192,6 +192,15 @@ def only_match(pattern: "re.Pattern[str]", path: Path) -> str:
     return str(found[0])
 
 
+def releases(path: Path) -> list[str]:
+    """Return every release heading of a changelog, newest first."""
+    found = NEWEST_RELEASE.findall(path.read_text(encoding="utf-8"))
+
+    assert found, f"{path.name} carries no release heading"
+
+    return [str(name) for name in found]
+
+
 def formula(arrow: str, subtracted: str) -> str:
     """Build one line of the form ``X_index <arrow> X_index - <subtracted>``.
 
@@ -290,6 +299,23 @@ def test_the_three_places_that_carry_the_version_agree() -> None:
 
     assert only_match(README_VERSION, ROOT / "README.md") == declared
     assert only_match(NEWEST_RELEASE, ROOT / "CHANGELOG.md") == declared
+
+
+def test_no_release_appears_twice_in_the_changelog() -> None:
+    """Die Version zu vergleichen genuegt nicht, wenn sie zweimal dasteht.
+
+    In 0.4.0rc9 stand ``## 0.4.0rc9`` zweimal auf der Seite: ein erster
+    Abschnitt mit den intern gefundenen Befunden und ein zweiter, der sie mit
+    den Auditbefunden zusammenfuehrte. Der Vergleich oben blieb gruen, weil er
+    die erste gefundene Ueberschrift nimmt. Ein externes Audit hat es gesehen.
+    """
+    headings = releases(ROOT / "CHANGELOG.md")
+
+    assert headings[0] == only_match(DECLARED_VERSION, ROOT / "pyproject.toml")
+    assert len(headings) == len(set(headings)), (
+        f"these releases appear more than once: "
+        f"{sorted({name for name in headings if headings.count(name) > 1})}"
+    )
 
 
 # --------------------------------------------------------------------------
@@ -466,6 +492,33 @@ def test_each_version_pattern_reads_its_own_file_and_not_another() -> None:
     assert not DECLARED_VERSION.findall('python_version = "3.10"')
     assert README_VERSION.findall("Current version: **9.9.9**") == ["9.9.9"]
     assert NEWEST_RELEASE.findall("## 9.9.9\n\n## 9.9.8") == ["9.9.9", "9.9.8"]
+
+
+def test_a_changelog_with_one_release_twice_is_caught(tmp_path: Path) -> None:
+    """Die Gegenkontrolle zu der Pruefung, die den Fall von 0.4.0rc9 gefunden haette."""
+    doubled = tmp_path / "CHANGELOG.md"
+    doubled.write_text("## 9.9.9\n\nfirst\n\n## 9.9.9\n\nsecond\n", encoding="utf-8")
+    single = tmp_path / "single.md"
+    single.write_text("## 9.9.9\n\n## 9.9.8\n", encoding="utf-8")
+
+    names = releases(doubled)
+
+    assert names == ["9.9.9", "9.9.9"]
+    assert len(names) != len(set(names))
+
+    other = releases(single)
+
+    assert other == ["9.9.9", "9.9.8"]
+    assert len(other) == len(set(other))
+
+
+def test_a_changelog_without_a_release_heading_fails_loudly(tmp_path: Path) -> None:
+    """Sonst laufen beide Pruefungen darueber gegen eine leere Liste."""
+    empty = tmp_path / "CHANGELOG.md"
+    empty.write_text("# Changelog\n\nNotable changes per release.\n", encoding="utf-8")
+
+    with pytest.raises(AssertionError, match="no release heading"):
+        releases(empty)
 
 
 def test_a_version_pattern_that_finds_nothing_fails_loudly(tmp_path: Path) -> None:

@@ -5,8 +5,8 @@ forward search and the peel search in opposite directions and share almost
 nothing, but they take the same kind of arguments and they answer the same two
 questions before they spend anything:
 
-* are the bounds numbers a walk can count with (SEA-13, REV-11);
-* do the two endpoints leave a chain to look for at all.
+* are the bounds numbers a walk can count with (SEA-12);
+* do the two endpoints leave a chain to look for at all (REV-11).
 
 Keeping one copy is not tidiness. The bound check existed in both modules with
 different messages and different coverage -- one refused a negative
@@ -62,22 +62,37 @@ def same_generators(reached: PolynomialMap, source: PolynomialMap) -> bool:
 def settled(source: PolynomialMap, target: PolynomialMap) -> bool:
     """Return whether REV-11 answers this pair without a walk.
 
-    Two cases, and both are decided by the endpoints alone:
+    Four invariants, each of them a property a ``BCWStep`` cannot change, so
+    each of them decides the pair from its endpoints alone:
 
+    * the target has fewer coordinates. A step introduces two, one or none and
+      removes none, so the dimension never falls along a chain.
+    * the coefficient domains differ. A step takes its factors and its
+      coefficient from the domain of its source, and ``PolynomialMap`` counts
+      the domain as part of its identity, so no chain crosses from ``ZZ`` to
+      ``QQ``. This one has cost a release before: a driver built its source
+      with ``over_field`` while the target lay over ``ZZ``, and the search ran
+      for hours in a space that could not contain the answer.
+    * a generator of the source is missing from the target. A step keeps every
+      coordinate it was given and adds fresh ones, so the source's generators
+      are a subset of any map reachable from it. At equal dimensions this is
+      the case of two maps over different generators.
     * the endpoints are the same map, up to the order of its coordinates. The
       chain that reaches it has no steps, and RED-1 makes that unrepresentable.
-    * the dimensions agree and the generators do not. A step never removes a
-      coordinate, so equal dimensions mean every step introduces none, and such
-      a step leaves the generators alone. No chain can cross from one set to
-      the other.
 
-    Where the dimensions differ this returns false even when no chain exists,
-    because that is a question for the walk and not for the endpoints.
+    Where none of the four applies this returns false, even when no chain
+    exists. That is then a question for the walk and not for the endpoints.
     """
-    if target.dimension != source.dimension:
-        return False
-
-    if not same_generators(target, source):
+    if target.dimension < source.dimension:
         return True
+
+    if target.ring.domain != source.ring.domain:
+        return True
+
+    if not set(source.variables) <= set(target.variables):
+        return True
+
+    if target.dimension > source.dimension:
+        return False
 
     return bool(target.reordered(source.variables) == source)

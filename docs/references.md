@@ -24,10 +24,20 @@ numbers from it:
 
 | Cited as | Content |
 | --- | --- |
-| p. 304 | `MA_n(k)`, `EA_n(k)`, the filtration by `ord(F - X)`, stable extension |
-| Proposition (3.1) | degree reduction to 3 by stabilization and two elementary automorphisms |
+| p. 302 | `MA_n(k)`, its monoid structure under composition and its grading |
+| p. 303 | `MA_n^0(k)`, `MA_n^1(k)` and the filtration `MA_n^d(k)` by `ord(F - X)` |
 | Chapter II, Proposition (1.1), p. 303 | `F = (X + F(0)) o F_(1) o F'` with `F' in MA^1`: translation, then linear normalization |
+| p. 304 | elementary automorphisms, `EA_n(k)`, `EA_n^d(k)`, the stable extension `F -> F^[m]` |
+| Proposition (3.1), p. 305 | degree reduction to 3 by stabilization and two elementary automorphisms |
 | Chapter II, §4, p. 306 | proof of the Reduction Theorem; homogenization over `k[T]` |
+
+One row said p. 304 for the filtration as well as for `EA_n(k)` and the stable
+extension. An audit of `0.4.0rc9` read the scan and found the filtration on
+p. 303: p. 304 begins with the decomposition of `GA_n(k)` and then defines the
+elementary automorphisms. `MA_n(k)` itself is p. 302. The three are separate
+rows now, since one row for three pages is how they were confused. This is the
+second time a citation in this table has had to be corrected against the
+source, after Proposition (1.1) and Section 4 were swapped in 0.2.
 
 ---
 
