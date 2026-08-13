@@ -565,7 +565,17 @@ def test_a_state_is_walked_once() -> None:
     # Die beiden Schritte liegen auf verschiedenen Komponenten und vertauschen,
     # also fuehren zwei Wege zur selben Karte. Ein Ziel, das nicht erreichbar
     # ist, laesst den Abtrag den Raum ganz ablaufen und dabei darauf stossen.
-    elsewhere = over_field(PolynomialMap((x, y), (x + y**5, y + x**5)))
+    #
+    # Die Quelle entsteht aus ``source`` durch Verketten mit einem elementaren
+    # Automorphismus. Der hat Determinante eins, also hat sie dieselbe wie das
+    # Ziel und wird von ``settled`` nicht vorab beantwortet. Bis 0.4.0rc10
+    # stand hier eine Karte mit anderer Determinante; seit BCW-7 in ``settled``
+    # geprueft wird, waere der Abtrag gar nicht mehr gelaufen und der Test
+    # haette den Wiederbesuch nicht mehr erreicht, den er prueft.
+    elementary = over_field(PolynomialMap((x, y), (x + y**5, y)))
+    elsewhere = elementary.compose(source)
+
+    assert elsewhere.determinant() == target.determinant()
 
     exhausted = peel(elsewhere, target, budget=2000)
 
@@ -771,12 +781,21 @@ def test_a_candidate_that_does_not_verify_is_discarded() -> None:
     war falsch, also faellt der Kandidat weg. Der Fehler schlug bis 0.4.0rc4
     aus ``peel`` heraus. Nullfaktoren bleiben dabei zulaessig: der
     Self-Fresh-Fall oben braucht sie.
+
+    Ein Faktor vom Grad null ist eine Konstante ungleich null, und die frische
+    Koordinate traegt sie dann als Absolutglied. Das Ziel liegt damit
+    zwangslaeufig ausserhalb von ``MA^0``. Seit 0.4.0rc10 prueft ``settled``
+    das, also muss auch die Quelle den Ursprung bewegen, sonst wird das Paar
+    vor dem Abtrag beantwortet und der Test erreicht den Zweig nicht mehr, den
+    er prueft. Beide Karten haben Determinante eins.
     """
-    source = PolynomialMap((x, y), (x + y**3, y))
+    source = PolynomialMap((x, y), (x + y**3 + 1, y))
     target = PolynomialMap(
         (x, y, u, v),
-        (x + y**3 - (u + 1) * (v + y), y, u + 1, v + y),
+        (x + y**3 + 1 - (u + 1) * (v + y), y, u + 1, v + y),
     )
+
+    assert not source.is_in_MA(0) and not target.is_in_MA(0)
 
     outcome = peel(source, target, budget=20)
 

@@ -741,13 +741,27 @@ def test_the_forward_search_raises_nothing_when_it_finds_nothing(
     assert search(flat, elsewhere, {}).exhausted
 
 
-def test_a_budget_spent_exactly_is_not_a_cut_off(flat: PolynomialMap) -> None:
-    target = PolynomialMap(
-        flat.variables, (flat.components[0] + x**5, flat.components[1])
-    )
+def test_a_budget_spent_exactly_is_not_a_cut_off() -> None:
+    """Ein genau aufgebrauchtes Budget ist kein Abschnitt, sondern ein Ende.
 
-    tight = search(flat, target, {}, budget=1)
-    loose = search(flat, target, {}, budget=2)
+    Das Ziel muss dafuer den Walk erreichen. Bis 0.4.0rc10 stand hier die
+    Quelle ``flat`` mit dem Ziel ``x**5 + x + x**2*y**3``; die beiden haben
+    verschiedene Determinanten, und seit ``settled`` BCW-7 mitprueft,
+    beantworten die Endpunkte das Paar vor der Suche. Der Test prueft dann
+    nicht mehr, was sein Name sagt.
+
+    Das Paar hier hat dieselbe Determinante und denselben Ursprung und ist
+    trotzdem unerreichbar, also laeuft der Walk und erschoepft sich nach genau
+    einer Karte.
+    """
+    source = PolynomialMap((x, y), (x + y**3, y))
+    target = PolynomialMap((x, y), (x + y**5, y))
+
+    assert target.determinant() == source.determinant()
+    assert target.is_in_MA(0) == source.is_in_MA(0)
+
+    tight = search(source, target, {}, budget=1)
+    loose = search(source, target, {}, budget=2)
 
     assert tight.examined == loose.examined == 1
     assert tight.exhausted and loose.exhausted
@@ -925,6 +939,51 @@ def test_an_endpoint_no_step_can_reach_is_settled_before_the_walk() -> None:
 
             assert outcome.examined == unpicked.examined == 0
             assert outcome.exhausted and unpicked.exhausted
+
+
+def test_an_endpoint_of_another_determinant_is_settled_before_the_walk() -> None:
+    """BCW-7 verlangt, dass ein Schritt die Determinante erhaelt.
+
+    Jedes Element von ``EA_n(k)`` hat Determinante eins, und ein Schritt ist
+    ein Produkt solcher Elemente mit der stabilen Erweiterung. Damit steht die
+    Nichtantwort vor dem Walk fest, und bis 0.4.0rc10 wurde sie budgetabhaengig
+    durchsucht. Ein externes Audit hat das Paar gebaut.
+    """
+    source = PolynomialMap((x, y), (x, y))
+    target = PolynomialMap((x, y), (2 * x, y))
+
+    assert source.determinant() != target.determinant()
+    assert source.is_in_MA(0) and target.is_in_MA(0)
+    assert set(source.variables) == set(target.variables)
+    assert source.ring.domain == target.ring.domain
+
+    for budget in (0, 1, 200):
+        assert search(source, target, {}, budget=budget).examined == 0
+        assert search(source, target, {}, budget=budget).exhausted
+        assert peel(source, target, budget=budget).examined == 0
+        assert peel(source, target, budget=budget).exhausted
+
+
+def test_an_endpoint_that_moves_the_origin_is_settled_before_the_walk() -> None:
+    """Ein Schritt baut ``G o F^[m] o H`` und beide Faktoren fixieren den Ursprung.
+
+    ``H`` liegt nach BCW-6 mindestens in ``EA^0``, ``G`` in ``EA^1``, und die
+    Erweiterung um Identitaetskoordinaten haengt Nullen an. Also ist
+    ``target(0) = 0`` genau dann, wenn ``source(0) = 0``, und zwar in beide
+    Richtungen. Ein externes Audit hat das Paar gebaut.
+    """
+    source = PolynomialMap((x, y), (x, y))
+    target = PolynomialMap((x, y), (x + 1, y))
+
+    assert source.is_in_MA(0) and not target.is_in_MA(0)
+    assert source.determinant() == target.determinant()
+
+    for budget in (0, 1, 200):
+        for first, second in ((source, target), (target, source)):
+            assert search(first, second, {}, budget=budget).examined == 0
+            assert search(first, second, {}, budget=budget).exhausted
+            assert peel(first, second, budget=budget).examined == 0
+            assert peel(first, second, budget=budget).exhausted
 
 
 def test_a_reachable_extension_is_not_settled_away() -> None:

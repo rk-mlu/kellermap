@@ -62,8 +62,9 @@ def same_generators(reached: PolynomialMap, source: PolynomialMap) -> bool:
 def settled(source: PolynomialMap, target: PolynomialMap) -> bool:
     """Return whether REV-11 answers this pair without a walk.
 
-    Four invariants, each of them a property a ``BCWStep`` cannot change, so
-    each of them decides the pair from its endpoints alone:
+    Six invariants, each of them a property a ``BCWStep`` cannot change, so
+    each of them decides the pair from its endpoints alone. They are checked
+    from the cheapest to the dearest, since any one of them is enough:
 
     * the target has fewer coordinates. A step introduces two, one or none and
       removes none, so the dimension never falls along a chain.
@@ -77,11 +78,27 @@ def settled(source: PolynomialMap, target: PolynomialMap) -> bool:
       coordinate it was given and adds fresh ones, so the source's generators
       are a subset of any map reachable from it. At equal dimensions this is
       the case of two maps over different generators.
+    * one endpoint fixes the origin and the other does not. A step builds
+      ``G o F^[m] o H`` with ``H`` in ``EA^0`` and ``G`` in ``EA^1`` by BCW-6,
+      and both fix the origin; the extension by identity coordinates adds
+      zeros. So ``target(0) = 0`` exactly when ``source(0) = 0``, in both
+      directions, and membership of ``MA^0`` is carried along a chain.
+    * the Jacobian determinants differ. BCW-7 requires a step to preserve the
+      determinant, because every element of ``EA_n(k)`` has determinant one.
+      This check is last because it is the only one that computes anything.
     * the endpoints are the same map, up to the order of its coordinates. The
       chain that reaches it has no steps, and RED-1 makes that unrepresentable.
 
-    Where none of the four applies this returns false, even when no chain
-    exists. That is then a question for the walk and not for the endpoints.
+    The list is not claimed to be complete. It holds the invariants a step is
+    required to preserve that are cheap enough to test on two maps, and it has
+    grown under audit twice, from two entries to four and then to six. A
+    missing entry costs a walk that was going to fail anyway; a wrong entry
+    would lose a reachable target. That asymmetry is why the list may be short
+    and may not be wrong.
+
+    Where none of them applies this returns false, which says that the
+    endpoints do not settle the pair and not that a chain exists. That question
+    belongs to the walk.
     """
     if target.dimension < source.dimension:
         return True
@@ -90,6 +107,12 @@ def settled(source: PolynomialMap, target: PolynomialMap) -> bool:
         return True
 
     if not set(source.variables) <= set(target.variables):
+        return True
+
+    if source.is_in_MA(0) != target.is_in_MA(0):
+        return True
+
+    if source.determinant() != target.determinant():
         return True
 
     if target.dimension > source.dimension:

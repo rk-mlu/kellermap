@@ -4,6 +4,51 @@ Notable changes per release. The milestone plan and its reasoning live in
 `docs/roadmap.md`, the binding obligations of the verification surface in
 `docs/contracts.md`.
 
+## 0.4.0rc11
+
+One finding from the audit of `0.4.0rc10`, and the correction of a claim I
+should not have made.
+
+### Fixed
+
+- `settled()` decided four endpoint invariants and searched two more. A target
+  of a different Jacobian determinant and a target that moves the origin when
+  the source does not are each impossible for a chain of `BCWStep` to reach,
+  and each was reported as an unexhausted space at a budget of zero and as an
+  exhausted one at a budget of one. Both now stand in the list, with the
+  obligation each rests on: BCW-7 requires a step to preserve the determinant,
+  and BCW-6 puts `H` in `EA^0` and `G` in `EA^1`, both of which fix the origin,
+  so membership of `MA^0` is carried in both directions. The two are checked
+  after the structural ones, since they are the only entries that compute
+  anything. Measured on the largest pair in the project, the three-dimensional
+  source against the published nineteen-dimensional target: 12.8 ms cold and
+  0.6 ms warm, and the driver for that chain runs in 2.4 seconds as before.
+
+### Changed
+
+- REV-11 no longer calls its list the whole of what the endpoints decide. It
+  was four entries when it made that claim and an audit produced two more the
+  same day. The page now says the list holds the invariants that are cheap
+  enough to check, that it is not claimed to be complete, and why the
+  asymmetry permits that: a missing entry costs a walk that was going to fail,
+  a wrong entry would lose a reachable target.
+- Three tests reached the branches they exist for only because `settled()` was
+  narrower than the contract. Widening it left them green and empty, and the
+  coverage gate is what said so.
+  `test_a_budget_spent_exactly_is_not_a_cut_off` used endpoints of different
+  determinants; it now uses a pair of determinant one that is still
+  unreachable. `test_a_state_is_walked_once` used an unreachable source of a
+  different determinant; the source is now `source` composed with an
+  elementary automorphism, which has determinant one, so the walk runs the
+  whole space again and revisits a state after 49 maps.
+  `test_a_candidate_that_does_not_verify_is_discarded` needs a factor of
+  degree zero, which is a non-zero constant, which necessarily moves the
+  origin; its source now moves the origin too, so the pair reaches the walk.
+
+  This is the third time in this milestone that widening a guard has quietly
+  emptied a test. Each time the coverage gate caught it, and each time the
+  test was rebuilt rather than marked unreachable.
+
 ## 0.4.0rc10
 
 Three findings from the audit of `0.4.0rc9`. One of them is a defect I
