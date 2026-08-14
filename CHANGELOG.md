@@ -4,706 +4,89 @@ Notable changes per release. The milestone plan and its reasoning live in
 `docs/roadmap.md`, the binding obligations of the verification surface in
 `docs/contracts.md`.
 
-## 0.4.0rc15
+## 0.4.0
 
-One finding from the audit of `0.4.0rc14`, in the packaging and not in the
-library. No file under `src/` is touched.
+Searching for a reduction rather than verifying one that is presented, and the
+certified factorization of the published nineteen-dimensional Keller map of
+degree three. `TranslationStep` completes the linear normalization, `search()`
+walks from the source and `peel()` from the target, and the published chain is
+a verified `Reduction` in the test suite, an independent rendering in plain
+SymPy, and a search result.
 
-### Fixed
+What that factorization is worth is stated precisely in `docs/references.md`.
+A chain was reconstructed by an external audit of this project and verified
+here twice and independently. The backward search then found a second one, of
+seventeen steps like the first, in eighteen examined maps. It is a chain and
+not the chain, and no minimality is claimed for it.
 
-- A virtual environment named `.venv314` beside the project broke `uv build`.
-  The archive carried it, and unpacking the archive for the wheel build failed
-  on the absolute symlink inside: "Invalid tar file". The name was in none of
-  the three lists that were supposed to prevent it -- the exclusions in
-  `pyproject.toml`, `.gitignore`, and the cleanup in the Makefile -- and it is
-  a plausible local name beside a matrix that carries 3.10 and 3.14.
-  Reproduced: `uv venv --python 3.14 .venv314 && uv build` fails on a clean
-  extraction.
-
-  The source archive is defined by a positive list now. What is not in it is
-  not shipped, whatever it is called. An exclusion list cannot be completed
-  against names nobody has chosen yet, and the comment above it promised that
-  the archive does not depend on the state of the working directory, which
-  only a positive list can keep.
-
-  The shipped set is unchanged: the same fifteen top-level entries as
-  `0.4.0rc14`, compared archive against archive.
-
-- Each entry of the list is anchored with a leading slash. Without it the
-  patterns hold at every level, as in `.gitignore`, so `.gitignore` also
-  matched the file `uv venv` leaves in every environment and the archive
-  carried `.venv314/.gitignore`. The build succeeded and the promise was
-  broken anyway. Found while writing the regression, not by the audit.
-
-- `.gitignore` ignores `.venv*/` rather than `.venv/`. This is a second line
-  and not the fix: the build tool reads `.gitignore`, so this alone covers the
-  reported name, and only the positive list covers a name nobody listed.
+The milestone went through fifteen release candidates and a series of external
+audits. What each candidate changed is in the history of this file; the
+candidates carry no public tag.
 
 ### Added
 
-- `tests/test_packaging.py`. It builds the archive from a copy of the project
-  that carries two stray environments and checks the contents, not the exit
-  code.
-
-  The two environments are the point. `.venv314` is the reported name, which
-  `.gitignore` now covers as well, so a test with only that one could pass
-  without the positive list doing anything. `venv314` without the dot is in no
-  ignore list, and it is what the positive list alone keeps out. The last test
-  of the module runs the same build against the exclusion list this candidate
-  replaces and requires it to fail, naming `venv314`.
-
-  It builds fully rather than with `--sdist`: the reported error appears when
-  the archive is unpacked for the wheel build, not when it is packed. Both
-  builds together take about one and a half seconds, so none of it sits behind
-  a slow marker.
-
-## 0.4.0rc14
-
-Two findings from the audit of `0.4.0rc13`, both about the mutation probe added
-there and neither about the library. The runtime code is unchanged.
-
-### Fixed
-
-- `scripts/mutation_probe.py` mutated the real `src/` and put it back by
-  deleting that directory and copying a snapshot over it. The audit found three
-  mutations left in the tree after a run that reported success, in two
-  independent extractions. It did not reproduce here -- a full sweep left every
-  file byte-identical, immediately afterwards and five seconds later -- and the
-  mechanism is not established. The design is replaced rather than the symptom
-  patched, because the operation is unsafe whatever the mechanism: the tree is
-  deleted and rebuilt twelve times, and an interrupt, an error inside the copy,
-  or a second run started while the first is mutating leaves the repository
-  without a source directory or with a mutation in it.
-
-  The probe now copies the project into a temporary directory and mutates,
-  tests and restores only there. Restoring is one file written back from the
-  text it held, so there is no directory removal in the script at all.
-  `tests/test_scripts.py` runs a whole sweep with a stub in place of the suite
-  and compares a hash of every Python file of the repository before and after.
-
-- `tests/test_scripts.py` loaded script modules without registering them in
-  `sys.modules`. `dataclasses` looks the module up there to resolve deferred
-  annotations, so `Probe` could not be built. The two search drivers have no
-  dataclass, which is why the defect appeared only with the second file loaded.
-
-### Changed
-
-- The accounting of the ten misses was wrong in `docs/contracts.md` and
-  incomplete in the `0.4.0rc13` entry above, which is corrected in place. There
-  are eight collision verifications, one per direction in each of the four
-  `transport` methods. One of the eight -- the fold's check of its result
-  against its own `target` -- is redundant rather than uncontrolled. Seven
-  uncontrolled collision checks plus the two peel bounds are the nine; the
-  redundant one makes ten. The page said eight and two and called the sum nine.
-
-- The claim that the kept probes reproduce those numbers is withdrawn, from the
-  contract page, the changelog and the script's own docstring. It cannot hold.
-  The redundant clause has no probe among the twelve and cannot usefully have
-  one, since a clause that cannot fail on supplied data reports `MISSED` for a
-  reason that is not a missing control; and the other nine were fixed in
-  `0.4.0rc13`, so the probes now report twelve caught. Measured: `0 of 12`. The
-  exact set that produced the ten was never written down, so an immutable
-  manifest is not available either. What the probes establish is that the
-  controls are still in place, and that is what the texts now say.
-
-## 0.4.0rc13
-
-No audit finding. This candidate comes from a systematic pass over
-`docs/contracts.md` asking, for every obligation, whether anything would notice
-if it stopped holding. The last three audits each found one clause that was
-written down and assumed, and looking for the fourth by reading seemed less
-likely to work than looking for all of them by measuring.
-
-The method is a mutation probe: break one fragment of the source, run the fast
-suite, restore. `CAUGHT` means the promise has a control. `MISSED` means the
-suite is indifferent to whether it is kept. Coverage cannot answer this, because
-a check with no control still runs.
-
-The first run produced ten misses. Nine were missing controls and one was
-redundant; the arithmetic of that sentence is corrected in `0.4.0rc14`, where
-the reasons are also given for why the ten cannot be re-derived from the probes
-that were kept.
-
-### Fixed
-
-- Seven of the eight collision verifications inside the four `transport`
-  methods were uncontrolled; the eighth is the fold's check of its result
-  against its own `target`, which is redundant rather than uncontrolled and is
-  dealt with under Changed. Each `transport` checks its input against the
-  step's source and its output against the step's target, and the two mask each
-  other: remove either one and the other catches the same bad collision one
-  line later, with a different message and against a different map. Three tests
-  already existed for this and read only the obligation, which is `COL-3` for
-  both. They now read which map the failure names -- by the arity of the
-  reported point where the dimensions differ, by the reported image where they
-  do not.
-- The output check of a `transport` had no control at all, and it is the one
-  that matters most. `transport()` does not call `verify()`, so on a supplied
-  step whose target is wrong that check is the only thing between a false
-  certificate and an apparently machine-checked non-injectivity of its target.
-  Reachable, and now controlled for `BCWStep`, `LinearStep` and
-  `TranslationStep`.
-- REV-8 and REV-9, the two bounds that prune the peel, could both be switched
-  off without a single test failing. They are sound rather than heuristic, so
-  removing them changes no result -- only how many maps are examined, which
-  nothing asserted. Measured on the chain in `test_a_state_is_walked_once`: 49
-  maps with both, 50 without REV-9, 57 without REV-8, 58 without either. The
-  count is now pinned.
-- `test_transport_refuses_a_collision_of_another_map` in `tests/test_translation.py`
-  used a source whose normalization shifts by zero, so its source and target
-  were the same map and no test written against it could have distinguished the
-  two checks. It now uses a source that moves.
-
-### Added
-
-- `scripts/mutation_probe.py`, holding twelve probes so that a later change to
-  the same lines can be asked the same question. It is not a gate: it takes
-  about ten seconds per probe, and a miss is a question rather than a defect.
-
-### Changed
-
-- `docs/contracts.md` names a third gap beside the two it already named. Full
-  statement coverage is not full obligation coverage, which the page said; and
-  full obligation coverage is not the same as every obligation being pinned,
-  which it did not.
-- RED-5 states which of its three parts can fail on supplied data. The check of
-  the folded collision against `target` cannot: `target` is `steps[-1].target`
-  and the last step has already verified its output against it under STEP-2.
-  It is kept as a self-check and marked as one in the code. This was the one
-  miss of the ten that wanted a sentence on the contract page rather than a
-  test.
-- The fold's check of its *input* is not redundant, and the reason is
-  localization: without it the same collision fails inside step 0 and the error
-  is located there, blaming a step at which nothing is wrong. That is what its
-  new control reads.
-
-## 0.4.0rc12
-
-Three findings from the audit of `0.4.0rc11`. The first is a contract that was
-written down and not checked; the other two are a claim and a comparison that
-had drifted from the rest of the package.
-
-### Fixed
-
-- The arguments of `search` and `peel` were validated after `settled`, so
-  whether a call was valid depended on whether REV-11 answered the pair from
-  its endpoints. `search(F, F, None)` returned an outcome while the same pool
-  against endpoints that had to be walked raised, and `peel(None, F)` raised
-  `AttributeError` from inside `settled` -- an implementation detail rather
-  than the argument that was wrong, and not what the error table of `api.md`
-  promises. Every check now runs first, and the regressions run each of them
-  twice: once against endpoints `settled` answers and once against endpoints
-  the walk has to cross.
-- SEA-3 requires each pool name to satisfy RC-4 against the source's ring.
-  That was written down and assumed. A pool naming a generator of the source
-  was accepted, and the search then looked for steps introducing a coordinate
-  that already existed. The names are now checked for being symbols, for being
-  pairwise distinct *by name* -- `Symbol("w")` and `Symbol("w", positive=True)`
-  are two dictionary keys and one name -- and for being disjoint from
-  `reserved_names` of the source's ring. `api.md` lists the three new rows.
-- `settled` compared determinants with `!=`. `architecture.md` gives
-  `canonical.agree` as the one answer this package has to what equality of two
-  expressions means, and the BCW, linear and translation steps already use it.
-  No wrong answer could be produced for values that come out of a ring, which
-  is exactly the argument that section warns against: a second, cheaper answer
-  to the same question is how the original defect arose. Measured after the
-  change: `settled` on the largest pair in the project is 0.66 ms warm, and
-  `scripts/search_alpoege19.py` runs in 2.4 seconds as before.
-
-### Changed
-
-- The docstring of `settled` called the determinant the only check that
-  computes anything, passing over `is_in_MA` directly above it. It now says
-  two, which is what the rc11 changelog entry already said.
-- `architecture.md` counted two `Expr`-level determinant comparisons. There
-  have been three since `0.4.0rc11`.
-
-## 0.4.0rc11
-
-One finding from the audit of `0.4.0rc10`, and the correction of a claim I
-should not have made.
-
-### Fixed
-
-- `settled()` decided four endpoint invariants and searched two more. A target
-  of a different Jacobian determinant and a target that moves the origin when
-  the source does not are each impossible for a chain of `BCWStep` to reach,
-  and each was reported as an unexhausted space at a budget of zero and as an
-  exhausted one at a budget of one. Both now stand in the list, with the
-  obligation each rests on: BCW-7 requires a step to preserve the determinant,
-  and BCW-6 puts `H` in `EA^0` and `G` in `EA^1`, both of which fix the origin,
-  so membership of `MA^0` is carried in both directions. The two are checked
-  after the structural ones, since they are the only entries that compute
-  anything. Measured on the largest pair in the project, the three-dimensional
-  source against the published nineteen-dimensional target: 12.8 ms cold and
-  0.6 ms warm, and the driver for that chain runs in 2.4 seconds as before.
-
-### Changed
-
-- REV-11 no longer calls its list the whole of what the endpoints decide. It
-  was four entries when it made that claim and an audit produced two more the
-  same day. The page now says the list holds the invariants that are cheap
-  enough to check, that it is not claimed to be complete, and why the
-  asymmetry permits that: a missing entry costs a walk that was going to fail,
-  a wrong entry would lose a reachable target.
-- Three tests reached the branches they exist for only because `settled()` was
-  narrower than the contract. Widening it left them green and empty, and the
-  coverage gate is what said so.
-  `test_a_budget_spent_exactly_is_not_a_cut_off` used endpoints of different
-  determinants; it now uses a pair of determinant one that is still
-  unreachable. `test_a_state_is_walked_once` used an unreachable source of a
-  different determinant; the source is now `source` composed with an
-  elementary automorphism, which has determinant one, so the walk runs the
-  whole space again and revisits a state after 49 maps.
-  `test_a_candidate_that_does_not_verify_is_discarded` needs a factor of
-  degree zero, which is a non-zero constant, which necessarily moves the
-  origin; its source now moves the origin too, so the pair reaches the walk.
-
-  This is the third time in this milestone that widening a guard has quietly
-  emptied a test. Each time the coverage gate caught it, and each time the
-  test was rebuilt rather than marked unreachable.
-
-## 0.4.0rc10
-
-Three findings from the audit of `0.4.0rc9`. One of them is a defect I
-introduced in that candidate.
-
-### Fixed
-
-- `settled()` decided two endpoint invariants and searched three more. A
-  target of lower dimension, a target missing one of the source's generators,
-  and a target over a different coefficient domain are each impossible for a
-  chain of `BCWStep` to reach, and each was reported as an unexhausted space
-  at a budget of zero and as an exhausted one at a budget of one. All four
-  invariants are now decided before either walk, in `search` and in `peel`,
-  and REV-11 lists them with the property of a step each one rests on. The
-  domain case is the one that has cost most: a driver built its source with
-  `over_field` while the target lay over `ZZ`, and the forward search ran for
-  hours in a space that could not contain the answer.
-- `CHANGELOG.md` carried two `## 0.4.0rc9` sections. The first held the
-  findings from the review here and the second the merged set including the
-  audit of `0.4.0rc8`, so the first was contained in the second. It came from
-  writing the merged section without removing the one it replaced. The
-  version check stayed green because it compares the first heading it finds,
-  and it now also requires that no release appears twice. The audit found
-  this; the check that would have found it is the one the audit suggested.
-- `docs/references.md` attributed the filtration `MA_n^d(k)` to p. 304 of the
-  paper. It is on p. 303; p. 304 opens with the decomposition of `GA_n(k)` and
-  then defines the elementary automorphisms, `EA_n(k)` and the stable
-  extension. `MA_n(k)` itself is p. 302. Read off the scan page by page. The
-  three are separate rows now, since one row covering three pages is how they
-  came to be confused. Every other citation of p. 304 in the repository is
-  about elementary automorphisms and stands.
-
-### Changed
-
-- `test_a_chain_over_other_generators_is_a_non_answer` used a source over
-  generators the target did not have. The wider `settled()` answers that pair
-  before the walk, so the test no longer reached the endpoint comparison it
-  exists for. It now puts the source under the target and gives the pool names
-  the target does not carry, which is a chain of the right dimension over the
-  wrong generators and reaches that comparison again.
-
-## 0.4.0rc9
-
-Three findings from the audit of `0.4.0rc8`, and three from a review here
-before it arrived. None is about the mathematics: every one is a check that
-was believed to cover something it did not.
-
-### Fixed
-
-- REV-11 was only half implemented in `search`. Its test stood in `_finish`,
-  that is in the descent, so a pair whose answer was fixed before the walk
-  still had its `exhausted` flag decided by the budget: `search(F, F)`
-  reported an unexhausted space at a budget of one and an exhausted one at
-  four. The omission is invisible on a source with no steps that introduce no
-  generator, since there is nothing to descend into, which is why the earlier
-  regression did not show it. Both cases of REV-11 are now settled from the
-  endpoints, before either walk begins, in `search` and in `peel`. `peel` gains
-  the second case, so a target of the source's dimension over other generators
-  no longer costs an examined map to say the same thing.
-- `scripts/search_alpoege19.py` hung on `start=0`. Zero doubles to zero, so
-  `while budget <= ceiling: budget *= 2` never ended and the run printed
-  nothing. Both drivers in the file had that loop written out and both hung.
-  The budgets come from `rounds()` now, which refuses a first budget below one
-  and a ceiling below it. The check is in the script and not in the library:
-  zero is a legal budget of `search` and `peel`, which examine nothing and say
-  so.
-- `enumerate_candidates` is public and did not check `selection_limit`. The
-  same negative value was refused through `search` and accepted directly.
-- `budget`, `spare`, `pairs`, `rising`, `rewrites` and `selection_limit` are
-  checked for being whole numbers and not only for being non-negative.
-  `budget=1.5` produced `examined = 1.5`, which contradicts the `int` that
-  `PeelOutcome` and `SearchOutcome` declare. `True` is refused with it, since
-  `bool` is a subclass of `int`.
-- `tests/test_documentation.py` examined eight of the nine obligation families.
-  `STEP` was missing from `FAMILIES`, and both filters sieve against that set,
-  so every citation of that family had been unchecked since 0.3 --
-  `reduction.py` carries one. An invented `STEP` number passed the gate; it now
-  fails. The set is compared for equality with the families the contract page
-  defines rather than for inclusion, since inclusion is what let the omission
-  through.
-- The check for a range presented as a whole family reached two of the eleven
-  such summaries in the repository. It looked for a signal word within forty
-  characters containing no full stop, and `docs/contracts.md` contains two, so
-  all three docstrings of the form "See ``docs/contracts.md``, X-1 to X-n" lay
-  outside the window. It works one sentence at a time now and reaches all
-  eleven, an enumeration to its end rather than to its first range, and a range
-  wrapped across a line. Measured before and after; nothing in the repository
-  fails either way.
-- The CI ran neither the coverage gate nor the reconstruction scripts. Both are
-  release gates in `AGENTS.md`, both stood only in the `release` target, and so
-  both ran by hand or not at all -- the Makefile records the same finding for
-  `reconstruct` one level down. They are steps of the matrix job now, because
-  the coverage figure can differ between interpreters and should name the one
-  it falls on. Measured: 100 per cent on 3.10 and on 3.14, and the three
-  reconstructions together under ten seconds. `dist-check` joins the packaging
-  job, which was already building the artefacts it reads.
-
-### Added
-
-- `kellermap/guards.py`, holding the two questions both walks answer before
-  they spend anything: whether the bounds are countable numbers, and whether
-  the endpoints leave a chain to look for. Both checks existed twice before,
-  with different messages, and both copies had drifted -- which is how the two
-  findings above came about, one release apart.
-- `tests/test_scripts.py`. The search drivers had no test at all; the audit
-  said so, and the hang is what a first one catches.
-
-### Changed
-
-- Every check in `tests/test_documentation.py` has a negative control: a text
-  with the fault written into it, and one with the permitted form. Writing them
-  is what found two of the findings above. The module reads itself, so the
-  faulty examples are assembled rather than written out.
-- The signal words for a claiming range live in the expression alone. They
-  stood there and in a docstring, and the two had drifted: `state` was in the
-  docstring and not in the expression, `siehe` and `obligations of` the other
-  way round. The expression gained `state` and word boundaries -- without the
-  leading one, `state` matches inside `overstated` and the check reported one
-  of its own negative controls.
-- The version is checked in the three places that carry it: `pyproject.toml`,
-  the project status in `README.md`, and the newest heading here.
-- REV-11 and SEA-12 in `docs/contracts.md` say what is settled before a walk
-  and what the bounds have to be. Both were true of `peel` and stated as if
-  they were true of everything.
-
-## 0.4.0rc8
-
-Five blockers and two smaller findings from the audit of `0.4.0rc7`.
-
-### Fixed
-
-- `search_alpoege19.py` took `rising` and did not pass it to `peel`, while
-  printing it among the rules that defined the space. A run reported an
-  exhausted space where the chain was three maps away. That is a false negative
-  research report, and it came from a textual replacement of mine that matched
-  nothing and was not checked.
-- `exhausted` was wrong in both searches. In `peel` the visited-state cache was
-  consulted after the budget check, so a state seen long before could fail on
-  the budget; in `search` it still came from `remaining > 0`. Both now set the
-  flag only where an unexamined state fails.
-- `search` raised where `peel` had been taught not to: `search(F, F)` gave the
-  internal error of RED-1, and a target of the source's dimension over other
-  generators gave a `ValueError` from `reordered`. Both are non-answers, as
-  REV-11 says and as `contracts.md` has promised since 0.3.
-- REV-11 compared generators by their printed names, so `Symbol("x",
-  positive=True)` and `Symbol("x", real=True)` passed as one map and
-  `reordered` refused them. The symbols are compared.
-- `budget`, `spare`, `pairs`, `rising`, `rewrites` and `selection_limit` are
-  checked for negative values. A negative budget produced `examined = -1`.
-- The CI job named for Python 3.14 ran 3.10. `uv run` takes its version from
-  `.python-version` unless told otherwise, so `make check` ignored the matrix.
-  `UV_PYTHON` is set for both, and a step asserts the interpreter before the
-  gates run.
-
-### Changed
-
-- REV-12 is stated as a ceiling rather than a direction. Saying `rising = 0`
-  admits "chains whose degree never rises" was wrong: a chain of degrees
-  `4, 3, 4` is admitted there, because none of them exceeds four.
-
-## 0.4.0rc7
-
-Three findings from the audit of `0.4.0rc6`.
-
-### Fixed
-
-- `peel(F, F)` returned a verified cyclic chain. `0.4.0rc6` moved REV-11 into
-  the descent, where it stopped the empty `Reduction` and not the search, which
-  could then return to the source: two `m = 0` steps with coefficients `1` and
-  `-1`, correct as mathematics and against the clause. Equal endpoints are now
-  answered before the search begins.
-- `exhausted` came from `remaining > 0`, which confuses a budget spent exactly
-  with a search cut off. It is now set only where a state actually fails on the
-  budget.
-
-### Changed
-
-- The degree bound is REV-12 and takes an argument. The code carried it with a
-  proof beside it, and the proof was wrong: the new terms of a step have degree
-  at most `1 + deg Q` when the factors are new, and not when a factor is a
-  component the map already has. The audit built a chain of degrees `3, 4, 3`,
-  refused at `rising = 0` and found at `rising = 1`. The bound stays as a
-  stated decision, and the rules the driver prints on exhaustion name it.
-- `tests/test_documentation.py` reads German ranges and the tuple form of `G`,
-  both of which it missed; the module docstring of `tests/test_peeling.py`, the
-  formula in `architecture.md` and a comment in `search_alpoege19.py` were what
-  it missed them in.
-
-## 0.4.0rc6
-
-Two findings from the audit of `0.4.0rc5`, and a gate so that the
-documentation stops being checked one place at a time.
-
-### Fixed
-
-- `peel(F, F)` raised `ValueError` from a public function. Equal endpoints are
-  legitimate arguments, and the answer is the chain of no steps, which RED-1
-  makes unrepresentable. It is now reported as an exhausted space, which
-  REV-11 states. The same holds for a target of the source's dimension over
-  different generators, which used to reach `reordered` and raise.
-- `pairs=1` suppressed every step introducing two coordinates unless the map
-  was within two coordinates of the source, so it meant a position as well as
-  a count. That reasoning fails when such a step's factor uses a coordinate an
-  earlier step introduced, and a valid chain with exactly one of them was
-  reported as an exhausted space. The position filter is gone; `pairs` is the
-  count it always claimed to be.
-
-### Added
-
-- `tests/test_documentation.py` checks what the prose claims about the code:
-  that every cited obligation exists, that a range presented as a whole family
-  reaches its last member, that the class sketch in `contracts.md` mentions
-  every parameter the constructor takes, and that no formula writes `G`
-  without its coefficient. It found the unweighted `G` in the public docstring
-  and four stale ranges on its first run.
-
-### Changed
-
-- The licence of arXiv:2608.00222 is CC BY 4.0, which the arXiv listing states.
-  `references.md` said it could not be established, written from habit rather
-  than from looking. The decision not to vendor the map stands on its own
-  reasons.
-
-## 0.4.0rc5
-
-Two crash paths out of `peel`, one search bound stated too narrowly, and four
-documentation contradictions, all from the audit of `0.4.0rc4`.
-
-### Fixed
-
-- `peel` raised `KeyError` on a valid one-step chain. REV-2 is a pattern and
-  not a certainty: a coordinate of the *source* can occur in exactly two
-  components by coincidence, is then peeled on trial, and the map that results
-  no longer contains the source, which everything downstream assumed it did.
-  A state missing a source generator is now discarded before anything reads it.
-- `peel` let a `VerificationError` escape. It rebuilds each candidate forwards,
-  and a candidate whose factor has order zero puts `H` in `EA^-1`, which BCW-6
-  rightly refuses. The guess was wrong, so the candidate is dropped; an
-  unsuccessful search must not report a certificate failure. Zero factors stay
-  admissible, since the self-fresh case of `0.4.0rc4` needs them.
-
-### Changed
-
-- REV-10 states the actual bound on the `m = 0` branch. It said only that a
-  step cancelling its target's terms exactly leaves nothing to read the
-  constant from. The branch tries the constants that cancel one of the shared
-  monomials, so a step whose own constant cancels none of them is out of reach
-  as well — `(s + 2ab + x**3, ...)` to `(s + ab + x**3, ...)` with coefficient
-  one, where only `-1` is tried. Both examples are in the clause and in the
-  tests.
-- `architecture.md`, the module text of `tests/test_alpoege19.py` and the class
-  sketch in `contracts.md` no longer say the step sequence is missing or write
-  `G` unweighted, and the `moves` docstring no longer claims that an `m = 0`
-  move must shorten its target.
-- The 0.5 plan records where a peel spends its time, measured under
-  `cProfile`: in SymPy expression work rather than in coefficient arithmetic.
-  Working in the ring throughout, which `undo` still does not, is the lever.
-  `gmpy2` is not: measured with and without, it gains about six per cent, less
-  than the variation between two runs, and adopting it would double the
-  configurations the release chain has to cover for a gain in the noise.
-
-## 0.4.0rc4
-
-One release blocker, two functional findings and the documentation
-contradictions from the audit of `0.4.0rc3`.
-
-### Fixed
-
-- `undo` rebuilt the reduced ring from the printed names of its generators, so
-  `Symbol("x", positive=True)` came back as `Symbol("x")` and a component no
-  longer converted, while `Symbol("x space")` was parsed into two generators.
-  The ring is cloned with the generator objects.
-- `factor` read the constant off the coefficient of the dropped coordinate to
-  the first power only, so a step whose two slots are one fresh coordinate
-  carrying zero -- where the coordinate appears only squared -- looked
-  unreachable. Any monomial carrying the coordinate gives the same constant,
-  and the one of highest degree is taken, chosen canonically so that the term
-  order cannot decide it.
-- The `m = 0` branch required undoing to shorten the target component. That is
-  one case taken for all: undoing adds a product back, so the component usually
-  grows, and the requirement only held where the forward step had grown it.
-  Removed; it costs seven more moves at the root of the published map and
-  changes neither run.
-- `tests/data.py` holds SymPy constants and imports nothing from `kellermap`,
-  so `scripts/reconstruct_alpoege19.py` reads the published map without the
-  code it checks. The `PolynomialMap` is built in the test module.
-
-### Added
-
-- REV-10 states a bound the code had and the page did not: a step introducing
-  no coordinate whose removed product cancelled its target's terms exactly
-  leaves no monomial to read the constant from, so every constant fits and the
-  peel would be guessing. Such a step is outside the space.
-
-### Changed
-
-- `contracts.md`, `roadmap.md`, `architecture.md` and the module text of
-  `step.py` describe `m` as the number of distinct fresh variables, and the
-  class sketch in `contracts.md` carries the coefficient. `step.py` names all
-  three extensions beyond Proposition (3.1) and cites BCW-1 to BCW-12.
-- A second family of counterexamples is recorded in `references.md`:
-  arXiv:2608.00222v1, whose §3.5 gives another three-dimensional Keller map.
-  Its component degrees, its determinant and a collision were recomputed here;
-  its fiber count was not. It is over `QQ` and unnormalized, and its collision
-  is not rational, so it is a different search space and would need a
-  `Collision` over a number field. The 0.5 plan names it as a second source.
-- The sentence saying the two derived rows carry different standing, with the
-  label in the first column saying which. Both are labelled `derived` and both
-  mean the same by it; what differs is when each became derivable, and what a
-  derivation establishes is a separate question that the provenance section
-  answers for each.
-- `references.md` and the 0.5 plan record that the coefficient ring is part of
-  the search space rather than a matter of presentation. The linear
-  normalization divides by the determinant, so `bcw17` and `alpoege15` carry
-  genuine fractions and live over `QQ`, while the nineteen-dimensional map was
-  never normalized and is over `ZZ` throughout its chain. A step preserves the
-  domain, so the source fixes what is reachable, and a benchmark figure has to
-  say which space it belongs to.
-- The benchmark table in `references.md` names the two derived maps by their
-  functions in `kellermap.examples` rather than by the test modules they lived
-  in before 0.4, marks the nineteen-dimensional row as present from a checkout
-  and not from the source archive, and reports the step sequence of that map as
-  reproduced rather than as the target of a milestone still running.
-
-## 0.4.0rc3
-
-One release blocker and the remaining findings from the audit of `0.4.0rc2`.
-
-### Fixed
-
-- The `m = 0` branch of `moves` computed in expressions rather than in the ring
-  of the map, and was wrong in both directions. Over `ZZ` it offered a constant
-  of `1/2`, which is not a constant there, and the peel then crashed on a map
-  it could not build -- with the valid chain already in the space. Over
-  `ZZ[S, T]` it measured the shortening with `sp.Add.make_args`, counting
-  `S*a*x - T*a*x` as two summands where the ring sees one term with coefficient
-  `S - T`, so a valid step looked like no shortening at all and the space was
-  reported exhausted after one state. The branch now works on `PolyElement`
-  throughout, converts every quotient into the coefficient domain and discards
-  what does not lie there.
-- The deduplicated constants were iterated straight out of a `set`, so
-  `PYTHONHASHSEED` decided which move came first and, on a tight budget, which
-  chain was found. They are sorted canonically.
-- BCW-8 gave the transported image as `c_index - c_u * c_w` after introducing
-  the coefficient, in the contract and in the docstring. Both now carry the
-  weight.
-- Documentation from before `0.4.0rc2`: `architecture.md` said no direction had
-  found the chain and described `m` as the number of `Fresh` slots;
-  `references.md` said the sequence was missing; `peeling.py` and
-  `search_alpoege19.py` still spoke of the withdrawn diagonal, and the latter
-  claimed a first round below 68425 maps was wasted, where eighteen now
-  suffice. The README called three routes "the same seventeen steps", and the
-  search finds a different valid seventeen-step chain.
-
-## 0.4.0rc2
-
-Three release blockers and four further findings from the audit of `0.4.0rc1`.
-
-### Fixed
-
-- `BCWStep.transport` scaled the removed product by the coefficient in `G` but
-  not in the image, so a transported collision image was wrong whenever a
-  carried coordinate had a non-zero image. Every collision image in the suite
-  had zeros there, and a product with a zero does not remember a factor.
-- `scripts/search_alpoege19.py` built its source over `QQ` while the published
-  map is over `ZZ`, so the search could not reach it however long it ran. Over
-  `ZZ` the peel reaches it in eighteen examined maps. The claim that this
-  repository had not found the chain is withdrawn.
-- The source archive no longer carries `tests/data.py`. Distributing it
-  contradicted this project's own rule while the documentation said otherwise.
-- `peel` carries the coefficient domain and the monomial order of the target
-  into every intermediate map instead of re-inferring them, and admits a
-  parameter of that domain as a coefficient, which BCW-11 always allowed.
-- BCW-12 compares its two factors canonically, so two spellings of one
-  polynomial are one polynomial.
-- `moves` offers one candidate per distinct constant rather than one per shared
-  monomial, and `peel` walks a state once. Thirty-six candidates at the root of
-  the published map became sixteen.
-
-### Added
-
-- SEA-14 names the boundary of the forward search: no coefficient other than
-  one, and no step whose two slots are one fresh coordinate. Reporting no
-  result for either is SEA-6 and not a deferral under SEA-7. Peeling has
-  neither restriction.
-- `mypy --strict scripts` is a gate.
-
-## 0.4.0rc1
-
-The linear part completed, two searches for a step sequence, and the certified
-factorization of the published nineteen-dimensional Keller map of degree three.
-
-That factorization is the result of the milestone, and what it is worth is
-stated precisely in `docs/references.md`. A chain was reconstructed by an
-external audit of this project and verified here twice and independently, once
-in plain SymPy and once as a chain of `BCWStep`. The backward search then found
-a second one, of seventeen steps like the first, in eighteen examined maps.
-
-### Added
-
-- `TranslationStep` — the first factor of Chapter II, Proposition (1.1),
-  which completes the linear normalization for maps outside `MA^0`.
-  Obligations TRA-1 to TRA-8.
-- `search(source, target, pool)` — a forward search for a step sequence,
-  under SEA-1 to SEA-13, with `enumerate_candidates`, `anchors` and
-  `Candidate`.
-- `peel(source, target)` — a backward search, taking a chain off the target.
-  It needs neither a value pool nor supplied names, and recovers the
-  fifteen-dimensional reduction in eight maps where the forward search needs
-  sixty-two and a value the published map no longer carries. Obligations REV-1
-  to REV-9.
+- `TranslationStep` — the first factor of Chapter II, Proposition (1.1), which
+  completes the linear normalization for maps outside `MA^0`. Obligations TRA-1
+  to TRA-8.
+- `search(source, target, pool)` — a forward search for a step sequence, under
+  SEA-1 to SEA-14, with `enumerate_candidates`, `anchors` and `Candidate`. It
+  is told what a fresh coordinate may carry.
+- `peel(source, target)` — a backward search, taking a chain off the target,
+  under REV-1 to REV-12. It needs neither a value pool nor supplied names, and
+  recovers the fifteen-dimensional reduction in eight examined maps where the
+  forward search needs sixty-two and a value the published map no longer
+  carries. `PeelOutcome`, `SearchOutcome` and `Undo` come with it.
 - `BCWStep` takes a `coefficient` (BCW-11) and admits two `Fresh` slots naming
   one variable (BCW-12). Both are extensions beyond Proposition (3.1), marked
-  as such, and both are needed by the published chain.
-- `PolynomialMap.reordered()` — the generator order of a chain is the order
-  its steps introduced them, and a target may name them differently.
+  as such, and the published chain needs both.
+- `PolynomialMap.reordered()` — the generator order of a chain is the order its
+  steps introduced them, and a target may name them differently.
 - `PolynomialMap.identity()` — the identity was written out forty-one times,
   twenty-one of them repeating their own variable list.
 - `kellermap.examples` — the Keller maps this repository writes out more than
   once, chosen by two counted criteria.
-- `tests/test_alpoege19.py` and `scripts/reconstruct_alpoege19.py` — the
-  chain as a verified `Reduction` and as an independent rendering.
-- `tests/test_admissible_shapes.py` — every admissible shape of a step
-  through every operation. Two faults of this milestone were found by an audit
-  and by an assembly rather than by a test, and both were of that kind.
-- `tests/test_ascii.py` — a gate for the agreement that Python files are pure
-  ASCII, which had one breach in the tree and no gate to attribute it to.
+- `tests/test_alpoege19.py` and `scripts/reconstruct_alpoege19.py` — the chain
+  as a verified `Reduction` and as an independent rendering.
+- Gates for the agreements that had none: `tests/test_admissible_shapes.py` for
+  every admissible shape of a step through every operation,
+  `tests/test_ascii.py` for pure-ASCII Python files,
+  `tests/test_documentation.py` for what the prose claims about the code,
+  `tests/test_packaging.py` for what the source archive ships, and
+  `tests/test_scripts.py` for the drivers.
+- `scripts/mutation_probe.py` — it breaks one fragment of the source in a copy
+  of the project, runs the suite, and reports whether anything noticed. Full
+  statement coverage says a line ran; it does not say that removing the line
+  would be caught, and those are different questions.
 
 ### Changed
 
-- SEA-5 compares the endpoint by plain equality again. It allowed a diagonal
-  `D` between work packages 7 and 10, first of signs and then of arbitrary
-  non-zero constants; BCW-11 made it unnecessary, because a scalar the step
-  can carry needs nowhere else to live.
-- `m` counts distinct fresh variables, which matters only once two slots may
-  name one.
 - `Collision.transport` appends one coordinate per fresh generator rather than
-  per `Fresh` slot.
-- The fixed maps moved to where their provenance puts them:
-  `kellermap.examples` for the ones this project may distribute, `tests/data.py`
-  for the nineteen-dimensional map, whose licence could not be established.
+  one per `Fresh` slot, which matters once two slots may name one variable.
+- `m` counts distinct fresh variables, for the same reason. BCW-1 and BCW-2 are
+  amended for the coefficient and for the shared name.
+- The fixed maps moved to where their provenance puts them: `kellermap.examples`
+  for the ones this project may distribute, `tests/data.py` for the
+  nineteen-dimensional map, whose licence could not be established. The source
+  archive does not carry that file.
+- The source archive is defined by a positive list of what it ships rather than
+  by a list of what it does not. A list of exclusions cannot be completed
+  against names nobody has chosen yet, and the promise above it was that the
+  archive does not depend on the state of the working directory.
+- `docs/contracts.md` names a third gap beside the two it already named. Full
+  statement coverage is not full obligation coverage; and full obligation
+  coverage is not the same as every obligation being pinned by something.
+- The release chain runs the coverage gate, the three reconstructions and the
+  distribution metadata check automatically rather than by hand, on both ends
+  of the supported Python range.
+
+### Fixed
+
+- `docs/references.md` attributed the filtration `MA_n^d(k)` to p. 304 of the
+  paper. It is on p. 303; p. 304 opens with the decomposition of `GA_n(k)`.
+  Read off the scan page by page, and the pages are separate rows now, since
+  one row covering three pages is how they came to be confused.
+- One Python file in the tree was not pure ASCII, against the project's own
+  agreement, with no gate to attribute it to.
 
 ### Withdrawn
 
@@ -712,6 +95,28 @@ a second one, of seventeen steps like the first, in eighteen examined maps.
   final carrier values and not a chronology; the chain settled it, and the
   paragraph that argued otherwise stays in `docs/roadmap.md`, withdrawn rather
   than deleted.
+
+### Known limitations
+
+- A reused factor must be carried by a coordinate of the source of that step,
+  not by an earlier map in the chain.
+- The forward search has a stated boundary, SEA-14: no coefficient other than
+  one, and no step whose two slots are one fresh coordinate. Reporting no
+  result for either is an exhausted space and not a deferral. Peeling has
+  neither restriction.
+- A `Collision` holds points over the coefficient domain of its map. The second
+  family of counterexamples recorded in `docs/references.md`, arXiv:2608.00222
+  §3.5, has a collision that is not rational, so reaching it needs a collision
+  over a number field. It is named as a second source for 0.5.
+- The coefficient ring is part of the search space and not a matter of
+  presentation. A step preserves the domain, so the source fixes what is
+  reachable, and a benchmark figure has to say which space it belongs to.
+- No minimality and no priority is claimed for any dimension reached here.
+  `docs/references.md` says what a comparison with the literature does and does
+  not establish.
+- A peel spends its time in SymPy expression work rather than in coefficient
+  arithmetic, measured under `cProfile`. Working in the ring throughout, which
+  `undo` still does not, is the lever, and it is 0.5 work.
 
 ## 0.3.0
 

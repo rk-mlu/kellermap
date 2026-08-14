@@ -437,8 +437,11 @@ ourselves.
 
 # Version 0.4
 
-**Status: complete.** `docs/contracts.md` states the obligations, written before
-the implementation as for 0.2 and 0.3.
+**Status: released as `0.4.0`.** The milestone went through fifteen release
+candidates and a series of external audits; the last found no blocker. What
+each candidate changed is in the history of `CHANGELOG.md`, which carries one
+consolidated entry for the release. `docs/contracts.md` states the obligations,
+written before the implementation as for 0.2 and 0.3.
 
 This page is the plan and the reasons for it. It says what each work package
 was for and why the ones that were inserted exist. What an obligation requires
