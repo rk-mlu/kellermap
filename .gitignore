@@ -6,7 +6,10 @@ __pycache__/
 # Build- und Testumgebungen
 dist/
 build/
-.venv/
+# Mit Stern: eine Umgebung heisst nicht immer .venv. `.venv314` neben einer
+# Matrix aus 3.10 und 3.14 war in keiner Liste, wurde mitversioniert und
+# brach `uv build`.
+.venv*/
 build_env/
 min_env/
 wheels/

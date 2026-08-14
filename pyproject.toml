@@ -1,6 +1,6 @@
 [project]
 name = "kellermap"
-version = "0.4.0rc14"
+version = "0.4.0rc15"
 description = "Polynomial Keller maps and certified transformations of them, working towards the Bass–Connell–Wright degree reduction."
 readme = "README.md"
 requires-python = ">=3.10"
@@ -112,23 +112,48 @@ build-backend = "hatchling.build"
 packages = ["src/kellermap"]
 
 [tool.hatch.build.targets.sdist]
-# Ohne explizite Ausschluesse haengt der Inhalt des sdist vom Zustand des
-# Arbeitsverzeichnisses ab: nach `make coverage` wanderten .coverage und
-# htmlcov/ mit hinein. Ein vorgeschaltetes `make clean` waere Disziplin,
-# das hier ist eine Zusage.
+# Eine Positivliste und keine Ausschlussliste. Ohne beides haengt der Inhalt
+# des sdist vom Zustand des Arbeitsverzeichnisses ab: nach `make coverage`
+# wanderten .coverage und htmlcov/ mit hinein.
+#
+# Bis 0.4.0rc15 stand hier eine Ausschlussliste, und sie konnte die Zusage
+# nicht halten, die der Kommentar gab. Sie zaehlte `.venv`, `build_env` und
+# `min_env` auf; eine Umgebung namens `.venv314` -- ein naheliegender Name
+# neben einer Matrix, die 3.10 und 3.14 fuehrt -- war in keiner der drei
+# Listen, also auch nicht in .gitignore, und `uv build` brach mit
+# "Invalid tar file" ab, weil in einer venv absolute Symlinks stehen. Ein
+# externes Audit hat es gebaut. Eine Ausschlussliste ist gegen Namen, die
+# noch niemand gewaehlt hat, nicht zu vervollstaendigen; eine Positivliste
+# ist es.
+#
+# Was hier nicht steht, wird nicht ausgeliefert. Ein neues Verzeichnis, das
+# ins Archiv gehoert, muss deshalb hier eingetragen werden -- und
+# `tests/test_packaging.py` haelt fest, dass die Liste und der Inhalt des
+# gebauten Archivs uebereinstimmen.
+# Jeder Eintrag ist mit "/" verankert. Ohne den fuehrenden Schraegstrich sind
+# die Muster wie in .gitignore auf jeder Ebene gueltig, und `.gitignore` traf
+# dann auch die Datei, die `uv venv` in jede Umgebung legt: das Archiv trug
+# `.venv314/.gitignore`. Der Bau lief durch, weil keine Symlinks mehr drin
+# waren, und die Zusage war trotzdem gebrochen.
+include = [
+    "/src",
+    "/tests",
+    "/docs",
+    "/scripts",
+    "/.github",
+    "/AGENTS.md",
+    "/CHANGELOG.md",
+    "/LICENSE",
+    "/Makefile",
+    "/README.md",
+    "/pyproject.toml",
+    "/uv.lock",
+    "/.gitignore",
+    "/.python-version",
+]
 exclude = [
-    ".coverage",
-    ".coverage.*",
-    "htmlcov",
-    ".pytest_cache",
-    ".mypy_cache",
-    ".ruff_cache",
     "**/__pycache__",
     "**/*.py[cod]",
-    "build_env",
-    "min_env",
-    "dist",
-    ".venv",
     # Fremde Mathematik ohne ermittelbare Lizenz. Das Wheel enthielt sie nie,
     # das Quellarchiv schon, und damit widersprach die Auslieferung der eigenen
     # Regel aus AGENTS.md. Wer die Abbildung hat, legt sie unter diesem Pfad ab;

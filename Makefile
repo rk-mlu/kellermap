@@ -68,6 +68,12 @@ check-full: lint typecheck test-all
 
 # Geprueft wird das Paket, nicht der Arbeitsbaum: die venv sieht src/ nicht,
 # also loest `import kellermap` in den Tests auf das installierte Wheel auf.
+#
+# Das Aufraeumen unten betrifft die beiden Umgebungen, die dieses Ziel selbst
+# anlegt, und nicht mehr den Inhalt des Archivs. Der haengt seit 0.4.0rc15 an
+# der Positivliste in pyproject.toml und nicht am Zustand des Verzeichnisses:
+# eine venv, die zufaellig daneben liegt, faehrt nicht mit, egal wie sie
+# heisst. Vorher war sie es, und eine namens .venv314 brach `uv build`.
 build-test:
 	@echo "--> Raeume alte Builds auf..."
 	rm -rf dist build_env min_env

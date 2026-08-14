@@ -4,6 +4,59 @@ Notable changes per release. The milestone plan and its reasoning live in
 `docs/roadmap.md`, the binding obligations of the verification surface in
 `docs/contracts.md`.
 
+## 0.4.0rc15
+
+One finding from the audit of `0.4.0rc14`, in the packaging and not in the
+library. No file under `src/` is touched.
+
+### Fixed
+
+- A virtual environment named `.venv314` beside the project broke `uv build`.
+  The archive carried it, and unpacking the archive for the wheel build failed
+  on the absolute symlink inside: "Invalid tar file". The name was in none of
+  the three lists that were supposed to prevent it -- the exclusions in
+  `pyproject.toml`, `.gitignore`, and the cleanup in the Makefile -- and it is
+  a plausible local name beside a matrix that carries 3.10 and 3.14.
+  Reproduced: `uv venv --python 3.14 .venv314 && uv build` fails on a clean
+  extraction.
+
+  The source archive is defined by a positive list now. What is not in it is
+  not shipped, whatever it is called. An exclusion list cannot be completed
+  against names nobody has chosen yet, and the comment above it promised that
+  the archive does not depend on the state of the working directory, which
+  only a positive list can keep.
+
+  The shipped set is unchanged: the same fifteen top-level entries as
+  `0.4.0rc14`, compared archive against archive.
+
+- Each entry of the list is anchored with a leading slash. Without it the
+  patterns hold at every level, as in `.gitignore`, so `.gitignore` also
+  matched the file `uv venv` leaves in every environment and the archive
+  carried `.venv314/.gitignore`. The build succeeded and the promise was
+  broken anyway. Found while writing the regression, not by the audit.
+
+- `.gitignore` ignores `.venv*/` rather than `.venv/`. This is a second line
+  and not the fix: the build tool reads `.gitignore`, so this alone covers the
+  reported name, and only the positive list covers a name nobody listed.
+
+### Added
+
+- `tests/test_packaging.py`. It builds the archive from a copy of the project
+  that carries two stray environments and checks the contents, not the exit
+  code.
+
+  The two environments are the point. `.venv314` is the reported name, which
+  `.gitignore` now covers as well, so a test with only that one could pass
+  without the positive list doing anything. `venv314` without the dot is in no
+  ignore list, and it is what the positive list alone keeps out. The last test
+  of the module runs the same build against the exclusion list this candidate
+  replaces and requires it to fail, naming `venv314`.
+
+  It builds fully rather than with `--sdist`: the reported error appears when
+  the archive is unpacked for the wheel build, not when it is packed. Both
+  builds together take about one and a half seconds, so none of it sits behind
+  a slow marker.
+
 ## 0.4.0rc14
 
 Two findings from the audit of `0.4.0rc13`, both about the mutation probe added
