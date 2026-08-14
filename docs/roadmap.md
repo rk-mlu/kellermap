@@ -813,12 +813,11 @@ boundedness is what makes it a milestone rather than a research programme.
 
 ## Untargeted search, and what a result without a target establishes
 
-0.4 searched between two fixed endpoints. That is what made its result
-checkable: the chain the search returned could be held against a map somebody
-else published, and the collision it transported against a table somebody else
-printed. Here the endpoint is not given. A sequence has to be chosen rather
-than recovered, and what changes first is not the machinery but what a result
-means.
+0.4 searched between two fixed endpoints. This made its result checkable. The
+chain could be compared with a map published by someone else, and the
+transported collision with a published table. Here the endpoint is not given.
+A sequence has to be chosen rather than recovered. The first thing that changes
+is not the algorithm. It is what a result means.
 
 Candidate enumeration against a known target is 0.4's, under SEA-1 to SEA-14.
 What is added is the search that has no target to read from, and the criteria
@@ -831,39 +830,40 @@ equalled the published map, and the transported three-point collision equalled
 the published table. Neither has a counterpart when the endpoint is whatever
 the search arrives at.
 
-What remains is not nothing, and it is worth saying exactly what it is.
+Four statements remain. They are listed here in full.
 
 - Every step the search builds compares the implementation against itself,
   under BCW-9. A chain is `CONSTRUCTED`, so the chain is not evidence about
   anyone else's mathematics.
-- The endpoint has degree at most three, which is checkable and is the point of
-  the exercise.
+- The endpoint has degree at most three. This is checkable, and it is the goal
+  of the search.
 - The collision still collides at the far end, transported through every step.
   This is a property of the source and the chain together and needs no
   published table.
 - The chain has a length and the endpoint has a dimension.
 
-So a result is: *here is a certified chain from this Keller map to a cubic map
-in n dimensions*. Verifiable, and about this library's own arithmetic. The
-dimension `n` is an upper bound and nothing else.
+A result is therefore the statement: there is a certified chain from this
+Keller map to a cubic map in `n` dimensions. The statement is verifiable, and
+it is a statement about this library's own arithmetic. The dimension `n` is an
+upper bound. It is not a minimum.
 
 ### Three decisions taken before the implementation
 
 **The endpoint is a property, not a map.** The search stops when the degree
 reaches three. It follows that `n` is an upper bound: a search that stops at
 the first cubic endpoint has found one chain, not the shortest. Exhausting a
-bounded space does not change this, because the bound is a decision — SEA-12
-already says so for the targeted search, and the untargeted one inherits the
-whole of that clause. Any number that leaves this repository says which space
-it belongs to, and `docs/references.md` says what a comparison with the
-literature does and does not establish.
+bounded space does not change this, because the bound is a decision. SEA-12
+already states this for the targeted search, and the untargeted search
+inherits the clause unchanged. Every number published from this repository
+states which space it belongs to. `docs/references.md` states what a comparison
+with the literature does and does not establish.
 
 **The enumerator is a new construction, and SEA-14 does not simply move.**
 SEA-14 names two shapes the forward search does not build: a step with a
 coefficient other than one, and a step whose two slots name one fresh
 coordinate. Its reasons are specific to having a target. `enumerate_candidates`
 divides a *displacement*, read off the difference between two known maps, and a
-division has no place to put a weight; SEA-8 gives each of the two factors a
+division has no place to put a weight. SEA-8 gives each of the two factors a
 name from a pool that the target fixes. Without a target there is no
 displacement to divide. The search chooses a factorization rather than
 recovering one, so neither reason transfers, and neither does the boundary
@@ -872,15 +872,15 @@ automatically.
 This is not an amendment to SEA. It is a second enumerator with its own
 obligations, and it gets a family of its own on the contract page. That
 family's obligations are written before the code exists, after a measurement,
-for the same reason WP 5 of 0.4 was inserted: the enumerator the plan implies
-may be unaffordable, and finding that out afterwards means writing the
-obligations twice.
+for the same reason WP 5 of 0.4 was inserted. The enumerator that the plan
+implies may be too expensive to run. If this is found out afterwards, the
+obligations have to be written twice.
 
 **The coefficient ring is part of the search space.** A step preserves the
 domain of its source, so the source fixes what is reachable, and the ring is
 not a matter of presentation. It becomes an explicit parameter before any
-figure is compared with anything, because a dimension reached over `QQ` and a
-dimension reached over a number field are answers to different questions.
+figure is compared with anything. A dimension reached over `QQ` and a dimension
+reached over a number field are results about different search spaces.
 
 ## Open from 0.4
 
@@ -889,9 +889,9 @@ of that step, not by an earlier map in the chain. Unchanged since 0.3, and
 stated in `docs/contracts.md`.
 
 **The boundary of the forward search.** SEA-14 reaches a proper subset of the
-chains `BCWStep` admits; `peel` has neither restriction. Whether the untargeted
-search needs the shapes SEA-14 excludes is an open question and is answered by
-the measurement in WP 8, not by assumption.
+chains `BCWStep` admits. `peel` has neither restriction. Whether the untargeted
+search needs the step shapes that SEA-14 excludes is an open question. It is
+answered by the measurement in WP 8 and not by assumption.
 
 **The language of the repository.** `AGENTS.md` has said since 0.2 that
 everything here is English, with test docstrings and test comments as the one
@@ -899,23 +899,26 @@ exception, German by existing convention. Two things are now known about that
 sentence.
 
 The exception should go. Every milestone since 0.2 has ended in external
-audits, 0.4 alone through fifteen release candidates, and each audit read the
-tests: a test is the sharpest statement of what an obligation means, and half
-of them are unreadable to a reviewer who does not read German. The exception
-was cheap when the tests were a private check and is not any more.
+audits, and 0.4 alone went through fifteen release candidates. Each audit read
+the tests. A test is the sharpest statement of what an obligation means, and
+half of the tests cannot be read by a reviewer who does not read German. The
+exception was acceptable while the tests were an internal check. It is no
+longer acceptable.
 
 And the exception is not where the German is. Counted before this plan was
 written: fifteen files outside `tests/` carry German comments, including
 `src/kellermap/peeling.py` with forty-seven German function words,
-`pyproject.toml`, the `Makefile` and the CI workflow. Those are not the
-exception — the rule already forbids them, and no gate catches it.
-`tests/test_ascii.py` checks the characters, not the language. So there are two
-changes and not one: repairing a breach of the existing rule, and then changing
-the rule. They are two work packages, in that order.
+`pyproject.toml`, the `Makefile` and the CI workflow. These files are not
+covered by the exception. The rule forbids German there, and no gate checks it:
+`tests/test_ascii.py` checks the characters and not the language. There are
+therefore two changes and not one. The first repairs a breach of the existing
+rule. The second changes the rule. They are two work packages, in that
+order.
 
 **`CONTRIBUTING.md`** was written before `v0.4.0` was tagged and did not make
-the tag. It is a work package here rather than a loose commit, because adding a
-file at the repository root now has consequences the positive list enforces.
+the tag. It is a work package here and not a single commit, because adding a file at
+the repository root now requires entries in two other files. The positive list
+in `pyproject.toml` enforces this.
 
 ## Work packages
 
@@ -943,33 +946,34 @@ for the duration and moves to `0.5.0rc1` in one step at the end.
 Every work package leaves the repository green.
 
 **WP 1 and WP 2** are the language, split because they are different changes.
-WP 1 repairs a breach of a rule that has stood since 0.2; WP 2 changes the
-rule. Neither alters a single statement. Where a formulation is bad, it is
-recorded and left for a package of its own: translating and improving are two
-jobs, and mixed together the diff is no longer reviewable as a translation.
+WP 1 repairs a breach of a rule that has stood since 0.2. WP 2 changes the
+rule. Neither package alters a single statement. Where a formulation is poor,
+it is recorded and left to a package of its own. Translating and improving are
+two different tasks. If they are mixed, the diff can no longer be reviewed as
+a translation.
 
 Both carry a mechanical control. Before and after each package, every `.py`
 file is dumped as an abstract syntax tree with its docstrings removed, and the
-dumps have to be identical. A green suite would not establish this — it would
-only establish that the tests that exist still pass — whereas an identical tree
+dumps have to be identical. A green suite would not establish this. It would
+only establish that the tests that exist still pass. An identical tree
 establishes that no instruction was touched. WP 2 adds the gate that keeps the
-rule true afterwards: a list of German function words over every file, in the
-shape of `tests/test_ascii.py`. It is a heuristic and will need an exception
-list; it is still the difference between a rule and a promise.
+rule true afterwards: a list of German function words, checked over every file,
+in the form of `tests/test_ascii.py`. The check is a heuristic and needs a list
+of allowed words. It is still better than a rule that nothing checks.
 
 **WP 3** adds `CONTRIBUTING.md`, and with it the entry in the positive list of
 `pyproject.toml` and in the shipped set of `tests/test_packaging.py`. It also
-joins `PROSE` in `tests/test_documentation.py`, because it cites obligations
-and a stale identifier in the page new contributors read is the same defect as
+joins `PROSE` in `tests/test_documentation.py`, because it cites obligations.
+A stale identifier in the page that new contributors read is the same defect as
 one in `contracts.md`.
 
 **WP 4** moves `undo` to `PolyElement`. Measured before the milestone began: a
 peel against the published nineteen-dimensional map costs about 3.8 seconds
 under `cProfile`, of which `undo` is 1.30 and `from_expr` is half of that. The
-`m = 0` branch of `moves` has worked in the ring since `0.4.0rc3`; `undo` still
+`m = 0` branch of `moves` has worked in the ring since `0.4.0rc3`. `undo` still
 goes through expressions and rebuilds a `PolynomialMap` from them at every
-step. This is a restructuring and changes no result, so it comes before
-anything that would make the search wider and the cost worse.
+step. This is a restructuring and changes no result. It comes before every
+package that makes the search wider, because a wider search costs more.
 
 **WP 5** makes the coefficient ring an explicit parameter of a search rather
 than something read off whatever was passed in. No figure from this milestone
@@ -979,50 +983,49 @@ is comparable with anything until this exists.
 currently holds points over the coefficient domain of its map, which puts the
 second family of counterexamples recorded in `docs/references.md`,
 arXiv:2608.00222 §3.5, out of reach. It is the second source map this project
-has, and a second source is worth more than a second example: agreement with it
-is evidence about somebody else's mathematics rather than about this library's
-own arithmetic. It goes after WP 5 because a collision over a number field is
-only a well-posed question once the ring is explicit.
+has. A second source is more useful than a second example: agreement with it is
+evidence about mathematics external to this project, and not about this
+library's own arithmetic. It comes after WP 5, because a collision over a
+number field is a well-posed question only once the ring is explicit.
 
 **WP 7** adds the Gao map. Its licence is established, CC BY 4.0, so unlike the
 nineteen-dimensional map it can be distributed with the library.
 
 **WP 8** states what an untargeted enumerator may claim, before it exists, and
-makes the measurement that decides it. Two questions: how large the space is
-for a map of the sizes this project already handles, and whether the shapes
-SEA-14 excludes are needed to leave it. The obligations of the new family are
+makes the measurement that decides it. It answers two questions. How large is
+the space for maps of the sizes this project already handles? Are the step
+shapes that SEA-14 excludes needed to reach degree three? The obligations of
+the new family are
 written from the answers. `tests/test_documentation.py` compares its family
 list with the contract page for equality, so a new family cannot be added to
 one and forgotten in the other.
 
 **WP 9** is the untargeted search itself, with no ranking and no pruning: the
 enumerator of WP 8, a stopping criterion of degree three, and an outcome that
-reports what it examined. It will be slow, and that is its purpose. A baseline
-that nobody measured is not a baseline, and WP 11 and WP 12 have nothing to be
-compared against without it.
+reports what it examined. It will be slow. That is intended: WP 11 and WP 12
+need a measured baseline to be compared against.
 
 **WP 10** measures what a search spends. Term growth per step, dimension growth
-per step, and where the two diverge. No heuristic yet: this package produces
-numbers and a way of reproducing them, in the shape of the profiling below and
-of `scripts/mutation_probe.py`, which is also a script that answers a question
-rather than a gate that has to pass.
+per step, and the points at which the two diverge. This package contains no
+heuristic. It produces numbers and a way of reproducing them, like the profile
+below and `scripts/mutation_probe.py`. Both are scripts that answer a question.
+Neither is a gate.
 
 **WP 11** ranks candidates by the criteria WP 10 found to predict something.
-Duplicated carrier values go first among the things to try, since they are
-readable straight off the components and they are what produced `alpoege15`.
-Ranking changes which chain is found first and how long it takes; it changes no
-chain into a different chain, and the tests say so.
+Duplicated carrier values are tried first. They can be read directly off the
+components, and they are what produced `alpoege15`. Ranking changes which chain
+is found first and how long the search takes. It does not turn one chain into a
+different chain, and the tests check this.
 
 **WP 12** discards branches that cannot reach degree three within what is left.
-This is the forward counterpart of REV-9, and it carries REV-9's risk: a bound
-that prunes too much turns a reachable chain into an exhausted space, and the
-report is then wrong rather than merely slow. It needs the negative control
-that its obligation is a bound and not a heuristic — a chain the unpruned
-search of WP 9 finds must still be found.
+This is the forward counterpart of REV-9, and it carries the same risk. A
+bound that prunes too much reports a reachable chain as an exhausted space.
+That result is wrong, not merely slow. The package needs a negative control:
+every chain that the unpruned search of WP 9 finds must still be found.
 
 **WP 13** compares. Reproducing published dimensions with machine-verifiable
-certificates is the first correctness target; improving them is the secondary
-scientific goal, and the two are not reported as one thing. Thompson's
+certificates is the first correctness target. Improving them is the secondary
+scientific goal. The two results are reported separately. Thompson's
 twenty-four-variable result and Long's reduction, arXiv:2607.18186, are the
 benchmarks named so far. Before any number leaves the repository the literature
 is checked again, and `docs/references.md` states what the comparison
@@ -1033,24 +1036,24 @@ documentation up to date, and prepares the release.
 
 ### Why the order
 
-WP 1 to WP 3 are text and touch nothing that computes; they go first because
-they touch every file and because a large textual diff interleaved with real
-change cannot be attributed. WP 4 is a restructuring that makes everything
-after it cheaper. WP 5 to WP 7 widen what can be searched *over* before WP 8 to
-WP 12 widen how it is searched. WP 13 draws no comparison until every earlier
-package has fixed what the comparison is between.
+WP 1 to WP 3 change text only and touch nothing that computes. They come
+first because they touch every file. A large text diff mixed with a change in
+behaviour cannot be attributed to either of the two. WP 4 is a restructuring
+that makes every later package cheaper. WP 5 to WP 7 widen what can be searched
+over. WP 8 to WP 12 then widen how it is searched. WP 13 draws no comparison
+until the earlier packages have fixed what is being compared.
 
-The split of what was one package in the first sketch — heuristics — into WP 8
-to WP 12 follows the same rule 0.4 arrived at the hard way. The obligations of
-an enumerator are written before it exists and after a measurement, a baseline
-is built before anything is compared against it, and a bound that can discard a
-reachable chain is a separate package from a ranking that cannot.
+The first sketch had one package for the heuristics. It is now WP 8 to WP 12,
+split along three rules that 0.4 established. The obligations of an enumerator
+are written before it exists and after a measurement. A baseline is built
+before anything is compared against it. A bound that can discard a reachable
+chain is a separate package from a ranking that cannot.
 
 ## Where the time goes
 
 Measured before 0.5 begins, so that the effort goes where it pays. A peel
 against the published nineteen-dimensional map costs about 3.8 seconds under
-`cProfile`, and the profile is flat in an informative way:
+`cProfile`. The profile is flat: no single call dominates.
 
 | | share |
 | --- | --- |
@@ -1060,24 +1063,25 @@ against the published nineteen-dimensional map costs about 3.8 seconds under
 | SymPy's expression cache, 150 730 calls | 0.94 s |
 | `expand` | 0.67 s |
 
-The time is in SymPy expression work — `expand`, `from_expr`, the cache — and
-not in the arithmetic of individual coefficients. `from_expr` runs 2840 times
+The time is spent in SymPy expression work, that is in `expand`, `from_expr`
+and the cache. It is not spent in the arithmetic of individual coefficients. `from_expr` runs 2840 times
 and `expand` 4378 times for eighteen examined maps.
 
-So the lever is to work in the ring throughout, which is WP 4.
+The change that matters is therefore to work in the ring throughout. This is
+WP 4.
 
-What is *not* the lever: `gmpy2`. SymPy uses it for `ZZ` and `QQ` when it is
-installed, and the maintainer asked whether it would help. Measured with and
-without, on the same machine: `peel` on the fifteen-dimensional map 0.73 s
-against 0.67 s, on the nineteen-dimensional one 0.94 s against 0.89 s, and the
-full suite varies more between two runs of one configuration than between the
-two configurations. The coefficients here are `1/2`, `-3`, `7`, `9`, and Python
-is already fast on numbers that size; `gmpy2` wins on large ones.
+What does not help is `gmpy2`. SymPy uses it for `ZZ` and `QQ` when it is
+installed, and the maintainer asked whether it would help. Measured with and without,
+on the same machine. `peel` on the fifteen-dimensional map: 0.73 s against
+0.67 s. On the nineteen-dimensional map: 0.94 s against 0.89 s. The full suite
+varies more between two runs of one configuration than between the two
+configurations. The coefficients here are `1/2`, `-3`, `7`, `9`, and Python
+is already fast on numbers of that size. `gmpy2` is faster on large ones.
 
-It is also not free to adopt. `GROUND_TYPES` is global rather than per ring, so
-a test computing over `QQ` would run through different code depending on the
-environment, and the three reconstruction scripts are exact rational arithmetic
-whose independence several audits have examined. The release chain would double
+It is also not free to adopt. `GROUND_TYPES` is global and not per ring. A test computing over `QQ` would
+therefore run through different code depending on the environment. The three
+reconstruction scripts use exact rational arithmetic, and several audits have
+examined their independence. The release chain would double
 its configurations for a gain in the noise.
 
 ## Not here
@@ -1085,13 +1089,13 @@ its configurations for a gain in the noise.
 The Reduction Theorem, and a pipeline that reduces an arbitrary Keller map:
 degree reduction, homogenization and unipotent reduction are 0.6.
 
-Profiling the complete pipeline is 0.7. WP 4 is here and not there because it
-is one measured change to this project's own code, and because everything from
-WP 9 on is more expensive without it. 0.7 is the milestone that looks at the
-whole, after there is a whole to look at.
+Profiling the complete pipeline is 0.7. WP 4 belongs here and not there for
+two reasons. It is a single measured change to this project's own code, and
+every package from WP 9 on is more expensive without it. 0.7 profiles the
+complete pipeline, which exists only after 0.6.
 
 Minimality. Nothing in this milestone establishes that a dimension is the
-smallest reachable, and no package is written as though it might.
+smallest one reachable. No work package assumes otherwise.
 
 ---
 
