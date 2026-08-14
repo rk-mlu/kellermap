@@ -173,6 +173,44 @@ suite, as are both blocks above.
 
 ---
 
+## How this project is built
+
+The code in this repository is written in collaboration with a large language
+model, Anthropic's Claude. `AGENTS.md` at the repository root holds the working
+agreements: how a change is delivered, what a certificate is for, how claims
+and sources are handled, and where the assistant is expected to push back
+rather than comply. It is the same file the assistant works from.
+
+The maintainer takes responsibility for everything here, whoever or whatever
+produced a first draft of it. Each milestone since 0.2 has gone through
+external audits before release, and every finding is recorded.
+
+This is worth one distinction, because the two halves of the repository carry
+different kinds of assurance.
+
+The mathematics is machine-checkable and is checked. A reduction is a chain of
+certified steps, each obligation has a number in `docs/contracts.md`, and the
+exception that fails cites it. The reduction of the published
+nineteen-dimensional map exists three times over by routes that share no code:
+as a chain of verified steps, as an independent computation in plain SymPy, and
+as a search result. `scripts/mutation_probe.py` breaks one promise at a time to
+ask whether the suite would notice. None of that asks anyone to trust the
+producer, which is the point of building it that way.
+
+The prose is not machine-checkable in the same sense. Page numbers, licences
+and statements about the literature rest on somebody having opened the source.
+Two errors of that kind were made during 0.4 and both were found by reading a
+scan page by page: a citation of the filtration `MA_n^d(k)` gave p. 304 where
+it is p. 303, and the licence of arXiv:2608.00222 was recorded as
+undeterminable when the listing states it. `docs/references.md` records what
+each claim rests on, and `tests/test_documentation.py` checks what the prose
+says about the code, which is the part of it that can be checked.
+
+If you want to contribute, `CONTRIBUTING.md` says how, including what is
+expected of AI-assisted contributions.
+
+---
+
 ## Documentation
 
 The documentation is located in

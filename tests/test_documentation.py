@@ -38,8 +38,15 @@ from kellermap.bcw import BCWStep
 ROOT = Path(__file__).resolve().parent.parent
 CONTRACTS = (ROOT / "docs" / "contracts.md").read_text(encoding="utf-8")
 
+# ``CONTRIBUTING.md`` steht hier, weil es Verpflichtungen zitiert. Ein
+# veralteter Bezeichner in einer Anleitung ist derselbe Fehler wie einer in
+# ``contracts.md``, und die Anleitung liest, wer neu dazukommt.
 PROSE = sorted(
-    [ROOT / "README.md", *(ROOT / "docs").glob("*.md")],
+    [
+        ROOT / "README.md",
+        ROOT / "CONTRIBUTING.md",
+        *(ROOT / "docs").glob("*.md"),
+    ],
     key=lambda path: path.name,
 )
 CODE = sorted(

@@ -48,6 +48,7 @@ SHIPPED = {
     ".github",
     "AGENTS.md",
     "CHANGELOG.md",
+    "CONTRIBUTING.md",
     "LICENSE",
     "Makefile",
     "README.md",
