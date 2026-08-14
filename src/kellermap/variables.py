@@ -15,11 +15,11 @@ from typing import Any, Protocol
 import sympy as sp
 from sympy.polys.rings import PolyRing
 
-# Ein Name der Form Praefix + Index, etwa "x17" oder "X4".
+# A name of the form prefix + index, for example "x17" or "X4".
 _INDEXED_NAME = re.compile(r"(?P<prefix>[A-Za-z_][A-Za-z_]*)(?P<index>\d+)")
 
-# Verwendet, wenn sich aus den vorhandenen Generatoren keine Konvention ablesen
-# laesst. Entspricht dem Verhalten vor Einfuehrung der Factory.
+# Used when no convention can be read off the generators that are present.
+# This matches the behaviour before the factory was introduced.
 FALLBACK_PREFIX = "X"
 
 

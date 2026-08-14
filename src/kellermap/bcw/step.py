@@ -263,9 +263,9 @@ class BCWStep:
                     f"Slot {position} must be a Fresh or a Carried, "
                     f"not {type(slot).__name__}."
                 )
-            # BCW-10, erste beide Klauseln. Konstruktorinvariante, weil ein
-            # Platz ausserhalb des Bereichs oder auf der Zielkomponente die
-            # Verschiebung von G nicht mehr frei von X_index liesse.
+            # BCW-10, first two clauses. A constructor invariant, because a
+            # slot outside the range or on the target component would no longer
+            # leave the displacement of G free of X_index.
             if isinstance(slot, Carried):
                 if not 0 <= slot.index < source.dimension:
                     raise ValueError(
@@ -281,12 +281,11 @@ class BCWStep:
 
         fresh = tuple(slot.variable for slot in slots if isinstance(slot, Fresh))
 
-        # BCW-12. Zwei Fresh-Plaetze duerfen dieselbe Variable nennen -- dann
-        # ist G die Subtraktion eines Quadrats --, aber sie muessen denselben
-        # Faktor tragen: eine Koordinate haelt einen Wert und nicht zwei.
-        # Nach dem Namen und nicht nach Symbol.__eq__: Symbol("v") und
-        # Symbol("v", positive=True) sind fuer SymPy verschieden und fuer
-        # einen PolyRing derselbe Generator.
+        # BCW-12. Two Fresh slots may name the same variable, in which case G
+        # subtracts a square, but they must carry the same factor: one
+        # coordinate holds one value and not two. Compared by name and not by
+        # Symbol.__eq__. Symbol("v") and Symbol("v", positive=True) are
+        # different for SymPy and are the same generator for a PolyRing.
         if len({symbol.name for symbol in fresh}) != len(fresh) and not agree(
             slots[0].polynomial,  # type: ignore[union-attr]
             slots[1].polynomial,  # type: ignore[union-attr]
@@ -298,12 +297,12 @@ class BCWStep:
 
         scalar = _coerce_coefficient(source, coefficient)
 
-        # Frueh und nicht erst in verify(): ein kollidierender Name laesst
-        # sich hinterher nicht mehr von einem falschen Ziel unterscheiden,
-        # weil die Erweiterung dann zwei Koordinaten denselben Generator
+        # Early and not first in verify(). A colliding name can no longer be
+        # told apart from a wrong target afterwards, because the extension then
+        # gives two coordinates the same generator
         # bezeichnen liesse.
-        # Gegen die reservierten Namen und nicht nur gegen die Koordinaten:
-        # ein Parameter des Koeffizientenbereichs ist ebenso vergeben.
+        # Against the reserved names and not only against the coordinates: a
+        # parameter of the coefficient domain is taken as well.
         taken = {symbol.name for symbol in fresh} & reserved_names(source.ring)
         if taken:
             raise ValueError(
@@ -624,9 +623,9 @@ class BCWStep:
         try:
             composite = self._composite()
         except ValueError as error:  # pragma: no cover - constructor rules it out
-            # Erreichbar nur, wenn die Erweiterung scheitert, und deren
-            # Vorbedingungen -- Frische der Variablen, P und Q im Quellring --
-            # erzwingt schon der Konstruktor.
+            # Reachable only if the extension fails, and its preconditions,
+            # that the variables are fresh and that P and Q lie in the source
+            # ring, are already enforced by the constructor.
             raise VerificationError(
                 "BCW-1", f"The step does not compose: {error}"
             ) from error
@@ -684,8 +683,8 @@ class BCWStep:
         As in ``LinearStep``, the canonical comparison is defensive: both
         determinants come out of a ``PolyRing`` and are normalized already.
         """
-        # pragma-frei nicht erreichbar: BCW-1 laeuft vorher und setzt das Ziel
-        # auf G o F^[m] o H, dessen Determinante die der Quelle ist.
+        # Not reachable without the pragma: BCW-1 runs first and sets the
+        # target to G o F^[m] o H, whose determinant is that of the source.
         if not agree(  # pragma: no cover - implied by BCW-1
             self._target.determinant(), self._source.determinant()
         ):

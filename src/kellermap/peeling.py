@@ -183,28 +183,27 @@ def factor(
     product = polynomials[slots[0]] * polynomials[slots[1]]
     position = current.variables.index(dropped[0])
 
-    # Der Rest der Zielkomponente ist frei von der abgetragenen Koordinate,
-    # also gibt *jedes* Monom des Produkts, das sie enthaelt, dieselbe
-    # Konstante. Genommen wird das mit dem hoechsten Grad darin: bei zwei
-    # verschiedenen frischen Koordinaten ist das Grad eins wie bisher, und bei
-    # zwei Plaetzen auf einer Koordinate mit Faktor null ist ``(u + 0)**2 =
-    # u**2`` das einzige, das sie ueberhaupt enthaelt. Auf Grad eins allein zu
-    # sehen liess diesen Fall unauffindbar erscheinen; ein externes Audit hat
-    # ihn gebaut.
+    # The rest of the target component is free of the removed coordinate, so
+    # every monomial of the product that contains it gives the same constant.
+    # The one taken is the monomial of highest degree in that coordinate. For
+    # two distinct fresh coordinates this is degree one, as before. For two
+    # slots on one coordinate with a factor of zero, ``(u + 0)**2 = u**2`` is
+    # the only monomial that contains it at all. Looking at degree one alone
+    # made this case appear unreachable. An external audit built it.
     carrying = [
         (monomial, coefficient)
         for monomial, coefficient in product.terms()
         if monomial[position]
     ]
-    # Nicht erreichbar: einer der beiden Plaetze *ist* die abgetragene
-    # Koordinate, ihre Komponente ist ``X_u + P``, und die andere ist nie null,
-    # also enthaelt das Produkt sie.
+    # Not reachable: one of the two slots is the removed coordinate, its
+    # component is ``X_u + P``, and the other slot is never zero, so the
+    # product contains it.
     if not carrying:  # pragma: no cover - a slot component is never zero
         return None
 
-    # Kanonisch und nicht das erste passende: hoechster Grad in der Koordinate,
-    # bei Gleichstand das groesste Monom der Ringordnung. Welches genommen wird,
-    # darf nicht an der Reihenfolge der Terme haengen.
+    # Canonical and not the first match: highest degree in the coordinate, and
+    # on a tie the largest monomial in the ring order. Which one is taken must
+    # not depend on the order of the terms.
     monomial, there = max(carrying, key=lambda term: (term[0][position], term[0]))
     here = dict(polynomials[target].terms()).get(monomial)
     if here is None:
@@ -218,10 +217,10 @@ def factor(
         NotImplementedError,
         ZeroDivisionError,
     ):
-        # Der Quotient liegt nicht in der Koeffizientendomaene. Konversion statt
-        # Inspektion, wie BCW-3, BCW-11 und TRA-2: ein Test auf ``free_symbols``
-        # wuerde ``T`` in ``ZZ[T]`` fuer eine Koordinate halten und einen
-        # Koeffizienten ablehnen, den BCW-11 ausdruecklich zulaesst.
+        # The quotient is not in the coefficient domain. Conversion and not
+        # inspection, as in BCW-3, BCW-11 and TRA-2. A test on ``free_symbols``
+        # would take ``T`` in ``ZZ[T]`` for a coordinate and would reject a
+        # coefficient that BCW-11 explicitly allows.
         return None
 
     return None if not ratio else sp.sympify(domain.to_sympy(ratio))
@@ -285,20 +284,19 @@ def moves(current: PolynomialMap, spare: int, pairs: int = 16) -> Iterator[Undo]
             if found is not None:
                 doubles.append(Undo(target, (first, second), (first, second), found))
 
-    # Ist die Erlaubnis reichlich, kommen sie zuerst: ein Zug, der zwei
-    # Koordinaten entfernt, kommt fuer dieselbe Tiefe doppelt so weit. Ist sie
-    # knapp, kommen sie zuletzt -- bei ``pairs = 1`` ist der eine solche Schritt
-    # nach REV-8 der letzte des Abtrags, und ihn zuerst zu versuchen gibt die
-    # einzige Erlaubnis frueh aus.
+    # When the allowance is ample they come first: a move that removes two
+    # coordinates gets twice as far for the same depth. When it is scarce they
+    # come last. At ``pairs = 1`` the single such step is the last one of the
+    # peel under REV-8, and trying it first spends the only allowance early.
     if pairs > 1:
         yield from doubles
 
     for fresh, target in peelable.items():
-        # BCW-12: eine frische Koordinate darf beide Plaetze fuellen. ``G``
-        # subtrahiert dann ein Quadrat, also steht die Koordinate quadriert in
-        # der Zielkomponente -- dieselbe Art von Signatur wie REV-2, und aus
-        # dem Ziel ablesbar. Genau eine Traegervariable der veroeffentlichten
-        # Abbildung kommt quadriert vor.
+        # BCW-12: one fresh coordinate may fill both slots. ``G`` then
+        # subtracts a square, so the coordinate appears squared in the target
+        # component. This is the same kind of signature as REV-2 and can be
+        # read off the target. Exactly one carrier variable of the published
+        # map appears squared.
         if _squared(current, target, fresh):
             found = factor(current, target, (fresh, fresh), (fresh,))
             if found is not None:
@@ -317,21 +315,21 @@ def moves(current: PolynomialMap, spare: int, pairs: int = 16) -> Iterator[Undo]
     if spare <= 0:
         return
 
-    # Von hier an wird im Ring der Karte gerechnet und nicht in Ausdruecken.
-    # Ausdruecke haben zweimal getaeuscht: ``S*a*x - T*a*x`` sind zwei
-    # Summanden und ein Monom mit Koeffizient ``S - T``, also sah ein Schritt
-    # nicht wie eine Kuerzung aus; und ein Quotient wie ``1/2`` sieht wie eine
-    # Konstante aus, liegt aber nicht in ``ZZ``, was den Abtrag zum Absturz
-    # brachte. Beides hat ein externes Audit gefunden.
+    # From here on the computation runs in the ring of the map and not in
+    # expressions. Expressions have misled twice. ``S*a*x - T*a*x`` is two
+    # summands and one monomial with coefficient ``S - T``, so a step did not
+    # look like a cancellation. And a quotient such as ``1/2`` looks like a
+    # constant but is not in ``ZZ``, which made the peel crash. An external
+    # audit found both.
     ring = current.ring
     domain = ring.domain
     polynomials = dict(zip(current.variables, current.to_polynomials(), strict=True))
     sizes = {variable: len(value.terms()) for variable, value in polynomials.items()}
 
-    # Das Produkt der beiden Platzkomponenten haengt weder vom Ziel noch von der
-    # Konstanten ab. Es einmal je Paar zu rechnen statt einmal je Kandidat ist
-    # bei neunzehn Koordinaten der Unterschied zwischen einer und vierzig
-    # Multiplikationen dichter Polynome.
+    # The product of the two slot components depends neither on the target nor
+    # on the constant. Computing it once per pair rather than once per
+    # candidate is, at nineteen coordinates, the difference between one and
+    # forty multiplications of dense polynomials.
     #
     # With replacement: BCW-6 admits both slots naming the same coordinate, and
     # ``combinations`` alone would never offer ``G = X_i - X_j**2``. The step
@@ -370,14 +368,14 @@ def moves(current: PolynomialMap, spare: int, pairs: int = 16) -> Iterator[Undo]
                     NotImplementedError,
                     ZeroDivisionError,
                 ):
-                    # Der Quotient liegt nicht in der Koeffizientendomaene. Ein
-                    # Schritt mit ihm ist ueber diesem Ring keiner.
+                    # The quotient is not in the coefficient domain. A step
+                    # using it is not a step over this ring.
                     continue
 
-            # Sortiert und nicht in der Reihenfolge einer Menge: ``moves``
-            # sagt zu, die Zuege in fester Reihenfolge auszugeben, und die
-            # Iteration ueber ein ``set`` haengt am Hash-Seed. Bei knappem
-            # Budget entscheidet das, welche Kette zuerst gefunden wird.
+            # Sorted, and not in the order of a set. ``moves`` promises to
+            # yield the moves in a fixed order, and iteration over a ``set``
+            # depends on the hash seed. At a small budget this decides which
+            # chain is found first.
             for candidate in sorted(
                 constants, key=lambda value: sp.default_sort_key(domain.to_sympy(value))
             ):
@@ -427,22 +425,22 @@ def peel(
     chains are looked for, and a chain outside them is unreachable rather than
     absent. ``budget`` bounds the maps examined.
     """
-    # Vor ``settled``, damit die Gueltigkeit der Argumente nicht davon
-    # abhaengt, ob REV-11 frueh antwortet. ``peel(None, F)`` warf einen
-    # ``AttributeError`` aus ``settled`` heraus, der die Implementierung
-    # nennt und nicht das falsche Argument.
+    # Before ``settled``, so that the validity of the arguments does not
+    # depend on whether REV-11 answers early. ``peel(None, F)`` raised an
+    # ``AttributeError`` out of ``settled`` which named the implementation and
+    # not the wrong argument.
     maps(source=source, target=target)
     counts(budget=budget, spare=spare, pairs=pairs, rising=rising)
 
-    # REV-11 vor der Suche und nicht in ihr. Bis 0.4.0rc6 stand der Test im
-    # Abstieg und verhinderte nur die leere ``Reduction``; die Suche lief
-    # weiter und konnte zur Quelle zurueckkehren, also eine zyklische Kette
-    # ausgeben, wo eine Nichtantwort zugesagt war. Ein externes Audit hat das
-    # gebaut.
+    # REV-11 before the search and not inside it. Until 0.4.0rc6 the test
+    # stood in the descent and prevented only the empty ``Reduction``. The
+    # search continued and could return to the source, so it could produce a
+    # cyclic chain where a non-answer was promised. An external audit built
+    # this.
     #
-    # Seit 0.4.0rc9 deckt der Vorabtest beide Faelle von REV-11 ab und nicht
-    # nur den ersten. Das Ziel ueber anderen Generatoren kostete vorher eine
-    # untersuchte Karte, um dasselbe zu sagen.
+    # Since 0.4.0rc9 the test before the search covers both cases of REV-11 and
+    # not only the first. A target over other generators previously cost one
+    # examined map to say the same thing.
     if settled(source, target):
         return PeelOutcome(None, 0, 0, True)
 
@@ -461,16 +459,16 @@ def peel(
         spare_left: int,
         pairs_left: int,
     ) -> PeelOutcome | None:
-        # Der bekannte Zustand zuerst: er kostet nichts und ist keine
-        # abgeschnittene Suche. Die Reihenfolge andersherum liess ein
-        # Duplikat am Budget scheitern und meldete den Raum als
-        # unerschoepft, obwohl alles gesehen war.
+        # The known state first: it costs nothing and is not a cut-off
+        # search. In the other order a duplicate failed on the budget and the
+        # space was reported as unexhausted although everything had been
+        # seen.
         state = (current, spare_left, pairs_left)
         if state in seen:
             return None
 
         if remaining[0] <= 0:
-            # Hier scheitert ein Zustand am Budget, und nur hier.
+            # A state fails on the budget here, and only here.
             cut_off[0] = True
             return None
 
@@ -480,12 +478,12 @@ def peel(
         deepest[0] = max(deepest[0], len(path))
 
         if current.dimension == source.dimension and same_generators(current, source):
-            # Der Vergleich hier und nicht in ``_rebuild``: dort kostet er das
-            # nochmalige Rueckrechnen des ganzen Pfades, hier eine Gleichheit.
-            # Ein leerer Pfad heisst, dass Quelle und Ziel dieselbe Karte sind.
-            # Eine ``Reduction`` ohne Schritte gibt es nach RED-1 nicht, also
-            # ist die Kette der Laenge null nicht darstellbar und wird als
-            # erschoepfter Raum gemeldet -- kein Fehler, siehe REV-11.
+            # The comparison here and not in ``_rebuild``. There it costs
+            # undoing the whole path a second time; here it costs one equality.
+            # An empty path means that source and target are the same map. A
+            # ``Reduction`` without steps does not exist under RED-1, so the
+            # chain of length zero is not representable and is reported as an
+            # exhausted space. This is not an error, see REV-11.
             if path and current.reordered(source.variables) == source:
                 found = _rebuild(
                     source, target, path, budget - remaining[0], deepest[0]
@@ -498,23 +496,23 @@ def peel(
             reached = undo(current, step)
             if reached is None or reached.dimension < source.dimension:
                 continue
-            # REV-2 ist ein Muster und keine Gewissheit: eine Koordinate der
-            # Quelle kann zufaellig in genau zwei Komponenten stehen und wird
-            # dann probeweise abgetragen. Die Karte danach kann die Quelle nicht
-            # mehr enthalten, und alles Weitere setzt voraus, dass sie es tut.
-            # Frueher lief ``_unfinishable`` in einen ``KeyError``; ein externes
-            # Audit hat das gebaut.
+            # REV-2 is a pattern and not a certainty. A coordinate of the
+            # source can happen to stand in exactly two components and is then
+            # removed on trial. The map after that can no longer contain the
+            # source, and everything below assumes that it does. Earlier
+            # ``_unfinishable`` ran into a ``KeyError``. An external audit
+            # built this.
             if not set(source.variables) <= set(reached.variables):
                 continue
             if _stranded(source, reached):
                 continue
             if _unfinishable(source, reached, spare_left - (0 if step.dropped else 1)):
                 continue
-            # REV-12, und eine Entscheidung wie die anderen. Der Kommentar
-            # hier nannte sie beweisbar: die neuen Terme haetten Grad hoechstens
-            # ``1 + deg Q``, also falle der Grad vorwaerts nie. Das ist falsch,
-            # sobald ein Faktor selbst schon in der Karte steht -- ein externes
-            # Audit hat eine Kette gebaut, deren Grade ``3, 4, 3`` laufen.
+            # REV-12, and a decision like the others. The comment here called
+            # it provable: the new terms would have degree at most
+            # ``1 + deg Q``, so the degree would never fall going forward. That
+            # is wrong as soon as a factor already stands in the map. An
+            # external audit built a chain whose degrees run ``3, 4, 3``.
             if reached.degree() > source.degree() + rising:
                 continue
 
@@ -620,7 +618,7 @@ def _rebuild(
     maps = [target]
     for step in path:
         reached = undo(maps[-1], step)
-        # Nicht erreichbar: der Weg wurde eben durch dieselben Zuege gefunden.
+        # Not reachable: the path was just found by these same moves.
         if reached is None:  # pragma: no cover - the path came from undoing
             return None
         maps.append(reached)
@@ -629,15 +627,15 @@ def _rebuild(
     current = maps[-1]
     for step, after in zip(reversed(path), reversed(maps[:-1]), strict=True):
         built = _forward(current, step, after)
-        # Nicht erreichbar: ``after`` ist durch Rueckrechnen aus ``current``
-        # entstanden, also baut derselbe Schritt vorwaerts wieder ``after``.
+        # Not reachable: ``after`` was produced by undoing from ``current``,
+        # so the same step going forward rebuilds ``after``.
         if built is None:  # pragma: no cover - the step came from undoing this
             return None
         steps.append(built)
         current = built.target
 
-    # Nicht erreichbar: jeder Einzelschritt hat oben schon gegen seine Karte
-    # geprueft, und die erste davon ist das Ziel.
+    # Not reachable: every single step has already been checked against its
+    # map above, and the first of those maps is the target.
     if current.reordered(target.variables) != target:  # pragma: no cover - per step
         return None
 
@@ -668,11 +666,11 @@ def _forward(
     ]
     level = 1 if all(order >= 2 for order in orders) else 0
 
-    # Der Schritt wird hier vermutet und nicht behauptet. Schlaegt der Bau oder
-    # die Pruefung fehl, so war die Vermutung falsch und der Kandidat faellt
-    # weg -- eine erfolglose Suche darf keinen Zertifikatsfehler nach aussen
-    # geben. Das Beispiel eines externen Audits: ein Faktor vom Grad null macht
-    # ``H`` zu einem Element von ``EA^-1``, und BCW-6 lehnt das zu Recht ab.
+    # The step is conjectured here and not asserted. If the construction or
+    # the verification fails, the conjecture was wrong and the candidate is
+    # dropped. An unsuccessful search must not report a certificate error to
+    # the outside. The example from an external audit: a factor of degree zero
+    # makes ``H`` an element of ``EA^-1``, and BCW-6 rejects that correctly.
     try:
         built = BCWStep.build(
             current,
@@ -686,8 +684,8 @@ def _forward(
     except (ValueError, VerificationError):
         return None
 
-    # Nicht erreichbar, und als Selbstpruefung behalten: der Schritt stammt aus
-    # dem Rueckrechnen von ``after`` und baut es daher wieder auf.
+    # Not reachable, and kept as a self-check: the step comes from undoing
+    # ``after`` and therefore rebuilds it.
     if built.target.reordered(after.variables) != after:  # pragma: no cover - undone
         return None
 

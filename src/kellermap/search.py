@@ -36,10 +36,10 @@ from .guards import counts, fresh_names, maps, settled
 from .polynomial_map import PolynomialMap
 from .reduction import Reduction
 
-# Ein Platz vor der Namensvergabe: entweder der Wert, den eine frische
-# Koordinate tragen wuerde, oder eine Koordinate, die ihn schon traegt.
-# Kein eigener Typ fuer den frischen Fall, weil ``Fresh`` sich davon nur
-# durch den Namen unterscheidet und den vergibt nach SEA-3 die Suche.
+# A slot before a name is assigned: either the value a fresh coordinate
+# would carry, or a coordinate that already carries it. There is no separate
+# type for the fresh case, because ``Fresh`` differs from it only by the name,
+# and under SEA-3 the search assigns that name.
 Slot: TypeAlias = sp.Expr | Carried
 
 
@@ -320,9 +320,9 @@ def _partner(
     """
     carried = carriers.get(selection)
     if carried is not None:
-        # Nicht erreichbar: das setzte voraus, dass die Verschiebung von
-        # Koordinate ``index`` ein Vielfaches ihrer selbst ist, also einen
-        # konstanten Anker -- und Konstanten sind als Anker ausgeschlossen.
+        # Not reachable: this would require the displacement of coordinate
+        # ``index`` to be a multiple of itself, that is a constant anchor.
+        # Constants are excluded as anchors.
         if carried == index:  # pragma: no cover - needs a constant anchor
             return None
         return Carried(carried)
@@ -503,8 +503,8 @@ def diagonal_matching(
     if signs is None:
         return None
 
-    # Selbstpruefung: die Loesung eines widerspruchsfreien Systems erfuellt es.
-    # Sie kann nur scheitern, wenn die Elimination falsch ist.
+    # Self-check: the solution of a consistent system satisfies it. This can
+    # fail only if the elimination is wrong.
     if conjugate(candidate, signs) != published:  # pragma: no cover - elimination
         return None
 
@@ -608,11 +608,11 @@ def search(
     is not a proof that nothing exists (SEA-6), and with ``exhausted`` false it
     is not even a statement about the space this search covers.
     """
-    # Vor ``settled``, und zwar alles davon. ``settled`` kann antworten und
-    # zurueckkehren; ein Argument, das erst danach geprueft wird, ist je nach
-    # Endpunkten gueltig oder nicht. Ein externes Audit hat das gebaut:
-    # ``search(F, F, None)`` gab ein Ergebnis, derselbe Vorrat gegen Endpunkte,
-    # die gelaufen werden mussten, warf.
+    # Before ``settled``, and all of it. ``settled`` can answer and return, so
+    # an argument checked only afterwards is valid or invalid depending on the
+    # endpoints. An external audit built this: ``search(F, F, None)`` returned
+    # a result, while the same pool against endpoints that had to be walked
+    # raised.
     maps(source=source, target=target)
     counts(
         budget=budget,
@@ -622,12 +622,12 @@ def search(
     )
     fresh_names(pool, source)
 
-    # REV-11 vor der Suche und nicht in ihr, wie im Abtrag. Bis 0.4.0rc8 stand
-    # der Test nur in ``_finish``, also im Abstieg: der Nichtantwort-Fall stand
-    # schon vor Beginn fest, und trotzdem entschied das Budget, ob der Raum als
-    # erschoepft gemeldet wurde. Sichtbar wird das erst an einer Quelle mit
-    # ``m = 0``-Zweigen, denn ohne sie hat der Abstieg nichts zu tun. Ein
-    # externes Audit hat sie gebaut.
+    # REV-11 before the search and not inside it, as in the peel. Until
+    # 0.4.0rc8 the test stood only in ``_finish``, that is in the descent. The
+    # non-answer case was fixed before the search began, and the budget still
+    # decided whether the space was reported as exhausted. This becomes visible
+    # only on a source with ``m = 0`` branches, because without them the
+    # descent has nothing to do. An external audit built such a source.
     if settled(source, target):
         return SearchOutcome(None, 0, 0, True)
 
@@ -647,10 +647,10 @@ def search(
         rewrites: int,
     ) -> SearchOutcome | None:
         if remaining[0] <= 0:
-            # Hier scheitert eine Karte am Budget, und nur hier. ``exhausted``
-            # aus ``remaining > 0`` abzuleiten verwechselte ein genau
-            # aufgebrauchtes Budget mit einer abgeschnittenen Suche -- derselbe
-            # Fehler wie im Abtrag, von demselben Audit gefunden.
+            # A map fails on the budget here, and only here. Deriving
+            # ``exhausted`` from ``remaining > 0`` confused a budget spent
+            # exactly with a cut-off search. This is the same defect as in the
+            # peel, found by the same audit.
             cut_off[0] = True
             return None
         remaining[0] -= 1

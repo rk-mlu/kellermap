@@ -5,7 +5,7 @@
 all: check
 
 # --------------------------------------------------------------------------
-# Einzelschritte
+# Individual steps
 # --------------------------------------------------------------------------
 
 format:
@@ -20,117 +20,121 @@ typecheck:
 	uv run mypy src
 	uv run mypy --strict scripts
 
-# Standardlauf. Der slow-Marker ist in pyproject.toml per addopts abgewaehlt.
+# Default run. The slow marker is deselected in pyproject.toml via addopts.
 test:
 	uv run pytest
 
-# Nur die langsamen Tests, derzeit der exakte Determinantennachweis in
-# Dimension 17 (rund eine Minute).
+# Only the slow tests, at present the exact determinant proof in dimension 17,
+# about one minute.
 test-slow:
 	uv run pytest -m slow
 
-# Alles, ohne Markerfilter.
+# Everything, with no marker filter.
 test-all:
 	uv run pytest -m ""
 
-# fail_under = 100 steht in pyproject.toml, das Ziel scheitert also, sobald
-# eine Anweisung ungeprueft bleibt. Unerreichbare Verteidigungszweige tragen
-# `# pragma: no cover` samt Begruendung; die Quote misst, was messbar ist.
+# fail_under = 100 stands in pyproject.toml, so this target fails as soon as
+# one statement stays unchecked. Unreachable defensive branches carry
+# `# pragma: no cover` with the reason. The figure measures what is
+# measurable.
 coverage:
 	uv run pytest --cov --cov-report=term-missing --cov-report=html
 
-# Nur die ausfuehrbaren Beispiele aus docs/.
+# Only the executable examples from docs/.
 docs:
 	uv run pytest docs
 
-# Die zweiten, von der Bibliothek unabhaengigen Rechnungen. Sie stehen in
-# AGENTS.md seit 0.2 unter den Gates, wurden aber von keinem Ziel aufgerufen
-# und liefen daher nur von Hand. Ein Nachweis, den niemand faehrt, ist keiner.
+# The second computations, independent of the library. They have stood in
+# AGENTS.md among the gates since 0.2, but no target called them, so they ran
+# only by hand. A check nobody runs is not a check.
 reconstruct:
 	uv run python scripts/reconstruct_bcw17.py
 	uv run python scripts/reconstruct_alpoege15.py
 	uv run python scripts/reconstruct_alpoege19.py
 
 # --------------------------------------------------------------------------
-# Sammelziele
+# Collected targets
 # --------------------------------------------------------------------------
 
-# Fuer den Arbeitsablauf und den PR-Job: Sekunden.
+# For the working loop and the pull request job: seconds.
 check: lint typecheck test
 
-# Vor einem Release und fuer den naechtlichen Job: schliesst die langsamen
-# Tests ein, damit der exakte Keller-Nachweis nicht dauerhaft ungeprueft bleibt.
+# Before a release and for the nightly job. Includes the slow tests, so that
+# the exact Keller proof does not stay unchecked indefinitely.
 check-full: lint typecheck test-all
 
 # --------------------------------------------------------------------------
-# Build und Test in isolierter Umgebung
+# Build and test in an isolated environment
 # --------------------------------------------------------------------------
 
-# Geprueft wird das Paket, nicht der Arbeitsbaum: die venv sieht src/ nicht,
-# also loest `import kellermap` in den Tests auf das installierte Wheel auf.
+# What is checked is the package and not the working tree. The virtual
+# environment does not see src/, so `import kellermap` in the tests resolves to
+# the installed wheel.
 #
-# Das Aufraeumen unten betrifft die beiden Umgebungen, die dieses Ziel selbst
-# anlegt, und nicht mehr den Inhalt des Archivs. Der haengt seit 0.4.0rc15 an
-# der Positivliste in pyproject.toml und nicht am Zustand des Verzeichnisses:
-# eine venv, die zufaellig daneben liegt, faehrt nicht mit, egal wie sie
-# heisst. Vorher war sie es, und eine namens .venv314 brach `uv build`.
+# The cleanup below concerns the two environments this target creates itself
+# and no longer the content of the archive. Since 0.4.0rc15 that content
+# depends on the positive list in pyproject.toml and not on the state of the
+# directory: a virtual environment that happens to lie beside the project is
+# not shipped, whatever it is called. Before that it was, and one named
+# .venv314 broke `uv build`.
 build-test:
-	@echo "--> Raeume alte Builds auf..."
+	@echo "--> Removing old builds..."
 	rm -rf dist build_env min_env
-	@echo "--> Baue Wheel und sdist..."
+	@echo "--> Building wheel and sdist..."
 	uv build
-	@echo "--> Erstelle frische venv (build_env)..."
-	# Gepruefte Untergrenze aus requires-python: die aelteste unterstuetzte
-	# Version bricht eher als die neueste. Die neueste deckt die CI ab.
+	@echo "--> Creating a fresh venv (build_env)..."
+	# The checked lower bound from requires-python: the oldest supported
+	# version breaks more often than the newest. The CI covers the newest.
 	uv venv --python 3.10 build_env
-	@echo "--> Installiere Wheel und pytest..."
+	@echo "--> Installing the wheel and pytest..."
 	VIRTUAL_ENV=build_env uv pip install dist/*.whl pytest
-	@echo "--> Pruefe PEP-561-Marker im installierten Paket..."
+	@echo "--> Checking the PEP 561 marker in the installed package..."
 	build_env/bin/python -c "import kellermap, pathlib, sys; sys.exit(None if (pathlib.Path(kellermap.__file__).parent / 'py.typed').exists() else 'py.typed fehlt im Wheel: kellermap waere fuer Typpruefer stromabwaerts untypisiert')"
-	@echo "--> Fahre die Testsuite gegen das installierte Paket..."
+	@echo "--> Running the test suite against the installed package..."
 	build_env/bin/python -m pytest -q
-	@echo "Erfolg: Wheel gebaut, installiert und geprueft."
+	@echo "Success: wheel built, installed and checked."
 
-# Aufloesung auf die kleinsten erlaubten Versionen statt auf die neuesten.
-# Ohne dieses Ziel bleibt die Untergrenze in pyproject.toml eine Behauptung:
-# entwickelt wird gegen aktuelle Pakete, und eine zu niedrige Angabe faellt
-# erst dem Anwender auf. sympy>=1.13 stand vier Releases lang unbemerkt drin.
+# Resolution to the smallest permitted versions rather than to the newest.
+# Without this target the lower bound in pyproject.toml stays an assertion:
+# development happens against current packages, and a bound that is too low is
+# noticed first by a user. sympy>=1.13 stood there unnoticed for four
+# releases.
 test-minimum:
-	@echo "--> Erstelle venv auf der aeltesten unterstuetzten Python-Version..."
+	@echo "--> Creating a venv on the oldest supported Python version..."
 	rm -rf min_env
 	uv venv --python 3.10 min_env
-	@echo "--> Installiere die kleinsten erlaubten Abhaengigkeiten..."
-	# Bewusst ohne --locked: der Lockfile pinnt die aufgeloesten, nicht die
-	# kleinsten Versionen. Er wird hier gerade umgangen.
+	@echo "--> Installing the smallest permitted dependencies..."
+	# Deliberately without --locked: the lockfile pins the resolved versions
+	# and not the smallest ones. It is being bypassed here on purpose.
 	VIRTUAL_ENV=min_env uv pip install --resolution lowest-direct -e .
-	# pytest in einem zweiten Schritt und ohne die Regel: geprueft werden die
-	# Untergrenzen, die dieses Paket zusagt, nicht die des Testlaeufers. Auf
-	# derselben Zeile waere pytest eine direkte Abhaengigkeit, und
-	# --resolution lowest-direct zoege pytest 2.0.0 von 2011, das sich mit
-	# heutigem setuptools nicht mehr bauen laesst.
-	@echo "--> Installiere den Testlaeufer (normale Aufloesung)..."
+	# pytest in a second step and without the rule. What is checked are the
+	# lower bounds this package declares and not those of the test runner. On
+	# the same line pytest would be a direct dependency, and
+	# --resolution lowest-direct would pull pytest 2.0.0 from 2011, which no
+	# longer builds with current setuptools.
+	@echo "--> Installing the test runner (normal resolution)..."
 	VIRTUAL_ENV=min_env uv pip install pytest
-	@echo "--> Zeige die aufgeloesten Versionen..."
+	@echo "--> Showing the resolved versions..."
 	min_env/bin/python -c "import sympy; print(f'    sympy {sympy.__version__}')"
-	@echo "--> Fahre die Testsuite..."
+	@echo "--> Running the test suite..."
 	min_env/bin/python -m pytest -q
-	@echo "Erfolg: die deklarierte Untergrenze traegt."
+	@echo "Success: the declared lower bound holds."
 
-# Prueft die Artefakte, die tatsaechlich hochgeladen wuerden. twine liest die
-# Metadaten so, wie PyPI sie liest; ein unvollstaendiges README oder eine
-# unlesbare Beschreibung faellt sonst erst beim Upload auf, wo die
-# Versionsnummer schon vergeben ist.
+# Checks the artefacts that would actually be uploaded. twine reads the
+# metadata the way PyPI reads it. An incomplete README or an unreadable
+# description would otherwise be noticed only at upload, where the version
+# number is already taken.
 dist-check:
-	@echo "--> Pruefe die gebauten Artefakte..."
+	@echo "--> Checking the built artefacts..."
 	uv run --with twine twine check dist/*
 
-# Prueft, ob uv.lock zu pyproject.toml passt, ohne ihn zu veraendern.
-# Ein veralteter Lockfile faellt sonst erst in der CI auf, wo `uv sync
-# --locked` fehlschlaegt.
+# Checks whether uv.lock matches pyproject.toml, without changing it. A stale
+# lockfile would otherwise be noticed only in the CI, where `uv sync --locked`
+# fails.
 lock-check:
 	uv lock --check
 
-# Alle Freigabe-Gates vor einem Tag.
+# All release gates before a tag.
 release: lock-check check-full coverage reconstruct build-test dist-check test-minimum
 
 # --------------------------------------------------------------------------

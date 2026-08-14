@@ -3,18 +3,18 @@ __pycache__/
 *.py[cod]
 *.egg-info/
 
-# Build- und Testumgebungen
+# Build and test environments
 dist/
 build/
-# Mit Stern: eine Umgebung heisst nicht immer .venv. `.venv314` neben einer
-# Matrix aus 3.10 und 3.14 war in keiner Liste, wurde mitversioniert und
-# brach `uv build`.
+# With a star: an environment is not always called .venv. `.venv314`, beside a
+# matrix of 3.10 and 3.14, was in no list, was put under version control, and
+# broke `uv build`.
 .venv*/
 build_env/
 min_env/
 wheels/
 
-# Werkzeug-Caches und Berichte
+# Tool caches and reports
 .coverage
 .coverage.*
 htmlcov/

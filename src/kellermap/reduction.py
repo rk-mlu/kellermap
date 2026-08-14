@@ -390,9 +390,9 @@ class LinearStep:
                 "the inverse of the linear part at the origin.",
             )
 
-        # Nicht erreichbar: LIN-1 laeuft vorher, die Quelle liegt in MA^0 und
-        # die Transformation ist die Inverse des Linearteils -- damit ist der
-        # Linearteil des Ziels die Identitaet.
+        # Not reachable: LIN-1 runs first, the source lies in MA^0 and the
+        # transformation is the inverse of the linear part, so the linear part
+        # of the target is the identity.
         if not self._target.is_in_MA(1):  # pragma: no cover - implied by LIN-1
             raise VerificationError(
                 "LIN-6",
@@ -724,8 +724,8 @@ class TranslationStep:
                 f"but the shift is {self._shift} and F(0) is {expected}.",
             )
 
-        # Nicht erreichbar: TRA-1 laeuft vorher und die erste Klausel oben
-        # ebenfalls, also ist das Ziel F - F(0) und verschwindet im Ursprung.
+        # Not reachable: TRA-1 runs first and so does the first clause above,
+        # so the target is F - F(0) and vanishes at the origin.
         if not self._target.is_in_MA(0):  # pragma: no cover - implied by TRA-1
             raise VerificationError(
                 "TRA-6",
@@ -910,14 +910,14 @@ class Reduction:
             except VerificationError as failure:
                 raise failure.located_at(position) from failure
 
-        # Kann nicht scheitern, und steht trotzdem hier. ``target`` ist
-        # ``steps[-1].target``, und der letzte Schritt hat seine Ausgabe nach
-        # STEP-2 schon dagegen geprueft: die Zeile vergleicht gegen dieselbe
-        # Karte ein zweites Mal. Eine Mutationsprobe hat es gezeigt -- als
-        # einzige der acht Transportpruefungen liess sie sich entfernen, ohne
-        # dass ein Test dafuer zu schreiben waere, der etwas anderes prueft als
-        # STEP-2. Sie bleibt als Selbstpruefung der eigenen Arithmetik, und
-        # RED-5 sagt jetzt, dass diese Klausel an vorgelegten Daten nicht
+        # Cannot fail, and stands here nonetheless. ``target`` is
+        # ``steps[-1].target``, and the last step has already checked its output
+        # against it under STEP-2, so this line compares against the same map a
+        # second time. A mutation probe showed it: of the eight transport
+        # checks it was the only one that could be removed without a test to
+        # write for it that checks anything other than STEP-2. It stays as a
+        # self-check of this library's own arithmetic, and RED-5 now states
+        # that this clause cannot
         # scheitern kann.
         carried.verify(self.target)
 

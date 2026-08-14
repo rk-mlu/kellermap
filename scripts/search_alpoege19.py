@@ -152,12 +152,12 @@ def setup() -> tuple[PolynomialMap, PolynomialMap, dict[sp.Symbol, sp.Expr]]:
     carriers = published.variables[3:]
     alpoege = examples.alpoege()
     rename = dict(zip(alpoege.variables, published.variables[:3], strict=True))
-    # Ueber ``ZZ`` und nicht ueber ``QQ``. ``PolynomialMap`` zaehlt den
-    # Koeffizientenbereich zu seiner Identitaet, jeder Schritt erhaelt ihn, und
-    # das veroeffentlichte Ziel liegt ueber ``ZZ`` -- eine Quelle ueber ``QQ``
-    # kann es daher nie erreichen. Das ``over_field`` an dieser Stelle war ein
-    # Reflex von mir und hat die Suche ein ganzes Release lang um ihren Erfolg
-    # gebracht; ein externes Audit hat es gefunden.
+    # Over ``ZZ`` and not over ``QQ``. ``PolynomialMap`` counts the coefficient
+    # domain as part of its identity, every step preserves it, and the
+    # published target lies over ``ZZ``. A source over ``QQ`` can therefore
+    # never reach it. The ``over_field`` at this place was written without
+    # thinking and cost the search its result for a whole release. An external
+    # audit found it.
     source = PolynomialMap(
         published.variables[:3],
         tuple(sp.expand(component.subs(rename)) for component in alpoege.components),

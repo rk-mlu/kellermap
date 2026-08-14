@@ -20,7 +20,7 @@ from .variables import (
     reserved_names,
 )
 
-# Eine Matrix duenn besetzter Polynome, zeilenweise.
+# A matrix of sparse polynomials, row by row.
 Block = tuple[tuple["PolyElement", ...], ...]
 
 
@@ -99,9 +99,9 @@ def _reindex(
 
 
 # SymPys aeltere ``old_poly_ring``-Domains tragen ihre Koeffizienten als
-# ``DMP``-Objekte statt als ``PolyElement``. Sie liessen sich hier weder
-# zuverlaessig klonen noch verrechnen -- ``from_ring`` scheiterte an einer
-# ``CoercionFailed`` tief in SymPy. Besser frueh und lesbar ablehnen.
+# ``DMP`` objects rather than as ``PolyElement``. They could be neither cloned
+# nor computed with reliably here: ``from_ring`` failed with a
+# ``CoercionFailed`` deep inside SymPy. Better to refuse early and readably.
 _UNSUPPORTED_DOMAIN = (
     "Coefficient domain {domain} is not supported: it is one of SymPy's "
     "older dense domains. Use QQ[T] or QQ.frac_field(T) instead of "
@@ -239,11 +239,11 @@ class PolynomialMap:
                 "Components must be polynomials in the specified variables."
             ) from exc
 
-        # sring darf ein Symbol, das bereits Generator ist, zusaetzlich in die
-        # Koeffizientendomain aufnehmen, wenn es mit anderen Annahmen auftritt
-        # -- gleicher Name, verschiedene Objekte. Ohne diese Pruefung entstuende
-        # eine Abbildung, die gueltig aussieht, deren ``components`` dasselbe
-        # Zeichen fuer zwei Dinge druckt und an der ``extend()`` spaeter
+        # sring may additionally take a symbol that is already a generator into
+        # the coefficient domain when it appears with other assumptions, that
+        # is under the same name as a different object. Without this check a map
+        # would arise that looks valid, whose ``components`` print the same
+        # character for two things, and on which ``extend()`` later
         # scheitert.
         validate_ring(polynomial_ring)
 
@@ -372,9 +372,9 @@ class PolynomialMap:
         reference to its ring, so copies bound to the internal one would leak
         it straight back out.
         """
-        # Ein Ring fuer alle Komponenten eines Aufrufs: sie gehoeren zu
-        # derselben Abbildung und muessen sich untereinander verrechnen
-        # lassen. Zwischen zwei Aufrufen ist der Ring verschieden.
+        # One ring for all components of one call: they belong to the same map
+        # and have to be computable with each other. Between two calls the ring
+        # is different.
         view = self._fresh_view_ring()
 
         return tuple(
@@ -691,8 +691,8 @@ class PolynomialMap:
         states that all three extensions share a naming policy, instead of
         relying on equal-dimensional maps happening to agree.
         """
-        # bool ist eine Unterklasse von int: extend(True) waere sonst eine
-        # Erweiterung um eine Variable, was fast sicher ein Tippfehler ist.
+        # bool is a subclass of int: extend(True) would otherwise be an
+        # extension by one variable, which is almost certainly a typing slip.
         if isinstance(number, bool) or not isinstance(number, int):
             raise TypeError("The extension size must be an integer.")
         if number < 0:
@@ -701,7 +701,7 @@ class PolynomialMap:
             return self
 
         make_variables = DEFAULT_VARIABLE_FACTORY if factory is None else factory
-        # Der Factory wird die Ansicht gereicht, nicht der interne Ring.
+        # The factory is handed the view and not the internal ring.
         new_variables = make_variables(self._fresh_view_ring(), number)
         self._validate_fresh_variables(new_variables, number)
 
@@ -774,8 +774,8 @@ class PolynomialMap:
         if order == self.variables:
             return self
 
-        # Positionsweise, nicht ueber ``set_ring``: das bildet Monome nach
-        # Position ab und wuerde die Exponenten eines umsortierten Rings still
+        # By position and not through ``set_ring``: that maps monomials by
+        # position and would silently
         # umdeuten, statt sie mitzunehmen.
         positions = tuple(self.variables.index(symbol) for symbol in order)
         new_ring = clone_ring(self._ring, order)

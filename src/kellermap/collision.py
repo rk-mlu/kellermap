@@ -23,9 +23,9 @@ from .canonical import agree, canonical
 from .errors import VerificationError
 from .polynomial_map import PolynomialMap
 
-# Ein Punkt des affinen Raums, koordinatenweise als SymPy-Ausdruck. Ausdruecke
-# und nicht Zahlen, weil ueber k(T) auch ein Parameter auftreten darf; was ein
-# Punkt nicht enthalten darf, sind die Variablen der Abbildung selbst.
+# A point of affine space, coordinate by coordinate as a SymPy expression.
+# Expressions and not numbers, because over k(T) a parameter may appear as
+# well. What a point must not contain are the variables of the map itself.
 Point = tuple[sp.Expr, ...]
 
 

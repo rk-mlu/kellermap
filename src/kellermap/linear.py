@@ -386,9 +386,9 @@ class Dilation(LinearFactor):
         if not value:
             raise ValueError("A dilation by zero is not invertible.")
 
-        # Der Kehrwert wird hier gebildet und nicht erst in inverse(): ein
-        # Faktor, dessen Inverses nicht im Bereich liegt, ist kein Element von
-        # GL_n(k), und das soll bei der Konstruktion auffallen.
+        # The reciprocal is formed here and not first in inverse(). A factor
+        # whose inverse does not lie in the domain is not an element of
+        # GL_n(k), and that should be noticed at construction.
         try:
             owned.domain.exquo(owned.domain.one, value)
         except (

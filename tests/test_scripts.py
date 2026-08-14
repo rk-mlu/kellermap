@@ -198,3 +198,118 @@ def test_the_working_copy_carries_what_the_suite_reads(
 
     assert not (copy / ".venv").exists()
     assert copy.resolve() != ROOT.resolve()
+
+
+# --------------------------------------------------------------------------
+# Der Codefingerabdruck
+#
+# Er ist die Kontrolle der Arbeitspakete 1 und 2 von 0.5: eine Uebersetzung
+# darf keine Anweisung beruehren. Ein Werkzeug, das eine Zusage nachweist,
+# braucht selbst einen Nachweis, dass es anschlaegt.
+# --------------------------------------------------------------------------
+
+
+@pytest.fixture(scope="module")
+def fingerprints() -> ModuleType:
+    return load("code_fingerprint")
+
+
+def written(directory: Path, body: str) -> Path:
+    directory.mkdir(parents=True, exist_ok=True)
+    path = directory / "sample.py"
+    path.write_text(body, encoding="utf-8")
+
+    return path
+
+
+def test_a_changed_docstring_leaves_the_fingerprint_alone(
+    fingerprints: ModuleType,
+    tmp_path: Path,
+) -> None:
+    """Der Fall, den das Paket erzeugt."""
+    first = written(
+        tmp_path / "a",
+        '"""Ein deutscher Docstring."""\n\n\ndef f(x: int) -> int:\n'
+        '    """Gibt x zurueck."""\n    return x\n',
+    )
+    second = written(
+        tmp_path / "b",
+        '"""An English docstring."""\n\n\ndef f(x: int) -> int:\n'
+        '    """Return x."""\n    return x\n',
+    )
+
+    assert fingerprints.fingerprint(first) == fingerprints.fingerprint(second)
+
+
+def test_a_changed_comment_leaves_the_fingerprint_alone(
+    fingerprints: ModuleType,
+    tmp_path: Path,
+) -> None:
+    """Kommentare stehen nicht im Syntaxbaum und fallen von selbst heraus."""
+    first = written(tmp_path / "a", "# Ein Kommentar.\nvalue = 1\n")
+    second = written(tmp_path / "b", "# A comment.\nvalue = 1\n")
+
+    assert fingerprints.fingerprint(first) == fingerprints.fingerprint(second)
+
+
+def test_a_changed_instruction_changes_the_fingerprint(
+    fingerprints: ModuleType,
+    tmp_path: Path,
+) -> None:
+    """Die Gegenkontrolle. Ohne sie waere ein Werkzeug denkbar, das immer
+    denselben Wert liefert und jede Uebersetzung freispricht.
+    """
+    first = written(tmp_path / "a", "def f(x: int) -> bool:\n    return x > 0\n")
+    second = written(tmp_path / "b", "def f(x: int) -> bool:\n    return x >= 0\n")
+
+    assert fingerprints.fingerprint(first) != fingerprints.fingerprint(second)
+
+
+def test_a_string_that_is_not_a_docstring_is_kept(
+    fingerprints: ModuleType,
+    tmp_path: Path,
+) -> None:
+    """Nur die erste Anweisung eines Rumpfes faellt weg.
+
+    Eine Fehlermeldung ist ein Wert, den der Code benutzt. Sie zu entfernen
+    hiesse, eine geaenderte Meldung zu verschweigen statt sie zu ignorieren.
+    """
+    first = written(tmp_path / "a", 'def f() -> None:\n    raise ValueError("one")\n')
+    second = written(tmp_path / "b", 'def f() -> None:\n    raise ValueError("two")\n')
+
+    assert fingerprints.fingerprint(first) != fingerprints.fingerprint(second)
+
+
+def test_a_body_of_only_a_docstring_stays_valid(
+    fingerprints: ModuleType,
+    tmp_path: Path,
+) -> None:
+    """Ein leerer Rumpf waere kein gueltiges Python mehr."""
+    only = written(tmp_path / "a", 'def f() -> None:\n    """Nur ein Docstring."""\n')
+    passed = written(tmp_path / "b", "def f() -> None:\n    pass\n")
+
+    assert fingerprints.fingerprint(only) == fingerprints.fingerprint(passed)
+
+
+def test_the_report_names_what_changed(fingerprints: ModuleType) -> None:
+    """Ein Bericht, der nur die Zahl nennt, hilft beim Suchen nicht."""
+    before = {"a.py": "1", "b.py": "2", "c.py": "3"}
+    after = {"a.py": "1", "b.py": "9", "d.py": "4"}
+
+    assert fingerprints.differences(before, after) == [
+        "changed  b.py",
+        "removed  c.py",
+        "added    d.py",
+    ]
+
+    assert not fingerprints.differences(before, before)
+
+
+def test_the_repository_is_covered(fingerprints: ModuleType) -> None:
+    """``src``, ``tests`` und ``scripts``, und nichts aus ``__pycache__``."""
+    covered = {str(path.relative_to(ROOT)) for path in fingerprints.sources()}
+
+    assert "src/kellermap/peeling.py" in covered
+    assert "tests/test_scripts.py" in covered
+    assert "scripts/code_fingerprint.py" in covered
+    assert not [name for name in covered if "__pycache__" in name]

@@ -1,30 +1,29 @@
-# Laeuft unveraendert auf GitHub Actions und auf Forgejo Actions.
+# Runs unchanged on GitHub Actions and on Forgejo Actions.
 #
-# Portabilitaet hat genau zwei Stolperstellen:
+# Portability has exactly two difficult points:
 #
-# 1. `uses:` wird von Forgejo gegen DEFAULT_ACTIONS_URL aufgeloest
-#    (data.forgejo.org), nicht gegen github.com. Dort ist nur ein Teil der
-#    Actions gespiegelt -- actions/checkout ja, astral-sh/setup-uv nicht.
-#    Vollqualifizierte URLs (uses: https://...) loesen das auf Forgejo, sind
-#    auf GitHub aber ungueltig. Deshalb wird hier ausser checkout keine
-#    Action benutzt; uv kommt ueber sein Installskript. Falls das Runner-
-#    Image astral.sh nicht erreicht, aber ein System-Python hat, ist
-#    `pip install uv==${UV_VERSION}` der gleichwertige Ersatz.
+# 1. `uses:` is resolved by Forgejo against DEFAULT_ACTIONS_URL
+#    (data.forgejo.org) and not against github.com. Only part of the actions
+#    are mirrored there: actions/checkout is, astral-sh/setup-uv is not.
+#    Fully qualified URLs (uses: https://...) solve this on Forgejo but are
+#    invalid on GitHub. No action other than checkout is therefore used here.
+#    uv is installed through its install script. If the runner image cannot
+#    reach astral.sh but has a system Python, `pip install uv==${UV_VERSION}`
+#    is the equivalent replacement.
 #
-#    checkout steht auf v5 und nicht auf dem aktuellen v7. v4 ist wegen
-#    Node 20 abgekuendigt; v5, v6 und v7 laufen alle auf Node 24, fuer einen
-#    Checkout ohne Optionen verhalten sie sich gleich. v5 ist davon die
-#    aelteste und damit die, die auf einer nachhinkenden Forgejo-Spiegelung
-#    am ehesten vorhanden ist -- dasselbe Prinzip wie bei ruff und mypy, die
-#    auf die Untergrenze aus requires-python zielen statt auf die neueste
-#    Version. Wer es haerten will, pinnt stattdessen den Commit-SHA; der ist
-#    in einer Git-Spiegelung identisch und gilt auf beiden Plattformen.
+#    checkout is pinned to v5 and not to the current v7. v4 is deprecated
+#    because of Node 20. v5, v6 and v7 all run on Node 24, and for a checkout
+#    without options they behave the same. v5 is the oldest of the three and
+#    therefore the one most likely to be present on a Forgejo mirror that
+#    lags behind. This is the same principle as for ruff and mypy, which
+#    target the lower bound from requires-python rather than the newest
+#    version. To harden this further, pin the commit SHA instead. The SHA is
+#    identical in a Git mirror and holds on both platforms.
 #
-# 2. `runs-on` ist ein Runner-Label. Auf GitHub ist ubuntu-latest gesetzt,
-#    Forgejo-Runner tragen haeufig `docker`. Das ist der Wert, der beim Umzug
-#    anzupassen ist -- in jedem der vier Jobs einmal. GitHub Actions erlaubt
-#    an dieser Stelle keine env-Referenz, weshalb er sich nicht an einer
-#    Stelle buendeln laesst.
+# 2. `runs-on` is a runner label. On GitHub it is set to ubuntu-latest.
+#    Forgejo runners often carry `docker`. This is the value to adjust when
+#    moving, once in each of the four jobs. GitHub Actions allows no env
+#    reference at this place, so it cannot be collected in one spot.
 
 name: CI
 
@@ -33,21 +32,21 @@ on:
     branches: [main]
   pull_request:
   schedule:
-    # Naechtlich, fuer die langsamen Pruefungen.
+    # Nightly, for the slow checks.
     - cron: "0 3 * * *"
 
 env:
-  # Gepinnt, damit ein uv-Release die CI nicht ueber Nacht aendert.
+  # Pinned, so that a uv release does not change the CI overnight.
   UV_VERSION: "0.11.7"
 
 jobs:
   check:
-    # Beide Enden der in pyproject.toml deklarierten Spanne. Die aelteste
-    # Version bricht eher, die neueste zuerst.
+    # Both ends of the range declared in pyproject.toml. The oldest version
+    # breaks more often, the newest breaks first.
     strategy:
       fail-fast: false
       matrix:
-        # Beide Enden der Spanne aus requires-python.
+        # Both ends of the range from requires-python.
         python-version: ["3.10", "3.14"]
     runs-on: ubuntu-latest
     steps:
@@ -57,14 +56,14 @@ jobs:
           curl -LsSf https://astral.sh/uv/${UV_VERSION}/install.sh | sh
           echo "$HOME/.local/bin" >> "$GITHUB_PATH"
       - run: uv python install ${{ matrix.python-version }}
-      # Faellt aus, wenn uv.lock nicht zu pyproject.toml passt -- billiger
-      # als ein fehlschlagendes `uv sync --locked` weiter unten.
+      # Fails when uv.lock does not match pyproject.toml. This is cheaper
+      # than a failing `uv sync --locked` further down.
       - run: make lock-check
       - run: uv sync --locked --python ${{ matrix.python-version }}
-      # UV_PYTHON gilt fuer jedes `uv run` im Makefile. Ohne es nahm `uv run`
-      # die Version aus `.python-version`, also 3.10 -- der 3.14-Job hat vier
-      # Releases lang 3.10 geprueft und 3.14 behauptet. Ein externes Audit hat
-      # es gemessen.
+      # UV_PYTHON applies to every `uv run` in the Makefile. Without it,
+      # `uv run` took the version from `.python-version`, that is 3.10. The
+      # 3.14 job checked 3.10 for four releases while claiming 3.14. An
+      # external audit measured it.
       - name: Check the interpreter is the one under test
         run: |
           uv run python -c "import sys; print(sys.version)"
@@ -74,32 +73,32 @@ jobs:
       - run: make check
         env:
           UV_PYTHON: ${{ matrix.python-version }}
-      # Die beiden folgenden Gates stehen in AGENTS.md unter den Freigabe-
-      # Pruefungen, standen aber nur im `release`-Ziel und liefen deshalb von
-      # Hand oder gar nicht. Das Makefile hat dasselbe fuer `reconstruct`
-      # festgehalten -- ein Nachweis, den niemand faehrt, ist keiner -- und die
-      # Feststellung gilt eine Ebene hoeher weiter.
+      # The two gates below stand in AGENTS.md among the release checks, but
+      # they stood only in the `release` target and therefore ran by hand or
+      # not at all. The Makefile recorded the same finding for `reconstruct`:
+      # a check nobody runs is not a check. The finding holds one level up as
+      # well.
       #
-      # Beide laufen in der Matrix und nicht in einem eigenen Job. Die Quote
-      # kann sich zwischen den Interpretern unterscheiden, sobald ein Zweig an
-      # der Version haengt, und dann soll die Version dranstehen, auf der sie
-      # faellt. Gemessen: 100 Prozent auf 3.10 und auf 3.14, und die drei
-      # Rekonstruktionen zusammen unter zehn Sekunden.
+      # Both run in the matrix and not in a job of their own. The coverage
+      # figure can differ between interpreters as soon as a branch depends on
+      # the version, and then the version on which it falls should be named.
+      # Measured: 100 per cent on 3.10 and on 3.14, and the three
+      # reconstructions together under ten seconds.
       - name: Coverage gate (fail_under = 100)
         run: make coverage
         env:
           UV_PYTHON: ${{ matrix.python-version }}
-      # Die zweiten, von der Bibliothek unabhaengigen Rechnungen. Sie sind das
-      # einzige Gate, das eine Abweichung zwischen zwei Implementierungen
-      # derselben Formeln finden kann.
+      # The second computations, independent of the library. They are the only
+      # gate that can find a divergence between two implementations of the
+      # same formulas.
       - name: Independent reconstructions
         run: make reconstruct
         env:
           UV_PYTHON: ${{ matrix.python-version }}
 
   minimum-dependencies:
-    # Die Untergrenze aus pyproject.toml gegenpruefen: sympy>=1.13 stand vier
-    # Releases lang darin, obwohl schon die Testsammlung darauf scheiterte.
+    # Check the lower bound from pyproject.toml. sympy>=1.13 stood there for
+    # four releases although even test collection failed on it.
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
@@ -111,7 +110,7 @@ jobs:
       - run: make test-minimum
 
   nightly:
-    # Der exakte Determinantennachweis in Dimension 17, rund eine Minute.
+    # The exact determinant proof in dimension 17, about one minute.
     if: github.event_name == 'schedule'
     runs-on: ubuntu-latest
     steps:
@@ -134,6 +133,6 @@ jobs:
           echo "$HOME/.local/bin" >> "$GITHUB_PATH"
       - run: uv python install 3.10
       - run: make build-test
-      # Die Metadaten so lesen, wie PyPI sie liest. Stand bisher nur im
-      # `release`-Ziel, obwohl dieser Job die Artefakte ohnehin gebaut hat.
+      # Read the metadata the way PyPI reads it. This stood only in the
+      # `release` target, although this job builds the artefacts anyway.
       - run: make dist-check

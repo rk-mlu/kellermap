@@ -35,11 +35,11 @@ classifiers = [
 ]
 
 dependencies = [
-    # Nicht 1.13: dort interniert PolyRing.__new__ seine Ringe in einem
-    # prozessweiten _ring_cache, zwei Konstruktionen mit gleichen Argumenten
-    # liefern dasselbe Objekt. Die Wertsemantik dieses Pakets -- kein
-    # veraenderliches Objekt wird mit einem Aufrufer geteilt -- ist damit
-    # nicht herstellbar, unabhaengig vom fehlenden PolyRing.is_element.
+    # Not 1.13: there PolyRing.__new__ interns its rings in a process-wide
+    # _ring_cache, so two constructions with equal arguments return the same
+    # object. The value semantics of this package, under which no mutable
+    # object is shared with a caller, cannot be established that way. This is
+    # independent of the missing PolyRing.is_element.
     "sympy>=1.14",
 ]
 
@@ -54,18 +54,18 @@ dev = [
 
 [tool.pytest.ini_options]
 testpaths = ["tests", "docs"]
-# Die Beispiele in docs/api.md sind Doctests: die Referenz kann nicht von der
-# Implementierung abweichen, ohne dass der Testlauf es meldet.
+# The examples in docs/api.md are doctests. The reference cannot diverge from
+# the implementation without the test run reporting it.
 addopts = "-m 'not slow' --doctest-glob=*.md"
 markers = [
-    "slow: Laufzeit im Minutenbereich; mit `pytest -m slow` oder `pytest -m ''` ausfuehren.",
+    "slow: runs for minutes. Select with `pytest -m slow` or `pytest -m ''`.",
 ]
 
 [tool.ruff]
 line-length = 88
-# Auf die Untergrenze aus requires-python gesetzt, nicht auf die neueste
-# Version: die UP-Regeln schreiben sonst Idiome vor, die auf 3.10 nicht
-# laufen, und ruff meldete das erst, wenn jemand sie uebernimmt.
+# Set to the lower bound from requires-python and not to the newest version.
+# Otherwise the UP rules prescribe idioms that do not run on 3.10, and ruff
+# would report this only once somebody adopted them.
 target-version = "py310"
 
 [tool.ruff.lint]
@@ -81,9 +81,9 @@ ignore = [
 ]
 
 [tool.mypy]
-# Ebenfalls die Untergrenze: sonst prueft mypy gegen Semantik, die die
-# aelteste unterstuetzte Version nicht hat, und laesst etwa tomllib oder
-# itertools.batched durch.
+# The lower bound again. Otherwise mypy checks against semantics that the
+# oldest supported version does not have, and lets tomllib or
+# itertools.batched pass.
 python_version = "3.10"
 strict = true
 
@@ -97,10 +97,10 @@ source = ["src/kellermap"]
 [tool.coverage.report]
 show_missing = true
 skip_covered = true
-# Vollstaendige Abdeckung ist Freigabestandard und wird deshalb erzwungen und
-# nicht bloss berichtet. Zweige, die sich nicht erreichen lassen, weil eine
-# frueher gepruefte Verpflichtung sie ausschliesst, tragen `# pragma: no
-# cover` mit Begruendung an Ort und Stelle.
+# Full coverage is a release standard and is therefore enforced and not merely
+# reported. Branches that cannot be reached, because an obligation checked
+# earlier rules them out, carry `# pragma: no cover` with the reason beside
+# them.
 fail_under = 100
 
 [build-system]
@@ -112,29 +112,28 @@ build-backend = "hatchling.build"
 packages = ["src/kellermap"]
 
 [tool.hatch.build.targets.sdist]
-# Eine Positivliste und keine Ausschlussliste. Ohne beides haengt der Inhalt
-# des sdist vom Zustand des Arbeitsverzeichnisses ab: nach `make coverage`
-# wanderten .coverage und htmlcov/ mit hinein.
+# A positive list and not a list of exclusions. Without either, the content of
+# the sdist depends on the state of the working directory: after `make
+# coverage`, .coverage and htmlcov/ were shipped with it.
 #
-# Bis 0.4.0rc15 stand hier eine Ausschlussliste, und sie konnte die Zusage
-# nicht halten, die der Kommentar gab. Sie zaehlte `.venv`, `build_env` und
-# `min_env` auf; eine Umgebung namens `.venv314` -- ein naheliegender Name
-# neben einer Matrix, die 3.10 und 3.14 fuehrt -- war in keiner der drei
-# Listen, also auch nicht in .gitignore, und `uv build` brach mit
-# "Invalid tar file" ab, weil in einer venv absolute Symlinks stehen. Ein
-# externes Audit hat es gebaut. Eine Ausschlussliste ist gegen Namen, die
-# noch niemand gewaehlt hat, nicht zu vervollstaendigen; eine Positivliste
-# ist es.
+# Until 0.4.0rc15 there was a list of exclusions here, and it could not keep
+# the promise the comment made. It listed `.venv`, `build_env` and `min_env`.
+# An environment named `.venv314`, an obvious name beside a matrix that carries
+# 3.10 and 3.14, was in none of the three lists and therefore not in .gitignore
+# either. `uv build` then failed with "Invalid tar file", because a virtual
+# environment contains absolute symlinks. An external audit built this. A list
+# of exclusions cannot be completed against names nobody has chosen yet. A
+# positive list can.
 #
-# Was hier nicht steht, wird nicht ausgeliefert. Ein neues Verzeichnis, das
-# ins Archiv gehoert, muss deshalb hier eingetragen werden -- und
-# `tests/test_packaging.py` haelt fest, dass die Liste und der Inhalt des
-# gebauten Archivs uebereinstimmen.
-# Jeder Eintrag ist mit "/" verankert. Ohne den fuehrenden Schraegstrich sind
-# die Muster wie in .gitignore auf jeder Ebene gueltig, und `.gitignore` traf
-# dann auch die Datei, die `uv venv` in jede Umgebung legt: das Archiv trug
-# `.venv314/.gitignore`. Der Bau lief durch, weil keine Symlinks mehr drin
-# waren, und die Zusage war trotzdem gebrochen.
+# What is not listed here is not shipped. A new directory that belongs in the
+# archive therefore has to be entered here, and `tests/test_packaging.py`
+# checks that this list and the content of the built archive agree.
+#
+# Every entry is anchored with "/". Without the leading slash the patterns hold
+# at every level, as in .gitignore, and `.gitignore` then also matched the file
+# that `uv venv` places in every environment: the archive carried
+# `.venv314/.gitignore`. The build succeeded, because no symlinks were left in
+# it, and the promise was broken all the same.
 include = [
     "/src",
     "/tests",
@@ -155,9 +154,10 @@ include = [
 exclude = [
     "**/__pycache__",
     "**/*.py[cod]",
-    # Fremde Mathematik ohne ermittelbare Lizenz. Das Wheel enthielt sie nie,
-    # das Quellarchiv schon, und damit widersprach die Auslieferung der eigenen
-    # Regel aus AGENTS.md. Wer die Abbildung hat, legt sie unter diesem Pfad ab;
-    # ohne sie ueberspringen die betroffenen Tests sich selbst und sagen warum.
+    # Mathematics from another source whose licence could not be established.
+    # The wheel never contained it, the source archive did, and shipping it
+    # contradicted this project's own rule in AGENTS.md. Whoever has the map
+    # places it under this path. Without it the tests concerned skip themselves
+    # and say why.
     "tests/data.py",
 ]

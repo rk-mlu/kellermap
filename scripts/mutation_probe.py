@@ -71,9 +71,9 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 
-# Was in die Arbeitskopie nicht mit muss: Umgebungen, Caches, Bauwerk und die
-# Versionsverwaltung. Die schnelle Sammlung liest ``docs/`` und ``README.md``,
-# also bleibt alles andere drin.
+# What the working copy does not need: environments, caches, build output and
+# version control. The fast suite reads ``docs/`` and ``README.md``, so
+# everything else stays in.
 LEAVE_OUT = shutil.ignore_patterns(
     ".git",
     ".venv",
@@ -261,8 +261,8 @@ def working_copy(scratch: Path) -> Path:
     copy = scratch / "project"
     shutil.copytree(ROOT, copy, ignore=LEAVE_OUT)
 
-    # Der Grund, warum das Skript umgebaut wurde, als Pruefung und nicht nur
-    # als Satz im Docstring.
+    # The reason the script was rebuilt, written as a check and not only as a
+    # sentence in the docstring.
     if copy.resolve() == ROOT.resolve():  # pragma: no cover - siehe Bedingung
         raise SystemExit("The working copy is the repository. Refusing to run.")
 
@@ -305,9 +305,8 @@ def main() -> int:
     missed = sweep(PROBES)
     print(f"\n{missed} of {len(PROBES)} promises have no control.")
 
-    # Kein Rueckgabewert ungleich null: ein Fehlschlag ist eine Frage und kein
-    # Defekt. Wer das Skript in eine Kette haengt, entscheidet selbst, welche
-    # Zahl er erwartet.
+    # No non-zero return value: a miss is a question and not a defect. Whoever
+    # puts this script into a chain decides what number to expect.
     return 0
 
 

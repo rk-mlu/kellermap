@@ -156,8 +156,8 @@ class ReductionContext:
 
 
 def _validate_count(count: int) -> None:
-    # bool ist eine Unterklasse von int; count=True waere eine Erweiterung um
-    # eine Variable und fast sicher ein Tippfehler.
+    # bool is a subclass of int. count=True would be an extension by one
+    # variable and is almost certainly a typing slip.
     if isinstance(count, bool) or not isinstance(count, int):
         raise TypeError(
             f"The number of fresh variables must be an integer, "
