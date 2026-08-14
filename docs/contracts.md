@@ -73,12 +73,25 @@ reachable, executed on every run, and still be pinned by nothing: if removing
 it leaves every test passing, then nothing in the repository distinguishes a
 codebase that keeps the promise from one that does not. Coverage cannot report
 this, because the line does run. `scripts/mutation_probe.py` asks the question
-directly — it breaks one fragment, runs the suite, and restores the source.
-Its first run, for `0.4.0rc13`, found ten clauses in that state, of which the
-RED-5 clause above was the one that turned out to be redundant rather than
-uncontrolled. The other nine were the eight collision checks inside the four
-`transport` methods, which masked each other, and the two peel bounds REV-8 and
-REV-9, whose removal changes no result and only the count of maps examined.
+directly — it breaks one fragment, runs the suite, and puts the fragment back.
+Its first run, for `0.4.0rc13`, found ten clauses in that state.
+
+The accounting, corrected in `0.4.0rc14` after an audit did the arithmetic.
+There are eight collision verifications: four `transport` methods, each
+checking its input against its step's source and its output against its step's
+target. One of the eight is the RED-5 clause above, which turned out to be
+redundant rather than uncontrolled. That leaves **seven** uncontrolled
+collision checks, which masked each other, together with the two peel bounds
+REV-8 and REV-9, whose removal changes no result and only the count of maps
+examined. Seven and two are the nine, and the redundant one makes ten. The page
+said eight and two and called the sum nine, which is not a sum.
+
+The ten are not re-derivable from the probes that were kept. The redundant
+clause has no probe among them and cannot usefully have one, and the other nine
+were fixed in `0.4.0rc13`, so the same probes against the current tree report
+twelve caught. What the kept probes establish is that those controls are still
+there; the ten is a record of a run, in `CHANGELOG.md`, and not a number this
+repository recomputes.
 
 The script is not a gate. A miss is a question and not a defect, and answering
 it sometimes means writing on this page rather than writing a test.

@@ -8,27 +8,55 @@ detects.
 
 This script answers the question directly. Each probe replaces one fragment of
 the source with a fragment that breaks the promise beside it, runs the fast
-suite, and restores the source. ``CAUGHT`` means at least one test failed and
-the promise has a control. ``MISSED`` means the suite is indifferent to whether
-the promise is kept.
+suite, and puts the fragment back. ``CAUGHT`` means at least one test failed
+and the promise has a control. ``MISSED`` means the suite is indifferent to
+whether the promise is kept.
 
-It is not a gate. It rebuilds the source tree between probes and takes about
-ten seconds per probe, which is too slow for a pre-commit loop and too blunt
-for a release chain: a ``MISSED`` is not always a defect. Some clauses cannot
-fail on supplied data, and for those the right answer is to say so on the
-contract page rather than to write a test that forces an unreachable state.
-The run of ``0.4.0rc13`` produced ten misses, of which nine were missing
-controls and one -- the fold's verification against its own target -- was
-provably redundant.
+**Nothing here writes to the repository.** The project is copied into a
+temporary directory first, and every edit, every test run and every restore
+happens inside that copy. Until ``0.4.0rc14`` the script mutated the real
+``src/`` and put it back by deleting that directory and copying a snapshot
+over it. That is a destructive operation on the working tree with no safe
+failure: an interrupt between the delete and the copy, an error inside the
+copy, or a second run started while the first is mutating, and the repository
+is left without a source directory or with a mutation in it. An audit of
+``0.4.0rc13`` found mutated files left behind after a run that reported
+success. The mechanism was not established -- it did not reproduce here -- and
+the design is replaced rather than patched, because a probe that can damage
+the tree is not worth running whatever the mechanism turns out to be.
+
+Restoring is now one file written back from the text it held, so there is no
+directory removal anywhere in this script.
+
+It is not a gate. It copies the project once and takes about ten seconds per
+probe, which is too slow for a pre-commit loop and too blunt for a release
+chain: a ``MISSED`` is not always a defect. Some clauses cannot fail on
+supplied data, and for those the right answer is to say so on the contract
+page rather than to write a test that forces an unreachable state.
+
+What these probes do and do not reproduce
+-----------------------------------------
+
+They ask today's question of today's code. Every one of them should report
+``CAUGHT``; a miss means a control has been lost since ``0.4.0rc13``, and
+``tests/test_scripts.py`` checks that the twelve fragments still match the code
+they aim at.
+
+They do **not** reproduce the ten misses of the first run, and until
+``0.4.0rc14`` this file and ``CHANGELOG.md`` said they did. Two reasons. The
+misses were fixed in ``0.4.0rc13``, so the same probes against the current tree
+report twelve caught, which is what fixing them means. And the set that
+produced the ten was not written down: the clause that turned out to be
+redundant rather than uncontrolled -- the fold's verification of its result
+against its own ``target`` -- has no probe here, and cannot usefully have one,
+since a clause that cannot fail on supplied data reports ``MISSED`` for a
+reason that is not a missing control. The historical number stands in
+``CHANGELOG.md`` as the record of a run, not as something this file
+re-derives.
 
 Usage::
 
     python scripts/mutation_probe.py
-
-The probes below are the ones that were run for ``0.4.0rc13``. They are kept
-rather than deleted so that a later change to the same lines can be checked
-against the same question, and so that the numbers in ``CHANGELOG.md`` can be
-reproduced.
 """
 
 from __future__ import annotations
@@ -37,12 +65,30 @@ import shutil
 import subprocess
 import sys
 import tempfile
-from collections.abc import Sequence
+from collections.abc import Callable, Sequence
 from dataclasses import dataclass
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
-SOURCE = ROOT / "src"
+
+# Was in die Arbeitskopie nicht mit muss: Umgebungen, Caches, Bauwerk und die
+# Versionsverwaltung. Die schnelle Sammlung liest ``docs/`` und ``README.md``,
+# also bleibt alles andere drin.
+LEAVE_OUT = shutil.ignore_patterns(
+    ".git",
+    ".venv",
+    "__pycache__",
+    "*.egg-info",
+    ".pytest_cache",
+    ".mypy_cache",
+    ".ruff_cache",
+    ".coverage*",
+    "htmlcov",
+    "dist",
+    "build",
+    "build_env",
+    "min_env",
+)
 
 
 @dataclass(frozen=True)
@@ -150,8 +196,8 @@ PROBES: tuple[Probe, ...] = (
 )
 
 
-def run_suite() -> tuple[bool, str]:
-    """Return whether the fast suite failed, and the line that says so."""
+def run_suite(root: Path) -> tuple[bool, str]:
+    """Return whether the fast suite failed under ``root``, and the line saying so."""
     finished = subprocess.run(  # noqa: S603
         [
             "uv",
@@ -163,7 +209,7 @@ def run_suite() -> tuple[bool, str]:
             "-p",
             "no:cacheprovider",
         ],
-        cwd=ROOT,
+        cwd=root,
         capture_output=True,
         text=True,
         check=False,
@@ -177,9 +223,15 @@ def run_suite() -> tuple[bool, str]:
     return finished.returncode != 0, summary[-1] if summary else "no summary"
 
 
-def apply(probe: Probe) -> None:
-    """Write the broken version of one fragment."""
-    path = ROOT / probe.path
+def apply(probe: Probe, root: Path) -> str:
+    """Write the broken version of one fragment, and return the text it replaced.
+
+    The caller hands that text back to ``restore``. Passing the original out
+    rather than keeping a snapshot of the tree elsewhere is what removes the
+    directory removal from this script: one file is written, and the same file
+    is written back.
+    """
+    path = root / probe.path
     text = path.read_text(encoding="utf-8")
 
     if probe.old not in text:
@@ -190,21 +242,54 @@ def apply(probe: Probe) -> None:
 
     path.write_text(text.replace(probe.old, probe.new, 1), encoding="utf-8")
 
+    return text
 
-def sweep(probes: Sequence[Probe]) -> int:
-    """Run every probe and report. Return the number of misses."""
+
+def restore(probe: Probe, root: Path, text: str) -> None:
+    """Put the file back as it was."""
+    (root / probe.path).write_text(text, encoding="utf-8")
+
+
+def working_copy(scratch: Path) -> Path:
+    """Copy the project into ``scratch`` and return the copy's root.
+
+    Everything the fast suite reads comes along: the sources, the tests, the
+    fixed data under ``tests/``, ``docs/`` and ``README.md`` for the
+    documentation gate, and ``pyproject.toml`` with ``uv.lock`` so that the run
+    resolves the same dependencies.
+    """
+    copy = scratch / "project"
+    shutil.copytree(ROOT, copy, ignore=LEAVE_OUT)
+
+    # Der Grund, warum das Skript umgebaut wurde, als Pruefung und nicht nur
+    # als Satz im Docstring.
+    if copy.resolve() == ROOT.resolve():  # pragma: no cover - siehe Bedingung
+        raise SystemExit("The working copy is the repository. Refusing to run.")
+
+    return copy
+
+
+def sweep(
+    probes: Sequence[Probe],
+    run: Callable[[Path], tuple[bool, str]] = run_suite,
+) -> int:
+    """Run every probe against a copy of the project. Return the number of misses.
+
+    ``run`` is a parameter so that ``tests/test_scripts.py`` can drive a whole
+    sweep without spending two minutes on twelve suite runs. What the test
+    checks is the part that damaged a tree: that the repository is untouched
+    afterwards, and that every fragment still matches the code it aims at.
+    """
     missed = 0
     with tempfile.TemporaryDirectory() as scratch:
-        pristine = Path(scratch) / "src"
-        shutil.copytree(SOURCE, pristine)
+        copy = working_copy(Path(scratch))
 
         for probe in probes:
-            apply(probe)
+            original = apply(probe, copy)
             try:
-                caught, summary = run_suite()
+                caught, summary = run(copy)
             finally:
-                shutil.rmtree(SOURCE)
-                shutil.copytree(pristine, SOURCE)
+                restore(probe, copy, original)
 
             missed += not caught
             mark = "CAUGHT " if caught else "MISSED "
@@ -215,7 +300,8 @@ def sweep(probes: Sequence[Probe]) -> int:
 
 
 def main() -> int:
-    print(f"{len(PROBES)} probes; the source tree is restored after each.\n")
+    print(f"{len(PROBES)} probes, run against a copy of the project.")
+    print("The repository is not written to.\n")
     missed = sweep(PROBES)
     print(f"\n{missed} of {len(PROBES)} promises have no control.")
 

@@ -4,6 +4,55 @@ Notable changes per release. The milestone plan and its reasoning live in
 `docs/roadmap.md`, the binding obligations of the verification surface in
 `docs/contracts.md`.
 
+## 0.4.0rc14
+
+Two findings from the audit of `0.4.0rc13`, both about the mutation probe added
+there and neither about the library. The runtime code is unchanged.
+
+### Fixed
+
+- `scripts/mutation_probe.py` mutated the real `src/` and put it back by
+  deleting that directory and copying a snapshot over it. The audit found three
+  mutations left in the tree after a run that reported success, in two
+  independent extractions. It did not reproduce here -- a full sweep left every
+  file byte-identical, immediately afterwards and five seconds later -- and the
+  mechanism is not established. The design is replaced rather than the symptom
+  patched, because the operation is unsafe whatever the mechanism: the tree is
+  deleted and rebuilt twelve times, and an interrupt, an error inside the copy,
+  or a second run started while the first is mutating leaves the repository
+  without a source directory or with a mutation in it.
+
+  The probe now copies the project into a temporary directory and mutates,
+  tests and restores only there. Restoring is one file written back from the
+  text it held, so there is no directory removal in the script at all.
+  `tests/test_scripts.py` runs a whole sweep with a stub in place of the suite
+  and compares a hash of every Python file of the repository before and after.
+
+- `tests/test_scripts.py` loaded script modules without registering them in
+  `sys.modules`. `dataclasses` looks the module up there to resolve deferred
+  annotations, so `Probe` could not be built. The two search drivers have no
+  dataclass, which is why the defect appeared only with the second file loaded.
+
+### Changed
+
+- The accounting of the ten misses was wrong in `docs/contracts.md` and
+  incomplete in the `0.4.0rc13` entry above, which is corrected in place. There
+  are eight collision verifications, one per direction in each of the four
+  `transport` methods. One of the eight -- the fold's check of its result
+  against its own `target` -- is redundant rather than uncontrolled. Seven
+  uncontrolled collision checks plus the two peel bounds are the nine; the
+  redundant one makes ten. The page said eight and two and called the sum nine.
+
+- The claim that the kept probes reproduce those numbers is withdrawn, from the
+  contract page, the changelog and the script's own docstring. It cannot hold.
+  The redundant clause has no probe among the twelve and cannot usefully have
+  one, since a clause that cannot fail on supplied data reports `MISSED` for a
+  reason that is not a missing control; and the other nine were fixed in
+  `0.4.0rc13`, so the probes now report twelve caught. Measured: `0 of 12`. The
+  exact set that produced the ten was never written down, so an immutable
+  manifest is not available either. What the probes establish is that the
+  controls are still in place, and that is what the texts now say.
+
 ## 0.4.0rc13
 
 No audit finding. This candidate comes from a systematic pass over
@@ -17,18 +66,24 @@ suite, restore. `CAUGHT` means the promise has a control. `MISSED` means the
 suite is indifferent to whether it is kept. Coverage cannot answer this, because
 a check with no control still runs.
 
-The first run produced ten misses out of twelve probes.
+The first run produced ten misses. Nine were missing controls and one was
+redundant; the arithmetic of that sentence is corrected in `0.4.0rc14`, where
+the reasons are also given for why the ten cannot be re-derived from the probes
+that were kept.
 
 ### Fixed
 
-- All eight collision verifications inside the four `transport` methods were
-  uncontrolled. Each `transport` checks its input against the step's source and
-  its output against the step's target, and the two mask each other: remove
-  either one and the other catches the same bad collision one line later, with
-  a different message and against a different map. Three tests already existed
-  for this and read only the obligation, which is `COL-3` for both. They now
-  read which map the failure names -- by the arity of the reported point where
-  the dimensions differ, by the reported image where they do not.
+- Seven of the eight collision verifications inside the four `transport`
+  methods were uncontrolled; the eighth is the fold's check of its result
+  against its own `target`, which is redundant rather than uncontrolled and is
+  dealt with under Changed. Each `transport` checks its input against the
+  step's source and its output against the step's target, and the two mask each
+  other: remove either one and the other catches the same bad collision one
+  line later, with a different message and against a different map. Three tests
+  already existed for this and read only the obligation, which is `COL-3` for
+  both. They now read which map the failure names -- by the arity of the
+  reported point where the dimensions differ, by the reported image where they
+  do not.
 - The output check of a `transport` had no control at all, and it is the one
   that matters most. `transport()` does not call `verify()`, so on a supplied
   step whose target is wrong that check is the only thing between a false
@@ -48,11 +103,9 @@ The first run produced ten misses out of twelve probes.
 
 ### Added
 
-- `scripts/mutation_probe.py`, holding the twelve probes of this run so that
-  the numbers above can be reproduced and so that a later change to the same
-  lines can be asked the same question. It is not a gate: it rebuilds the
-  source tree between probes, takes about ten seconds each, and a miss is a
-  question rather than a defect.
+- `scripts/mutation_probe.py`, holding twelve probes so that a later change to
+  the same lines can be asked the same question. It is not a gate: it takes
+  about ten seconds per probe, and a miss is a question rather than a defect.
 
 ### Changed
 
