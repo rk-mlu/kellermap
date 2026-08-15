@@ -263,7 +263,7 @@ def working_copy(scratch: Path) -> Path:
 
     # The reason the script was rebuilt, written as a check and not only as a
     # sentence in the docstring.
-    if copy.resolve() == ROOT.resolve():  # pragma: no cover - siehe Bedingung
+    if copy.resolve() == ROOT.resolve():  # pragma: no cover - see the condition
         raise SystemExit("The working copy is the repository. Refusing to run.")
 
     return copy

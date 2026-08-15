@@ -148,9 +148,9 @@ STEPS: tuple[Classic | Shared, ...] = (
         _11,
     ),
     Classic(2, _1 * _2 * _10, -_1 * _3 - 3 * _2, _12, _13),
-    # x1*x2 liegt seit Schritt 3 als Komponente 8 vor.
+    # x1*x2 has been component 8 since step 3.
     Shared(2, 7, -_10 * _13 - _2 * _11, _14),
-    # x1**2 liegt seit Schritt 1 als Komponente 5 vor.
+    # x1**2 has been component 5 since step 1.
     Shared(10, 4, _2 * _3, _15),
 )
 

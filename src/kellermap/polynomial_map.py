@@ -98,10 +98,10 @@ def _reindex(
     )
 
 
-# SymPys aeltere ``old_poly_ring``-Domains tragen ihre Koeffizienten als
-# ``DMP`` objects rather than as ``PolyElement``. They could be neither cloned
-# nor computed with reliably here: ``from_ring`` failed with a
-# ``CoercionFailed`` deep inside SymPy. Better to refuse early and readably.
+# SymPy's older ``old_poly_ring`` domains carry their coefficients as ``DMP``
+# objects rather than as ``PolyElement``. They could be neither cloned nor
+# computed with reliably here: ``from_ring`` failed with a ``CoercionFailed``
+# deep inside SymPy. Better to refuse early and readably.
 _UNSUPPORTED_DOMAIN = (
     "Coefficient domain {domain} is not supported: it is one of SymPy's "
     "older dense domains. Use QQ[T] or QQ.frac_field(T) instead of "
@@ -243,8 +243,8 @@ class PolynomialMap:
         # the coefficient domain when it appears with other assumptions, that
         # is under the same name as a different object. Without this check a map
         # would arise that looks valid, whose ``components`` print the same
-        # character for two things, and on which ``extend()`` later
-        # scheitert.
+        # character for two things, and on which ``extend()`` would later
+        # fail.
         validate_ring(polynomial_ring)
 
         object.__setattr__(self, "_ring", polynomial_ring)
@@ -775,8 +775,8 @@ class PolynomialMap:
             return self
 
         # By position and not through ``set_ring``: that maps monomials by
-        # position and would silently
-        # umdeuten, statt sie mitzunehmen.
+        # position and would silently reinterpret the exponents of a reordered
+        # ring instead of carrying them over.
         positions = tuple(self.variables.index(symbol) for symbol in order)
         new_ring = clone_ring(self._ring, order)
 

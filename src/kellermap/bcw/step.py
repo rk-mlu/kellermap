@@ -298,9 +298,8 @@ class BCWStep:
         scalar = _coerce_coefficient(source, coefficient)
 
         # Early and not first in verify(). A colliding name can no longer be
-        # told apart from a wrong target afterwards, because the extension then
-        # gives two coordinates the same generator
-        # bezeichnen liesse.
+        # told apart from a wrong target afterwards, because the extension
+        # would then let two coordinates denote the same generator.
         # Against the reserved names and not only against the coordinates: a
         # parameter of the coefficient domain is taken as well.
         taken = {symbol.name for symbol in fresh} & reserved_names(source.ring)

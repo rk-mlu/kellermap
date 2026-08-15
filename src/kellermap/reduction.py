@@ -917,8 +917,7 @@ class Reduction:
         # checks it was the only one that could be removed without a test to
         # write for it that checks anything other than STEP-2. It stays as a
         # self-check of this library's own arithmetic, and RED-5 now states
-        # that this clause cannot
-        # scheitern kann.
+        # that this clause cannot fail on supplied data.
         carried.verify(self.target)
 
         return carried

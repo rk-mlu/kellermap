@@ -89,7 +89,7 @@ build-test:
 	@echo "--> Installing the wheel and pytest..."
 	VIRTUAL_ENV=build_env uv pip install dist/*.whl pytest
 	@echo "--> Checking the PEP 561 marker in the installed package..."
-	build_env/bin/python -c "import kellermap, pathlib, sys; sys.exit(None if (pathlib.Path(kellermap.__file__).parent / 'py.typed').exists() else 'py.typed fehlt im Wheel: kellermap waere fuer Typpruefer stromabwaerts untypisiert')"
+	build_env/bin/python -c "import kellermap, pathlib, sys; sys.exit(None if (pathlib.Path(kellermap.__file__).parent / 'py.typed').exists() else 'py.typed is missing from the wheel: kellermap would be untyped for type checkers downstream')"
 	@echo "--> Running the test suite against the installed package..."
 	build_env/bin/python -m pytest -q
 	@echo "Success: wheel built, installed and checked."
