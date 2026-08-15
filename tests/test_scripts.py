@@ -313,3 +313,88 @@ def test_the_repository_is_covered(fingerprints: ModuleType) -> None:
     assert "tests/test_scripts.py" in covered
     assert "scripts/code_fingerprint.py" in covered
     assert not [name for name in covered if "__pycache__" in name]
+
+
+# --------------------------------------------------------------------------
+# The vocabulary instrument
+#
+# It reports prose words that do not occur in the English part of the
+# repository. It is not a gate: over the translated modules it reports about a
+# hundred words, all of them English. What it is good for is a list a reader
+# scans once per module, and it is what found twenty-eight German lines that
+# the word list of tests/test_language.py missed.
+# --------------------------------------------------------------------------
+
+
+@pytest.fixture(scope="module")
+def foreign() -> ModuleType:
+    return load("foreign_words")
+
+
+def test_the_default_file_set_is_the_remainder(foreign: ModuleType) -> None:
+    """The path that was never tried, and therefore never ran.
+
+    Called without arguments the script examines the modules that
+    ``tests/test_language.py`` still lists. That branch held a nested
+    ``__import__`` call which raised ``AttributeError`` on every invocation.
+    Nothing caught it, because every run during development passed a file name.
+    """
+    listed = foreign.remainder()
+
+    assert listed, "the remainder is empty; this test outlived its purpose"
+    assert all(path.parent.name == "tests" for path in listed)
+    assert all(path.exists() for path in listed)
+
+
+def test_the_script_runs_without_arguments(
+    foreign: ModuleType,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    """``main`` itself, and not only the function it calls.
+
+    The defect was in ``main``, so a test of ``remainder`` alone would have
+    passed while the script kept raising. It is driven here the way the
+    maintainer drove it.
+    """
+    monkeypatch.setattr(foreign.sys, "argv", ["foreign_words.py"])
+
+    assert foreign.main() == 0
+
+    printed = capsys.readouterr().out
+    listed = {path.name for path in foreign.remainder()}
+
+    assert listed, "the remainder is empty; this test outlived its purpose"
+    assert all(f"{name}:" in printed for name in listed)
+
+
+def test_the_module_under_review_is_not_its_own_corpus(foreign: ModuleType) -> None:
+    """A path comparison that mixed relative and absolute paths.
+
+    Every module under review entered the English vocabulary it was measured
+    against, so the report came back empty for every input. The paths are
+    resolved before they are compared.
+    """
+    relative = Path("tests/test_peeling.py")
+    absolute = ROOT / "tests" / "test_peeling.py"
+
+    assert foreign.english({relative}) == foreign.english({absolute})
+
+    # And the exemption really works: taking the module out of the corpus has
+    # to remove words, otherwise the line above compares two equal defects.
+    assert foreign.english({absolute}) < foreign.english(set())
+
+    # The report on an examined module is therefore not empty.
+    known = foreign.english({relative})
+    words = {w.lower() for w in foreign.WORD.findall(foreign.prose(absolute))}
+
+    assert words - known
+
+
+def test_prose_excludes_code_and_quoted_code(foreign: ModuleType) -> None:
+    """Identifiers are not words, whichever language they look like."""
+    text = foreign.prose(ROOT / "src" / "kellermap" / "guards.py")
+
+    assert "bound" in text
+    assert "raise TypeError" not in text
+    assert not foreign.QUOTED_CODE.search(text)

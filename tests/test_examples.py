@@ -100,7 +100,7 @@ def test_the_unit_translation_lies_outside_MA0() -> None:  # noqa: N802
 
 
 def test_alpoeges_map_has_degree_seven_and_determinant_minus_two() -> None:
-    """Fremde Mathematik; Herkunft in ``docs/references.md``."""
+    """Mathematics from another source; provenance in ``docs/references.md``."""
     source = examples.alpoege()
 
     assert source.dimension == 3

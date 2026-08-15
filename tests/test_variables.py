@@ -54,7 +54,7 @@ def test_repeated_extension_of_equal_maps_agrees() -> None:
 
 
 # --------------------------------------------------------------------------
-# Namenskonvention
+# Naming convention
 # --------------------------------------------------------------------------
 
 
@@ -92,7 +92,7 @@ def test_explicit_prefix_overrides_the_convention() -> None:
 
 
 # --------------------------------------------------------------------------
-# Kollisionen
+# Collisions
 # --------------------------------------------------------------------------
 
 
@@ -129,7 +129,7 @@ def test_factory_returns_nothing_for_zero(numbered: PolynomialMap) -> None:
 
 
 # --------------------------------------------------------------------------
-# extend prueft, was die Factory zusagt
+# extend checks what the factory promises
 # --------------------------------------------------------------------------
 
 
@@ -225,10 +225,10 @@ def test_extending_twice_reads_the_numbered_convention(
 def test_purity_alone_does_not_give_the_composition_invariant() -> None:
     """Why the requirement stands in the protocol in its own right.
 
-    This factory is a pure function of ring and count and collides
-    nie -- ``extend`` findet also nichts zu beanstanden. Trotzdem liefern
-    the two decompositions give different maps, because the size of the ring
-    enters the names instead of only the walking distance.
+    This factory is a pure function of ring and count and never collides, so
+    ``extend`` finds nothing to object to. The two decompositions give
+    different maps all the same, because the size of the ring enters the names
+    instead of only the walking distance.
     """
 
     def by_ring_size(ring: PolyRing, count: int) -> tuple[sp.Symbol, ...]:
@@ -244,12 +244,12 @@ def test_purity_alone_does_not_give_the_composition_invariant() -> None:
 
 
 # --------------------------------------------------------------------------
-# Verschachtelte Koeffizientendomaenen
+# Nested coefficient domains
 #
 # Domains nest: over QQ[X3][S] the symbol S is on top and X3 one level below.
 # Reading domain.symbols alone finds S and misses X3, which is enough for
-# extend() to hand out a coordinate X3 and confuse it with the parameter
-# zusammenfaellt.
+# extend() to hand out a coordinate X3 that then coincides with the
+# parameter.
 # --------------------------------------------------------------------------
 
 NESTED_DOMAINS = [

@@ -65,7 +65,7 @@ def test_index_must_be_an_integer(index: object) -> None:
 
 
 def test_factors_over_different_domains_are_unequal() -> None:
-    """Gleiche Symbole, gleiches P, andere Koeffizientendomain."""
+    """The same symbols, the same P, a different coefficient domain."""
     over_zz = ring("X1,X2", ZZ)[0]
     over_qq = ring("X1,X2", QQ)[0]
 
@@ -94,7 +94,7 @@ def test_apply_to_requires_the_same_ring(identity: PolynomialMap) -> None:
 
 
 # --------------------------------------------------------------------------
-# BCW Proposition (3.1), Formel (1)
+# BCW Proposition (3.1), formula (1)
 # --------------------------------------------------------------------------
 
 # G = (X1 - X3 X4, X2, X3, X4) and H = (X1, X2, X3 + P, X4 + Q). G is a single
@@ -132,7 +132,7 @@ def test_a_linear_polynomial_only_gives_EA0() -> None:  # noqa: N802
 
 
 # --------------------------------------------------------------------------
-# Gruppenstruktur
+# Group structure
 # --------------------------------------------------------------------------
 
 FACTORS = [
@@ -244,7 +244,7 @@ def test_composition_across_rings_is_rejected() -> None:
 
 
 # --------------------------------------------------------------------------
-# Identitaet
+# The identity
 # --------------------------------------------------------------------------
 
 
@@ -285,8 +285,8 @@ def test_the_identity_factor_has_infinite_order() -> None:
 
 
 def test_a_product_can_lie_deeper_than_its_factors() -> None:
-    """Why ``filtration_degree`` forms the map instead of
-    befragen.
+    """Why ``filtration_degree`` forms the map instead of consulting the
+    factors.
 
     Both factors lie in EA^0 and in no deeper level, while their product is
     the identity and lies in every EA^d. The filtration degree of the product
@@ -305,7 +305,7 @@ def test_a_product_can_lie_deeper_than_its_factors() -> None:
 
 
 # --------------------------------------------------------------------------
-# Wertsemantik
+# Value semantics
 # --------------------------------------------------------------------------
 
 

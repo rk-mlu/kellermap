@@ -84,7 +84,7 @@ def test_a_dilation_is_rejected_by_ElementaryFactor(ring: object) -> None:  # no
 
 
 # --------------------------------------------------------------------------
-# Die einzelnen Faktoren
+# The individual factors
 # --------------------------------------------------------------------------
 
 
@@ -280,7 +280,7 @@ def test_the_identity_factors_into_nothing(ring: object) -> None:
 
 
 # --------------------------------------------------------------------------
-# Gruppenstruktur
+# Group structure
 # --------------------------------------------------------------------------
 
 
@@ -401,7 +401,7 @@ ALPOEGE = PolynomialMap(
 
 @pytest.fixture(scope="module")
 def normalization() -> LinearAutomorphism:
-    """L^-1 zu L = J(F)(0), faktorisiert."""
+    """L^-1 for L = J(F)(0), factorized."""
     F = over_field(ALPOEGE)
     linear_part = sp.Matrix(
         F.jacobian().xreplace({v: sp.Integer(0) for v in F.variables})
@@ -469,8 +469,8 @@ def test_the_normalization_moves_only_the_image(
     """Left composition leaves every preimage where it was.
 
     The BCW17 points therefore carry Alpoege's points verbatim in their first
-    three coordinates, while the image moves from (-1/4, 0, 0) to (0, 0, -1/4)
-    wandert.
+    three coordinates, while the image moves from (-1/4, 0, 0) to
+    (0, 0, -1/4).
     """
     F = over_field(ALPOEGE)
     normalized = normalization.apply_to(F)

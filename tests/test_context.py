@@ -5,8 +5,8 @@ checked. Purity, by asking twice. Composition, by having the context fetch
 ``count`` names once and one name ``count`` times.
 
 That is the core of this file. Neither defect shows up anywhere further down.
-Both produce entirely valid polynomial maps, only not
-die, welche die Identitaet braucht.
+Both produce entirely valid polynomial maps, only not the one the identity
+requires.
 """
 
 import pytest
@@ -34,7 +34,7 @@ def context() -> ReductionContext:
 
 
 # --------------------------------------------------------------------------
-# RC-1: Determinismus
+# RC-1: determinism
 # --------------------------------------------------------------------------
 
 
@@ -63,7 +63,7 @@ def test_a_counting_factory_is_caught() -> None:
 
 
 # --------------------------------------------------------------------------
-# RC-3: Komposition
+# RC-3: composition
 # --------------------------------------------------------------------------
 
 
@@ -183,7 +183,7 @@ def test_extending_a_map_keeps_its_domain(context: ReductionContext) -> None:
 
 
 # --------------------------------------------------------------------------
-# Randfaelle
+# Edge cases
 # --------------------------------------------------------------------------
 
 

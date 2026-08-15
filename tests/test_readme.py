@@ -2,8 +2,7 @@
 
 The README is also the PyPI landing page. It is the first thing anyone sees of
 this package and the only thing they read without installing it. An example
-that no longer runs there is more expensive than a failed
-Test.
+that no longer runs there is more expensive than a failed test.
 
 What is checked is the code block itself and not a copy of it. Duplicating it
 would allow exactly the divergence the test is meant to prevent.

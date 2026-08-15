@@ -137,7 +137,7 @@ def test_the_wrong_factor_does_not_undo(
 
 
 # --------------------------------------------------------------------------
-# Die Zuege
+# The moves
 # --------------------------------------------------------------------------
 
 
@@ -148,8 +148,7 @@ def test_steps_removing_two_coordinates_go_where_the_allowance_is(
 
     Ample: a move that removes two coordinates gets twice as far for the same
     depth. Scarce: at ``pairs = 1`` the single such step is the last one of the
-    peel under REV-8, and trying it first spends the
-    einzige Erlaubnis frueh aus.
+    peel under REV-8, and trying it first spends the only allowance early.
 
     Measured on ``alpoege15``, where one order finds it in eight maps and the
     other does not find it in two thousand.
@@ -178,7 +177,7 @@ def test_without_a_spare_no_step_that_removes_nothing_is_offered() -> None:
 
 
 # --------------------------------------------------------------------------
-# Die Bruecke zurueck
+# The bridge back
 # --------------------------------------------------------------------------
 
 
@@ -255,7 +254,7 @@ def test_a_budget_that_runs_out_says_less(
 
 
 # --------------------------------------------------------------------------
-# An echten Daten
+# On real data
 # --------------------------------------------------------------------------
 
 
@@ -335,9 +334,8 @@ def test_a_step_that_removes_nothing_is_offered_per_cancelling_constant() -> Non
     Until 0.4.0rc6 the name and the reasoning of this test rested on a
     condition that 0.4.0rc4 removed, namely that undoing has to shorten the
     component. It lengthens it most of the time. What actually bounds the
-    moves stands in REV-10: the constants offered are those that make one of
-    the
-    gemeinsamen Monome streichen.
+    moves stands in REV-10: the constants offered are those that cancel one of
+    the shared monomials.
     """
     source = over_field(PolynomialMap((x, y, z), (x + x**5, y + x**2, z + x**3)))
     target = BCWStep.build(source, 0, Carried(1), Carried(2), 1).target
@@ -619,10 +617,10 @@ def test_a_state_is_walked_once() -> None:
 def test_a_constant_outside_the_domain_is_not_a_move() -> None:
     """Over ``ZZ`` the value ``1/2`` is not a constant, however it looks.
 
-    Gegenbeispiel eines externen Audits. Die beiden gemeinsamen Monome geben
+    A counterexample from an external audit. The two shared monomials give
     ``1`` and ``1/2``. The second was emitted as a move, and the peel crashed
-    while undoing, because the result was no longer over ``ZZ``
-    lag. Die gueltige Kette war die ganze Zeit im Raum.
+    while undoing, because the result no longer lay over ``ZZ``. The valid
+    chain was in the space the whole time.
     """
     a, b, s = sp.symbols("a b s")
     source = PolynomialMap((s, a, b, x), (s + a * x + x**3, a, b + 2 * x, x))
@@ -668,9 +666,9 @@ def test_a_parameter_coefficient_is_found_at_m_zero() -> None:
 def test_the_order_of_the_moves_does_not_depend_on_the_hash_seed() -> None:
     """``moves`` promises a fixed order, and a ``set`` has none.
 
-    The deduplicated constants were emitted straight out of a set
-    ausgegeben, also entschied ``PYTHONHASHSEED``, welcher Zug zuerst kam --
-    and, at a small budget, which chain is found. They are sorted canonically
+    The deduplicated constants were emitted straight out of a set, so
+    ``PYTHONHASHSEED`` decided which move came first and, at a small budget,
+    which chain is found. They are sorted canonically
     now. This test checks the promise within one process. Independence of the
     seed itself is measurable outside it.
     """
@@ -786,8 +784,8 @@ def test_a_source_coordinate_matching_the_pattern_is_not_peeled() -> None:
     Here ``z`` happens to stand in exactly two components and is therefore
     peeled off on trial, and the map after that no longer contains the source.
     Everything below assumes that it does, and it ran into a ``KeyError``. The
-    right move stands later in the same list and was never reached.
-    Gegenbeispiel eines externen Audits.
+    right move stands later in the same list and was never reached. A
+    counterexample from an external audit.
     """
     source = PolynomialMap((x, y, z), (x + y**3, y, z + y))
     step = BCWStep.build(source, 0, Carried(2), Fresh(y**2, u), 0)
@@ -831,7 +829,7 @@ def test_a_candidate_that_does_not_verify_is_discarded() -> None:
 
 
 def test_a_constant_that_cancels_no_monomial_is_not_tried() -> None:
-    """Die zweite Haelfte von REV-10.
+    """The second half of REV-10.
 
     Target and product share the monomial ``a*b`` here, but the coefficient of
     the step is ``1`` and the only candidate that would make a monomial vanish
@@ -960,8 +958,7 @@ def test_equal_endpoints_do_not_yield_a_cycle() -> None:
     only. The search continued and could return to the source: a cyclic chain
     of two ``m = 0`` steps with the coefficients ``1`` and ``-1``,
     mathematically correct and against the library's own promise. A
-    counterexample from an
-    externen Audits.
+    counterexample from an external audit.
     """
     a, b, s = sp.symbols("a b s")
     source = PolynomialMap((s, a, b, x), (s + a * b, a + x, b, x))
@@ -978,8 +975,7 @@ def test_a_budget_spent_exactly_is_not_a_cut_off() -> None:
 
     There is exactly one state here and no move. Until 0.4.0rc6 the space was
     not exhausted at a budget of one and was exhausted at a budget of two,
-    although in
-    beiden Faellen alles gesehen wurde.
+    although everything had been seen in both cases.
     """
     source = PolynomialMap((x, y), (x + y**3, y))
     elsewhere = PolynomialMap((x, y), (x + y**5, y))
@@ -997,7 +993,7 @@ def test_the_degree_may_rise_along_a_valid_chain() -> None:
     It read: the new terms have degree at most ``1 + deg Q``, so the degree
     never falls going forward. That holds for new factors and fails as soon as
     a factor is a component the map already has. This chain runs
-    ``3, 4, 3``. Gegenbeispiel eines externen Audits.
+    ``3, 4, 3``. A counterexample from an external audit.
     """
     a, b, s = sp.symbols("a b s")
     source = PolynomialMap((s, a, b, x, y), (s + x**3, a + x**2, b + y**2, x, y))

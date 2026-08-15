@@ -153,12 +153,12 @@ def test_the_selection_limit_keeps_only_the_largest_cofactor() -> None:
 
 
 # --------------------------------------------------------------------------
-# Die abgeleitete Stufe
+# The derived level
 # --------------------------------------------------------------------------
 
 
 def test_the_level_follows_from_the_orders(flat: PolynomialMap) -> None:
-    """``H`` verschiebt die frischen Koordinaten um die Faktoren."""
+    """``H`` shifts the fresh coordinates by the factors."""
     candidate = enumerate_candidates(flat, [x * y])[0]
 
     assert candidate.filtration_level(flat) == 1
@@ -187,7 +187,7 @@ def test_without_a_fresh_slot_the_level_is_one() -> None:
 
 
 # --------------------------------------------------------------------------
-# Namen kommen von aussen
+# Names come from outside
 # --------------------------------------------------------------------------
 
 
@@ -391,7 +391,7 @@ def test_a_different_generator_order_is_refused(flat: PolynomialMap) -> None:
 
 
 # --------------------------------------------------------------------------
-# Die Suche
+# The search
 # --------------------------------------------------------------------------
 
 
@@ -421,8 +421,8 @@ def test_a_conjugated_target_is_out_of_reach_of_the_pool(two_step: tuple) -> Non
     The family of steps is closed under diagonal conjugation, so a chain to the
     conjugated target does exist. Its steps carry different coefficients and
     different factor values, and both come here from a pool read off the
-    unconjugated target. The peel solves for them
-    stattdessen; siehe ``test_peeling.py``.
+    unconjugated target. The peel solves for them instead, see
+    ``test_peeling.py``.
     """
     source, target, pool = two_step
     flipped = conjugate(target, (1, 1, 1, -1))
@@ -434,9 +434,8 @@ def test_a_conjugated_target_is_out_of_reach_of_the_pool(two_step: tuple) -> Non
 def test_a_value_outside_the_pool_is_unreachable(two_step: tuple) -> None:
     """Without rewrites not unfound, but unreachable.
 
-    That is the price of SEA-8. ``rewrites`` relaxes it, and does so by
-    name:
-    siehe die Tests weiter unten.
+    That is the price of SEA-8. ``rewrites`` relaxes it, and does so by name.
+    See the tests further down.
     """
     source, target, _ = two_step
 
@@ -733,8 +732,7 @@ def test_the_forward_search_raises_nothing_when_it_finds_nothing(
     dimension over other generators raised a ``ValueError`` out of
     ``reordered``, and a budget spent exactly counted as a cut-off search. An
     external audit built all three. ``contracts.md`` has promised since 0.3
-    that a
-    erfolglose Suche nichts wirft.
+    that an unsuccessful search raises nothing.
     """
     elsewhere = PolynomialMap(sp.symbols("p q"), sp.symbols("p q"))
 
@@ -792,7 +790,7 @@ def test_a_bound_that_is_not_a_whole_number_is_refused(flat: PolynomialMap) -> N
 def test_the_enumerator_refuses_a_bad_limit_of_its_own(flat: PolynomialMap) -> None:
     """The enumerator is public and was not checked through ``search``.
 
-    Bis 0.4.0rc9 lieferte ``selection_limit=-1`` still Kandidaten, waehrend
+    Until 0.4.0rc9 ``selection_limit=-1`` silently yielded candidates, while
     the same value gave a ``ValueError`` through ``search``. An external audit
     made the direct call.
     """
@@ -1006,8 +1004,7 @@ def test_the_arguments_are_checked_whatever_the_endpoints_do(
     endpoints it returned before the pool was looked at, so
     ``search(F, F, None)`` gave a result while the same pool against endpoints
     that had to be walked raised. Whether a call is valid may not depend on how
-    far the search gets. An external audit
-    hat es gebaut.
+    far the search gets. An external audit built it.
 
     The parameter ``label`` appears in the test name only and makes visible
     which of the two routes is reported when one of them breaks.
@@ -1058,8 +1055,7 @@ def test_a_reachable_extension_is_not_settled_away() -> None:
     """The negative control: the test in advance must not swallow a real search.
 
     More coordinates, the same domain, every generator of the source contained.
-    There is something to search for here, and both directions have to
-    laufen.
+    There is something to search for here, and both directions have to run.
     """
     source = over_field(PolynomialMap((x, y), (x + x**2 * y**3, y)))
     target = BCWStep.build(source, 0, Fresh(x * y, u), Fresh(x * y**2, v), 1).target
