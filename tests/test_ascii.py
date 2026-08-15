@@ -1,19 +1,19 @@
-"""Python-Dateien sind reines ASCII.
+"""Python files are pure ASCII.
 
-Die Verabredung gilt fuer Quellcode, Tests und Skripte, nicht fuer die
-Dokumentation: ``docs/`` und ``README.md`` duerfen Umlaute und typografische
-Zeichen tragen, ``.py``-Dateien nicht. Dort steht ``Alpoege``, ``ueber``,
-``Section 4`` und ``F o G``.
+The agreement covers source code, tests and scripts, and not the
+documentation. ``docs/`` and ``README.md`` may carry umlauts and typographic
+characters, ``.py`` files may not. There they read ``Alpoege``,
+``Section 4`` and ``F o G``.
 
-Bis 0.4 erzwang das nichts. ``ruff`` prueft mit RUF001 bis RUF003 nur
-verwechselbare Zeichen; ein Ringoperator faellt nicht darunter, und genau
-einer stand seit 0.3 unbemerkt im Docstring von ``PolynomialMap.compose``.
-Eine Regel ohne Gate ist eine Bitte.
+Until 0.4 nothing enforced this. ``ruff`` checks only confusable characters,
+under RUF001 to RUF003. A ring operator is not one of them, and exactly one had
+stood unnoticed in the docstring of ``PolynomialMap.compose`` since 0.3. A rule
+without a gate is a request.
 
-Geprueft werden ``src``, ``tests`` und ``scripts`` namentlich und nicht der
-Baum ab der Wurzel. ``make build-test`` und ``make test-minimum`` legen
-virtuelle Umgebungen im Arbeitsverzeichnis an, und deren Fremdpakete waeren
-weder unsere Dateien noch unsere Verabredung.
+``src``, ``tests`` and ``scripts`` are named explicitly rather than walking the
+tree from the root. ``make build-test`` and ``make test-minimum`` create virtual
+environments in the working directory, and the third-party packages in them are
+neither our files nor our agreement.
 """
 
 import unicodedata
@@ -21,7 +21,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 
-# Die Verzeichnisse, fuer die die Verabredung gilt.
+# The directories the agreement covers.
 CHECKED = ("src", "tests", "scripts")
 
 
@@ -59,10 +59,10 @@ def describe(path: Path, findings: list[tuple[int, int, str]]) -> str:
 
 
 def test_the_directories_are_there() -> None:
-    """Sonst prueft der Test still nichts.
+    """Otherwise the test silently checks nothing.
 
-    Ein Tippfehler in ``CHECKED`` oder ein verschobenes Verzeichnis liesse den
-    Hauptteil ueber eine leere Liste laufen und trotzdem gruen werden.
+    A typing slip in ``CHECKED`` or a moved directory would let the main test
+    run over an empty list and still turn green.
     """
     assert all((ROOT / directory).is_dir() for directory in CHECKED)
     assert len(python_files()) > 20
@@ -76,15 +76,15 @@ def test_every_python_file_is_pure_ascii() -> None:
     ]
 
     assert not reports, (
-        "Python-Dateien sind reines ASCII; Umlaute und typografische Zeichen "
-        "gehoeren nach docs/ und README.md:\n" + "\n".join(reports)
+        "Python files are pure ASCII. Umlauts and typographic characters "
+        "belong in docs/ and README.md:\n" + "\n".join(reports)
     )
 
 
 def test_the_check_finds_a_non_ascii_character(tmp_path: Path) -> None:
-    """Negativkontrolle: ohne sie sagt der Erfolgsfall nichts.
+    """A negative control. Without it the passing case says nothing.
 
-    Genau der Fall, der bis 0.4 durchging -- der Ringoperator in einem
+    Exactly the case that went through until 0.4: the ring operator in a
     Docstring.
     """
     source = tmp_path / "offending.py"
@@ -104,10 +104,10 @@ def test_the_check_passes_a_pure_ascii_file(tmp_path: Path) -> None:
 
 
 def test_an_unnamed_character_is_still_reported() -> None:
-    """Nicht jedes Zeichen traegt einen Unicode-Namen.
+    """Not every character carries a Unicode name.
 
-    Der Bericht darf daran nicht scheitern, sonst verdeckt ein Fehler im
-    Melder den Fund, den er melden soll.
+    The report must not fail on that, otherwise a defect in the reporter hides
+    the finding it is meant to report.
     """
     report = describe(ROOT / "src" / "example.py", [(3, 5, "\x85")])
 

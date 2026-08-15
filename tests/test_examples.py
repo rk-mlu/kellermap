@@ -1,9 +1,9 @@
-"""Die Beispielabbildungen: was sie sind und was sie nicht sein duerfen.
+"""The example maps: what they are and what they may not be.
 
-Das Kriterium, das dieses Modul definiert, ist hier gepruefte Eigenschaft und
-nicht Absicht: jede Abbildung darin ist eine Keller-Abbildung, ihre
-Jacobi-Determinante also eine Konstante ungleich null. Ohne diesen Test waere
-der Name des Moduls eine Behauptung, die niemand nachhaelt.
+The criterion this module defines is a checked property here and not an
+intention. Every map in it is a Keller map, so its Jacobian determinant is a
+non-zero constant. Without this test the name of the module would be a claim
+that nobody follows up.
 """
 
 import inspect
@@ -29,10 +29,10 @@ COLLISIONS = [name for name in ALL if name not in NAMES]
 
 
 def test_the_module_holds_what_it_says_it_holds() -> None:
-    """Dreizehn wiederholte kleine Abbildungen, dazu die beiden Reduktionen.
+    """Thirteen small maps that recur, and the two reductions.
 
-    Und drei Kollisionen, die keine Abbildungen sind und deshalb von den
-    Kriterien unten nicht erfasst werden.
+    And three collisions, which are not maps and are therefore not covered by
+    the criteria below.
     """
     assert len(NAMES) == 15
     assert len(COLLISIONS) == 3
@@ -40,10 +40,10 @@ def test_the_module_holds_what_it_says_it_holds() -> None:
 
 @pytest.mark.parametrize("name", NAMES)
 def test_every_example_is_a_keller_map(name: str) -> None:
-    """Das Kriterium, das ueber die Aufnahme entscheidet.
+    """The criterion that decides inclusion.
 
-    Eine Determinante mit einer freien Variablen ist keine Konstante, und null
-    ist keine Einheit. Beides schliesst aus.
+    A determinant with a free variable is not a constant, and zero is not a
+    unit. Either one excludes a map.
     """
     determinant = getattr(examples, name)().determinant()
 
@@ -58,10 +58,10 @@ def test_every_example_is_a_polynomial_map(name: str) -> None:
 
 @pytest.mark.parametrize("name", NAMES + COLLISIONS)
 def test_every_example_is_a_pure_function(name: str) -> None:
-    """Zwei Aufrufe geben gleiche Abbildungen und keine geteilten Objekte.
+    """Two calls give equal maps and no shared objects.
 
-    Wie ``VariableFactory``: eine Beispielabbildung, die sich zwischen zwei
-    Aufrufen unterscheidet, waere in einem Testlauf nicht wiederfindbar.
+    As with ``VariableFactory``: an example map that differs between two calls
+    could not be found again within one test run.
     """
     first, second = getattr(examples, name)(), getattr(examples, name)()
 
@@ -71,19 +71,19 @@ def test_every_example_is_a_pure_function(name: str) -> None:
 
 @pytest.mark.parametrize("name", ALL)
 def test_every_example_is_documented(name: str) -> None:
-    """Der Docstring nennt die Abbildung; ohne ihn ist der Name eine Vermutung."""
+    """The docstring names the map. Without it the name is a guess."""
     assert (getattr(examples, name).__doc__ or "").strip()
 
 
 # --------------------------------------------------------------------------
-# Was die einzelnen Abbildungen sind
+# What the individual maps are
 # --------------------------------------------------------------------------
 
 
 def test_the_parameter_is_not_a_coordinate() -> None:
-    """``T`` gehoert dem Koeffizientenbereich, nicht der Abbildung.
+    """``T`` belongs to the coefficient domain and not to the map.
 
-    Genau die Unterscheidung, auf der COL-2, BCW-3 und TRA-2 beruhen.
+    Exactly the distinction COL-2, BCW-3 and TRA-2 rest on.
     """
     parametric = examples.parametric_shear()
 
@@ -92,7 +92,7 @@ def test_the_parameter_is_not_a_coordinate() -> None:
 
 
 def test_the_unit_translation_lies_outside_MA0() -> None:  # noqa: N802
-    """Die Quelle, fuer die es ``TranslationStep`` gibt."""
+    """The source ``TranslationStep`` exists for."""
     outside = examples.unit_translation()
 
     assert outside.filtration_degree() == -1
@@ -127,7 +127,7 @@ def test_the_product_shear_is_short_a_product_of_two_coordinates() -> None:
 
 
 def test_the_displacement_of_the_factorable_shear_factors() -> None:
-    """Warum sie die uebliche Quelle fuer einen ``BCWStep`` ist."""
+    """Why it is the usual source for a ``BCWStep``."""
     source = examples.factorable_shear()
     _, second, third = source.variables
 
@@ -135,7 +135,7 @@ def test_the_displacement_of_the_factorable_shear_factors() -> None:
 
 
 def test_not_every_example_has_determinant_one() -> None:
-    """Sonst pruefte kein Test die Unterscheidung Keller gegen unimodular."""
+    """Otherwise no test checks Keller against unimodular."""
     determinants = {getattr(examples, name)().determinant() for name in NAMES}
 
     assert determinants != {1}
@@ -144,7 +144,7 @@ def test_not_every_example_has_determinant_one() -> None:
 
 
 # --------------------------------------------------------------------------
-# Die Referenzreduktionen und ihre Kollisionen
+# The reference reductions and their collisions
 # --------------------------------------------------------------------------
 
 
@@ -157,7 +157,7 @@ def test_not_every_example_has_determinant_one() -> None:
     ],
 )
 def test_each_collision_belongs_to_its_map(map_name: str, collision_name: str) -> None:
-    """Sonst waere die Zusammengehoerigkeit nur eine Namensaehnlichkeit."""
+    """Otherwise the pairing would be a similarity of names only."""
     collision = getattr(examples, collision_name)()
 
     assert collision.verify(getattr(examples, map_name)()) is None
@@ -165,7 +165,7 @@ def test_each_collision_belongs_to_its_map(map_name: str, collision_name: str) -
 
 
 def test_the_reference_reductions_are_cubic_and_normalized() -> None:
-    """Beide beginnen mit der linearen Normalisierung, also Determinante eins."""
+    """Both begin with the linear normalisation, so the determinant is one."""
     seventeen, fifteen = examples.bcw17(), examples.alpoege15()
 
     assert (seventeen.dimension, seventeen.degree()) == (17, 3)
@@ -174,7 +174,7 @@ def test_the_reference_reductions_are_cubic_and_normalized() -> None:
 
 
 def test_the_reductions_reduce_alpoeges_map() -> None:
-    """Der Grad faellt von sieben auf drei, die Dimension steigt."""
+    """The degree falls from seven to three and the dimension rises."""
     source = examples.alpoege()
 
     assert source.degree() == 7
@@ -183,16 +183,15 @@ def test_the_reductions_reduce_alpoeges_map() -> None:
 
 
 def test_the_reference_reductions_are_over_a_field_and_the_source_is_not() -> None:
-    """Der Koeffizientenbereich folgt aus der Normalisierung, nicht aus Stil.
+    """The coefficient domain follows from the normalisation, not from style.
 
-    Die lineare Normalisierung von Kapitel II, Proposition (1.1), dividiert
-    durch die Determinante, also tragen ``bcw17`` und ``alpoege15`` echte
-    Brueche und leben ueber ``QQ``. Alpoeges Abbildung selbst ist nicht
-    normalisiert und liegt ueber ``ZZ``.
+    The linear normalisation of Chapter II, Proposition (1.1), divides by the
+    determinant, so ``bcw17`` and ``alpoege15`` carry proper fractions and live
+    over ``QQ``. Alpoege's map itself is not normalised and lies over ``ZZ``.
 
-    Ein ``BCWStep`` erhaelt den Bereich, also legt der Bereich der Quelle den
-    aller erreichbaren Abbildungen fest. Das ist eine Aussage ueber den
-    Suchraum, und ``roadmap.md`` fuehrt sie fuer 0.5 aus.
+    A ``BCWStep`` preserves the domain, so the domain of the source fixes that
+    of every reachable map. This is a statement about the search space, and
+    ``roadmap.md`` develops it for 0.5.
     """
     source = examples.alpoege()
 

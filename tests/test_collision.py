@@ -1,12 +1,12 @@
-"""Kollisionen: der Nachweis, dass eine Abbildung nicht injektiv ist.
+"""Collisions: the evidence that a map is not injective.
 
-Geprueft wird zweierlei. Zum einen die Konstruktorinvarianten -- ein
-``Collision``-Objekt mit zusammenfallenden Punkten soll gar nicht erst
-entstehen. Zum anderen die drei Verpflichtungen COL-1 bis COL-3 aus
-``docs/contracts.md``, die ``verify`` gegen eine Abbildung prueft.
+Two things are checked. The constructor invariants, so that a ``Collision``
+object with coinciding points does not come into existence at all. And the
+three obligations COL-1 to COL-3 of ``docs/contracts.md`` that ``verify``
+checks against a map.
 
-Der Regressionsteil am Ende arbeitet mit Alpoeges Gegenbeispiel, damit der Typ
-einmal an dem Objekt haengt, um dessentwillen es ihn gibt.
+The regression part at the end works with Alpoege's counterexample, so that the
+type is exercised once on the object it exists for.
 """
 
 import pytest
@@ -16,7 +16,7 @@ from kellermap import Collision, PolynomialMap, VerificationError
 
 x, y = sp.symbols("x y")
 
-# F(x, y) = (x^2, y) identifiziert (1, 0) und (-1, 0).
+# F(x, y) = (x^2, y) identifies (1, 0) and (-1, 0).
 SQUARE = PolynomialMap((x, y), (x**2, y))
 
 POINTS = ((1, 0), (-1, 0))
@@ -34,7 +34,7 @@ def collision() -> Collision:
 
 
 def test_coordinates_are_sympified(collision: Collision) -> None:
-    """Python-Zahlen kommen als SymPy-Ausdruecke wieder heraus."""
+    """Python numbers come back out as SymPy expressions."""
     assert collision.points == (
         (sp.Integer(1), sp.Integer(0)),
         (-sp.Integer(1), sp.Integer(0)),
@@ -48,7 +48,7 @@ def test_dimension_and_length(collision: Collision) -> None:
 
 
 def test_rationals_survive_construction() -> None:
-    """Exakte Arithmetik, keine Gleitkommazahlen unterwegs."""
+    """Exact arithmetic, with no floating point on the way."""
     points = ((sp.Rational(-1, 4), 0), (sp.Rational(1, 4), 0))
     assert Collision(points, (0, 0)).points[0][0] == sp.Rational(-1, 4)
 
@@ -64,7 +64,7 @@ def test_points_must_be_distinct() -> None:
 
 
 def test_distinctness_compares_values_not_syntax() -> None:
-    """(1/2, 0) und (2/4, 0) sind derselbe Punkt, verschieden geschrieben."""
+    """(1/2, 0) and (2/4, 0) are one point, written differently."""
     with pytest.raises(ValueError, match="distinct points"):
         Collision(
             ((sp.Rational(1, 2), 0), (sp.Rational(2, 4), sp.Integer(0))),
@@ -83,7 +83,7 @@ def test_image_must_have_the_same_length() -> None:
 
 
 def test_a_point_must_be_iterable() -> None:
-    """Ein einzelner Ausdruck ist kein Punkt, auch wenn er iterierbar waere."""
+    """A single expression is not a point, even if it were iterable."""
     with pytest.raises(TypeError, match="iterable of coordinates"):
         Collision((sp.Integer(1), sp.Integer(-1)), IMAGE)
 
@@ -134,7 +134,7 @@ def test_COL1_dimension_mismatch(collision: Collision) -> None:  # noqa: N802
 
 
 def test_COL2_a_coordinate_carrying_a_variable_of_the_map() -> None:  # noqa: N802
-    """Sonst wuerde die Auswertung den Punkt in sich selbst einsetzen."""
+    """Otherwise evaluation would substitute the point into itself."""
     suspect = Collision(((x, 0), (-x, 0)), (x**2, 0))
 
     with pytest.raises(VerificationError) as failure:
@@ -144,7 +144,7 @@ def test_COL2_a_coordinate_carrying_a_variable_of_the_map() -> None:  # noqa: N8
 
 
 def test_COL2_allows_a_coefficient_parameter() -> None:  # noqa: N802
-    """Ein Parameter aus dem Koeffizientenbereich ist keine Variable."""
+    """A parameter of the coefficient domain is not a variable."""
     T = sp.Symbol("T")
     scaled = PolynomialMap((x, y), (x**2, T * y))
     parametric = Collision(((T, 0), (-T, 0)), (T**2, 0))
@@ -163,7 +163,7 @@ def test_COL3_wrong_image(collision: Collision) -> None:  # noqa: N802
 
 
 def test_COL3_points_that_do_not_collide() -> None:  # noqa: N802
-    """Zwei verschiedene Punkte mit verschiedenen Bildern."""
+    """Two distinct points with distinct images."""
     apart = Collision(((1, 0), (1, 1)), (1, 0))
 
     with pytest.raises(VerificationError) as failure:
@@ -173,7 +173,7 @@ def test_COL3_points_that_do_not_collide() -> None:  # noqa: N802
 
 
 def test_the_error_names_its_obligation(collision: Collision) -> None:
-    """Die Kennung steht in der Nachricht, nicht nur im Attribut."""
+    """The identifier is in the message and not only in the attribute."""
     with pytest.raises(VerificationError, match=r"\[COL-3\]"):
         Collision(POINTS, (0, 0)).verify(SQUARE)
 
@@ -198,7 +198,7 @@ def test_at_computes_the_image(collision: Collision) -> None:
 
 
 def test_at_verifies_before_returning() -> None:
-    """at() kann keine Kollision aus Punkten machen, die keine sind."""
+    """at() cannot make a collision out of points that are not one."""
     with pytest.raises(VerificationError) as failure:
         Collision.at(SQUARE, ((1, 0), (1, 1)))
 
@@ -224,7 +224,7 @@ def test_equality_with_other_types(collision: Collision) -> None:
 
 
 def test_extended_appends_coordinates(collision: Collision) -> None:
-    """Was ein stabilisierender Schritt braucht."""
+    """What a stabilising step needs."""
     wider = collision.extended(((2, 3), (-2, 3)), (0, 0))
 
     assert wider.dimension == 4
@@ -243,7 +243,7 @@ def test_extended_checks_the_width(collision: Collision) -> None:
 
 
 def test_extended_may_collapse_nothing(collision: Collision) -> None:
-    """Die angehaengten Koordinaten duerfen die Punkte nicht gleich machen."""
+    """The appended coordinates must not make the points equal."""
     assert collision.extended(((), ()), ()) == collision
 
 
@@ -287,7 +287,7 @@ ALPOEGE_POINTS = (
 
 
 def test_alpoeges_collision_verifies() -> None:
-    """Drei Punkte, ein Bild, konstante Determinante -- das Gegenbeispiel."""
+    """Three points, one image, constant determinant: the counterexample."""
     collision = Collision.at(ALPOEGE, ALPOEGE_POINTS)
 
     assert len(collision) == 3
@@ -297,10 +297,10 @@ def test_alpoeges_collision_verifies() -> None:
 
 
 def test_the_normalized_image_is_the_one_bcw17_carries() -> None:
-    """Die Normalisierung verschiebt nur das Bild, nicht die Urbilder.
+    """Normalisation moves the image only, not the preimages.
 
-    Das ist die Rechnung, die ``LinearStep`` in WP3 als Zertifikat ablegt;
-    hier steht sie als Eigenschaft von ``with_image``.
+    This is the computation ``LinearStep`` records as a certificate in WP 3.
+    Here it stands as a property of ``with_image``.
     """
     collision = Collision.at(ALPOEGE, ALPOEGE_POINTS)
     jacobian = ALPOEGE.jacobian().xreplace(

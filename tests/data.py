@@ -1,23 +1,22 @@
-"""Feste Eingabe, die dieses Projekt nicht ausliefert.
+"""Fixed input that this project does not distribute.
 
-Die neunzehndimensionale Abbildung ist fremde Mathematik, und eine Lizenz dazu
-liess sich nicht ermitteln. ``AGENTS.md`` verlangt, solche Daten nicht ins Paket
-zu uebernehmen, also stehen sie hier und nicht in ``kellermap.examples``.
+The nineteen-dimensional map is mathematics from another source, and a licence
+for it could not be established. ``AGENTS.md`` requires that such data is not
+taken into the package, so it stands here and not in ``kellermap.examples``.
 
-Das ist zugleich die Abbildung, an der das Ergebnis von Meilenstein 0.4 haengt:
-sie ist das einzige Datum, gegen das eine gefundene Kette geprueft wird und das
-dieses Projekt nicht selbst gerechnet hat. Dass sie ausserhalb des
-ausgelieferten Pakets liegt, macht diese Aeusserlichkeit sichtbar, statt sie
-einem Leser als Verzeichnisfrage zu ueberlassen.
+It is also the map the result of milestone 0.4 rests on. It is the only datum a
+found chain is checked against that this project did not compute itself. Its
+place outside the distributed package makes that externality visible, rather
+than leaving it to a reader as a question about directories.
 
-Herkunft und was die Uebereinstimmung belegt: ``docs/references.md``.
+Provenance, and what the agreement establishes: ``docs/references.md``.
 
-Reine SymPy-Konstanten, ohne ``kellermap``. Der Grund steht in
-``scripts/reconstruct_alpoege19.py``: dieses Skript rechnet die Reduktion
-unabhaengig von der Bibliothek nach und liest die Zielabbildung von hier. Baute
-dieses Modul die ``PolynomialMap``, so ginge die Konversion der Daten durch
-genau den Code, gegen den geprueft werden soll. Die ``PolynomialMap`` entsteht
-im Testmodul. Ein externes Audit hat darauf hingewiesen.
+Plain SymPy constants, without ``kellermap``. The reason stands in
+``scripts/reconstruct_alpoege19.py``. That script recomputes the reduction
+independently of the library and reads the target map from here. If this module
+built the ``PolynomialMap``, the conversion of the data would run through
+exactly the code that is to be checked. The ``PolynomialMap`` is built in the
+test module. An external audit pointed this out.
 """
 
 import sympy as sp

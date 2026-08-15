@@ -1,6 +1,6 @@
-"""Elementarautomorphismen und die Gruppe EA_n(k).
+"""Elementary automorphisms and the group EA_n(k).
 
-Seitenangaben beziehen sich auf Bass, Connell, Wright, Bull. AMS 1982.
+Page references are to Bass, Connell, Wright, Bull. AMS 1982.
 """
 
 import math
@@ -14,8 +14,8 @@ from kellermap import ElementaryAutomorphism, ElementaryFactor, PolynomialMap
 
 R, X1, X2, X3, X4 = ring("X1,X2,X3,X4", QQ)
 
-# Dieselben Variablen als SymPy-Symbole; ``components`` liegt an der
-# Ausdrucksgrenze, die Ringelemente oben sind nicht damit vergleichbar.
+# The same variables as SymPy symbols. ``components`` sits at the expression
+# boundary, and the ring elements above are not comparable with it.
 x1, x2, x3, x4 = R.symbols
 
 
@@ -25,15 +25,15 @@ def identity() -> PolynomialMap:
 
 
 # --------------------------------------------------------------------------
-# Validierung
+# Validation
 # --------------------------------------------------------------------------
 
 
 def test_polynomial_must_not_involve_the_moving_variable() -> None:
-    """Die Bedingung, an der die Umkehrformel haengt.
+    """The condition the inversion formula depends on.
 
-    X_i |-> a X_i + P ist nur dann durch a^-1 (X_i - P) zu invertieren, wenn
-    P unter der Substitution unveraendert bleibt.
+    X_i |-> a X_i + P can be inverted by a^-1 (X_i - P) only when P stays
+    unchanged under the substitution.
     """
     with pytest.raises(ValueError, match="must not involve X1"):
         ElementaryFactor(R, 0, X1 * X2)
@@ -58,8 +58,8 @@ def test_polynomial_must_be_polynomial() -> None:
 
 @pytest.mark.parametrize("index", [True, 0.5, "0", None])
 def test_index_must_be_an_integer(index: object) -> None:
-    """``True`` ist in Python ein int und ``0.5`` besteht jeden
-    Bereichsvergleich; beides muss dennoch scheitern."""
+    """``True`` is an int in Python and ``0.5`` passes every range comparison.
+    Both have to fail all the same."""
     with pytest.raises(TypeError, match="must be an integer"):
         ElementaryFactor(R, index, R.zero)  # type: ignore[arg-type]
 
@@ -97,8 +97,8 @@ def test_apply_to_requires_the_same_ring(identity: PolynomialMap) -> None:
 # BCW Proposition (3.1), Formel (1)
 # --------------------------------------------------------------------------
 
-# G = (X1 - X3 X4, X2, X3, X4) und H = (X1, X2, X3 + P, X4 + Q). G ist ein
-# einzelner Faktor, H ein Produkt aus zweien -- deshalb zwei Klassen.
+# G = (X1 - X3 X4, X2, X3, X4) and H = (X1, X2, X3 + P, X4 + Q). G is a single
+# factor and H a product of two, which is why there are two classes.
 
 BCW_G = ElementaryFactor(R, index=0, polynomial=-X3 * X4)
 BCW_H = ElementaryAutomorphism(
@@ -117,13 +117,13 @@ def test_bcw_H_reproduces_the_paper() -> None:  # noqa: N802
 
 
 def test_bcw_factors_lie_in_EA1() -> None:  # noqa: N802
-    """Erster Teil des Beweises: deg P, deg Q >= 2, also G, H in EA^1."""
+    """First part of the proof: deg P, deg Q >= 2, so G, H lie in EA^1."""
     assert BCW_G.is_in_EA(1)
     assert BCW_H.is_in_EA(1)
 
 
 def test_a_linear_polynomial_only_gives_EA0() -> None:  # noqa: N802
-    """Der Linearisierungsteil, in dem BCW nur EA^0 fordern."""
+    """The linearisation part, where BCW require only EA^0."""
     factor = ElementaryFactor(R, 2, X1)
 
     assert factor.filtration_degree() == 0
@@ -148,7 +148,7 @@ FACTORS = [
 def test_factor_inverse_is_two_sided(
     factor: ElementaryFactor, identity: PolynomialMap
 ) -> None:
-    """Beide Reihenfolgen, weil eine einseitige Inverse hier nichts beweist."""
+    """Both orders, because a one-sided inverse proves nothing here."""
     E = factor.to_polynomial_map()
     E_inverse = factor.inverse().to_polynomial_map()
 
@@ -165,10 +165,10 @@ def test_inverting_twice_returns_the_factor(factor: ElementaryFactor) -> None:
 def test_structural_determinant_matches_the_computed_one(
     factor: ElementaryFactor,
 ) -> None:
-    """Jeder Erzeuger von EA_n(k) hat Determinante 1, ohne Rechnung.
+    """Every generator of EA_n(k) has determinant 1, without computing.
 
-    Das ist die Zusage, auf die sich ``BCWStep.verify`` stuetzen soll; sie
-    wird hier gegen den gerechneten Weg gehalten.
+    This is the promise ``BCWStep.verify`` is to rely on. Here it is held
+    against the computed route.
     """
     assert factor.determinant() == 1
     assert factor.to_polynomial_map().determinant() == 1
@@ -178,10 +178,10 @@ def test_structural_determinant_matches_the_computed_one(
 def test_apply_to_agrees_with_full_composition(
     factor: ElementaryFactor, identity: PolynomialMap
 ) -> None:
-    """Der billige Pfad muss dasselbe liefern wie die volle Komposition.
+    """The cheap path has to give what the full composition gives.
 
-    ``apply_to`` fasst nur eine Komponente an; das ist der Grund fuer die
-    Klasse, und deshalb wird es gegen ``PolynomialMap.compose`` geprueft.
+    ``apply_to`` touches one component only. That is the reason for the class,
+    and therefore it is checked against ``PolynomialMap.compose``.
     """
     target = PolynomialMap.from_ring(R, (X1 + X2**2, X2 * X3, X3 + X4, X4))
 
@@ -189,8 +189,8 @@ def test_apply_to_agrees_with_full_composition(
 
 
 def test_product_inverse_reverses_the_order() -> None:
-    """Mit nicht kommutierenden Faktoren, sonst prueft der Test die Umkehrung
-    der Reihenfolge nicht."""
+    """With factors that do not commute, otherwise the test does not check
+    that the order is reversed."""
     first = ElementaryFactor(R, 0, X2**2)
     second = ElementaryFactor(R, 1, X1**2)
 
@@ -214,13 +214,13 @@ def test_product_inverse_is_two_sided(
 
 
 def test_every_element_of_EA_has_determinant_one() -> None:  # noqa: N802
-    """BCW S. 304: EA_n(k) wird von Abbildungen mit Determinante 1 erzeugt.
+    """BCW p. 304: EA_n(k) is generated by maps of determinant 1.
 
-    Ein frueherer Entwurf liess X_j |-> a X_j + P mit beliebiger Einheit a zu.
-    Das ist ein polynomialer Automorphismus, aber kein elementarer: sein
-    Displacement (a - 1) X_j haengt von X_j ab. Er haette Elemente mit
-    Determinante ungleich 1 in EA_n(k) gebracht und damit das Argument
-    zerstoert, dass ein Reduktionsschritt die Jacobi-Determinante erhaelt.
+    An earlier draft admitted X_j |-> a X_j + P for an arbitrary unit a. That
+    is a polynomial automorphism but not an elementary one: its displacement
+    (a - 1) X_j depends on X_j. It would have brought elements of determinant
+    other than 1 into EA_n(k) and destroyed the argument that a reduction step
+    preserves the Jacobian determinant.
     """
     automorphism = ElementaryAutomorphism(FACTORS)
 
@@ -257,7 +257,7 @@ def test_identity_is_the_empty_product(identity: PolynomialMap) -> None:
 
 
 def test_identity_needs_a_ring_to_become_a_map() -> None:
-    """Ein leeres Produkt traegt keinen Ring, es kennt seine Dimension nicht."""
+    """An empty product carries no ring and does not know its dimension."""
     with pytest.raises(ValueError, match="needs a ring"):
         ElementaryAutomorphism.identity().to_polynomial_map()
 
@@ -270,12 +270,12 @@ def test_composing_with_the_identity_changes_nothing() -> None:
 
 
 # --------------------------------------------------------------------------
-# Filtrierung
+# Filtration
 # --------------------------------------------------------------------------
 
 
 def test_order_is_the_order_of_the_polynomial() -> None:
-    """Das Displacement ist P, also braucht die Ordnung keine Abbildung."""
+    """The displacement is P, so the order needs no map."""
     assert ElementaryFactor(R, 0, X2**5).order() == 5
     assert ElementaryFactor(R, 0, X2 + X3**4).order() == 1
 
@@ -285,13 +285,13 @@ def test_the_identity_factor_has_infinite_order() -> None:
 
 
 def test_a_product_can_lie_deeper_than_its_factors() -> None:
-    """Warum ``filtration_degree`` die Abbildung bildet statt die Faktoren zu
+    """Why ``filtration_degree`` forms the map instead of
     befragen.
 
-    Beide Faktoren liegen in EA^0 und in keinem tieferen, ihr Produkt ist die
-    Identitaet und liegt in jedem EA^d. Aus den Faktoren allein ist der
-    Filtrierungsgrad des Produkts also nicht abzulesen; MA^d als Untermonoid
-    gibt nur eine untere Schranke.
+    Both factors lie in EA^0 and in no deeper level, while their product is
+    the identity and lies in every EA^d. The filtration degree of the product
+    therefore cannot be read off the factors alone. MA^d as a submonoid gives
+    a lower bound only.
     """
     up = ElementaryFactor(R, 0, X2)
     down = ElementaryFactor(R, 0, -X2)
@@ -330,11 +330,11 @@ def test_comparison_with_a_foreign_type_is_not_implemented() -> None:
 def test_different_factorizations_of_one_automorphism_are_not_equal(
     identity: PolynomialMap,
 ) -> None:
-    """Die Entwurfsentscheidung, ausgesprochen.
+    """The design decision, stated.
 
-    Beide Objekte sind die Identitaet als Abbildung. Als Elemente von EA sind
-    sie verschieden, weil die Faktorisierung das Zertifikat ist und ein
-    Reduktionsschritt die von ihm benutzte vorzeigen muss.
+    Both objects are the identity as a map. As elements of EA they are
+    different, because the factorization is the certificate and a reduction
+    step has to exhibit the one it used.
     """
     empty = ElementaryAutomorphism.identity()
     cancelling = ElementaryAutomorphism([BCW_G, BCW_G.inverse()])
@@ -377,7 +377,7 @@ def test_automorphisms_are_hashable() -> None:
 
 
 def test_identity_lies_in_every_EA() -> None:  # noqa: N802
-    """Das leere Produkt traegt keinen Ring, ist aber in jedem EA^d."""
+    """The empty product carries no ring and lies in every EA^d."""
     empty = ElementaryAutomorphism.identity()
 
     assert empty.filtration_degree() == math.inf
@@ -386,7 +386,7 @@ def test_identity_lies_in_every_EA() -> None:  # noqa: N802
 
 
 def test_factor_does_not_adopt_the_callers_ring() -> None:
-    """Dieselbe Zusage wie bei PolynomialMap.ring, aus demselben Grund."""
+    """The same promise as for PolynomialMap.ring, for the same reason."""
     R2, Y1, Y2 = ring("Y1,Y2", QQ)
     factor = ElementaryFactor(R2, 0, Y2**2)
     before = factor.to_polynomial_map().components
@@ -408,19 +408,19 @@ def test_factor_ring_property_does_not_leak() -> None:
 
 @pytest.mark.parametrize("factor", FACTORS)
 def test_every_generator_has_determinant_one(factor: ElementaryFactor) -> None:
-    """EA_n(k) liegt in SA_n(k).
+    """EA_n(k) lies in SA_n(k).
 
-    BCW definieren einen Faktor durch E_j - X_j = P mit P frei von X_j; der
-    Linearteil ist damit unipotent und die Determinante 1. Ein Faktor mit
-    Skalierung a auf X_j haette Determinante a und waere kein Element von
-    EA_n(k) -- ein frueherer Entwurf liess das zu.
+    BCW define a factor by E_j - X_j = P with P free of X_j. The linear part is
+    then unipotent and the determinant is 1. A factor scaling X_j by a would
+    have determinant a and would not be an element of EA_n(k). An earlier draft
+    admitted that.
     """
     assert factor.determinant() == 1
     assert factor.to_polynomial_map().determinant() == 1
 
 
 def test_identity_lies_in_every_filtration_level() -> None:
-    """Das leere Produkt traegt keinen Ring, ist aber in jedem EA^d."""
+    """The empty product carries no ring and lies in every EA^d."""
     empty = ElementaryAutomorphism.identity()
 
     assert empty.filtration_degree() == float("inf")
@@ -428,12 +428,12 @@ def test_identity_lies_in_every_filtration_level() -> None:
 
 
 # --------------------------------------------------------------------------
-# Ringvalidierung
+# Ring validation
 #
-# Dieselbe Pruefung wie in PolynomialMap.from_ring, aus derselben Quelle.
-# Frueher fehlte sie hier: ein zusammengesetzter Generator wurde angenommen,
-# ``variable`` lieferte dann ein Mul statt eines Symbols, und erst
-# ``to_polynomial_map`` scheiterte -- weit entfernt von der Ursache.
+# The same check as in PolynomialMap.from_ring, from the same source. It was
+# missing here before: a composite generator was accepted, ``variable`` then
+# returned a Mul instead of a Symbol, and only ``to_polynomial_map`` failed,
+# far away from the cause.
 # --------------------------------------------------------------------------
 
 
@@ -445,7 +445,7 @@ def test_composite_generators_are_rejected() -> None:
 
 
 def test_generators_sharing_a_name_are_rejected() -> None:
-    """Verschiedene Annahmen, gleicher Name: als Ausdruck ununterscheidbar."""
+    """Different assumptions, one name: indistinguishable as an expression."""
     plain = sp.Symbol("z")
     positive = sp.Symbol("z", positive=True)
     ambiguous = ring([plain, positive], QQ)[0]
@@ -464,5 +464,5 @@ def test_a_ring_without_generators_is_rejected() -> None:
 
 
 def test_variable_is_always_a_symbol() -> None:
-    """Die Zusage, die vorher nur behauptet war."""
+    """The promise that was only asserted before."""
     assert isinstance(BCW_G.variable, sp.Symbol)

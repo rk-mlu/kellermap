@@ -1,13 +1,13 @@
-"""Was in diesem Paket "derselbe Wert" heisst.
+"""What "the same value" means in this package.
 
-Der Anlass ist ein Befund aus dem Audit von 0.2.0rc1: ``Collision`` verglich
-Koordinaten mit ``expand``, und das raeumt keinen Nenner ab. Ueber ``k(T)``
-gilt ``(T^2 - 1)/(T - 1) = T + 1``, und der alte Test sah dort zwei Punkte, wo
-einer steht -- COL-4 rueckwaerts gelesen, und in der Gegenrichtung eine
-korrekte, nur unguenstig geschriebene Bildkoordinate, die COL-3 verworfen
-haette.
+The occasion is a finding of the audit of 0.2.0rc1. ``Collision`` compared
+coordinates with ``expand``, and that clears no denominator. Over ``k(T)`` the
+identity ``(T^2 - 1)/(T - 1) = T + 1`` holds, and the old test saw two points
+where one stands. That is COL-4 read backwards, and in the other direction a
+correct image coordinate, merely written awkwardly, that COL-3 would have
+rejected.
 
-Die Regressionstests am Ende halten genau diese beiden Richtungen fest.
+The regression tests at the end record exactly these two directions.
 """
 
 import pytest
@@ -19,13 +19,13 @@ from kellermap.canonical import agree, canonical, is_zero
 T = sp.Symbol("T")
 x, y = sp.symbols("x y")
 
-# Dieselbe Zahl, zweimal geschrieben.
+# The same number, written twice.
 FOLDED = (T**2 - 1) / (T - 1)
 PLAIN = T + 1
 
 
 # --------------------------------------------------------------------------
-# Der Nulltest selbst
+# The test for zero itself
 # --------------------------------------------------------------------------
 
 
@@ -58,7 +58,7 @@ def test_expressions_that_do_not(left: sp.Expr, right: sp.Expr) -> None:
 
 
 def test_expand_would_have_missed_it() -> None:
-    """Die Gegenprobe auf den alten Test, damit der Befund nicht zurueckkehrt."""
+    """The control on the old test, so that the finding does not return."""
     assert sp.expand(FOLDED - PLAIN) != 0
     assert agree(FOLDED, PLAIN)
 
@@ -68,7 +68,7 @@ def test_canonical_normalizes() -> None:
 
 
 def test_canonical_is_not_conversion() -> None:
-    """Normalform ist keine Umwandlung: Float bleibt Float."""
+    """A normal form is not a conversion: a float stays a float."""
     assert canonical(sp.Float(0.25)) != sp.Rational(1, 4)
 
 
@@ -78,25 +78,25 @@ def test_is_zero() -> None:
 
 
 # --------------------------------------------------------------------------
-# COL-4: zwei Schreibweisen sind ein Punkt
+# COL-4: two ways of writing it are one point
 # --------------------------------------------------------------------------
 
 
 def test_COL4_two_spellings_of_one_point() -> None:  # noqa: N802
-    """Der Blocker aus dem Audit, in seiner urspruenglichen Form."""
+    """The blocker from the audit, in its original form."""
     with pytest.raises(ValueError, match="distinct points"):
         Collision(((FOLDED, 0), (PLAIN, 0)), (0, 0))
 
 
 def test_the_coordinates_are_stored_in_normal_form() -> None:
-    """Damit ``__eq__`` und ``__hash__`` miteinander uebereinstimmen koennen."""
+    """So that ``__eq__`` and ``__hash__`` can agree with each other."""
     collision = Collision(((FOLDED, 0), (T, 0)), (0, 0))
 
     assert collision.points[0] == (PLAIN, sp.Integer(0))
 
 
 def test_equality_and_hash_survive_a_rewriting() -> None:
-    """Zwei Wege, dieselbe Kollision hinzuschreiben, sind ein Objekt."""
+    """Two ways of writing down one collision are one object."""
     folded = Collision(((FOLDED, 0), (T, 0)), (FOLDED, 0))
     plain = Collision(((PLAIN, 0), (T, 0)), (PLAIN, 0))
 
@@ -105,25 +105,25 @@ def test_equality_and_hash_survive_a_rewriting() -> None:
 
 
 # --------------------------------------------------------------------------
-# COL-3: eine korrekte, nur anders geschriebene Bildkoordinate
+# COL-3: a correct image coordinate, merely written differently
 # --------------------------------------------------------------------------
 
 
 @pytest.fixture(scope="module")
 def parametric() -> PolynomialMap:
-    """F(x, y) = ((T + 1) x^2, y) ueber ZZ(T), mit einer Kollision."""
+    """F(x, y) = ((T + 1) x^2, y) over ZZ(T), with a collision."""
     return PolynomialMap((x, y), ((T + 1) * x**2, y))
 
 
 def test_COL3_an_image_written_the_long_way(parametric: PolynomialMap) -> None:  # noqa: N802
-    """Das Bild bei x = 1 ist T + 1, hier als (T^2 - 1)/(T - 1) geschrieben."""
+    """The image at x = 1 is T + 1, written here as (T^2 - 1)/(T - 1)."""
     collision = Collision(((1, 0), (-1, 0)), (FOLDED, 0))
 
     assert collision.verify(parametric) is None
 
 
 def test_COL3_still_rejects_a_wrong_image(parametric: PolynomialMap) -> None:  # noqa: N802
-    """Die Normalform macht die Pruefung nicht nachgiebig."""
+    """The normal form does not make the check lenient."""
     with pytest.raises(VerificationError) as failure:
         Collision(((1, 0), (-1, 0)), (T, 0)).verify(parametric)
 

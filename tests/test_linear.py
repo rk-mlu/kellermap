@@ -1,14 +1,14 @@
-"""Der lineare Teil: GL_n(k) als geordnetes Produkt von Gauss-Operationen.
+"""The linear part: GL_n(k) as an ordered product of Gauss operations.
 
-Der inhaltliche Kern dieser Datei ist die Unterscheidung, die dem Modul seinen
-Zweck gibt: eine Transvektion ist elementar im Sinne von BCW, eine
-Vertauschung und eine Streckung sind es nicht. Der Rest prueft, dass die
-Faktorisierung wirklich die Matrix reproduziert und dass ``apply_to`` dasselbe
-tut wie die Komposition ueber ``PolynomialMap``.
+The substance of this file is the distinction that gives the module its
+purpose. A transvection is elementary in the sense of BCW; a transposition and
+a dilation are not. The rest checks that the factorization really reproduces
+the matrix, and that ``apply_to`` does what composition through
+``PolynomialMap`` does.
 
-Am Ende steht die Normalisierung von Alpoeges Abbildung, an der sich beides
-zeigt: die Faktorisierung besteht aus genau einer Vertauschung und einer
-Streckung, und ihre Determinante -1/2 macht die Keller-Determinante -2 zu 1.
+At the end stands the normalisation of Alpoege's map, where both show. The
+factorization consists of exactly one transposition and one dilation, and its
+determinant -1/2 turns the Keller determinant -2 into 1.
 """
 
 import pytest
@@ -40,12 +40,12 @@ def F() -> PolynomialMap:  # noqa: N802
 
 
 # --------------------------------------------------------------------------
-# Was elementar ist und was nicht
+# What is elementary and what is not
 # --------------------------------------------------------------------------
 
 
 def test_a_transvection_is_elementary(ring: object) -> None:
-    """P = a * X_source ist frei von X_index, also ein ElementaryFactor."""
+    """P = a * X_source is free of X_index, so it is an ElementaryFactor."""
     shear = Transvection(ring, 0, 1, 3)
 
     assert shear.is_elementary
@@ -54,7 +54,7 @@ def test_a_transvection_is_elementary(ring: object) -> None:
 
 
 def test_a_transvection_lies_in_EA0_and_not_in_EA1(ring: object) -> None:  # noqa: N802
-    """Der Linearteil ist genau der Grund, weshalb EA^0 in BCW vorkommt."""
+    """The linear part is exactly why EA^0 appears in BCW."""
     factor = Transvection(ring, 0, 1, 3).as_elementary_factor()
 
     assert factor.is_in_EA(0)
@@ -62,7 +62,7 @@ def test_a_transvection_lies_in_EA0_and_not_in_EA1(ring: object) -> None:  # noq
 
 
 def test_a_transposition_is_not_elementary(ring: object) -> None:
-    """Zwei bewegte Komponenten, und Determinante -1."""
+    """Two components moved, and determinant -1."""
     swap = Transposition(ring, 0, 2)
 
     assert not swap.is_elementary
@@ -70,7 +70,7 @@ def test_a_transposition_is_not_elementary(ring: object) -> None:
 
 
 def test_a_dilation_is_not_elementary(ring: object) -> None:
-    """Die Verschiebung (a - 1) * X_index haengt von X_index ab."""
+    """The displacement (a - 1) * X_index depends on X_index."""
     scaling = Dilation(ring, 0, sp.Rational(1, 2))
 
     assert not scaling.is_elementary
@@ -78,7 +78,7 @@ def test_a_dilation_is_not_elementary(ring: object) -> None:
 
 
 def test_a_dilation_is_rejected_by_ElementaryFactor(ring: object) -> None:  # noqa: N802
-    """Gegenprobe: die Streckung kaeme durch die Pruefung von 0.1 nicht durch."""
+    """A control: the dilation would not pass the check of 0.1."""
     with pytest.raises(ValueError, match="must not involve"):
         ElementaryFactor(ring, 0, -sp.Rational(1, 2) * x)
 
@@ -153,7 +153,7 @@ def test_dilation_by_zero_is_rejected(ring: object) -> None:
 
 
 def test_dilation_needs_a_unit() -> None:
-    """Ueber ZZ ist 2 keine Einheit; die Meldung nennt den Ausweg."""
+    """Over ZZ the number 2 is not a unit. The message names the way out."""
     with pytest.raises(ValueError, match="over_field"):
         Dilation(QUADRATIC.ring, 0, 2)
 
@@ -177,7 +177,7 @@ def test_index_must_be_an_integer(ring: object) -> None:
     ],
 )
 def test_inverse_undoes_the_factor(factor_of, ring: object) -> None:  # type: ignore[no-untyped-def]
-    """Auf Matrixebene und auf Abbildungsebene."""
+    """At the level of the matrix and at the level of the map."""
     factor = factor_of(ring)
     identity = PolynomialMap.from_ring(ring, ring.gens)
 
@@ -196,7 +196,7 @@ def test_inverse_undoes_the_factor(factor_of, ring: object) -> None:  # type: ig
     ],
 )
 def test_apply_to_agrees_with_composition(factor_of, F: PolynomialMap) -> None:  # type: ignore[no-untyped-def] # noqa: N803
-    """apply_to ist eine Abkuerzung, kein anderer Begriff von Komposition."""
+    """apply_to is a shortcut and not another notion of composition."""
     factor = factor_of(F.ring)
 
     assert factor.apply_to(F) == factor.to_polynomial_map().compose(F)
@@ -210,7 +210,7 @@ def test_a_factor_rejects_a_foreign_map(ring: object) -> None:
 
 
 def test_matrices_act_on_the_components(F: PolynomialMap) -> None:
-    """Linkskomposition ist Matrix mal Komponentenvektor, ohne Substitution."""
+    """Left composition is matrix times component vector, with no substitution."""
     factor = Transvection(F.ring, 0, 1, 3)
     expected = sp.Matrix(factor.matrix()) * sp.Matrix(F.components)
 
@@ -239,7 +239,7 @@ def test_factorize_reproduces_the_matrix(matrix: sp.Matrix, ring: object) -> Non
 
 @pytest.mark.parametrize("matrix", CASES)
 def test_factorize_reproduces_the_determinant(matrix: sp.Matrix, ring: object) -> None:
-    """Ohne die Matrix zu bilden: das Produkt der Faktordeterminanten."""
+    """Without forming the matrix: the product of the factor determinants."""
     factored = LinearAutomorphism.factorize(ring, matrix)
 
     assert factored.determinant() == matrix.det()
@@ -264,7 +264,7 @@ def test_factorize_rejects_the_wrong_shape(ring: object) -> None:
 
 
 def test_factorize_needs_a_field() -> None:
-    """Ueber ZZ fehlt der Kehrwert; die Meldung nennt over_field."""
+    """Over ZZ the reciprocal is missing. The message names over_field."""
     with pytest.raises(ValueError, match="over_field"):
         LinearAutomorphism.factorize(QUADRATIC.ring, sp.diag(2, 1, 1))
 
@@ -321,11 +321,11 @@ def test_factors_must_be_linear_factors(ring: object) -> None:
 
 
 def test_is_elementary_is_a_property_of_the_factorization(ring: object) -> None:
-    """Hinreichend, nicht charakterisierend.
+    """Sufficient, not characterising.
 
-    Zwei gleiche Vertauschungen sind die Identitaet und liegen damit in
-    EA_n(k), obwohl kein Faktor elementar ist. Die Eigenschaft berichtet ueber
-    die vorgelegte Faktorisierung, nicht ueber das Element.
+    Two equal transpositions are the identity and therefore lie in EA_n(k),
+    although no factor is elementary. The property reports on the factorization
+    presented and not on the element.
     """
     swap = Transposition(ring, 0, 1)
     twice = LinearAutomorphism([swap, swap])
@@ -337,7 +337,7 @@ def test_is_elementary_is_a_property_of_the_factorization(ring: object) -> None:
 def test_two_factorizations_of_one_matrix_are_different_objects(
     ring: object,
 ) -> None:
-    """Wie bei ElementaryAutomorphism: die Faktorisierung ist das Zertifikat."""
+    """As for ElementaryAutomorphism: the factorization is the certificate."""
     swap = Transposition(ring, 0, 1)
     once = LinearAutomorphism([swap])
     thrice = LinearAutomorphism([swap, swap, swap])
@@ -383,7 +383,7 @@ def test_over_field_is_idempotent() -> None:
 
 
 # --------------------------------------------------------------------------
-# Regression: die Normalisierung von Alpoeges Abbildung
+# Regression: the normalisation of Alpoege's map
 # --------------------------------------------------------------------------
 
 ALPOEGE_VARIABLES = sp.symbols("x1 x2 x3")
@@ -413,7 +413,7 @@ def normalization() -> LinearAutomorphism:
 def test_the_normalization_is_a_transposition_and_a_dilation(
     normalization: LinearAutomorphism,
 ) -> None:
-    """Genau die beiden Operationen der Handrechnung, in dieser Reihenfolge."""
+    """Exactly the two operations of the hand computation, in that order."""
     swap, scaling = normalization.factors
 
     assert isinstance(swap, Transposition)
@@ -426,10 +426,10 @@ def test_the_normalization_is_a_transposition_and_a_dilation(
 def test_the_normalization_is_not_elementary(
     normalization: LinearAutomorphism,
 ) -> None:
-    """Das kuerzeste Argument braucht die Faktorisierung gar nicht.
+    """The shortest argument does not need the factorization at all.
 
-    Jedes Element von EA_n(k) hat Determinante 1. Diese hier hat -1/2, liegt
-    also in keiner Faktorisierung in EA_3(k).
+    Every element of EA_n(k) has determinant 1. This one has -1/2, so under no
+    factorization does it lie in EA_3(k).
     """
     assert normalization.determinant() == sp.Rational(-1, 2)
     assert not normalization.is_elementary
@@ -438,7 +438,7 @@ def test_the_normalization_is_not_elementary(
 def test_the_normalization_turns_the_determinant_into_one(
     normalization: LinearAutomorphism,
 ) -> None:
-    """Warum BCW17 Determinante 1 hat und Alpoege -2."""
+    """Why BCW17 has determinant 1 and Alpoege has -2."""
     F = over_field(ALPOEGE)
 
     assert F.determinant() == -2
@@ -448,7 +448,7 @@ def test_the_normalization_turns_the_determinant_into_one(
 def test_the_normalization_reaches_MA1(  # noqa: N802
     normalization: LinearAutomorphism,
 ) -> None:
-    """Die Voraussetzung von Proposition (3.1)."""
+    """The hypothesis of Proposition (3.1)."""
     F = over_field(ALPOEGE)
 
     assert not F.is_in_MA(1)
@@ -466,10 +466,10 @@ def test_the_normalization_is_reversible(
 def test_the_normalization_moves_only_the_image(
     normalization: LinearAutomorphism,
 ) -> None:
-    """Linkskomposition laesst jedes Urbild, wo es war.
+    """Left composition leaves every preimage where it was.
 
-    Deshalb tragen die BCW17-Punkte in ihren ersten drei Koordinaten woertlich
-    Alpoeges Punkte, waehrend das Bild von (-1/4, 0, 0) nach (0, 0, -1/4)
+    The BCW17 points therefore carry Alpoege's points verbatim in their first
+    three coordinates, while the image moves from (-1/4, 0, 0) to (0, 0, -1/4)
     wandert.
     """
     F = over_field(ALPOEGE)

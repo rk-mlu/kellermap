@@ -1,14 +1,14 @@
-"""Jede als ``Iterable`` deklarierte Schnittstelle vertraegt einen Generator.
+"""Every interface declared as ``Iterable`` accepts a generator.
 
-Anlass ist ein Befund aus dem Audit von 0.2.0rc2: ``BCWStep.build`` reichte
-sein ``variables``-Argument an zwei Konstruktoraufrufe weiter, und ein
-Generator war nach dem ersten verbraucht. Der regulaere Konstruktor nahm
-denselben Generator an. Zwei Eingaenge mit derselben Typangabe verhielten sich
-also verschieden, und das faellt niemandem auf, der Tupel uebergibt.
+The occasion is a finding of the audit of 0.2.0rc2. ``BCWStep.build`` passed
+its ``variables`` argument on to two constructor calls, and a generator was
+spent after the first. The regular constructor accepted the same generator. Two
+entry points with the same type annotation therefore behaved differently, and
+nobody who passes tuples notices that.
 
-Diese Datei prueft deshalb nicht nur die eine Stelle. Wer ``Iterable``
-schreibt, sagt zu, mit einem einmal durchlaufbaren Objekt auszukommen; die
-Zusage gilt fuer die ganze Oberflaeche oder fuer keine.
+This file does not check the one place alone. Writing ``Iterable`` is a promise
+to make do with an object that can be walked once. The promise holds for the
+whole surface or for none of it.
 """
 
 import inspect
@@ -43,7 +43,7 @@ SWAP = LinearAutomorphism([Transposition(RING, 0, 1)])
 
 
 def once(*items: object) -> object:
-    """Ein Iterable, das sich genau einmal durchlaufen laesst."""
+    """An iterable that can be walked exactly once."""
     return iter(items)
 
 
@@ -68,13 +68,13 @@ def test_a_one_shot_iterable_is_enough(case: str) -> None:
 
 
 def test_bcw_step_no_longer_takes_an_iterable() -> None:
-    """Die Stelle des urspruenglichen Befundes gibt es nicht mehr.
+    """The place of the original finding no longer exists.
 
-    ``BCWStep`` nahm die frischen Variablen als ``Iterable`` entgegen und
-    reichte sie an zwei Konstruktoraufrufe weiter; ein Generator war nach dem
-    ersten leer. Seit den Faktorplaetzen traegt jeder Platz seine eigene
-    Variable, und der Parameter existiert nicht mehr. Der Test haelt fest,
-    dass die Signatur nicht dorthin zurueckkehrt.
+    ``BCWStep`` took the fresh variables as an ``Iterable`` and passed them on
+    to two constructor calls. A generator was empty after the first. Since the
+    factor slots were introduced, each slot carries its own variable and the
+    parameter is gone. This test records that the signature does not return to
+    that shape.
     """
     names = list(inspect.signature(BCWStep.__init__).parameters)
 

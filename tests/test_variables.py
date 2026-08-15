@@ -1,8 +1,8 @@
-"""Namensgebung fuer Stabilisierungsvariablen.
+"""Naming of stabilisation variables.
 
-Die Tests halten zwei Zusagen fest, an denen spaetere Reduktionen haengen:
-dass eine Factory eine reine Funktion ist, und dass ``extend`` ihr Ergebnis
-prueft statt es zu glauben.
+The tests record two promises that later reductions depend on: that a factory
+is a pure function, and that ``extend`` checks its result rather than believing
+it.
 """
 
 import pytest
@@ -23,22 +23,22 @@ x, y, T = sp.symbols("x y T")
 
 @pytest.fixture
 def numbered() -> PolynomialMap:
-    """Eine Abbildung mit durchnummerierten Variablen, wie BCW17."""
+    """A map with numbered variables, as in BCW17."""
     variables = sp.symbols("x1:6")
     return PolynomialMap(variables, variables)
 
 
 # --------------------------------------------------------------------------
-# Reinheit
+# Purity
 # --------------------------------------------------------------------------
 
 
 def test_factory_is_a_pure_function(numbered: PolynomialMap) -> None:
-    """Die tragende Zusage des Protokolls.
+    """The load-bearing promise of the protocol.
 
-    Ein hochzaehlender Generator wuerde hier beim zweiten Aufruf andere Namen
-    liefern und die Monoid-Identitaet in test_invariants brechen -- ohne dass
-    irgendetwas eine Ausnahme wuerfe.
+    A generator that counts upwards would return different names on the second
+    call and break the monoid identity in test_invariants, without anything
+    raising an exception.
     """
     ring = numbered.ring
 
@@ -46,7 +46,7 @@ def test_factory_is_a_pure_function(numbered: PolynomialMap) -> None:
 
 
 def test_repeated_extension_of_equal_maps_agrees() -> None:
-    """Dieselbe Zusage, eine Ebene hoeher."""
+    """The same promise, one level up."""
     F = examples.sum_and_difference()
     G = examples.sum_and_difference()
 
@@ -59,23 +59,23 @@ def test_repeated_extension_of_equal_maps_agrees() -> None:
 
 
 def test_convention_is_read_off_numbered_generators(numbered: PolynomialMap) -> None:
-    """x1..x5 wird zu x6, x7 -- nicht zu X6, X7.
+    """x1..x5 becomes x6, x7 and not X6, X7.
 
-    Eine Reduktion komponiert viele Erweiterungen; zwei konkurrierende
-    Namensschemata in einer Abbildung sind gegen das Paper schwer zu lesen.
+    A reduction composes many extensions. Two competing naming schemes in one
+    map are hard to read against the paper.
     """
     assert numbered.extend(2).variables[-2:] == sp.symbols("x6 x7")
 
 
 def test_fallback_prefix_without_a_convention() -> None:
-    """x, y traegt keine Nummerierung: Verhalten wie vor der Factory."""
+    """x, y carries no numbering: the behaviour from before the factory."""
     F = examples.sum_and_difference()
 
     assert F.extend(2).variables == (x, y, sp.Symbol("X3"), sp.Symbol("X4"))
 
 
 def test_fallback_prefix_on_mixed_conventions() -> None:
-    """Uneinheitliche Praefixe geben keine Konvention her."""
+    """Inconsistent prefixes yield no convention."""
     a1, b2 = sp.symbols("a1 b2")
     F = PolynomialMap((a1, b2), (a1, b2))
 
@@ -83,7 +83,7 @@ def test_fallback_prefix_on_mixed_conventions() -> None:
 
 
 def test_explicit_prefix_overrides_the_convention() -> None:
-    """Der Sinn der Injektion: eine Reduktion kann Traegervariablen benennen."""
+    """The point of the injection: a reduction can name carrier variables."""
     F = examples.sum_and_difference()
 
     extended = F.extend(3, IndexedVariableFactory(prefix="u"))
@@ -97,7 +97,7 @@ def test_explicit_prefix_overrides_the_convention() -> None:
 
 
 def test_reserved_names_cover_the_coefficient_domain() -> None:
-    """T in k[T] ist kein Generator, sein Name ist trotzdem belegt."""
+    """T in k[T] is not a generator, and its name is taken all the same."""
     F = examples.parametric_swap()
 
     assert reserved_names(F.ring) == {"x", "y", "T"}
@@ -134,8 +134,8 @@ def test_factory_returns_nothing_for_zero(numbered: PolynomialMap) -> None:
 
 
 def test_extend_rejects_a_colliding_name() -> None:
-    """Der teuerste Fehlerfall: ``clone`` wuerde ihn wortlos hinnehmen und
-    einen Ring bauen, in dem zwei Koordinaten denselben Generator meinen."""
+    """The most expensive failure: ``clone`` would accept it without a word
+    and build a ring in which two coordinates mean one generator."""
     F = examples.sum_and_difference()
 
     def colliding(ring: object, count: int) -> tuple[sp.Symbol, ...]:
@@ -176,7 +176,7 @@ def test_extend_rejects_non_symbols() -> None:
 
 
 # --------------------------------------------------------------------------
-# Zweimal erweitern muss einmal erweitern gleichen
+# Extending twice has to equal extending once
 # --------------------------------------------------------------------------
 
 SPLITS = [(1, 1), (2, 2), (1, 3), (3, 1)]
@@ -191,9 +191,9 @@ def test_extending_twice_equals_extending_once(
 ) -> None:
     """(F^[m])^[l] = F^[m+l].
 
-    Eine Reduktion stabilisiert schrittweise; sie muss dort landen, wo eine
-    einzige Stabilisierung landet. Der Test prueft die Namensvergabe, nicht
-    die Komponenten -- die sind ohnehin Identitaeten.
+    A reduction stabilises step by step and has to arrive where a single
+    stabilisation arrives. The test checks the naming and not the components,
+    which are identities anyway.
     """
     F = examples.sum_and_difference()
 
@@ -202,10 +202,10 @@ def test_extending_twice_equals_extending_once(
 
 @pytest.mark.parametrize(("m", "ell"), SPLITS)
 def test_extending_twice_survives_a_reserved_name_in_between(m: int, ell: int) -> None:
-    """Derselbe Test mit einer Luecke in der Namensfolge.
+    """The same test with a gap in the sequence of names.
 
-    X3 ist als Koeffizientensymbol belegt, die Vergabe muss es ueberspringen
-    -- in beiden Zerlegungen an derselben Stelle.
+    X3 is taken as a coefficient symbol, so naming has to skip it, at the same
+    place in both decompositions.
     """
     F = PolynomialMap((x, y), (sp.Symbol("X3") * x, y))
 
@@ -215,7 +215,7 @@ def test_extending_twice_survives_a_reserved_name_in_between(m: int, ell: int) -
 def test_extending_twice_reads_the_numbered_convention(
     numbered: PolynomialMap,
 ) -> None:
-    """x1..x5 -> x6..x9, gleich ob in einem oder in zwei Schritten."""
+    """x1..x5 -> x6..x9, whether in one step or in two."""
     stepwise = numbered.extend(2).extend(2)
 
     assert stepwise == numbered.extend(4)
@@ -223,12 +223,12 @@ def test_extending_twice_reads_the_numbered_convention(
 
 
 def test_purity_alone_does_not_give_the_composition_invariant() -> None:
-    """Warum die Anforderung eigenstaendig im Protokoll steht.
+    """Why the requirement stands in the protocol in its own right.
 
-    Diese Factory ist eine reine Funktion von Ring und Anzahl und kollidiert
+    This factory is a pure function of ring and count and collides
     nie -- ``extend`` findet also nichts zu beanstanden. Trotzdem liefern
-    beide Zerlegungen verschiedene Abbildungen, weil die Ringgroesse in den
-    Namen eingeht statt nur in die Laufweite.
+    the two decompositions give different maps, because the size of the ring
+    enters the names instead of only the walking distance.
     """
 
     def by_ring_size(ring: PolyRing, count: int) -> tuple[sp.Symbol, ...]:
@@ -246,9 +246,9 @@ def test_purity_alone_does_not_give_the_composition_invariant() -> None:
 # --------------------------------------------------------------------------
 # Verschachtelte Koeffizientendomaenen
 #
-# Domains verschachteln sich: ueber QQ[X3][S] steht S oben und X3 eine Ebene
-# tiefer. Wer nur domain.symbols liest, findet S und uebersieht X3 -- genug,
-# damit extend() eine Koordinate X3 vergibt und sie mit dem Parameter
+# Domains nest: over QQ[X3][S] the symbol S is on top and X3 one level below.
+# Reading domain.symbols alone finds S and misses X3, which is enough for
+# extend() to hand out a coordinate X3 and confuse it with the parameter
 # zusammenfaellt.
 # --------------------------------------------------------------------------
 
@@ -274,7 +274,7 @@ def test_reserved_names_reaches_every_domain_level(
 def test_extension_avoids_nested_domain_symbols(
     domain: object, expected: set[str]
 ) -> None:
-    """Der Fehler, den die Luecke ermoeglichte."""
+    """The defect the gap made possible."""
     R, u, v = ring("u,v", domain)
     F = PolynomialMap.from_ring(R, (u + v, v))
 
@@ -284,7 +284,7 @@ def test_extension_avoids_nested_domain_symbols(
 
 
 def test_a_generator_may_not_share_a_name_with_a_nested_parameter() -> None:
-    """SymPy prueft nur die oberste Domain-Ebene; hier wird tiefer geschaut."""
+    """SymPy checks the top domain level only. Here the search goes deeper."""
     X3, S = sp.symbols("X3 S")
     R, generator, other = ring("X3,w", QQ[X3][S])
 

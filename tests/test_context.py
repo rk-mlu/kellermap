@@ -1,11 +1,11 @@
-"""Der Kontext, der eine Factory bei ihrem Wort nimmt.
+"""The context that takes a factory at its word.
 
-Beide Eigenschaften, die ``VariableFactory`` verlangt, sind billig zu pruefen
-und werden geprueft: Reinheit, indem zweimal gefragt wird, und Komposition,
-indem der Kontext einmal ``count`` Namen holt und einmal ``count`` mal einen.
+Both properties ``VariableFactory`` requires are cheap to check and are
+checked. Purity, by asking twice. Composition, by having the context fetch
+``count`` names once and one name ``count`` times.
 
-Das ist der Kern dieser Datei. Keiner der beiden Fehler faellt irgendwo weiter
-unten auf -- beide erzeugen voellig gueltige Polynomabbildungen, nur eben nicht
+That is the core of this file. Neither defect shows up anywhere further down.
+Both produce entirely valid polynomial maps, only not
 die, welche die Identitaet braucht.
 """
 
@@ -43,12 +43,12 @@ def test_equal_arguments_give_equal_names(context: ReductionContext) -> None:
 
 
 def test_a_second_context_agrees(context: ReductionContext) -> None:
-    """Kein Zustand im Objekt, also auch keiner zwischen Objekten."""
+    """No state in the object, and therefore none between objects."""
     assert context.variables(RING, 2) == ReductionContext().variables(RING, 2)
 
 
 def test_a_counting_factory_is_caught() -> None:
-    """Der Fehler, vor dem der Docstring von VariableFactory warnt."""
+    """The defect the docstring of VariableFactory warns about."""
 
     class Counting:
         def __init__(self) -> None:
@@ -68,7 +68,7 @@ def test_a_counting_factory_is_caught() -> None:
 
 
 def test_extending_twice_equals_extending_once(context: ReductionContext) -> None:
-    """(F^[2])^[2] = F^[4], und zwar mit denselben Namen."""
+    """(F^[2])^[2] = F^[4], and with the same names."""
     twice = context.extend(context.extend(IDENTITY, 2), 2)
     once = context.extend(IDENTITY, 4)
 
@@ -84,10 +84,10 @@ def test_the_names_compose(context: ReductionContext) -> None:
 
 
 def test_a_factory_naming_after_the_ring_size_is_caught() -> None:
-    """Rein, kollisionsfrei -- und trotzdem falsch.
+    """Pure, free of collisions, and wrong all the same.
 
-    Das Beispiel aus dem Docstring von ``VariableFactory``: die Namen tragen
-    die Groesse des Rings, den die Factory bekam.
+    The example from the docstring of ``VariableFactory``: the names carry the
+    size of the ring the factory was given.
     """
 
     class Sized:
@@ -99,7 +99,7 @@ def test_a_factory_naming_after_the_ring_size_is_caught() -> None:
 
 
 # --------------------------------------------------------------------------
-# RC-4 und RC-5: Frische, und dass der Kontext nachprueft
+# RC-4 and RC-5: freshness, and that the context verifies it
 # --------------------------------------------------------------------------
 
 
@@ -122,7 +122,7 @@ def test_a_miscounting_factory_is_caught() -> None:
 
 
 def test_a_colliding_factory_is_caught() -> None:
-    """PolyRing nimmt einen doppelten Namen widerspruchslos an."""
+    """PolyRing accepts a duplicated name without complaint."""
 
     class Colliding:
         def __call__(self, ring: PolyRing, count: int) -> tuple[sp.Symbol, ...]:
@@ -151,7 +151,7 @@ def test_a_factory_returning_something_else_is_caught() -> None:
 
 
 def test_a_name_of_a_coefficient_parameter_is_caught() -> None:
-    """Ein T aus k[T] ist kein Generator und trotzdem vergeben."""
+    """A T from k[T] is not a generator and is taken all the same."""
     T = sp.Symbol("T")
     parametric = PolynomialMap((x1, x2), (x1 + T * x2, x2))
 
@@ -164,7 +164,7 @@ def test_a_name_of_a_coefficient_parameter_is_caught() -> None:
 
 
 # --------------------------------------------------------------------------
-# RC-6: der arithmetische Kontext bleibt
+# RC-6: the arithmetic context is preserved
 # --------------------------------------------------------------------------
 
 
@@ -237,10 +237,10 @@ def test_a_fixed_factory_refuses_another_count() -> None:
 
 
 def test_a_fixed_factory_does_not_compose() -> None:
-    """Und der Kontext sagt das, statt es zu verschweigen.
+    """And the context says so rather than passing over it.
 
-    Eine feste Factory ist fuer *eine* Erweiterung bekannter Groesse da; eine
-    Kette braucht eine, die komponiert.
+    A fixed factory is there for *one* extension of known size. A chain needs
+    one that composes.
     """
     context = ReductionContext(factory=FixedVariableFactory(sp.symbols("x4 x5")))
 
@@ -249,14 +249,14 @@ def test_a_fixed_factory_does_not_compose() -> None:
 
 
 # --------------------------------------------------------------------------
-# Zusammenspiel mit einem Schritt
+# Interaction with a step
 # --------------------------------------------------------------------------
 
 
 def test_a_context_names_the_variables_of_a_step(
     context: ReductionContext,
 ) -> None:
-    """RC-7: der Kontext benennt, er waehlt keinen Schritt aus."""
+    """RC-7: the context names, it does not select a step."""
     from kellermap import over_field
     from kellermap.bcw import BCWStep, Fresh
 
@@ -270,7 +270,7 @@ def test_a_context_names_the_variables_of_a_step(
 
 
 def test_the_context_names_a_whole_chain(context: ReductionContext) -> None:
-    """Drei Schritte, sechs Variablen, und keine Luecke dazwischen."""
+    """Three steps, six variables, and no gap between them."""
     from kellermap import over_field
 
     current = over_field(PolynomialMap.identity((x1, x2, x3)))

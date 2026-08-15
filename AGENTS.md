@@ -14,9 +14,17 @@ This file describes how to work, not what the project is. For that, read
 
 - **Conversation** with the maintainer is in German.
 - **Everything in the repository is English**: source docstrings and comments,
-  `docs/`, `README.md`, `CHANGELOG.md`, commit messages, release notes. The
-  one exception is test docstrings and test comments, which are German by
-  existing convention.
+  test docstrings and test comments, `docs/`, `README.md`, `CHANGELOG.md`,
+  commit messages, release notes.
+
+  Until milestone 0.5 there was one exception, for test docstrings and test
+  comments. It is withdrawn. Every audit of milestone 0.4 read the tests, a
+  test is the sharpest statement of what an obligation means, and half of them
+  could not be read by a reviewer who does not read German.
+
+  `tests/test_language.py` enforces the rule and carries the remainder of the
+  translation in `NOT_YET_TRANSLATED`. That list only shrinks: a module that
+  has been translated and left in it fails the suite.
 - **Python files are pure ASCII.** This is enforced by 
   `pytest tests/test_ascii.py` since WP 4 of version v0.4.0. Umlauts and
   typographic characters belong in `docs/` and `README.md`, not in `.py` files.

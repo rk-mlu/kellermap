@@ -1,12 +1,12 @@
-"""Der Quickstart aus dem README.
+"""The quickstart from the README.
 
-Das README ist zugleich die PyPI-Landeseite: es ist das Erste, was jemand von
-diesem Paket sieht, und das Einzige, was er ohne Installation liest. Ein
-Beispiel, das dort nicht mehr laeuft, ist teurer als ein fehlgeschlagener
+The README is also the PyPI landing page. It is the first thing anyone sees of
+this package and the only thing they read without installing it. An example
+that no longer runs there is more expensive than a failed
 Test.
 
-Geprueft wird der Codeblock selbst, nicht eine Kopie davon. Duplizieren wuerde
-genau die Abweichung erlauben, gegen die der Test schuetzen soll.
+What is checked is the code block itself and not a copy of it. Duplicating it
+would allow exactly the divergence the test is meant to prevent.
 """
 
 import re
@@ -18,10 +18,10 @@ import sympy as sp
 
 README = Path(__file__).resolve().parent.parent / "README.md"
 
-# Die Werte, die der Quickstart in seinen Kommentaren behauptet. Sie stehen
-# hier ein zweites Mal, weil sich aus Prosa wie "# 2, from ord(F - X) = 3"
-# kein Wert zuverlaessig herausloesen laesst. Wer einen davon aendert, muss
-# beide Stellen anfassen -- der Test verweist auf die andere.
+# The values the quickstart claims in its comments. They stand here a second
+# time, because no value can be extracted reliably from prose such as
+# "# 2, from ord(F - X) = 3". Whoever changes one of them has to touch both
+# places, and the test points at the other.
 QUICKSTART_CLAIMS = {
     "determinant": sp.Integer(1),
     "degree": 3,
@@ -29,7 +29,7 @@ QUICKSTART_CLAIMS = {
     "variables": sp.symbols("x y X3 X4"),
 }
 
-# Ebenso fuer den Reduktionsblock.
+# The same for the reduction block.
 REDUCTION_CLAIMS = {
     "dimensions": (3, 3, 5),
     "point": (
@@ -61,11 +61,11 @@ def blocks() -> list[str]:
 
 @pytest.fixture(scope="module")
 def namespaces(blocks: list[str]) -> list[dict[str, Any]]:
-    """Jeden Block einzeln ausfuehren, in einem eigenen Namensraum.
+    """Run every block on its own, in a namespace of its own.
 
-    Einzeln und nicht gemeinsam: ein Leser tippt einen Block ab, nicht die
-    Summe aller vorherigen, und ein Block, der stillschweigend auf einer
-    Zuweisung aus einem frueheren beruht, laeuft bei ihm nicht.
+    On its own and not together. A reader copies one block and not the sum of
+    all earlier ones, and a block that silently relies on an assignment from an
+    earlier one does not run for them.
     """
     executed = []
     for block in blocks:
@@ -77,11 +77,11 @@ def namespaces(blocks: list[str]) -> list[dict[str, Any]]:
 
 
 def test_every_readme_block_runs(namespaces: list[dict[str, Any]]) -> None:
-    """Jeder Block muss ohne Vorbereitung durchlaufen.
+    """Every block has to run without preparation.
 
-    Faengt den Fall, dass eine Signatur sich aendert und das README es nicht
-    mitbekommt -- der haeufigere Fehler, weil er niemandem auffaellt, der die
-    Bibliothek schon kennt.
+    This catches a signature that changes while the README does not follow. It
+    is the more common defect, because nobody who already knows the library
+    notices it.
     """
     assert all(namespace for namespace in namespaces)
 
@@ -89,7 +89,7 @@ def test_every_readme_block_runs(namespaces: list[dict[str, Any]]) -> None:
 def test_the_readme_quickstart_says_the_truth(
     namespaces: list[dict[str, Any]],
 ) -> None:
-    """Und die Werte muessen stimmen, die der erste Block behauptet."""
+    """And the values the first block claims have to be right."""
     F = namespaces[0]["F"]
 
     assert F.determinant() == QUICKSTART_CLAIMS["determinant"]
@@ -101,7 +101,7 @@ def test_the_readme_quickstart_says_the_truth(
 def test_the_readme_reduction_says_the_truth(
     namespaces: list[dict[str, Any]],
 ) -> None:
-    """Ebenso der zweite: eine Kette, die wirklich verifiziert."""
+    """The second as well: a chain that really verifies."""
     if len(namespaces) < 2:
         pytest.skip("The README carries no reduction block")
 
@@ -117,10 +117,10 @@ def test_the_readme_reduction_says_the_truth(
 
 
 def test_the_blocks_import_the_installed_package(blocks: list[str]) -> None:
-    """Kein Block darf sich auf das Repository stuetzen.
+    """No block may rely on the repository.
 
-    Ein Leser installiert das Paket und tippt ab; ein relativer Import oder
-    ein Pfad aus dem Arbeitsbaum wuerde bei ihm scheitern und hier nicht.
+    A reader installs the package and copies. A relative import or a path from
+    the working tree would fail for them and not here.
     """
     for block in blocks:
         assert "kellermap" in block
