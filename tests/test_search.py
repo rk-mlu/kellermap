@@ -1,12 +1,12 @@
-"""Kandidatenaufzaehlung: was Proposition (3.1) an einer Karte tun koennte.
+"""Candidate enumeration: what Proposition (3.1) could do on a map.
 
-Hier wird nichts verifiziert. Ein Kandidat ist ein Vorschlag, und was ihn zu
-einem Beleg macht, ist ``BCWStep.build`` gefolgt von ``verify()`` -- SEA-1. Die
-Tests pruefen entsprechend Mechanik und Vollstaendigkeit gegenueber dem Vorrat,
-nicht Korrektheit im Sinne eines Zertifikats.
+Nothing is verified here. A candidate is a proposal, and what makes it evidence
+is ``BCWStep.build`` followed by ``verify()``, which is SEA-1. The tests
+accordingly check the mechanism and completeness relative to the pool, and not
+correctness in the sense of a certificate.
 
-Die Kontrolle an echten Daten steht in ``test_bcw17.py`` und
-``test_alpoege15.py``, wo die bekannten Schritte liegen.
+The control on real data stands in ``test_bcw17.py`` and
+``test_alpoege15.py``, where the known steps are.
 """
 
 from collections.abc import Callable
@@ -35,26 +35,26 @@ u, v = sp.symbols("u v")
 
 @pytest.fixture
 def flat() -> PolynomialMap:
-    """Eine Komponente mit einem einzigen zusammengesetzten Monom."""
+    """A component with a single composite monomial."""
     return PolynomialMap((x, y), (x + x**2 * y**3, y))
 
 
 @pytest.fixture
 def carried() -> PolynomialMap:
-    """Koordinate 1 traegt ``x**2``."""
+    """Coordinate 1 carries ``x**2``."""
     return PolynomialMap((x, y), (x + x**2 * y**3, y + x**2))
 
 
 # --------------------------------------------------------------------------
-# Der Vorrat begrenzt, und wie
+# How the pool bounds the search
 # --------------------------------------------------------------------------
 
 
 def test_an_empty_pool_leaves_only_the_carriers(flat: PolynomialMap) -> None:
-    """Koordinate 1 ist ein Traeger, traegt aber den Wert null.
+    """Coordinate 1 is a carrier but carries the value zero.
 
-    Ein Anker ist sie damit nicht: durch null wird nicht geteilt, und ein
-    Produkt mit null ist keine Teilsumme, die irgendetwas entfernt.
+    That does not make it an anchor: one does not divide by zero, and a product
+    with zero is not a partial sum that removes anything.
     """
     assert flat.carrier_indices == (1,)
     assert enumerate_candidates(flat, []) == ()
@@ -69,10 +69,10 @@ def test_a_pool_value_anchors_a_candidate(flat: PolynomialMap) -> None:
 
 
 def test_a_value_the_ring_cannot_hold_is_dropped(flat: PolynomialMap) -> None:
-    """So faellt die Abhaengigkeit zwischen Traegern von selbst heraus.
+    """This makes the dependency between carriers drop out by itself.
 
-    ``w6 = w1 x`` wird erst umwandelbar, wenn ``w1`` als Generator existiert.
-    Hier steht ``z`` fuer ein solches noch nicht eingefuehrtes ``w``.
+    ``w6 = w1 x`` becomes convertible only once ``w1`` exists as a generator.
+    Here ``z`` stands for such a ``w`` that has not been introduced yet.
     """
     assert anchors(flat, [x * y, y * z]) == (x * y, Carried(1))
     assert enumerate_candidates(flat, [y * z]) == ()
@@ -88,10 +88,10 @@ def test_a_carrier_is_an_anchor_without_any_pool(carried: PolynomialMap) -> None
 def test_the_target_component_is_not_offered_as_a_carrier(
     carried: PolynomialMap,
 ) -> None:
-    """Der Konstruktor von ``BCWStep`` lehnt einen solchen Platz ab.
+    """The constructor of ``BCWStep`` rejects such a slot.
 
-    Ein Kandidat, der ihn vorschlaegt, waere nicht baubar, und ein Aufzaehler,
-    der Nichtbaubares vorschlaegt, verschiebt die Pruefung nur nach hinten.
+    A candidate proposing it could not be built, and an enumerator that
+    proposes what cannot be built only postpones the check.
     """
     assert all(
         not (isinstance(slot, Carried) and slot.index == candidate.index)
@@ -101,16 +101,16 @@ def test_the_target_component_is_not_offered_as_a_carrier(
 
 
 # --------------------------------------------------------------------------
-# SEA-10: echte Teile des Kofaktors
+# SEA-10: proper parts of the cofactor
 # --------------------------------------------------------------------------
 
 
 def test_a_proper_part_of_the_cofactor_is_offered() -> None:
-    """Die Messung hinter SEA-10, an einem kleinen Fall.
+    """The measurement behind SEA-10, on a small case.
 
-    Der groesste Kofaktor ist ``y + z``; der Aufzaehler bietet auch ``y`` und
-    ``z`` einzeln an, weil Schritt zwei der ``alpoege15``-Kette genau so einen
-    Term liegen laesst.
+    The largest cofactor is ``y + z``. The enumerator also offers ``y`` and
+    ``z`` on their own, because step two of the ``alpoege15`` chain leaves
+    exactly such a term behind.
     """
     source = PolynomialMap((x, y, z), (x + x * y + x * z, y, z))
 
@@ -124,12 +124,12 @@ def test_a_proper_part_of_the_cofactor_is_offered() -> None:
 
 
 def test_every_selection_is_checked_in_its_own_right() -> None:
-    """Terme aus dem Kofaktor zu streichen ist keine sichere Operation.
+    """Dropping terms from the cofactor is not a safe operation.
 
-    ``(x - y) * (x + y) = x**2 - y**2`` ist eine Teilsumme, ``x*y`` ist im
-    Produkt ausgeloescht. Der Teil ``x`` allein liefert ``x**2 - x*y``, und
-    ``-x*y`` steht nicht in der Komponente. Wer die Pruefung vom groessten
-    Kofaktor erbt, bietet hier einen Kandidaten an, der nicht existiert.
+    ``(x - y) * (x + y) = x**2 - y**2`` is a partial sum, and ``x*y`` cancels in
+    the product. The part ``x`` on its own gives ``x**2 - x*y``, and ``-x*y``
+    does not stand in the component. Inheriting the check from the largest
+    cofactor offers a candidate here that does not exist.
     """
     source = PolynomialMap((x, y), (x + x**2 - y**2, y))
 
@@ -141,7 +141,7 @@ def test_every_selection_is_checked_in_its_own_right() -> None:
 
 
 def test_the_selection_limit_keeps_only_the_largest_cofactor() -> None:
-    """Eine Schranke gegen einen pathologischen Fall, nicht gegen die Daten."""
+    """A bound against a pathological case and not against the data."""
     source = PolynomialMap((x, y, z), (x + x * y + x * z + x * y * z, y, z))
 
     unlimited = enumerate_candidates(source, [x])
@@ -165,7 +165,7 @@ def test_the_level_follows_from_the_orders(flat: PolynomialMap) -> None:
 
 
 def test_a_factor_of_order_one_drops_the_level() -> None:
-    """Ein Faktor der Ordnung eins druckt ``H`` auf ``EA^0``."""
+    """A factor of order one pushes ``H`` down to ``EA^0``."""
     source = PolynomialMap((x, y), (x + x**2 * y + x**2 * y**2, y))
 
     levels = {
@@ -177,7 +177,7 @@ def test_a_factor_of_order_one_drops_the_level() -> None:
 
 
 def test_without_a_fresh_slot_the_level_is_one() -> None:
-    """``H`` ist dann die Identitaet und liegt in jedem ``EA^d``."""
+    """``H`` is then the identity and lies in every ``EA^d``."""
     source = PolynomialMap((x, y, z), (x + y**2 * z**2, y + y**2, z + z**2))
 
     candidate = Candidate(0, Carried(1), Carried(2))
@@ -204,7 +204,7 @@ def test_a_carried_slot_consumes_no_name(carried: PolynomialMap) -> None:
 
 
 def test_too_few_names_are_refused(flat: PolynomialMap) -> None:
-    """Lieber ablehnen als einen Namen erfinden, den niemand vergeben hat."""
+    """Better to refuse than to invent a name nobody handed out."""
     candidate = enumerate_candidates(flat, [x * y])[0]
 
     with pytest.raises(ValueError, match="fewer names were supplied"):
@@ -212,7 +212,7 @@ def test_too_few_names_are_refused(flat: PolynomialMap) -> None:
 
 
 # --------------------------------------------------------------------------
-# SEA-2 und die Bruecke zum Zertifikat
+# SEA-2 and the bridge to the certificate
 # --------------------------------------------------------------------------
 
 
@@ -224,7 +224,7 @@ def test_the_enumeration_is_a_pure_function(carried: PolynomialMap) -> None:
 
 
 def test_swapping_the_slots_is_not_offered_twice(flat: PolynomialMap) -> None:
-    """Vertauschte Plaetze geben denselben Schritt bis auf die Benennung."""
+    """Swapped slots give the same step up to the naming."""
     products = [
         candidate.product(flat) for candidate in enumerate_candidates(flat, [x * y])
     ]
@@ -233,7 +233,7 @@ def test_swapping_the_slots_is_not_offered_twice(flat: PolynomialMap) -> None:
 
 
 def test_a_candidate_builds_and_verifies(flat: PolynomialMap) -> None:
-    """Der Uebergang, den SEA-1 meint: Vorschlag, dann Zertifikat."""
+    """The transition SEA-1 means: a proposal, then a certificate."""
     source = over_field(flat)
     candidate = enumerate_candidates(source, [x * y])[0]
 
@@ -249,10 +249,10 @@ def test_a_candidate_builds_and_verifies(flat: PolynomialMap) -> None:
 
 
 def test_a_constant_is_no_anchor_and_no_cofactor() -> None:
-    """``H`` laege sonst ausserhalb von ``EA^0`` und BCW-6 lehnte ab.
+    """``H`` would otherwise lie outside ``EA^0`` and BCW-6 would refuse.
 
-    Die Ablehnung vom Aufzaehler zum Konstruktor zu verschieben macht sie
-    nicht sicherer, nur spaeter.
+    Moving the refusal from the enumerator to the constructor does not make it
+    safer, only later.
     """
     source = PolynomialMap((x, y), (x + x * y + x, y))
 
@@ -264,7 +264,7 @@ def test_a_constant_is_no_anchor_and_no_cofactor() -> None:
 
 
 def test_a_carried_cofactor_moves_to_the_first_slot() -> None:
-    """Traeger zuerst -- die Reihenfolge, in der die Referenzketten stehen."""
+    """Carriers first, the order in which the reference chains stand."""
     source = PolynomialMap((x, y), (x + x**3 * y, y + x**2))
 
     found = enumerate_candidates(source, [x * y])
@@ -273,22 +273,22 @@ def test_a_carried_cofactor_moves_to_the_first_slot() -> None:
 
 
 # --------------------------------------------------------------------------
-# Konjugation mit einer Vorzeichendiagonale
+# Conjugation with a diagonal of signs
 # --------------------------------------------------------------------------
 
 
 def test_conjugation_is_an_involution(flat: PolynomialMap) -> None:
-    """``D`` ist zu sich selbst invers."""
+    """``D`` is its own inverse."""
     signs = (1, -1)
 
     assert conjugate(conjugate(flat, signs), signs) == flat
 
 
 def test_conjugation_preserves_what_a_certificate_claims() -> None:
-    """Grad, Ordnung, Filtrationsgrad und die Keller-Determinante ueberleben.
+    """Degree, order, filtration degree and the Keller determinant survive.
 
-    Deshalb ist SEA-5 mit einem ausgewiesenen ``D`` noch eine Aussage ueber
-    dieselbe Abbildung und nicht ueber eine andere.
+    That is why SEA-5 with a reported ``D`` is still a statement about the same
+    map and not about a different one.
     """
     source = over_field(examples.cubic_shear())
 
@@ -302,10 +302,10 @@ def test_conjugation_preserves_what_a_certificate_claims() -> None:
 
 
 def test_a_non_constant_determinant_moves_with_the_coordinates() -> None:
-    """Sie ueberlebt als Funktion, nicht als Polynom.
+    """It survives as a function and not as a polynomial.
 
-    Fuer eine Keller-Abbildung ist das dieselbe Konstante -- der Fall, um den
-    es bei SEA-5 geht. Sonst unterscheiden sich die beiden um die Vorzeichen.
+    For a Keller map that is the same constant, which is the case SEA-5 is
+    about. Otherwise the two differ by the signs.
     """
     source = PolynomialMap((x, y), (x + x**2 * y**3, y))
 
@@ -323,16 +323,16 @@ def test_the_identity_diagonal_changes_nothing(flat: PolynomialMap) -> None:
 def test_a_diagonal_must_be_invertible_and_the_right_length(
     flat: PolynomialMap, wrong: tuple[int, ...]
 ) -> None:
-    """Eine Null ist kein Koordinatenwechsel."""
+    """A zero is not a change of coordinates."""
     with pytest.raises(ValueError, match="non-zero entries"):
         conjugate(flat, wrong)
 
 
 def test_an_entry_other_than_a_sign_is_admitted(flat: PolynomialMap) -> None:
-    """Bis 0.4 war ``D`` auf ``+-1`` beschraenkt, und das war zu eng.
+    """Until 0.4 ``D`` was restricted to ``+-1``, and that was too narrow.
 
-    Eine Diagonale mit beliebigen Eintraegen ungleich null ist genauso ein
-    Koordinatenwechsel. Das Abtragen kam damit von Tiefe sechs auf elf.
+    A diagonal with arbitrary non-zero entries is just as much a change of
+    coordinates. The peel went from depth six to eleven with it.
     """
     keller = over_field(PolynomialMap((x, y), (x + y**3, y)))
     scaled = conjugate(keller, (2, 1))
@@ -343,13 +343,13 @@ def test_an_entry_other_than_a_sign_is_admitted(flat: PolynomialMap) -> None:
 
 
 def test_a_non_unit_over_a_ring_is_refused(flat: PolynomialMap) -> None:
-    """Ueber ``ZZ`` gibt es kein Inverses zu zwei."""
+    """Over ``ZZ`` there is no inverse of two."""
     with pytest.raises(ValueError, match="not a unit"):
         conjugate(flat, (2, 1))
 
 
 # --------------------------------------------------------------------------
-# Das Ablesen von D
+# Reading D off
 # --------------------------------------------------------------------------
 
 
@@ -363,21 +363,21 @@ def test_the_diagonal_is_read_off(flat: PolynomialMap) -> None:
 
 
 def test_maps_of_different_shape_have_no_diagonal(flat: PolynomialMap) -> None:
-    """Andere Monome, also keine Vorzeichenwahl, die es richtet."""
+    """Different monomials, so no choice of signs repairs it."""
     other = PolynomialMap((x, y), (x + x**2 * y**2, y))
 
     assert diagonal_matching(other, flat) is None
 
 
 def test_a_different_magnitude_has_no_diagonal(flat: PolynomialMap) -> None:
-    """``D`` kann Vorzeichen drehen, keine Koeffizienten."""
+    """``D`` can turn signs and not coefficients."""
     other = PolynomialMap((x, y), (x + 2 * x**2 * y**3, y))
 
     assert diagonal_matching(other, flat) is None
 
 
 def test_an_inconsistent_system_has_no_diagonal() -> None:
-    """Zwei Monome fordern dasselbe Produkt mit verschiedenem Vorzeichen."""
+    """Two monomials demand the same product with different signs."""
     source = PolynomialMap((x, y), (x + x * y**2 + x**3, y))
     other = PolynomialMap((x, y), (x + x * y**2 - x**3, y))
 
@@ -385,7 +385,7 @@ def test_an_inconsistent_system_has_no_diagonal() -> None:
 
 
 def test_a_different_generator_order_is_refused(flat: PolynomialMap) -> None:
-    """SEA-4 zuerst: umsortieren, dann vergleichen."""
+    """SEA-4 first: reorder, then compare."""
     with pytest.raises(ValueError, match="different generators"):
         diagonal_matching(flat.reordered((y, x)), flat)
 
@@ -397,7 +397,7 @@ def test_a_different_generator_order_is_refused(flat: PolynomialMap) -> None:
 
 @pytest.fixture
 def two_step() -> tuple[PolynomialMap, PolynomialMap, dict]:
-    """Quelle, Ziel und Vorrat einer Kette, deren Antwort bekannt ist."""
+    """Source, target and pool of a chain whose answer is known."""
     source = over_field(PolynomialMap((x, y), (x + x**2 * y**3, y)))
     target = BCWStep.build(source, 0, Fresh(x * y, u), Fresh(x * y**2, v), 1).target
 
@@ -415,13 +415,13 @@ def test_the_search_recovers_a_known_chain(two_step: tuple) -> None:
 
 
 def test_a_conjugated_target_is_out_of_reach_of_the_pool(two_step: tuple) -> None:
-    """SEA-5 ist seit WP 10 wieder Gleichheit, und der Vorwaertssuche fehlt
-    dafuer etwas, das dem Abtrag nicht fehlt.
+    """Since WP 10 SEA-5 is plain equality again, and for that the forward
+    search lacks something the peel does not lack.
 
-    Die Schrittfamilie ist unter Diagonalkonjugation abgeschlossen, also *gibt*
-    es eine Kette zum konjugierten Ziel -- ihre Schritte tragen aber andere
-    Koeffizienten und andere Faktorwerte, und beide kommen hier aus einem
-    Vorrat, der vom unkonjugierten Ziel abgelesen wurde. Der Abtrag loest sie
+    The family of steps is closed under diagonal conjugation, so a chain to the
+    conjugated target does exist. Its steps carry different coefficients and
+    different factor values, and both come here from a pool read off the
+    unconjugated target. The peel solves for them
     stattdessen; siehe ``test_peeling.py``.
     """
     source, target, pool = two_step
@@ -432,9 +432,10 @@ def test_a_conjugated_target_is_out_of_reach_of_the_pool(two_step: tuple) -> Non
 
 
 def test_a_value_outside_the_pool_is_unreachable(two_step: tuple) -> None:
-    """Ohne Umschreibungen nicht ungefunden, sondern unerreichbar.
+    """Without rewrites not unfound, but unreachable.
 
-    Das ist der Preis von SEA-8. ``rewrites`` lockert ihn, und zwar benannt:
+    That is the price of SEA-8. ``rewrites`` relaxes it, and does so by
+    name:
     siehe die Tests weiter unten.
     """
     source, target, _ = two_step
@@ -446,7 +447,7 @@ def test_a_value_outside_the_pool_is_unreachable(two_step: tuple) -> None:
 
 
 def test_a_budget_that_runs_out_says_less(two_step: tuple) -> None:
-    """SEA-6 mit noch weniger Gehalt: ``exhausted`` unterscheidet die Faelle."""
+    """SEA-6 with even less content: ``exhausted`` tells the cases apart."""
     source, target, pool = two_step
 
     outcome = search(source, target, pool, budget=1)
@@ -465,7 +466,7 @@ def test_an_exhausted_space_is_reported_as_such(two_step: tuple) -> None:
 
 
 def test_a_wrong_target_of_the_right_shape_is_not_found() -> None:
-    """Der Endpunkt entscheidet, nicht die Kette."""
+    """The endpoint decides and not the chain."""
     source = over_field(PolynomialMap((x, y), (x + x**2 * y**3, y)))
     reachable = BCWStep.build(source, 0, Fresh(x * y, u), Fresh(x * y**2, v), 1).target
     wrong = PolynomialMap(
@@ -477,10 +478,10 @@ def test_a_wrong_target_of_the_right_shape_is_not_found() -> None:
 
 
 def test_a_chain_that_would_raise_the_degree_is_not_walked() -> None:
-    """Beschneidung: entlang beider Referenzketten faellt der Grad nie.
+    """Pruning: along both reference chains the degree never falls.
 
-    Die Regel ist eine Entscheidung ueber die Suche, keine Aussage ueber
-    Keller-Abbildungen -- ein Zertifikat verlangt keinen Fortschritt.
+    The rule is a decision about the search and not a statement about Keller
+    maps. A certificate requires no progress.
     """
     source = over_field(PolynomialMap((x, y), (x + x**2 * y**3, y)))
     target = BCWStep.build(source, 0, Fresh(x * y, u), Fresh(x * y**2, v), 1).target
@@ -490,7 +491,7 @@ def test_a_chain_that_would_raise_the_degree_is_not_walked() -> None:
 
 
 def test_a_target_of_the_wrong_dimension_is_not_reached() -> None:
-    """Alle Namen verbraucht, aber die Dimension passt nicht."""
+    """Every name spent, and the dimension does not match."""
     source = over_field(PolynomialMap((x, y), (x + x**2 * y**3, y)))
     target = BCWStep.build(source, 0, Fresh(x * y, u), Fresh(x * y**2, v), 1).target
     wider = target.extend(2)
@@ -509,15 +510,15 @@ def test_the_outcome_carries_what_was_examined(two_step: tuple) -> None:
 
 @pytest.fixture
 def with_carrier() -> PolynomialMap:
-    """Koordinate 1 traegt ``x**2``, also gibt es ``m = 1``-Zuege."""
+    """Coordinate 1 carries ``x**2``, so there are ``m = 1`` moves."""
     return over_field(PolynomialMap((x, y), (x + x**3 * y**3, y + x**2)))
 
 
 def test_a_carried_slot_consumes_no_name_in_the_search(
     with_carrier: PolynomialMap,
 ) -> None:
-    """Ein Schritt, der einen vorhandenen Traeger wiederbenutzt, kostet keine
-    Dimension und keinen Namen aus dem Vorrat."""
+    """A step that reuses an existing carrier costs no dimension and no name
+    from the pool."""
     target = BCWStep.build(with_carrier, 0, Carried(1), Fresh(x * y**3, u), 1).target
 
     outcome = search(with_carrier, target, {u: x * y**3})
@@ -530,10 +531,10 @@ def test_a_carried_slot_consumes_no_name_in_the_search(
 def test_a_step_past_the_target_dimension_is_not_walked(
     with_carrier: PolynomialMap,
 ) -> None:
-    """Beschneidung: die Dimension darf die des Ziels nicht ueberschreiten.
+    """Pruning: the dimension may not exceed that of the target.
 
-    Der Vorrat haelt hier zwei Namen und das Ziel hat nur Platz fuer einen, so
-    dass der ``m = 2``-Zug gebaut, geprueft und dann verworfen wird.
+    The pool holds two names here and the target has room for one, so the
+    ``m = 2`` move is built, checked and then discarded.
     """
     target = BCWStep.build(with_carrier, 0, Carried(1), Fresh(x * y**3, u), 1).target
 
@@ -545,17 +546,17 @@ def test_a_step_past_the_target_dimension_is_not_walked(
 
 
 # --------------------------------------------------------------------------
-# Schritte, die keinen Generator einfuehren
+# Steps that introduce no generator
 # --------------------------------------------------------------------------
 
 
 @pytest.fixture
 def spare_case() -> tuple[PolynomialMap, PolynomialMap]:
-    """Quelle und Ziel einer Kette aus einem einzigen ``m = 0``-Schritt.
+    """Source and target of a chain of a single ``m = 0`` step.
 
-    Koordinate 1 traegt ``x**2``, Koordinate 2 traegt ``x**3``, und Komponente
-    0 enthaelt deren Produkt. Der Schritt benutzt beide Traeger wieder und
-    verbraucht keinen Namen.
+    Coordinate 1 carries ``x**2``, coordinate 2 carries ``x**3``, and component
+    0 contains their product. The step reuses both carriers and spends no
+    name.
     """
     source = over_field(PolynomialMap((x, y, z), (x + x**5, y + x**2, z + x**3)))
     target = BCWStep.build(source, 0, Carried(1), Carried(2), 1).target
@@ -566,13 +567,12 @@ def spare_case() -> tuple[PolynomialMap, PolynomialMap]:
 def test_a_chain_may_end_with_a_step_that_introduces_nothing(
     spare_case: tuple[PolynomialMap, PolynomialMap],
 ) -> None:
-    """Der Endpunkt wird geprueft, sobald alle Namen vergeben sind -- und die
-    Suche laeuft danach weiter, solange ein Ersatzschritt uebrig ist.
+    """The endpoint is checked as soon as every name is handed out, and the
+    search continues afterwards while a spare step is left.
 
-    Ohne das waere eine Kette unerreichbar, deren letzter Schritt keinen
-    Generator anlegt. Die veroeffentlichte neunzehndimensionale Abbildung
-    braucht mindestens einen solchen Schritt: ihre Dimension waechst um
-    sechzehn ueber siebzehn Schritte.
+    Without this, a chain whose last step creates no generator would be
+    unreachable. The published nineteen-dimensional map needs at least one such
+    step: its dimension grows by sixteen over seventeen steps.
     """
     source, target = spare_case
 
@@ -587,11 +587,11 @@ def test_a_chain_may_end_with_a_step_that_introduces_nothing(
 def test_without_a_spare_step_that_chain_is_out_of_reach(
     spare_case: tuple[PolynomialMap, PolynomialMap],
 ) -> None:
-    """Negativkontrolle: ``spare`` ist die Schranke fuer die Kettenlaenge.
+    """A negative control: ``spare`` is the bound on the length of a chain.
 
-    Jeder andere Schritt verbraucht einen Namen, also hat eine Kette hoechstens
-    ``len(pool) + spare`` Schritte. Ohne Ersatzschritt ist die Kette hier nicht
-    ungefunden, sondern nicht ausdrueckbar.
+    Every other step spends a name, so a chain has at most
+    ``len(pool) + spare`` steps. Without a spare step the chain here is not
+    unfound but inexpressible.
     """
     source, target = spare_case
 
@@ -604,10 +604,10 @@ def test_without_a_spare_step_that_chain_is_out_of_reach(
 def test_a_spare_step_is_refused_mid_chain_as_well(
     spare_case: tuple[PolynomialMap, PolynomialMap],
 ) -> None:
-    """Die Schranke gilt nicht erst am Ende der Kette.
+    """The bound does not apply only at the end of the chain.
 
-    Hier sind noch Namen offen, also laeuft die Suche weiter, und die
-    ``m = 0``-Zuege werden trotzdem verworfen.
+    Names are still open here, so the search continues, and the ``m = 0`` moves
+    are discarded all the same.
     """
     source, target = spare_case
 
@@ -618,10 +618,10 @@ def test_a_spare_step_is_refused_mid_chain_as_well(
 
 
 def test_the_outcome_says_how_far_a_failed_search_got(two_step: tuple) -> None:
-    """Bei einem Fehlschlag ist das die einzige Angabe zum *Was*.
+    """On a failure this is the only statement about *what* happened.
 
-    Eine Suche, die nie ueber wenige Schritte hinauskommt, berichtet etwas
-    anderes als eine, die den letzten Namen vergibt und am Endpunkt scheitert.
+    A search that never gets beyond a few steps reports something different
+    from one that hands out the last name and fails at the endpoint.
     """
     source, target, pool = two_step
 
@@ -634,18 +634,18 @@ def test_the_outcome_says_how_far_a_failed_search_got(two_step: tuple) -> None:
 
 
 # --------------------------------------------------------------------------
-# Koordinaten, die spaeter ueberschrieben werden
+# Coordinates that are overwritten later
 # --------------------------------------------------------------------------
 
 
 @pytest.fixture
 def rewritten() -> tuple[PolynomialMap, PolynomialMap, dict]:
-    """Eine Kette, deren zweite frische Koordinate spaeter umgeschrieben wird.
+    """A chain whose second fresh coordinate is rewritten later.
 
-    Schritt eins legt ``u`` und ``v`` an, Schritt zwei zielt auf die Komponente
-    von ``v``. Im Ziel traegt ``v`` daher nicht mehr den Wert, mit dem es
-    eingefuehrt wurde, und ein aus dem Ziel abgelesener Vorrat enthaelt diesen
-    Wert nicht. Genau der Fall, den ``alpoege15`` an echten Daten zeigt.
+    Step one creates ``u`` and ``v``, and step two aims at the component of
+    ``v``. In the target ``v`` therefore no longer carries the value it was
+    introduced with, and a pool read off the target does not contain that
+    value. Exactly the case ``alpoege15`` shows on real data.
     """
     t = sp.Symbol("t")
     source = over_field(
@@ -664,11 +664,11 @@ def rewritten() -> tuple[PolynomialMap, PolynomialMap, dict]:
 def test_a_coordinate_outside_the_pool_may_take_a_free_name(
     rewritten: tuple,
 ) -> None:
-    """SEA-13: der Vorrat begrenzt den Anker, nicht jeden frischen Platz.
+    """SEA-13: the pool bounds the anchor and not every fresh slot.
 
-    Ein Platz, dessen Faktor der Vorrat nicht kennt, bekommt einen freien
-    Namen. Er kann das Ziel dann nur erreichen, wenn ein spaeterer Schritt
-    seine Komponente umschreibt -- was hier geschieht.
+    A slot whose factor the pool does not know is given a free name. It can
+    then reach the target only if a later step rewrites its component, which is
+    what happens here.
     """
     source, target, pool = rewritten
 
@@ -680,7 +680,7 @@ def test_a_coordinate_outside_the_pool_may_take_a_free_name(
 
 
 def test_without_a_rewrite_that_chain_is_out_of_reach(rewritten: tuple) -> None:
-    """Negativkontrolle. Der Fehlschlag sagt nichts ueber die Existenz."""
+    """A negative control. The failure says nothing about existence."""
     source, target, pool = rewritten
 
     outcome = search(source, target, pool, rewrites=0)
@@ -690,10 +690,10 @@ def test_without_a_rewrite_that_chain_is_out_of_reach(rewritten: tuple) -> None:
 
 
 def test_a_matching_value_takes_its_own_name(two_step: tuple) -> None:
-    """Ein Faktor, den der Vorrat kennt, kostet keine Umschreibung.
+    """A factor the pool knows costs no rewrite.
 
-    Sonst waere die Verzweigung nicht zu bezahlen: jeder frische Platz haette
-    dann so viele Zuege wie es freie Namen gibt.
+    Otherwise the branching could not be paid for: every fresh slot would then
+    have as many moves as there are free names.
     """
     source, target, pool = two_step
 
@@ -704,13 +704,13 @@ def test_a_matching_value_takes_its_own_name(two_step: tuple) -> None:
 
 
 def test_the_diagonal_is_read_off_an_overdetermined_system() -> None:
-    """Jedes Monom jeder Komponente ist eine Gleichung, also viel mehr als
-    Unbekannte -- die spaeteren reduzieren gegen die frueheren.
+    """Every monomial of every component is one equation, so there are far more
+    equations than unknowns, and the later ones reduce against the earlier.
 
-    ``diagonal_matching`` traegt seit WP 10 keine Verpflichtung mehr: SEA-5 ist
-    wieder Gleichheit, weil der Koeffizient im Schritt steht. Es beantwortet
-    weiterhin die Diagnosefrage, worin sich zwei Ketten unterscheiden, die
-    dieselbe Reduktion sind.
+    Since WP 10 ``diagonal_matching`` carries no obligation: SEA-5 is plain
+    equality again, because the coefficient stands in the step. It still
+    answers the diagnostic question of how two chains that are the same
+    reduction differ.
     """
     source = PolynomialMap(
         (x, y, z),
@@ -727,12 +727,13 @@ def test_the_diagonal_is_read_off_an_overdetermined_system() -> None:
 def test_the_forward_search_raises_nothing_when_it_finds_nothing(
     flat: PolynomialMap,
 ) -> None:
-    """Dieselben drei Faelle wie beim Abtrag, und dieselbe Zusage.
+    """The same three cases as for the peel, and the same promise.
 
-    ``search(F, F)`` warf den internen Fehler von RED-1, ein gleichdimensionales
-    Ziel auf anderen Generatoren einen ``ValueError`` aus ``reordered``, und ein
-    genau aufgebrauchtes Budget galt als abgeschnittene Suche. Ein externes
-    Audit hat alle drei gebaut; ``contracts.md`` sagt seit 0.3 zu, dass eine
+    ``search(F, F)`` raised the internal error of RED-1, a target of equal
+    dimension over other generators raised a ``ValueError`` out of
+    ``reordered``, and a budget spent exactly counted as a cut-off search. An
+    external audit built all three. ``contracts.md`` has promised since 0.3
+    that a
     erfolglose Suche nichts wirft.
     """
     elsewhere = PolynomialMap(sp.symbols("p q"), sp.symbols("p q"))
@@ -744,17 +745,17 @@ def test_the_forward_search_raises_nothing_when_it_finds_nothing(
 
 
 def test_a_budget_spent_exactly_is_not_a_cut_off() -> None:
-    """Ein genau aufgebrauchtes Budget ist kein Abschnitt, sondern ein Ende.
+    """A budget spent exactly is not a cut-off but an end.
 
-    Das Ziel muss dafuer den Walk erreichen. Bis 0.4.0rc10 stand hier die
-    Quelle ``flat`` mit dem Ziel ``x**5 + x + x**2*y**3``; die beiden haben
-    verschiedene Determinanten, und seit ``settled`` BCW-7 mitprueft,
-    beantworten die Endpunkte das Paar vor der Suche. Der Test prueft dann
-    nicht mehr, was sein Name sagt.
+    For that the target has to reach the walk. Until 0.4.0rc10 the source
+    ``flat`` stood here with the target ``x**5 + x + x**2*y**3``. The two have
+    different determinants, and since ``settled`` checks BCW-7 as well, the
+    endpoints answer the pair before the search. The test then no longer checks
+    what its name says.
 
-    Das Paar hier hat dieselbe Determinante und denselben Ursprung und ist
-    trotzdem unerreichbar, also laeuft der Walk und erschoepft sich nach genau
-    einer Karte.
+    The pair here has the same determinant and the same origin and is
+    unreachable all the same, so the walk runs and exhausts itself after
+    exactly one map.
     """
     source = PolynomialMap((x, y), (x + y**3, y))
     target = PolynomialMap((x, y), (x + y**5, y))
@@ -776,11 +777,11 @@ def test_a_negative_bound_is_refused_by_the_search(flat: PolynomialMap) -> None:
 
 
 def test_a_bound_that_is_not_a_whole_number_is_refused(flat: PolynomialMap) -> None:
-    """``examined`` sagt ``int`` zu, und ``budget=1.5`` gab ``examined = 1.5``.
+    """``examined`` promises ``int``, and ``budget=1.5`` gave ``examined = 1.5``.
 
-    ``True`` steht daneben, weil ``bool`` eine Unterklasse von ``int`` ist: ein
-    Budget von einer Karte, fast sicher ein Tippfehler und nicht die Absicht.
-    Ein externes Audit hat den Fliesskommafall gemessen.
+    ``True`` stands beside it, because ``bool`` is a subclass of ``int``: a
+    budget of one map, almost certainly a typing slip and not the intention. An
+    external audit measured the floating point case.
     """
     for bound in ("budget", "spare", "rewrites", "selection_limit"):
         for value in (1.5, True):
@@ -789,11 +790,11 @@ def test_a_bound_that_is_not_a_whole_number_is_refused(flat: PolynomialMap) -> N
 
 
 def test_the_enumerator_refuses_a_bad_limit_of_its_own(flat: PolynomialMap) -> None:
-    """Der Aufzaehler ist oeffentlich und wurde nicht ueber ``search`` geprueft.
+    """The enumerator is public and was not checked through ``search``.
 
     Bis 0.4.0rc9 lieferte ``selection_limit=-1`` still Kandidaten, waehrend
-    derselbe Wert an ``search`` einen ``ValueError`` gab. Ein externes Audit hat
-    den direkten Aufruf gemacht.
+    the same value gave a ``ValueError`` through ``search``. An external audit
+    made the direct call.
     """
     with pytest.raises(ValueError, match="must not be negative"):
         enumerate_candidates(flat, [x], selection_limit=-1)
@@ -801,20 +802,20 @@ def test_the_enumerator_refuses_a_bad_limit_of_its_own(flat: PolynomialMap) -> N
     with pytest.raises(TypeError, match="must be integers"):
         enumerate_candidates(flat, [x], selection_limit=1.5)
 
-    # Null ist erlaubt und heisst etwas: jeder Quotient hat mehr Terme als die
-    # Schranke, also wird er ungeteilt angeboten. Der Test schreibt nur fest,
-    # dass die Pruefung ihn nicht mit einer negativen Zahl verwechselt.
+    # Zero is allowed and means something: every quotient has more terms than
+    # the limit, so it is offered undivided. The test records only that the
+    # check does not confuse zero with a negative number.
     assert enumerate_candidates(flat, [x], selection_limit=0)
 
 
 @pytest.fixture
 def with_idle_moves() -> PolynomialMap:
-    """Eine Keller-Abbildung, an der es ``m = 0``-Zuege gibt.
+    """A Keller map on which ``m = 0`` moves exist.
 
-    Zwei Traeger, ``a`` fuer ``x**2`` und ``b`` fuer ``y**2``, und eine
-    Komponente, die deren Produkt enthaelt. Ohne solche Zuege hat der Abstieg
-    nichts zu tun und eine fehlende Vorabantwort faellt nicht auf -- das ist
-    der Grund, warum ``flat`` den Befund unten nicht zeigt.
+    Two carriers, ``a`` for ``x**2`` and ``b`` for ``y**2``, and a component
+    containing their product. Without such moves the descent has nothing to do
+    and a missing answer in advance does not show. That is why ``flat`` does
+    not show the finding below.
     """
     a, b, s = sp.symbols("a b s")
 
@@ -827,13 +828,13 @@ def with_idle_moves() -> PolynomialMap:
 def test_equal_endpoints_are_settled_before_the_search(
     with_idle_moves: PolynomialMap,
 ) -> None:
-    """REV-11 vor der Suche und nicht in ihr, wie im Abtrag.
+    """REV-11 before the search and not inside it, as in the peel.
 
-    Bis 0.4.0rc8 stand der Test nur in ``_finish``, also im Abstieg. Der
-    Nichtantwort-Fall stand damit schon vor Beginn fest, und trotzdem entschied
-    das Budget, ob ``exhausted`` wahr wurde: mit Budget eins falsch, mit Budget
-    vier wahr. Ein externes Audit hat die Abbildung gebaut, an der es sichtbar
-    ist.
+    Until 0.4.0rc8 the test stood only in ``_finish``, that is in the descent.
+    The non-answer case was therefore fixed before the start, and the budget
+    still decided whether ``exhausted`` became true: false at a budget of one,
+    true at a budget of four. An external audit built the map on which this is
+    visible.
     """
     assert with_idle_moves.determinant() == 1
 
@@ -849,11 +850,11 @@ def test_equal_endpoints_are_settled_before_the_search(
 def test_a_target_of_one_dimension_on_other_generators_is_settled_too(
     with_idle_moves: PolynomialMap,
 ) -> None:
-    """Der zweite Fall von REV-11, und er kostet jetzt ebenfalls nichts.
+    """The second case of REV-11, and it now costs nothing either.
 
-    Gleiche Dimension heisst, dass jeder Schritt keinen Generator einfuehrt,
-    und ein solcher Schritt laesst die Generatoren in Ruhe. Keine Kette kann
-    von der einen Menge in die andere.
+    Equal dimension means that every step introduces no generator, and such a
+    step leaves the generators alone. No chain crosses from one set to the
+    other.
     """
     p, q, r, t, w = sp.symbols("p q r t w")
     elsewhere = PolynomialMap(
@@ -871,10 +872,10 @@ def test_a_target_of_one_dimension_on_other_generators_is_settled_too(
 def test_a_different_target_of_one_dimension_is_still_searched(
     with_idle_moves: PolynomialMap,
 ) -> None:
-    """Die Gegenkontrolle: der Vorabtest darf die Suche nicht verschlucken.
+    """The negative control: the test in advance must not swallow the search.
 
-    Dieselben Generatoren, dieselbe Dimension, eine andere Karte. Hier gibt es
-    etwas zu suchen, und der Abstieg hat zu laufen.
+    The same generators, the same dimension, a different map. There is
+    something to search for here, and the descent has to run.
     """
     a, b, s = sp.symbols("a b s")
     elsewhere = PolynomialMap(
@@ -888,19 +889,18 @@ def test_a_different_target_of_one_dimension_is_still_searched(
 
 
 def test_a_chain_over_other_generators_is_a_non_answer() -> None:
-    """Und kein ``ValueError`` aus ``reordered``.
+    """And no ``ValueError`` out of ``reordered``.
 
-    Die Kette entsteht hier wirklich: die Quelle steht unter dem Ziel, der
-    Vorrat traegt aber andere Namen als das Ziel. Der Abstieg baut also eine
-    Kette der richtigen Dimension ueber der falschen Generatormenge, und
-    ``reordered`` lehnt sie zu Recht ab.
+    The chain really comes into existence here: the source stands below the
+    target, but the pool carries names other than the target's. The descent
+    therefore builds a chain of the right dimension over the wrong set of
+    generators, and ``reordered`` rejects it correctly.
 
-    Bis 0.4.0rc9 stand hier eine Quelle ueber voellig anderen Generatoren.
-    Dieser Fall wird seit 0.4.0rc10 von ``settled`` vor der Suche beantwortet und
-    erreicht den Endpunktvergleich nicht mehr, also pruefte der Test die
-    Stelle nicht mehr, die er pruefen soll. Ein externes Audit hat die
-    Erweiterung von ``settled`` veranlasst; die Luecke, die sie hier reisst,
-    schliesst diese Fassung.
+    Until 0.4.0rc9 a source over entirely different generators stood here.
+    Since 0.4.0rc10 ``settled`` answers that case before the search and it no
+    longer reaches the endpoint comparison, so the test no longer checked the
+    place it is meant to check. An external audit prompted the extension of
+    ``settled``. This version closes the gap that extension tore open here.
     """
     first, second = sp.symbols("p q")
     source = over_field(PolynomialMap((x, y), (x + x**2 * y**3, y)))
@@ -915,16 +915,17 @@ def test_a_chain_over_other_generators_is_a_non_answer() -> None:
 
 
 def test_an_endpoint_no_step_can_reach_is_settled_before_the_walk() -> None:
-    """Drei Invarianten, die ein ``BCWStep`` nicht aendern kann.
+    """Three invariants a ``BCWStep`` cannot change.
 
-    Ein Schritt fuehrt zwei, eine oder keine Koordinate ein und entfernt
-    keine; er nimmt Faktoren und Koeffizient aus dem Koeffizientenbereich
-    seiner Quelle; und er behaelt jede Koordinate, die er bekommen hat. Damit
-    steht die Nichtantwort in allen drei Faellen vor dem Walk fest.
+    A step introduces two, one or no coordinate and removes none. It takes its
+    factors and its coefficient from the coefficient domain of its source. And
+    it keeps every coordinate it was given. The non-answer is therefore fixed
+    before the walk in all three cases.
 
-    Bis 0.4.0rc9 wurden sie budgetabhaengig durchsucht: mit Budget null hiess
-    der Raum unerschoepft, mit Budget eins erschoepft, obwohl beide Male
-    nichts zu entscheiden war. Ein externes Audit hat die Tabelle gemessen.
+    Until 0.4.0rc9 they were searched depending on the budget: at a budget of
+    zero the space was called unexhausted, at a budget of one exhausted,
+    although there was nothing to decide either time. An external audit
+    measured the table.
     """
     p, q = sp.symbols("p q")
     source = PolynomialMap((x, y), (x + y**3, y))
@@ -944,12 +945,12 @@ def test_an_endpoint_no_step_can_reach_is_settled_before_the_walk() -> None:
 
 
 def test_an_endpoint_of_another_determinant_is_settled_before_the_walk() -> None:
-    """BCW-7 verlangt, dass ein Schritt die Determinante erhaelt.
+    """BCW-7 requires a step to preserve the determinant.
 
-    Jedes Element von ``EA_n(k)`` hat Determinante eins, und ein Schritt ist
-    ein Produkt solcher Elemente mit der stabilen Erweiterung. Damit steht die
-    Nichtantwort vor dem Walk fest, und bis 0.4.0rc10 wurde sie budgetabhaengig
-    durchsucht. Ein externes Audit hat das Paar gebaut.
+    Every element of ``EA_n(k)`` has determinant one, and a step is a product of
+    such elements with the stable extension. The non-answer is therefore fixed
+    before the walk, and until 0.4.0rc10 it was searched depending on the
+    budget. An external audit built the pair.
     """
     source = PolynomialMap((x, y), (x, y))
     target = PolynomialMap((x, y), (2 * x, y))
@@ -967,12 +968,12 @@ def test_an_endpoint_of_another_determinant_is_settled_before_the_walk() -> None
 
 
 def test_an_endpoint_that_moves_the_origin_is_settled_before_the_walk() -> None:
-    """Ein Schritt baut ``G o F^[m] o H`` und beide Faktoren fixieren den Ursprung.
+    """A step builds ``G o F^[m] o H`` and both factors fix the origin.
 
-    ``H`` liegt nach BCW-6 mindestens in ``EA^0``, ``G`` in ``EA^1``, und die
-    Erweiterung um Identitaetskoordinaten haengt Nullen an. Also ist
-    ``target(0) = 0`` genau dann, wenn ``source(0) = 0``, und zwar in beide
-    Richtungen. Ein externes Audit hat das Paar gebaut.
+    Under BCW-6 ``H`` lies at least in ``EA^0`` and ``G`` in ``EA^1``, and the
+    extension by identity coordinates appends zeros. So ``target(0) = 0`` holds
+    exactly when ``source(0) = 0``, in both directions. An external audit built
+    the pair.
     """
     source = PolynomialMap((x, y), (x, y))
     target = PolynomialMap((x, y), (x + 1, y))
@@ -999,17 +1000,17 @@ def test_the_arguments_are_checked_whatever_the_endpoints_do(
     label: str,
     target_of: Callable[[PolynomialMap], PolynomialMap],
 ) -> None:
-    """Dieselbe Ausnahme, ob ``settled`` antwortet oder der Walk laeuft.
+    """The same exception, whether ``settled`` answers or the walk runs.
 
-    Bis 0.4.0rc11 stand ``settled`` vor der Argumentpruefung. Bei gleichen
-    Endpunkten kehrte es zurueck, bevor der Vorrat angesehen wurde, also gab
-    ``search(F, F, None)`` ein Ergebnis, waehrend derselbe Vorrat gegen
-    Endpunkte, die gelaufen werden mussten, warf. Ob ein Aufruf gueltig ist,
-    darf nicht davon abhaengen, wie weit die Suche kommt. Ein externes Audit
+    Until 0.4.0rc11 ``settled`` stood before the argument check. On equal
+    endpoints it returned before the pool was looked at, so
+    ``search(F, F, None)`` gave a result while the same pool against endpoints
+    that had to be walked raised. Whether a call is valid may not depend on how
+    far the search gets. An external audit
     hat es gebaut.
 
-    Der Parameter ``label`` steht nur im Testnamen und macht sichtbar, welcher
-    der beiden Wege gemeldet wird, wenn einer bricht.
+    The parameter ``label`` appears in the test name only and makes visible
+    which of the two routes is reported when one of them breaks.
     """
     source = PolynomialMap((x, y), (x + y**3, y))
     target = target_of(source)
@@ -1041,11 +1042,11 @@ def test_the_arguments_are_checked_whatever_the_endpoints_do(
 
 
 def test_a_fresh_pool_name_is_accepted() -> None:
-    """Die Gegenkontrolle: die Pruefung darf nicht alles ablehnen.
+    """The negative control: the check must not reject everything.
 
-    RC-4 verlangt Symbole, paarweise verschieden nach Namen und disjunkt zu
-    ``reserved_names`` des Quellrings. Ein Name, der das erfuellt, hat
-    durchzugehen -- auch dann, wenn ``settled`` gleich danach antwortet.
+    RC-4 requires symbols, pairwise distinct by name and disjoint from the
+    ``reserved_names`` of the source ring. A name that satisfies this has to
+    pass, even when ``settled`` answers immediately afterwards.
     """
     source = PolynomialMap((x, y), (x + y**3, y))
 
@@ -1054,10 +1055,10 @@ def test_a_fresh_pool_name_is_accepted() -> None:
 
 
 def test_a_reachable_extension_is_not_settled_away() -> None:
-    """Die Gegenkontrolle: der Vorabtest darf keine echte Suche verschlucken.
+    """The negative control: the test in advance must not swallow a real search.
 
-    Mehr Koordinaten, gleicher Bereich, die Generatoren der Quelle alle
-    enthalten -- hier ist etwas zu suchen, und beide Richtungen haben zu
+    More coordinates, the same domain, every generator of the source contained.
+    There is something to search for here, and both directions have to
     laufen.
     """
     source = over_field(PolynomialMap((x, y), (x + x**2 * y**3, y)))

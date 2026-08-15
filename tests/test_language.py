@@ -82,11 +82,9 @@ NOT_YET_TRANSLATED = frozenset(
         "test_documentation.py",
         "test_invariants.py",
         "test_packaging.py",
-        "test_peeling.py",
         "test_polynomial_map.py",
         "test_reduction.py",
         "test_scripts.py",
-        "test_search.py",
         "test_translation.py",
     }
 )
