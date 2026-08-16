@@ -484,5 +484,5 @@ def test_the_enumerator_contains_every_step_of_this_chain(
             == wanted
         ]
 
-        assert found, f"Schritt {position} fehlt in der Aufzaehlung"
+        assert found, f"step {position} is missing from the enumeration"
         assert found[0].filtration_level(step.source) == step.filtration_level

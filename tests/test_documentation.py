@@ -269,20 +269,51 @@ def test_every_open_ended_range_reaches_the_last_obligation(path: Path) -> None:
     )
 
 
-def gate_commands() -> list[str]:
-    """Return the commands of the quality gate block in ``AGENTS.md``.
+def fenced_blocks(path: Path, heading: str) -> list[list[str]]:
+    """Return the fenced blocks that follow ``heading`` in ``path``.
 
-    The block is the fenced one that follows the heading. Trailing comments are
-    dropped, because they explain and do not run.
+    Trailing comments are dropped from each line, because they explain and do
+    not run. The blocks end at the next heading of the same level.
     """
-    text = (ROOT / "AGENTS.md").read_text(encoding="utf-8")
-    after = text[text.index("## Quality gates") :]
-    block = after[after.index("```") + 3 :]
+    text = path.read_text(encoding="utf-8")
+    after = text[text.index(heading) + len(heading) :]
+    level = heading.split(" ")[0]
+    section = after.split(f"\n{level} ")[0]
 
+    blocks = []
+    parts = section.split("```")
+    for index in range(1, len(parts), 2):
+        blocks.append(
+            [
+                line.split("#")[0].strip()
+                for line in parts[index].splitlines()
+                if line.strip()
+            ]
+        )
+
+    return blocks
+
+
+def gate_commands() -> list[str]:
+    """Return the commands of the quality gate block in ``AGENTS.md``."""
+    return fenced_blocks(ROOT / "AGENTS.md", "## Quality gates")[0]
+
+
+def makefile_targets() -> set[str]:
+    """Return every target the Makefile declares."""
+    return {
+        line.split(":")[0]
+        for line in (ROOT / "Makefile").read_text(encoding="utf-8").splitlines()
+        if line and not line[0].isspace() and ":" in line and not line.startswith("#")
+    }
+
+
+def makefile_recipes() -> list[str]:
+    """Return every command the Makefile runs, without the ``uv run`` prefix."""
     return [
-        line.split("#")[0].strip()
-        for line in block[: block.index("```")].splitlines()
-        if line.strip()
+        line.strip().removeprefix("uv run ")
+        for line in (ROOT / "Makefile").read_text(encoding="utf-8").splitlines()
+        if line.startswith("\t")
     ]
 
 
@@ -293,11 +324,7 @@ def test_every_gate_of_the_agreements_is_a_command_the_makefile_runs() -> None:
     comparison ignores the ``uv run`` prefix, which the Makefile carries and
     the prose does not.
     """
-    recipes = [
-        line.strip().removeprefix("uv run ")
-        for line in (ROOT / "Makefile").read_text(encoding="utf-8").splitlines()
-        if line.startswith("\t")
-    ]
+    recipes = makefile_recipes()
     unknown = [
         command
         for command in gate_commands()
@@ -305,6 +332,40 @@ def test_every_gate_of_the_agreements_is_a_command_the_makefile_runs() -> None:
     ]
 
     assert not unknown, f"AGENTS.md names commands no target runs: {unknown}"
+
+
+def test_the_gates_of_the_contributing_guide_exist() -> None:
+    """The same for the guide, which said something the Makefile does not do.
+
+    It stated that ``make check`` runs coverage and that ``make check-full``
+    covers it as well. Coverage is a target of its own. The prose is corrected;
+    what is checked here is narrower and mechanical: every target it names has
+    to exist, and every command in its second block has to be one a target
+    runs. A wrong sentence about what a target contains is not caught by this,
+    and a reader has to keep noticing those.
+    """
+    blocks = fenced_blocks(
+        ROOT / "CONTRIBUTING.md", "## Before you open a pull request"
+    )
+    targets = makefile_targets()
+    recipes = makefile_recipes()
+
+    named = [line.removeprefix("make ").strip() for line in blocks[0]]
+    unknown_targets = [target for target in named if target not in targets]
+
+    assert not unknown_targets, (
+        f"CONTRIBUTING.md names no such target: {unknown_targets}"
+    )
+
+    unknown_commands = [
+        command
+        for command in blocks[1]
+        if not any(recipe.startswith(command) for recipe in recipes)
+    ]
+
+    assert not unknown_commands, (
+        f"CONTRIBUTING.md names commands no target runs: {unknown_commands}"
+    )
 
 
 def test_every_reconstruction_script_is_named_in_the_agreements() -> None:

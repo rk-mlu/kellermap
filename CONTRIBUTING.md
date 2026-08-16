@@ -42,10 +42,16 @@ is worth reading whether or not you use one.
 Everything below has to pass.
 
 ```
-make check          # ruff, mypy --strict, the fast suite, coverage
-make check-full     # the above, including the slow markers
+make check          # ruff, mypy --strict, the fast suite
+make check-full     # the above, with the slow markers instead of the fast suite
+make coverage       # the suite again, with fail_under = 100
 make reconstruct    # the three independent reconstructions
 ```
+
+`make check` does not run coverage and `make check-full` does not either.
+Coverage is a target of its own, and so is `make reconstruct`. `make release`
+runs all of them before a tag, together with `lock-check`, `build-test`,
+`dist-check` and `test-minimum`.
 
 Or the individual gates:
 
@@ -104,9 +110,15 @@ reference fails the suite rather than the next audit.
 
 ## Language and style
 
-- **The repository is in English**: source docstrings and comments, `docs/`,
-  `README.md`, `CHANGELOG.md`, commit messages, release notes. Test docstrings
-  and test comments are German by existing convention.
+- **The repository is in English**, without exception: source docstrings and
+  comments, test docstrings and test comments, assertion messages, `docs/`,
+  `README.md`, `CHANGELOG.md`, commit messages, release notes.
+
+  Test docstrings were German by convention until milestone 0.5, and that
+  exception is withdrawn. `tests/test_language.py` enforces the rule. It is a
+  word list and therefore a net with holes, so a green run is not a proof;
+  `scripts/foreign_words.py` is the second instrument and is read once per
+  file.
 - **Python files are pure ASCII**, enforced by `tests/test_ascii.py`. Umlauts
   and typographic characters belong in `docs/` and `README.md`.
 - **Documentation uses plain language.** Short sentences, one statement per

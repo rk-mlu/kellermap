@@ -392,27 +392,59 @@ def test_the_script_reports_on_a_named_module(
     assert "test_peeling.py:" in capsys.readouterr().out
 
 
-def test_the_module_under_review_is_not_its_own_corpus(foreign: ModuleType) -> None:
-    """A path comparison that mixed relative and absolute paths.
+@pytest.mark.parametrize(
+    "name",
+    [
+        "tests/test_peeling.py",
+        "src/kellermap/peeling.py",
+        "scripts/mutation_probe.py",
+        "docs/contracts.md",
+    ],
+)
+def test_the_file_under_review_is_not_its_own_corpus(
+    foreign: ModuleType,
+    name: str,
+) -> None:
+    """Two defects, and the second was hidden by a test that covered one case.
 
-    Every module under review entered the English vocabulary it was measured
-    against, so the report came back empty for every input. The paths are
-    resolved before they are compared.
+    The first version compared a relative path with an absolute one, so every
+    file under review entered the vocabulary it was measured against and the
+    report came back empty. The second resolved the paths and then dropped the
+    file from the test modules alone, so a file under ``src/`` or ``scripts/``
+    was still in its own corpus. The maintainer measured all three directories;
+    the test written for the first defect used a test module and passed.
+
+    Parametrised over the directories for that reason. One case is not the
+    rule.
     """
-    relative = Path("tests/test_peeling.py")
-    absolute = ROOT / "tests" / "test_peeling.py"
+    relative = Path(name)
+    absolute = ROOT / name
 
     assert foreign.english({relative}) == foreign.english({absolute})
 
-    # And the exemption really works: taking the module out of the corpus has
-    # to remove words, otherwise the line above compares two equal defects.
+    # Taking the file out of the corpus has to remove words, otherwise the line
+    # above compares two equal defects.
     assert foreign.english({absolute}) < foreign.english(set())
 
-    # The report on an examined module is therefore not empty.
+    # The report on an examined file is therefore not empty.
     known = foreign.english({relative})
-    words = {w.lower() for w in foreign.WORD.findall(foreign.prose(absolute))}
+    words = {word.lower() for word in foreign.WORD.findall(foreign.prose(absolute))}
 
     assert words - known
+
+
+def test_the_corpus_holds_every_english_source(foreign: ModuleType) -> None:
+    """The module says which files it reads, and it left one out.
+
+    ``CONTRIBUTING.md`` is named in the description and was not in the list.
+    """
+    known = foreign.english(set())
+    contributing = {
+        word.lower()
+        for word in foreign.WORD.findall(foreign.prose(ROOT / "CONTRIBUTING.md"))
+    }
+
+    assert contributing <= known
 
 
 def test_prose_excludes_code_and_quoted_code(foreign: ModuleType) -> None:

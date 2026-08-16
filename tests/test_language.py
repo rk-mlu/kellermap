@@ -90,6 +90,7 @@ blind spot even when the reason for it has gone, which is why there is none
 now.
 """
 
+import ast
 import io
 import re
 import tokenize
@@ -269,9 +270,9 @@ GERMAN_WORDS = """
     paketierungsfehler parametrisieren passt permutiert pfad plaetze
     plaetzen platz platzhalter platzkoordinaten polynom polynome
     polynomgleichheit polynomidentitaet positionen positivliste praedikat
-    preis presents proben produkt produkte projekt projekts projektstand
-    protokoll provenienz pruefbar pruefen pruefpfad prueft pruefte
-    pruefung pruefungen punkt punkte punkten punktes quadrat quellarchiv
+    preis proben produkt produkte projekt projekts projektstand protokoll
+    provenienz pruefbar pruefen pruefpfad prueft pruefte pruefung
+    pruefungen punkt punkte punkten punktes quadrat quellarchiv
     quelldateien quelle rationale rationalen rationaler raum rechnen
     rechnet rechnete rechnung reduktion reduktionsziel referenz
     referenzpfad referenzreduktion regel regressionskandidat
@@ -378,8 +379,30 @@ def suspicious(line: str) -> bool:
     return bool(GERMAN_WORD.search(text) or GERMAN_ENDING.search(text))
 
 
+def _span(node: ast.AST) -> range:
+    """Return the line numbers a node covers."""
+    start = getattr(node, "lineno", 0)
+    end = getattr(node, "end_lineno", None) or start
+
+    return range(start, end + 1)
+
+
 def prose(path: Path) -> list[tuple[int, str]]:
-    """Return the comment and docstring lines of ``path``, with their numbers.
+    """Return the prose lines of ``path``, with their numbers.
+
+    Prose is what a person reads: comments, docstrings, the message of an
+    ``assert``, and the arguments of a ``raise``. Code is not prose, and
+    reading it reported identifiers such as ``items`` and ``xreplace``.
+
+    Assertion messages were left out until they had to be added. Four German
+    lines survived work package 2 in them, two of which the word list would
+    have caught. A message is read by whoever the check fails for, so it is
+    text under the rule like any other, the way the ``@echo`` lines of the
+    Makefile were in work package 1.
+
+    Strings anywhere else are data. ``tests/test_scripts.py`` passes German
+    source text to the fingerprint tool, and translating it would destroy the
+    test.
 
     For anything that is not Python the whole file is prose. ``pyproject.toml``
     and the Makefile carry comments and nothing this check would misread.
@@ -391,25 +414,25 @@ def prose(path: Path) -> list[tuple[int, str]]:
         return list(enumerate(lines, 1))
 
     numbers: set[int] = set()
-    depth = 0
-    tokens = list(tokenize.generate_tokens(io.StringIO(text).readline))
-    for index, token in enumerate(tokens):
-        if token.type == tokenize.OP and token.string in "([{":
-            depth += 1
-        elif token.type == tokenize.OP and token.string in ")]}":
-            depth -= 1
-        elif token.type == tokenize.COMMENT:
+    for token in tokenize.generate_tokens(io.StringIO(text).readline):
+        if token.type == tokenize.COMMENT:
             numbers.add(token.start[0])
-        elif token.type == tokenize.STRING and depth == 0:
-            previous = tokens[index - 1].type if index else tokenize.NEWLINE
-            if previous in (
-                tokenize.INDENT,
-                tokenize.NEWLINE,
-                tokenize.NL,
-                tokenize.DEDENT,
-                tokenize.ENCODING,
+
+    holders = (ast.Module, ast.ClassDef, ast.FunctionDef, ast.AsyncFunctionDef)
+    for node in ast.walk(ast.parse(text)):
+        if isinstance(node, holders) and node.body:
+            first = node.body[0]
+            if (
+                isinstance(first, ast.Expr)
+                and isinstance(first.value, ast.Constant)
+                and isinstance(first.value.value, str)
             ):
-                numbers.update(range(token.start[0], token.end[0] + 1))
+                numbers.update(_span(first))
+        elif isinstance(node, ast.Assert) and node.msg is not None:
+            numbers.update(_span(node.msg))
+        elif isinstance(node, ast.Raise) and node.exc is not None:
+            for argument in getattr(node.exc, "args", []):
+                numbers.update(_span(argument))
 
     return [(number, lines[number - 1]) for number in sorted(numbers)]
 
@@ -555,12 +578,32 @@ def test_code_is_not_prose() -> None:
     """Reading code produced reports on identifiers, so code is not read.
 
     ``items`` and ``xreplace`` were reported as German before this module read
-    comments and docstrings only.
+    prose only. The message of the ``raise`` is prose and the statement around
+    it is not, so the line carrying both is read and a plain assignment is not.
     """
     texts = [text for _, text in prose(ROOT / "src" / "kellermap" / "guards.py")]
 
     assert any("bound" in text for text in texts), "the prose is not read"
-    assert not [text for text in texts if "raise TypeError" in text]
+    assert not [text for text in texts if "wrong_type = {" in text]
+    assert not [text for text in texts if "return bool(" in text]
+
+
+def test_an_assertion_message_is_prose() -> None:
+    """Four German lines survived work package 2 in messages like this one.
+
+    A message is read by whoever the check fails for. Leaving it out meant the
+    rule covered what a maintainer reads and not what a user reads.
+    """
+    texts = [text for _, text in prose(Path(__file__))]
+
+    assert [text for text in texts if "German lines" in text]
+
+
+def test_a_raise_argument_is_prose() -> None:
+    """The same for the text an exception carries."""
+    texts = [text for _, text in prose(ROOT / "src" / "kellermap" / "guards.py")]
+
+    assert [text for text in texts if "must be polynomial maps" in text]
 
 
 def test_a_string_argument_is_not_a_docstring() -> None:

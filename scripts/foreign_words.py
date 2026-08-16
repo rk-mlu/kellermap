@@ -93,34 +93,39 @@ def english(examined: set[Path]) -> set[str]:
     The paths are resolved before they are compared. A relative path never
     equals an absolute one, and the first version compared them directly: every
     module under review entered its own corpus, and the report came back empty.
+
+    The exclusion applies to every source and not to ``tests/`` alone. The
+    second version dropped an examined file only from the test modules, so a
+    file under ``src/`` or ``scripts/`` still belonged to the corpus it was
+    measured against and reported nothing. Found by the maintainer, who
+    measured all three cases; the test written for the first version covered
+    only the one that worked.
     """
     left_out = {path.resolve() for path in examined}
     sources = [
         *sorted((ROOT / "docs").glob("*.md")),
         ROOT / "README.md",
+        ROOT / "CONTRIBUTING.md",
         ROOT / "AGENTS.md",
         ROOT / "pyproject.toml",
         ROOT / "Makefile",
         ROOT / ".github" / "workflows" / "ci.yml",
         *sorted((ROOT / "src").rglob("*.py")),
         *sorted((ROOT / "scripts").glob("*.py")),
-        *sorted(
-            path
-            for path in (ROOT / "tests").glob("*.py")
-            if path.resolve() not in left_out
-        ),
+        *sorted((ROOT / "tests").glob("*.py")),
     ]
 
     known: set[str] = set()
     for path in sources:
-        if not path.exists():
+        if not path.exists() or path.resolve() in left_out:
             continue
         known |= {word.lower() for word in WORD.findall(prose(path))}
 
     for path in sorted((ROOT / "src").rglob("*.py")) + sorted(
         (ROOT / "scripts").glob("*.py")
     ):
-        known |= identifiers(path)
+        if path.resolve() not in left_out:
+            known |= identifiers(path)
 
     return known
 

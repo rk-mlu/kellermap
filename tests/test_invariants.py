@@ -257,7 +257,7 @@ def reduced() -> PolynomialMap:
 
 
 def test_bcw_step_matches_formula_two_and_three(reduced: PolynomialMap) -> None:
-    """F' = (F1', F2, X3 + P, X4 + Q) mit F1' = (F1 - aM) - X3*Q - P*X4 - X3*X4.
+    """F' = (F1', F2, X3 + P, X4 + Q) with F1' = (F1 - aM) - X3*Q - P*X4 - X3*X4.
 
     This is the identity a later BCWStep has to reproduce.
     """
