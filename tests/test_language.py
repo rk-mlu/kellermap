@@ -90,9 +90,6 @@ SCANNED = (
 NOT_YET_TRANSLATED = frozenset(
     {
         "test_admissible_shapes.py",
-        "test_alpoege15.py",
-        "test_alpoege19.py",
-        "test_bcw17.py",
         "test_bcw_step.py",
         "test_documentation.py",
         "test_invariants.py",

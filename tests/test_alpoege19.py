@@ -1,51 +1,48 @@
-"""Die 19-dimensionale kubische Keller-Abbildung aus einer fremden Quelle.
+"""The 19-dimensional cubic Keller map from a source outside this project.
 
-Feste Eingabe wie BCW17, und aus demselben Grund: die Quelle veroeffentlicht
-die Abbildung, nicht ihre Faktorisierung. Anders als bei BCW17 laesst sich die
-Schrittfolge auch nicht ablesen. Sie wurde in 0.4 rekonstruiert und steht
-unten.
+Fixed input like BCW17, and for the same reason: the source publishes the map
+and not its factorization. Unlike for BCW17 the sequence of steps cannot be
+read off either. It was reconstructed in 0.4 and stands below.
 
-Bis 0.4 stand hier, die ``w``-Nummerierung sei nicht die
-Einfuehrungsreihenfolge, weil ``G5`` die spaeteren ``w13`` und ``w9`` benutzt.
-Das war ein Fehlschluss. ``G5`` ist die Komponente von ``w2``, und die ist kein
-eingefuehrter Wert, sondern der Rest eines spaeteren Schritts -- siehe unten.
-Nach dieser Korrektur zeigt jede Abhaengigkeit auf einen kleineren Index, und
-``w1`` bis ``w16`` ist eine gueltige Einfuehrungsreihenfolge. Bewiesen ist
-damit nichts: sie ist eine von etwa 7.26e10 gueltigen. Sie ist nur wieder die
-naheliegende.
+Up to 0.4 this said that the ``w`` numbering is not the order of introduction,
+because ``G5`` uses the later ``w13`` and ``w9``. That was a wrong inference.
+``G5`` is the component of ``w2``, and that is not an introduced value but the
+residue of a later step, as shown below. After this correction every dependency
+points at a smaller index, and ``w1`` to ``w16`` is a valid order of
+introduction. Nothing is proved by that: it is one of about 7.26e10 valid
+orders. It is only the obvious one again.
 
-Die Quelle beschreibt ihr Verfahren als siebzehn elementare Schritte mit
-sechzehn Traegervariablen, also nicht zwei je Schritt. Die ``P_j`` bestaetigen
-das: ``x^2``, ``xy``, ``y^2``, ``yz``, ``xz``, ``x^2 y``, ``xy^2``, ``y^2 z``
-sind Bausteine, die mehr als ein Schritt benutzt. Seit 0.3 kann ``BCWStep``
-einen solchen Schritt ausdruecken.
+The source describes its procedure as seventeen elementary steps with sixteen
+carrier variables, so not two per step. The ``P_j`` confirm this: ``x^2``,
+``xy``, ``y^2``, ``yz``, ``xz``, ``x^2 y``, ``xy^2`` and ``y^2 z`` are building
+blocks that more than one step uses. Since 0.3 ``BCWStep`` can express such a
+step.
 
-Die Schrittfolge zu rekonstruieren war Meilenstein 0.4. ``STEPS`` unten haelt
-sie, und ``test_the_peel_finds_a_chain_to_this_map`` zeigt, dass die
-Rueckwaertssuche eine zweite gueltige Kette findet. Herkunft und Reihenfolge
-der Ereignisse: ``docs/references.md``.
+Reconstructing the sequence of steps was milestone 0.4. ``STEPS`` below holds
+it, and ``test_the_peel_finds_a_chain_to_this_map`` shows that the backward
+search finds a second valid chain. Provenance and the order of events:
+``docs/references.md``.
 
-Die Kollision wird nicht aus der Tabelle der Quelle uebernommen, sondern aus
-``w_j = -P_j`` rekonstruiert und danach mit der Tabelle verglichen. Beide Wege
-sind unabhaengig.
+The collision is not taken from the table of the source. It is reconstructed
+from ``w_j = -P_j`` and compared with the table afterwards. The two routes are
+independent.
 
-Die Komponenten unten sind aus der gerenderten Textfassung abgeschrieben, in
-der die Exponenten verlorengegangen sind -- ``w32`` ist ``w3^2``. Die Abschrift
-wurde am 3. August 2026 gegen den maschinenlesbaren Abzug geprueft, den die
-Quelle verlinkt: alle neunzehn Komponenten stimmen als Polynome ueberein, die
-Variablenreihenfolge ebenso, und alle drei Punkte in allen neunzehn
-Koordinaten. Der Abzug selbst liegt bewusst nicht im Repository; die Gruende
-stehen in ``docs/references.md``.
+The components below are transcribed from the rendered text version, in which
+the exponents were lost: ``w32`` is ``w3^2``. On 3 August 2026 the
+transcription was checked against the machine-readable dump the source links
+to. All nineteen components agree as polynomials, the order of the variables
+agrees, and all three points agree in all nineteen coordinates. The dump itself
+is deliberately not in the repository; the reasons stand in
+``docs/references.md``.
 
-Beilaeufig ist das hier die Messung, die die Entwurfsentscheidung zum
-Schur-Komplement traegt: ``determinant()`` braucht ueber den Traegerblock
-Sekundenbruchteile, waehrend ``sp.Matrix(F.jacobian()).det()`` bei 19
-Variablen in einer Viertelstunde nicht fertig wird.
+Incidentally this is the measurement that carries the design decision about the
+Schur complement. Over the carrier block ``determinant()`` takes fractions of a
+second, while ``sp.Matrix(F.jacobian()).det()`` does not finish within a
+quarter of an hour at 19 variables.
 
-Zur Herkunft siehe ``docs/references.md``. Die Quelle ist eine
-selbstveroeffentlichte Notiz und traegt hier keine Autoritaet; was die Daten
-brauchbar macht, ist ausschliesslich, dass die Pruefungen unten sie
-nachrechnen.
+On the provenance see ``docs/references.md``. The source is a self-published
+note and carries no authority here. What makes the data usable is solely that
+the checks below recompute it.
 """
 
 import pytest
@@ -99,19 +96,19 @@ from tests.data import (  # noqa: E402, F401
 # checks. The map itself is built here.
 ALPOEGE19 = PolynomialMap(VARIABLES, COMPONENTS)
 
-# Die drei Punkte aus der Quelle, zum Vergleich mit der Rekonstruktion.
+# The three points from the source, for comparison with the reconstruction.
 
 
-# Die Traegerkomponenten haben die Form w_j + P_j.
+# The carrier components have the form w_j + P_j.
 
 
 def lift(point: tuple[sp.Expr, ...]) -> tuple[sp.Expr, ...]:
-    """Einen Punkt aus k^3 zu einem Punkt aus k^19 ergaenzen.
+    """Extend a point of k^3 to a point of k^19.
 
-    Ein Urbild der stabilisierten Abbildung erfuellt ``w_j = -P_j``. Das System
-    ist dreieckig -- der Abhaengigkeitsgraph der Traeger ist azyklisch, sonst
-    waere der Jacobiblock nicht unipotent --, also terminiert die Iteration ab
-    Null. Dass sie es tut, wird geprueft und nicht angenommen.
+    A preimage of the stabilised map satisfies ``w_j = -P_j``. The system is
+    triangular, because the dependency graph of the carriers is acyclic and the
+    Jacobian block would not be unipotent otherwise, so the iteration from zero
+    terminates. That it does is checked and not assumed.
     """
     values = dict(zip((x, y, z), point, strict=True))
     values.update({variable: sp.Integer(0) for variable in w})
@@ -130,7 +127,7 @@ def lift(point: tuple[sp.Expr, ...]) -> tuple[sp.Expr, ...]:
 
 
 # --------------------------------------------------------------------------
-# Die Abbildung selbst
+# The map itself
 # --------------------------------------------------------------------------
 
 
@@ -140,10 +137,10 @@ def test_dimension_and_degree() -> None:
 
 
 def test_the_determinant_is_minus_two() -> None:
-    """Konstant, also eine Keller-Abbildung -- und nicht normalisiert.
+    """Constant, so a Keller map, and not normalised.
 
-    BCW17 hat Determinante 1, weil dort der Schritt aus Proposition (1.1)
-    vorangeht. Hier fehlt er.
+    BCW17 has determinant 1, because the step of Proposition (1.1) comes first
+    there. Here it is absent.
     """
     assert ALPOEGE19.determinant() == -2
 
@@ -154,10 +151,10 @@ def test_it_lies_in_MA0_but_not_in_MA1() -> None:  # noqa: N802
 
 
 def test_the_linear_part_is_alpoeges_own() -> None:
-    """Weiterer Beleg, dass nicht normalisiert wurde.
+    """Further evidence that no normalisation took place.
 
-    Der Linearteil ist Alpoeges ``[[0,0,1],[0,1,0],[2,0,0]]``, um die
-    Identitaet auf den Traegern ergaenzt.
+    The linear part is Alpoege's ``[[0,0,1],[0,1,0],[2,0,0]]``, extended by the
+    identity on the carriers.
     """
     linear = sp.Matrix(
         ALPOEGE19.jacobian().xreplace(
@@ -171,49 +168,48 @@ def test_the_linear_part_is_alpoeges_own() -> None:
 
 
 def test_the_carrier_block_is_the_stabilization() -> None:
-    """Die sechzehn hinteren Koordinaten tragen die Reduktion."""
+    """The sixteen trailing coordinates carry the reduction."""
     assert ALPOEGE19.carrier_indices == tuple(range(3, 19))
 
 
 def test_the_factors_cannot_be_read_off_pairwise() -> None:
-    """Deshalb steht die Abbildung hier und nicht als Reduction.
+    """This is why the map stands here and not as a Reduction.
 
-    Bei BCW17 lassen sich die Faktoren paarweise aus den Komponenten ablesen,
-    weil Schritt k die Variablen 2k+2 und 2k+3 anlegt. Hier greift die
-    Komponente von ``w2`` auf ``w9`` und ``w13`` zu, also gibt es kein solches
-    Muster.
+    For BCW17 the factors can be read off the components in pairs, because step
+    k creates the variables 2k+2 and 2k+3. Here the component of ``w2`` reaches
+    for ``w9`` and ``w13``, so there is no such pattern.
 
-    Der Test hiess bis 0.4 ``..._numbering_is_not_the_introduction_order`` und
-    behauptete damit mehr, als er zeigt. Die Komponente von ``w2`` ist ein Rest
-    und kein eingefuehrter Wert, sagt ueber den Zeitpunkt seiner Einfuehrung
-    also nichts.
+    Up to 0.4 the test was called ``..._numbering_is_not_the_introduction_order``
+    and thereby claimed more than it shows. The component of ``w2`` is a residue
+    and not an introduced value, so it says nothing about when it was
+    introduced.
     """
     assert {w9, w13} <= CARRIERS[w2].free_symbols
 
 
 def test_the_carriers_are_shared_building_blocks() -> None:
-    """Siebzehn Schritte, sechzehn Variablen: nicht zwei je Schritt.
+    """Seventeen steps, sixteen variables: not two per step.
 
-    Seit 0.3 laesst sich ein solcher Schritt als ``BCWStep`` mit einem
-    ``Carried``-Platz hinschreiben. Was fehlt, ist die Schrittfolge.
+    Since 0.3 such a step can be written down as a ``BCWStep`` with a
+    ``Carried`` slot. What is missing is the sequence of steps.
     """
     monomials = {CARRIERS[w7], CARRIERS[w9], CARRIERS[w13]}
 
     assert monomials == {y**2, x * y, x**2}
-    # x^2 taucht als Baustein in mehreren spaeteren Traegern wieder auf.
+    # x^2 reappears as a building block in several later carriers.
     assert w13 in CARRIERS[w2].free_symbols
 
 
 # --------------------------------------------------------------------------
-# Die Kollision
+# The collision
 # --------------------------------------------------------------------------
 
 
 def test_the_reconstruction_reproduces_the_published_points() -> None:
-    """Zwei unabhaengige Wege, dieselben Zahlen.
+    """Two independent routes, the same numbers.
 
-    Die Punkte kommen hier aus ``w_j = -P_j`` und nicht aus der Tabelle der
-    Quelle; die Tabelle dient nur zum Vergleich.
+    The points come from ``w_j = -P_j`` here and not from the table of the
+    source. The table serves for comparison only.
     """
     lifted = tuple(lift(point) for point in ALPOEGE_POINTS)
     expected = tuple(
@@ -233,7 +229,7 @@ def test_the_collision_verifies() -> None:
 
 
 def test_the_image_is_alpoeges_own_padded_with_zeros() -> None:
-    """Keine Normalisierung, also wandert das Bild auch nicht."""
+    """No normalisation, so the image does not move either."""
     collision = Collision.at(ALPOEGE19, [lift(point) for point in ALPOEGE_POINTS])
 
     assert (
@@ -252,30 +248,30 @@ def test_the_points_extend_alpoeges_in_their_first_three_coordinates() -> None:
 
 
 def test_the_first_point_is_the_origin_over_alpoeges() -> None:
-    """P1 liegt auf allen Traegern bei null, weil alle P_j dort verschwinden."""
+    """P1 is zero on every carrier, because every P_j vanishes there."""
     assert lift(ALPOEGE_POINTS[0])[3:] == (sp.Integer(0),) * 16
 
 
 # --------------------------------------------------------------------------
-# Ein Stueck der gesuchten Schrittfolge
+# A piece of the sequence of steps
 # --------------------------------------------------------------------------
 
-# Die Komponente von w2 ist kein eingefuehrter Traegerwert, sondern der Rest
-# eines spaeteren Schritts. Proposition (3.1) hinterlaesst in der Zielkomponente
+# The component of w2 is not an introduced carrier value but the residue of a
+# later step. Proposition (3.1) leaves in the target component
 #
 #     (F_i - P Q) - X_a Q - P X_b - X_a X_b,
 #
-# und mit den beiden Traegerkoordinaten w13 und w9 als Plaetzen -- sie tragen
-# x^2 und x y -- ist der eingefuehrte Wert von w2 genau P Q = x^3 y, der sich
-# gegen den ersten Term weghebt. Was stehen bleibt, sind die drei Restterme.
+# and with the two carrier coordinates w13 and w9 as slots, which carry x^2
+# and x y, the introduced value of w2 is exactly P Q = x^3 y, which cancels
+# against the first term. What is left are the three residual terms.
 
 
 def test_the_component_of_w2_is_the_residue_of_a_carried_step() -> None:
-    """Ein Schritt mit zwei ``Carried``-Plaetzen, also ``m = 0``.
+    """A step with two ``Carried`` slots, so ``m = 0``.
 
-    Die Abbildung waechst von Dimension 3 auf 19, also ist die Summe der ``m``
-    ueber siebzehn Schritte gleich sechzehn und mindestens einer hat ``m = 0``.
-    Dies ist einer, und es ist der einzige, den die Daten hergeben.
+    The map grows from dimension 3 to 19, so the sum of the ``m`` over
+    seventeen steps is sixteen and at least one of them has ``m = 0``. This is
+    one, and it is the only one the data yield.
     """
     left, right = CARRIERS[w13], CARRIERS[w9]
 
@@ -289,15 +285,16 @@ def test_the_component_of_w2_is_the_residue_of_a_carried_step() -> None:
 
 
 def test_the_removed_product_is_the_value_w2_was_introduced_with() -> None:
-    """Der ``-P Q``-Term fehlt im Rest, weil er sich weghebt.
+    """The ``-P Q`` term is missing from the residue, because it cancels.
 
-    Genau daran ist der eingefuehrte Wert ablesbar: er muss ``P Q`` sein.
+    That is exactly what makes the introduced value readable: it has to be
+    ``P Q``.
     """
     assert sp.expand(CARRIERS[w13] * CARRIERS[w9]) == W2_INTRODUCED
 
 
 def test_a_perturbed_residue_is_not_the_component() -> None:
-    """Negativkontrolle: ohne sie sagt die Uebereinstimmung oben nichts."""
+    """A negative control: without it the agreement above says nothing."""
     for perturbation in (w13 * w9, w13 * x * y, w9 * x**2):
         broken = sp.expand(CARRIERS[w2] + perturbation)
 
@@ -311,19 +308,19 @@ def test_a_perturbed_residue_is_not_the_component() -> None:
 
 
 def test_w2_is_the_only_carrier_that_shows_the_signature() -> None:
-    """Der Rest eines Schritts traegt ein Monom in zwei Traegervariablen.
+    """The residue of a step carries a monomial in two carrier variables.
 
-    Das ist keine Faustregel. Beide Platzkoordinaten eines Schritts sind
-    Traegervariablen -- ``Carried`` verlangt einen Traeger, ``Fresh`` legt
-    einen an -- und die Komponenten von x, y und z sind hier keine Traeger,
-    kommen als Platz also nicht in Frage. Ein Rest muss die Signatur tragen.
-    Ein Wert wie ``w6 = w1 x`` nennt zwar eine Traegervariable, aber nur eine.
+    This is not a rule of thumb. Both slot coordinates of a step are carrier
+    variables, because ``Carried`` requires a carrier and ``Fresh`` creates
+    one, and the components of x, y and z are not carriers here and are
+    therefore not eligible as slots. A residue has to carry the signature. A
+    value such as ``w6 = w1 x`` does name a carrier variable, but only one.
 
-    Was der Test nicht ausschliesst: dass sich der ``-X_a X_b``-Term gegen
-    einen Term des eingefuehrten Werts weghebt, so wie sich bei ``w2`` der
-    ``-P Q``-Term weghebt. Eine so ueberschriebene Komponente saehe unberuehrt
-    aus. Der Test zeigt, dass nur ``w2`` die Signatur traegt, nicht, dass nur
-    ``w2`` ueberschrieben wurde.
+    What the test does not rule out: that the ``-X_a X_b`` term cancels against
+    a term of the introduced value, the way the ``-P Q`` term cancels at
+    ``w2``. A component overwritten in that way would look untouched. The test
+    shows that only ``w2`` carries the signature, not that only ``w2`` was
+    overwritten.
     """
     rewritten = [
         variable
@@ -338,15 +335,14 @@ def test_w2_is_the_only_carrier_that_shows_the_signature() -> None:
 
 
 def test_the_numbering_is_a_valid_introduction_order() -> None:
-    """Jede Abhaengigkeit zeigt auf einen kleineren Index -- nach der Korrektur.
+    """Every dependency points at a smaller index, after the correction.
 
-    Der eingefuehrte Wert von ``w2`` ist ``x^3 y`` und nennt keine
-    Traegervariable; die beiden, die seine veroeffentlichte Komponente nennt,
-    stehen dort als Rest. Damit ist ``w1`` bis ``w16`` eine gueltige
-    topologische Sortierung des Abhaengigkeitsgraphen.
+    The introduced value of ``w2`` is ``x^3 y`` and names no carrier variable.
+    The two that its published component names stand there as a residue. So
+    ``w1`` to ``w16`` is a valid topological order of the dependency graph.
 
-    Das beweist nicht, dass es die Reihenfolge war. Es entkraeftet den einzigen
-    Beleg dagegen, den die Quelle hergibt.
+    This does not prove that it was the order. It refutes the only evidence
+    against it that the source yields.
     """
     values = dict(CARRIERS)
     values[w2] = W2_INTRODUCED
@@ -360,11 +356,11 @@ def test_the_numbering_is_a_valid_introduction_order() -> None:
 
 
 def test_the_uncorrected_value_of_w2_is_what_broke_the_reading() -> None:
-    """Negativkontrolle: mit dem abgelesenen Wert scheitert die Sortierung.
+    """A negative control: with the value as read off, the ordering fails.
 
-    Und zwar an genau einer Stelle. Ohne diese Kontrolle sagt der Test darueber
-    die Korrektur nichts -- er koennte auch dann gruen sein, wenn der
-    abgelesene Wert ebenso gepasst haette.
+    And it fails at exactly one place. Without this control the test above says
+    nothing about the correction. It could be green even if the value as read
+    off had fitted just as well.
     """
     offenders = [
         variable
@@ -380,19 +376,19 @@ def test_the_uncorrected_value_of_w2_is_what_broke_the_reading() -> None:
 
 
 def test_the_pool_read_off_the_map_misses_that_value() -> None:
-    """Was der Befund fuer die Suche heisst.
+    """What the finding means for the search.
 
-    SEA-8 laesst einen Anker aus dem Vorrat kommen, und der Vorrat wird von
-    der Zielabbildung abgelesen. Der Wert, mit dem ``w2`` eingefuehrt wurde,
-    steht dort nicht: ein Aufzaehler erreicht diesen Schritt nur ueber seinen
-    Partner. Die Bedingung, unter der ein abgelesener Vorrat traegt, steht
-    unter SEA-8 in ``docs/contracts.md``.
+    SEA-8 lets an anchor come from the pool, and the pool is read off the target
+    map. The value ``w2`` was introduced with does not stand there: an
+    enumerator reaches this step only through its partner. The condition under
+    which a pool read off the target holds stands under SEA-8 in
+    ``docs/contracts.md``.
     """
     assert W2_INTRODUCED not in set(CARRIERS.values())
 
 
 # --------------------------------------------------------------------------
-# Was zuletzt eingefuehrt worden sein kann
+# What can have been introduced last
 # --------------------------------------------------------------------------
 
 
@@ -406,17 +402,16 @@ def occurrences(variable: sp.Symbol) -> list[int]:
 
 
 def test_six_coordinates_could_have_been_introduced_last() -> None:
-    """Ein Schritt hinterlaesst seine frische Koordinate an genau zwei Stellen.
+    """A step leaves its fresh coordinate in exactly two places.
 
-    In ihrer eigenen Komponente, als ``X_u + P``, und im Rest der
-    Zielkomponente. Kommt sie sonst nirgends vor, kann sie die zuletzt
-    eingefuehrte sein; kommt sie oefter vor, hat ein spaeterer Schritt sie
-    benutzt und sie kann es nicht sein.
+    In its own component, as ``X_u + P``, and in the residue of the target
+    component. If it occurs nowhere else it can be the one introduced last. If
+    it occurs more often, a later step used it and it cannot be.
 
-    Sechs von sechzehn erfuellen das. Das ist der Grund, warum die Suche
-    rueckwaerts guenstiger ist als vorwaerts: hier sind es sechs Kandidaten
-    fuer den letzten Schritt, vorwaerts bietet der Aufzaehler an einer Karte
-    dieser Groesse ueber hundert an.
+    Six of sixteen satisfy this. That is why searching backwards is cheaper
+    than searching forwards: there are six candidates for the last step here,
+    while going forward the enumerator offers over a hundred on a map of this
+    size.
     """
     last = {
         variable
@@ -429,11 +424,11 @@ def test_six_coordinates_could_have_been_introduced_last() -> None:
 
 
 def test_the_target_of_each_such_step_is_read_off_too() -> None:
-    """Die zweite Komponente ist die, auf die der einfuehrende Schritt zielte.
+    """The second component is the one the introducing step aimed at.
 
-    Drei der sechs zielen auf ``x``, zwei auf ``y``, eine auf ``z``. Keine auf
-    eine Traegerkomponente, was zu dem passt, was ``w2`` als einzige
-    ueberschriebene Traegerkomponente ausweist.
+    Three of the six aim at ``x``, two at ``y`` and one at ``z``. None aims at
+    a carrier component, which fits what marks ``w2`` as the only carrier
+    component that was overwritten.
     """
     targets = {
         variable: [
@@ -450,18 +445,17 @@ def test_the_target_of_each_such_step_is_read_off_too() -> None:
 
 
 # --------------------------------------------------------------------------
-# Die Schrittfolge
+# The sequence of steps
 # --------------------------------------------------------------------------
 
-# Rekonstruiert von einem externen Audit dieses Projekts im August 2026 und
-# hier unabhaengig nachgerechnet, bevor sie aufgeschrieben wurde. Sie benutzt
-# drei Erweiterungen von Proposition (3.1): einen wiederbenutzten Traeger
-# (BCW-10), einen Koeffizienten (BCW-11) und einen Schritt, dessen beide
-# Plaetze eine frische Variable nennen (BCW-12).
+# Reconstructed by an external audit of this project in August 2026 and
+# recomputed independently here before it was written down. It uses three
+# extensions of Proposition (3.1): a reused carrier (BCW-10), a coefficient
+# (BCW-11) and a step whose two slots name one fresh variable (BCW-12).
 #
-# Ein Eintrag ist (Zielkoordinate, Platz, Platz, Koeffizient). Ein Platz ist
-# ("fresh", Variable, Wert) oder ("carried", Variable). Positionen gehoeren
-# der Kette, Namen nicht -- deshalb steht hier keine einzige Zahl als Index.
+# An entry is (target coordinate, slot, slot, coefficient). A slot is
+# ("fresh", variable, value) or ("carried", variable). Positions belong to the
+# chain and names do not, which is why no index appears here as a number.
 FRESH, CARRIED = "fresh", "carried"
 
 STEPS = (
@@ -543,12 +537,12 @@ def build(steps: tuple = STEPS) -> Reduction:
 
 @pytest.mark.slow
 def test_the_chain_is_a_verified_reduction() -> None:
-    """Das Ziel von Meilenstein 0.4, als Zertifikat und nicht als Nachrechnung.
+    """The goal of milestone 0.4, as a certificate and not as a recomputation.
 
-    Siebzehn Schritte, jeder gegen BCW-1 bis BCW-12 geprueft, und am Ende die
-    veroeffentlichte Abbildung selbst. Die Kette ist ``CONSTRUCTED``, also ist
-    ihre eigene Pruefung nach BCW-9 kein Beleg -- der Beleg ist der Endpunkt,
-    verglichen mit Daten, die dieses Projekt nicht gerechnet hat.
+    Seventeen steps, each checked against BCW-1 to BCW-12, and at the end the
+    published map itself. The chain is ``CONSTRUCTED``, so under BCW-9 its own
+    verification is not evidence. The evidence is the endpoint, compared with
+    data this project did not compute.
     """
     chain = build()
 
@@ -560,11 +554,11 @@ def test_the_chain_is_a_verified_reduction() -> None:
 
 @pytest.mark.slow
 def test_the_chain_runs_as_recorded() -> None:
-    """Dimensionen und Grade, und was sie ueber die Gestalt sagen.
+    """Dimensions and degrees, and what they say about the shape.
 
-    Die Doppelungen in der Dimensionsfolge sind die beiden Schritte, die keinen
-    Generator einfuehren; der einzige Sprung um zwei ist der erste, der es muss,
-    weil Alpoeges Abbildung keine Traeger hat.
+    The repetitions in the sequence of dimensions are the two steps that
+    introduce no generator. The only jump by two is the first step, which has
+    to, because Alpoege's map has no carriers.
     """
     chain = build()
 
@@ -615,10 +609,10 @@ def test_the_chain_runs_as_recorded() -> None:
 
 @pytest.mark.slow
 def test_the_chain_carries_the_collision_to_the_published_points() -> None:
-    """Der zweite aeussere Beleg, und er ist von der Abbildung unabhaengig.
+    """The second external piece of evidence, independent of the map.
 
-    Alpoeges drei Punkte, durch siebzehn Schritte transportiert, ergeben die
-    siebenundfuenfzig Koordinaten der veroeffentlichten Tabelle.
+    Alpoege's three points, transported through seventeen steps, give the
+    fifty-seven coordinates of the published table.
     """
     chain = build()
     carried = chain.transport(
@@ -639,11 +633,11 @@ def test_the_chain_carries_the_collision_to_the_published_points() -> None:
 
 @pytest.mark.slow
 def test_a_wrong_coefficient_does_not_reach_the_published_map() -> None:
-    """Negativkontrolle: die Koeffizienten sind nicht Zierrat.
+    """A negative control: the coefficients are not ornament.
 
-    Ein einziger von ihnen geaendert, und die Kette baut sich weiterhin und
-    verifiziert weiterhin -- sie kommt nur woanders an. Genau deshalb ist der
-    Endpunkt der Beleg und nicht ``verify()``.
+    Change a single one of them and the chain still builds and still verifies.
+    It merely arrives somewhere else. That is exactly why the endpoint is the
+    evidence and not ``verify()``.
     """
     target, left, right, coefficient = STEPS[6]
     perturbed = (*STEPS[:6], (target, left, right, coefficient + 1), *STEPS[7:])
@@ -656,18 +650,18 @@ def test_a_wrong_coefficient_does_not_reach_the_published_map() -> None:
 
 @pytest.mark.slow
 def test_the_peel_finds_a_chain_to_this_map() -> None:
-    """Die Suche erreicht die veroeffentlichte Abbildung, ohne Hilfe.
+    """The search reaches the published map, without help.
 
-    Achtzehn gepruefte Karten. Sie bekommt Quelle und Ziel und sonst nichts:
-    keinen Wertevorrat, keine Namen, keine Vorzeichenkonvention (REV-1). Was
-    sie einschraenkt, ist aus dem Ziel abgelesen oder folgt aus der Arithmetik;
-    ``spare`` und ``pairs`` stehen auf den Werten, die sich daraus ergeben.
+    Eighteen examined maps. It is given source and target and nothing else: no
+    pool of values, no names, no sign convention (REV-1). What bounds it is
+    read off the target or follows from the arithmetic, and ``spare`` and
+    ``pairs`` stand at the values that follow.
 
-    Bis 0.4.0rc1 fand sie nichts, und der Grund war kein mathematischer: der
-    Treiber baute die Quelle mit ``over_field`` ueber ``QQ``, das Ziel liegt
-    ueber ``ZZ``, und ``PolynomialMap`` zaehlt den Koeffizientenbereich zu
-    seiner Identitaet. Ein externes Audit hat es gefunden. Dieser Test haelt
-    fest, dass der Bereich uebereinstimmt und die Suche ankommt.
+    Up to 0.4.0rc1 it found nothing, and the reason was not mathematical. The
+    driver built the source over ``QQ`` with ``over_field`` while the target
+    lies over ``ZZ``, and ``PolynomialMap`` counts the coefficient domain as
+    part of its identity. An external audit found it. This test records that
+    the domain agrees and that the search arrives.
     """
     source = alpoege_in_published_coordinates()
 
@@ -683,13 +677,13 @@ def test_the_peel_finds_a_chain_to_this_map() -> None:
 
 @pytest.mark.slow
 def test_the_chain_the_peel_finds_is_not_the_recorded_one() -> None:
-    """Eine Kette, nicht die Kette.
+    """A chain, not the chain.
 
-    Beide haben siebzehn Schritte und dieselbe Struktur -- einer fuehrt zwei
-    Koordinaten ein, zwei fuehren keine ein -- und sie fuehren die Koordinaten
-    in verschiedener Reihenfolge ein. Ein Test, der die gefundene festschreibt,
-    stuende der eigenen Verpflichtung im Weg; dieser haelt fest, dass es mehr
-    als eine gibt.
+    Both have seventeen steps and the same structure, with one step introducing
+    two coordinates and two introducing none, and they introduce the
+    coordinates in different orders. A test that pinned down the one found
+    would stand in the way of this project's own obligation. This one records
+    that there is more than one.
     """
     found = peel(
         alpoege_in_published_coordinates(), ALPOEGE19, budget=200, spare=2, pairs=1

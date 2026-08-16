@@ -1,36 +1,35 @@
-"""Kubische Keller-Abbildung in Dimension 17, abgeleitet aus Alpoeges.
+"""A cubic Keller map in dimension 17, derived from Alpoege's.
 
-Diese Abbildung hat Grad 3 und konstante Jacobi-Determinante 1, und sie erbt
-die Kollision der Alpoege-Abbildung. Sie ist damit selbst ein Gegenbeispiel
-zur Jacobi-Vermutung, nicht bloss eine Keller-Abbildung. All das rechnen die
-Tests unten selbst nach.
+This map has degree 3 and constant Jacobian determinant 1, and it inherits the
+collision of Alpoege's map. It is therefore itself a counterexample to the
+Jacobian conjecture and not merely a Keller map. The tests below compute all of
+that themselves.
 
-Bis Version 0.2 war sie ein Regressionskandidat: dass sie *durch eine
-BCW-Reduktion* aus der Alpoege-Abbildung hervorgeht, war behauptet und nicht
-gezeigt. Der Abschnitt "Ableitung" unten zeigt es jetzt -- eine ``Reduction``
-aus acht Schritten, Schritt fuer Schritt verifiziert, die die Kollision
-mittraegt.
+Up to version 0.2 it was a regression candidate: that it arises from Alpoege's
+map *by a BCW reduction* was asserted and not shown. The section "Derivation"
+below shows it now, as a ``Reduction`` of eight steps, verified step by step,
+which carries the collision along.
 
-Was daran Beleg ist und was nicht
----------------------------------
-Die Zwischenabbildungen in den Dimensionen 5 bis 15 sind nirgends
-veroeffentlicht. Sie *koennen* darum nicht vorgelegt werden, und ihre Schritte
-sind ``CONSTRUCTED``: BCW-1 vergleicht dort die Implementierung mit sich
-selbst. Die ganze Kette traegt deshalb nach RED-7 die schwaechere Provenienz.
+What is evidence here and what is not
+-------------------------------------
+The intermediate maps in dimensions 5 to 15 are published nowhere. They
+therefore *cannot* be supplied, and their steps are ``CONSTRUCTED``: BCW-1
+compares the implementation with itself there. Under RED-7 the whole chain
+carries the weaker provenance for that reason.
 
-Die aeussere Tatsache ist der Endpunkt, und dort beisst die Pruefung: der
-letzte Schritt bekommt die fixierten Komponenten als Ziel vorgelegt, also
-vergleicht sein BCW-1 eine extern gerechnete Abbildung mit
-``G o F^[2] o H``. Ebenso die Kollision, die am Ende der Kette gegen
-``BCW17_COLLISION`` gehalten wird, und die Variablennamen, die der
-``ReductionContext`` erzeugt und nicht die Tabelle vorgibt -- benennt er
-anders als x4 ... x17, faellt der letzte Schritt.
+The external fact is the endpoint, and that is where the check bites. The last
+step is given the fixed components as its target, so its BCW-1 compares an
+externally computed map with ``G o F^[2] o H``. The same holds for the
+collision, which is held against ``BCW17_COLLISION`` at the end of the chain,
+and for the variable names, which the ``ReductionContext`` produces and the
+table does not prescribe. If it names them anything but x4 to x17, the last
+step fails.
 
-Die Faktorisierung selbst ist nicht gesucht, sondern aus den fixierten
-Komponenten abgelesen: die Komponenten 4 bis 17 haben die Form ``X_j + P``,
-und diese ``P`` sind die Faktoren. Sie zu finden ist Sache von 0.3. Eine von
-dieser Bibliothek unabhaengige Nachrechnung derselben Kette in reinem SymPy
-steht in ``scripts/reconstruct_bcw17.py``.
+The factorization itself is not searched for but read off the fixed
+components: components 4 to 17 have the form ``X_j + P``, and these ``P`` are
+the factors. Finding them is the business of 0.3. A recomputation of the same
+chain in plain SymPy, independent of this library, stands in
+``scripts/reconstruct_bcw17.py``.
 """
 
 import math
@@ -64,30 +63,30 @@ _1, _2, _3, _4, _5, _6, _7, _8, _9, _10, _11, _12, _13, _14, _15, _16, _17 = X
 
 R = sp.Rational
 
-# Die drei Urbilder entstehen aus Alpoeges rationaler Kollision, indem die
-# Stabilisierungsvariablen x4..x17 topologisch nachgezogen werden.
+# The three preimages arise from Alpoege's rational collision by carrying the
+# stabilisation variables x4 to x17 along in topological order.
 
 
-# Die 14 Stabilisierungskoordinaten x4..x17 aus BCW Proposition (3.1). Ihr
-# Jacobi-Block ist unipotent, worauf die Determinantenstrategie aufsetzt.
+# The 14 stabilisation coordinates x4 to x17 of BCW Proposition (3.1). Their
+# Jacobian block is unipotent, which is what the determinant strategy uses.
 CARRIER_INDICES = tuple(range(3, 17))
 
 
 @pytest.fixture(scope="module")
 def bcw17() -> PolynomialMap:
-    """``PolynomialMap`` ist unveraenderlich, also genuegt Modul-Scope.
+    """``PolynomialMap`` is immutable, so module scope is enough.
 
-    Der Aufbau des Rings kostet in Dimension 17 spuerbar Zeit; sie faellt so
-    einmal statt einmal pro Test an.
+    Building the ring costs noticeable time in dimension 17. This way it is
+    paid once instead of once per test.
     """
     return PolynomialMap(variables=X, components=COMPONENTS)
 
 
 def test_reordering_the_generators_changes_no_value(bcw17: PolynomialMap) -> None:
-    """SEA-4 an der zweiten festen Abbildung, in Dimension 17.
+    """SEA-4 on the second fixed map, in dimension 17.
 
-    Dieselbe Kontrolle wie fuer ALPOEGE15, an anderen Daten: das Umsortieren
-    ist eine Umschreibung der Darstellung, und der Rueckweg liefert das
+    The same control as for ALPOEGE15, on other data: reordering rewrites the
+    presentation, and the way back gives the
     Original.
     """
     shuffled = X[8:] + X[:8]
@@ -103,7 +102,7 @@ def test_reordering_the_generators_changes_no_value(bcw17: PolynomialMap) -> Non
 
 
 def test_bcw17_is_not_injective(bcw17: PolynomialMap) -> None:
-    """Der eigentliche Inhalt: drei verschiedene Urbilder desselben Punktes."""
+    """The substance: three distinct preimages of one point."""
     points = tuple(tuple(map(sp.nsimplify, p)) for p in BCW17_COLLISION)
 
     assert len(set(points)) == 3
@@ -114,17 +113,17 @@ def test_bcw17_is_not_injective(bcw17: PolynomialMap) -> None:
 
 
 def test_bcw17_has_degree_three(bcw17: PolynomialMap) -> None:
-    """Das Reduktionsziel von BCW Proposition (3.1)."""
+    """The reduction target of BCW Proposition (3.1)."""
     assert bcw17.dimension == 17
     assert bcw17.degree() == 3
 
 
 def test_bcw17_lies_in_MA0_but_not_MA1(bcw17: PolynomialMap) -> None:
-    """F = X + H mit ord(H) = 1: der Linearteil ist noch nicht normalisiert.
+    """F = X + H with ord(H) = 1: the linear part is not normalised yet.
 
-    Die Komponenten 11 und 13 tragen die Linearterme 7*x2 und -3*x2, also
-    liegt F in MA^0, nicht in MA^1. Das ist genau der Zustand vor dem ersten
-    Schritt von BCW Paragraph 4, der F durch F'' = F'_(1)^-1 o F' ersetzt.
+    Components 11 and 13 carry the linear terms 7*x2 and -3*x2, so F lies in
+    MA^0 and not in MA^1. This is exactly the state before the first step of
+    BCW Section 4, which replaces F by F'' = F'_(1)^-1 o F'.
     """
     assert bcw17.displacement().order() == 1
     assert bcw17.is_in_MA(0)
@@ -132,25 +131,25 @@ def test_bcw17_lies_in_MA0_but_not_MA1(bcw17: PolynomialMap) -> None:
 
 
 def test_bcw17_linear_part_is_invertible(bcw17: PolynomialMap) -> None:
-    """J(F)(0) muss invertierbar sein, sonst ist der Normalisierungsschritt
-    von Paragraph 4 nicht ausfuehrbar."""
+    """J(F)(0) has to be invertible, otherwise the normalisation step of
+    Section 4 cannot be carried out."""
     linear_part = bcw17.jacobian().xreplace({v: sp.Integer(0) for v in X})
 
     assert linear_part.det() == 1
 
 
 # --------------------------------------------------------------------------
-# Keller-Eigenschaft
+# The Keller property
 # --------------------------------------------------------------------------
 
 
 def test_bcw17_determinant_is_one(bcw17: PolynomialMap) -> None:
-    """Keller-Eigenschaft, exakt und als Polynomidentitaet.
+    """The Keller property, exactly and as a polynomial identity.
 
-    Frueher war dieser Test hinter einer Umgebungsvariablen versteckt, weil
-    die 17x17-Determinante ueber QQ[x1..x17] rund eine Minute brauchte. Seit
-    ``determinant`` den unipotenten Traegerblock ueber das Schur-Komplement
-    herausrechnet, bleiben davon Millisekunden.
+    This test used to sit behind an environment variable, because the 17 by 17
+    determinant over QQ[x1..x17] took about a minute. Since ``determinant``
+    computes the unipotent carrier block away through the Schur complement,
+    milliseconds are left of it.
     """
     assert bcw17.determinant() == 1
 
@@ -158,12 +157,12 @@ def test_bcw17_determinant_is_one(bcw17: PolynomialMap) -> None:
 def test_bcw17_carrier_block_is_the_stabilization_block(
     bcw17: PolynomialMap,
 ) -> None:
-    """Woher die Beschleunigung kommt.
+    """Where the speed-up comes from.
 
-    Die Stabilisierungskoordinaten sind genau die, die BCW anfuegt: jede hat
-    die Form X_k + P mit P in den uebrigen Variablen, und die Abhaengigkeiten
-    unter ihnen sind azyklisch. Der Test haelt fest, dass die Erkennung diese
-    Struktur findet und nicht bloss zufaellig irgendeinen Block.
+    The stabilisation coordinates are exactly those BCW appends: each has the
+    form X_k + P with P in the remaining variables, and the dependencies among
+    them are acyclic. The test records that the detection finds this structure
+    and not merely some block by accident.
     """
     assert bcw17.carrier_indices == CARRIER_INDICES
 
@@ -173,11 +172,11 @@ def test_bcw17_carrier_block_is_the_stabilization_block(
 
 
 def test_bcw17_determinant_is_not_constant_after_a_perturbation() -> None:
-    """Gegenprobe: der Test oben besteht nicht deshalb, weil er nichts prueft.
+    """A control: the test above does not pass because it checks nothing.
 
-    Ein zusaetzlicher kubischer Term in der ersten Komponente laesst den
-    Traegerblock unberuehrt, aendert aber das Schur-Komplement. Waere die
-    Strategie falsch, faende sie hier weiterhin 1.
+    An additional cubic term in the first component leaves the carrier block
+    untouched but changes the Schur complement. If the strategy were wrong, it
+    would still find 1 here.
     """
     perturbed = PolynomialMap(
         variables=X,
@@ -190,19 +189,18 @@ def test_bcw17_determinant_is_not_constant_after_a_perturbation() -> None:
 
 @pytest.mark.slow
 def test_bcw17_determinant_strategies_agree(bcw17: PolynomialMap) -> None:
-    """Kreuzprobe der beiden Determinantenstrategien in voller Groesse.
+    """A cross-check of the two determinant strategies at full size.
 
-    ``architecture.md`` verlangt unter "Cross-representation tests", die
-    eigene ``DomainMatrix``-Integration gegen ein unabhaengig gerechnetes
-    Ergebnis zu halten. Hier laeuft der Vergleich andersherum: der
-    ``DomainMatrix``-Pfad ist die Referenz, das Schur-Komplement die
-    Optimierung. Der Zugriff auf die private Methode ist Absicht -- die
-    oeffentliche API waehlt die Strategie selbst, und genau diese Wahl soll
-    hier umgangen werden.
+    Under "Cross-representation tests" ``architecture.md`` requires holding
+    this project's ``DomainMatrix`` integration against an independently
+    computed result. Here the comparison runs the other way round: the
+    ``DomainMatrix`` path is the reference and the Schur complement is the
+    optimisation. Reaching for the private method is deliberate. The public API
+    chooses the strategy itself, and that choice is what has to be bypassed
+    here.
 
-    Als ``slow`` markiert: der Referenzpfad braucht rund eine Minute. Das ist
-    der Preis dafuer, die Optimierung nicht bloss gegen sich selbst zu
-    pruefen.
+    Marked ``slow``: the reference path takes about a minute. That is the price
+    of not checking the optimisation against itself.
     """
     reference = bcw17._determinant_by_domain_matrix(bcw17._jacobian_polynomials)
 
@@ -210,15 +208,15 @@ def test_bcw17_determinant_strategies_agree(bcw17: PolynomialMap) -> None:
 
 
 # --------------------------------------------------------------------------
-# Ableitung: die Kette von Alpoege hierher
+# Derivation: the chain from Alpoege to here
 # --------------------------------------------------------------------------
 
 
-# Die sieben Anwendungen von Proposition (3.1): Zielkomponente (nullbasiert),
-# die beiden Faktoren, und die EA-Stufe, die H erreicht. Die frischen
-# Variablen stehen hier bewusst nicht -- die vergibt der ReductionContext, und
-# dass er dabei x4 ... x17 in dieser Reihenfolge trifft, ist Teil dessen, was
-# der letzte Schritt prueft.
+# The seven applications of Proposition (3.1): the target component
+# (zero-based), the two factors, and the EA level H reaches. The fresh
+# variables are deliberately absent here. The ReductionContext hands them out,
+# and that it arrives at x4 to x17 in this order is part of what the last step
+# checks.
 STEPS = (
     (0, -_1 * _3 / 2, _1**2, 1),
     (1, 3 * _1**2 * _2, _1 * _2 * _3 + 3 * _2**2, 1),
@@ -232,13 +230,13 @@ STEPS = (
 
 @pytest.fixture(scope="module")
 def alpoege() -> PolynomialMap:
-    """Ueber QQ, weil die Normalisierung sofort einen Kehrwert braucht."""
+    """Over QQ, because the normalisation needs a reciprocal at once."""
     return over_field(examples.alpoege())
 
 
 @pytest.fixture(scope="module")
 def normalization(alpoege: PolynomialMap) -> LinearStep:
-    """F'' = F'_(1)^-1 o F', die lineare Normalisierung aus BCW Paragraph 4."""
+    """F'' = F'_(1)^-1 o F', the linear normalisation of BCW Section 4."""
     return LinearStep.normalize(alpoege)
 
 
@@ -246,7 +244,7 @@ def normalization(alpoege: PolynomialMap) -> LinearStep:
 def reduction(
     alpoege: PolynomialMap, normalization: LinearStep, bcw17: PolynomialMap
 ) -> Reduction:
-    """Die vollstaendige Kette, mit vorgelegtem Ziel im letzten Schritt."""
+    """The complete chain, with a supplied target in the last step."""
     context = ReductionContext()
     steps: list[LinearStep | BCWStep] = [normalization]
     current = normalization.target
@@ -267,7 +265,7 @@ def reduction(
 
 
 def test_the_reduction_verifies(reduction: Reduction) -> None:
-    """Acht Schritte, jeder einzeln geprueft, und jede Naht dazwischen."""
+    """Eight steps, each checked on its own, and every seam between them."""
     assert reduction.verify() is None
     assert len(reduction) == 8
 
@@ -275,16 +273,15 @@ def test_the_reduction_verifies(reduction: Reduction) -> None:
 def test_the_reduction_reaches_bcw17(
     reduction: Reduction, bcw17: PolynomialMap
 ) -> None:
-    """Der Endpunkt ist die fixierte Abbildung, nicht nur eine wie sie."""
+    """The endpoint is the fixed map and not merely one like it."""
     assert reduction.target == bcw17
 
 
 def test_the_last_step_is_the_one_that_can_fail(reduction: Reduction) -> None:
-    """Nur dort steht eine extern gerechnete Abbildung auf einer Seite.
+    """Only there does an externally computed map stand on one side.
 
-    Die Zwischenabbildungen sind nirgends veroeffentlicht, koennen also nicht
-    vorgelegt werden; ihre Schritte pruefen die Implementierung gegen sich
-    selbst.
+    The intermediate maps are published nowhere and therefore cannot be
+    supplied. Their steps check the implementation against itself.
     """
     assert reduction[-1].provenance is Provenance.SUPPLIED
     assert reduction.provenance is Provenance.CONSTRUCTED
@@ -293,11 +290,11 @@ def test_the_last_step_is_the_one_that_can_fail(reduction: Reduction) -> None:
 def test_a_perturbed_target_would_be_caught(
     reduction: Reduction, bcw17: PolynomialMap
 ) -> None:
-    """Gegenprobe: die Pruefung im letzten Schritt beisst wirklich.
+    """A control: the check in the last step really bites.
 
-    Ein Vorzeichen in der ersten Komponente daneben, und BCW-1 faellt. Ohne
-    diesen Test waere nicht zu sehen, ob der letzte Schritt etwas prueft oder
-    nur zufaellig durchgeht.
+    One sign wrong in the first component and BCW-1 fails. Without this test
+    there would be no way to see whether the last step checks anything or
+    merely happens to pass.
     """
     last = reduction[-1]
     perturbed = PolynomialMap(
@@ -319,13 +316,13 @@ def test_a_perturbed_target_would_be_caught(
 
 
 def test_the_dimensions_and_degrees(reduction: Reduction) -> None:
-    """3 auf 17 in sieben Schritten zu je zwei, Grad 7 auf 3."""
+    """3 to 17 in seven steps of two each, degree 7 to 3."""
     assert reduction.dimensions() == (3, 3, 5, 7, 9, 11, 13, 15, 17)
     assert reduction.degrees() == (7, 7, 7, 7, 7, 5, 4, 4, 3)
 
 
 def test_the_context_names_x4_to_x17(reduction: Reduction) -> None:
-    """Die Namen kommen aus dem Kontext, nicht aus der Tabelle."""
+    """The names come from the context and not from the table."""
     allocated = tuple(
         variable
         for step in reduction
@@ -339,7 +336,7 @@ def test_the_context_names_x4_to_x17(reduction: Reduction) -> None:
 def test_the_collision_is_transported(
     reduction: Reduction, alpoege: PolynomialMap
 ) -> None:
-    """Der eigentliche Zweck: aus drei Punkten in k^3 werden drei in k^17."""
+    """The actual purpose: three points in k^3 become three in k^17."""
     carried = reduction.transport(Collision.at(alpoege, ALPOEGE_COLLISION))
 
     assert carried == Collision(
@@ -351,7 +348,7 @@ def test_the_collision_is_transported(
 def test_the_determinant_is_settled_by_the_linear_step(
     reduction: Reduction, alpoege: PolynomialMap
 ) -> None:
-    """Nach LIN-3 die einzige Stelle, an der sie sich aendern darf."""
+    """Under LIN-3 the only place where they may change."""
     assert alpoege.determinant() == -2
     assert reduction[0].transformation.determinant() == R(-1, 2)
     assert all(
@@ -362,11 +359,11 @@ def test_the_determinant_is_settled_by_the_linear_step(
 
 
 def test_the_filtration_explains_MA0(reduction: Reduction) -> None:  # noqa: N802
-    """Warum BCW17 in MA^0 liegt und nicht in MA^1.
+    """Why BCW17 lies in MA^0 and not in MA^1.
 
-    Genau zwei der sieben Schritte erreichen nur EA^0, weil ihr Q einen
-    Linearterm traegt: 7*x2 und -3*x2. Das sind genau die beiden Linearterme,
-    die in den Komponenten 11 und 13 stehen.
+    Exactly two of the seven steps reach only EA^0, because their Q carries a
+    linear term: 7*x2 and -3*x2. These are exactly the two linear terms that
+    stand in components 11 and 13.
     """
     levels = [step.filtration_level for step in reduction if isinstance(step, BCWStep)]
 
@@ -378,7 +375,7 @@ def test_the_filtration_explains_MA0(reduction: Reduction) -> None:  # noqa: N80
 def test_the_two_EA0_steps_are_the_linear_terms(  # noqa: N802
     reduction: Reduction, bcw17: PolynomialMap
 ) -> None:
-    """Die Verbindung zwischen Zertifikat und fixierter Abbildung."""
+    """The connection between the certificate and the fixed map."""
     modest = [
         step
         for step in reduction
@@ -391,18 +388,18 @@ def test_the_two_EA0_steps_are_the_linear_terms(  # noqa: N802
 
 
 # --------------------------------------------------------------------------
-# Der lineare Schritt einzeln
+# The linear step on its own
 # --------------------------------------------------------------------------
 
 
 def test_normalization_explains_the_determinant(
     alpoege: PolynomialMap, normalization: LinearStep
 ) -> None:
-    """Warum BCW17 Determinante 1 hat, Alpoege aber -2.
+    """Why BCW17 has determinant 1 and Alpoege has -2.
 
-    Der Linearteil von Alpoege hat selbst Determinante -2. Die Normalisierung
-    teilt sie damit heraus; Stabilisierung und elementare Faktoren koennen die
-    Determinante danach nicht mehr aendern.
+    The linear part of Alpoege has determinant -2 itself, so the normalisation
+    divides it out. Stabilisation and elementary factors cannot change the
+    determinant afterwards.
     """
     assert alpoege.determinant() == -2
     assert normalization.target.determinant() == 1
@@ -411,10 +408,10 @@ def test_normalization_explains_the_determinant(
 def test_normalization_reaches_MA1(  # noqa: N802
     alpoege: PolynomialMap, normalization: LinearStep
 ) -> None:
-    """Die Voraussetzung von Proposition (3.1).
+    """The hypothesis of Proposition (3.1).
 
-    Alpoege liegt nur in MA^0; erst nach der Normalisierung ist der Linearteil
-    die Identitaet und die Abbildung liegt in MA^1.
+    Alpoege lies in MA^0 only. Not until the normalisation is the linear part
+    the identity and the map in MA^1.
     """
     assert not alpoege.is_in_MA(1)
     assert normalization.target.is_in_MA(1)
@@ -423,7 +420,7 @@ def test_normalization_reaches_MA1(  # noqa: N802
 def test_normalization_is_a_transposition_and_a_dilation(
     normalization: LinearStep,
 ) -> None:
-    """Und damit nicht elementar: EA_n(k) hat nur Determinante 1."""
+    """And therefore not elementary: EA_n(k) has determinant 1 only."""
     assert len(normalization.transformation) == 2
     assert not normalization.transformation.is_elementary
 
@@ -431,10 +428,10 @@ def test_normalization_is_a_transposition_and_a_dilation(
 def test_normalization_explains_the_image(
     alpoege: PolynomialMap, normalization: LinearStep
 ) -> None:
-    """Warum das Kollisionsbild (0, 0, -1/4) lautet und nicht (-1/4, 0, 0).
+    """Why the collision image is (0, 0, -1/4) and not (-1/4, 0, 0).
 
-    Der Linearteil vertauscht die erste und dritte Koordinate, seine Inverse
-    also ebenso. Linkskomposition laesst dabei jedes Urbild, wo es war.
+    The linear part swaps the first and third coordinate, and so does its
+    inverse. Left composition leaves every preimage where it was.
     """
     moved = normalization.transport(Collision.at(alpoege, ALPOEGE_COLLISION))
 
@@ -443,11 +440,10 @@ def test_normalization_explains_the_image(
 
 
 def test_the_collision_extends_alpoeges(bcw17: PolynomialMap) -> None:
-    """Die Kollisionspunkte setzen Alpoeges Punkte fort.
+    """The collision points continue Alpoege's points.
 
-    Der Zusammenhang zwischen beiden Abbildungen ist damit nicht nur
-    behauptet: dieselben drei Urbilder, um 14 Stabilisierungskoordinaten
-    ergaenzt.
+    The connection between the two maps is therefore more than an assertion:
+    the same three preimages, extended by 14 stabilisation coordinates.
     """
     heads = {tuple(map(sp.nsimplify, p))[:3] for p in BCW17_COLLISION}
     alpoege_points = {tuple(map(sp.nsimplify, point)) for point in ALPOEGE_COLLISION}
@@ -459,17 +455,15 @@ def test_the_collision_extends_alpoeges(bcw17: PolynomialMap) -> None:
 def test_the_enumerator_contains_every_step_of_this_chain(
     reduction: Reduction,
 ) -> None:
-    """Die Kontrolle fuer den Kandidatenaufzaehler, an bekannten Schritten.
+    """The control for the candidate enumerator, on known steps.
 
-    Der Vorrat kommt aus der Zielabbildung: die Werte, die ihre Traegerkoor-
-    dinaten halten. Fuer jeden Schritt der Kette muss der Aufzaehler an der
-    Karte davor einen Kandidaten mit derselben Zielkomponente und denselben
-    beiden Faktoren liefern, und die abgeleitete EA-Stufe muss die des
-    Schritts sein.
+    The pool comes from the target map: the values its carrier coordinates
+    hold. For every step of the chain the enumerator has to offer, on the map
+    before it, a candidate with the same target component and the same two
+    factors, and the derived EA level has to be that of the step.
 
-    Ein Aufzaehler, der einen nachweislich existierenden Schritt uebergeht,
-    ist unvollstaendig auf eine Weise, die ein Fehlschlag der Suche allein
-    nicht zeigen wuerde.
+    An enumerator that passes over a step known to exist is incomplete in a way
+    that a failure of the search alone would not show.
     """
     final = reduction.target
     pool = [

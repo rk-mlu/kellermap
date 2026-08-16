@@ -1,28 +1,27 @@
-"""alpoege15: eine kubische Keller-Abbildung in Dimension 15.
+"""alpoege15: a cubic Keller map in dimension 15.
 
-Kein fremdes Beispiel, sondern die eigene Reduktion dieses Projekts. Sie
-entsteht aus der siebzehndimensionalen, indem zwei Schritte einen Traeger
-mitbenutzen, den ein frueherer Schritt schon angelegt hat: BCW17 legt ``x1**2``
-zweimal an (in ``x5`` und ``x17``) und ``x1*x2`` ebenfalls zweimal (in ``x8``
-und ``x14``). Wer die Doppelung vermeidet, spart je eine Variable.
+Not an example from elsewhere but this project's own reduction. It arises from
+the seventeen-dimensional one by having two steps reuse a carrier that an
+earlier step already created: BCW17 creates ``x1**2`` twice, in ``x5`` and
+``x17``, and ``x1*x2`` twice as well, in ``x8`` and ``x14``. Avoiding the
+duplication saves one variable each time.
 
-Seit Meilenstein 0.3 wird die Abbildung abgeleitet und nicht mehr behauptet:
-eine ``Reduction`` aus acht Schritten, Schritt fuer Schritt verifiziert, die
-die Kollision mittraegt. Zwei der sieben BCW-Schritte haben ``m = 1``.
+Since milestone 0.3 the map is derived and no longer asserted: a ``Reduction``
+of eight steps, verified step by step, which carries the collision along. Two
+of the seven BCW steps have ``m = 1``.
 
-Was daran Beleg ist und was nicht
----------------------------------
-Anders als bei BCW17 ist der Endpunkt hier keine aeussere Tatsache. Die
-fixierten Komponenten weiter unten stammen aus derselben Handrechnung, die
-auch die Kette erzeugt hat; ``scripts/reconstruct_alpoege15.py`` fuehrt sie in
-reinem SymPy aus. Dass der letzte Schritt sein Ziel vorgelegt bekommt, zeigt
-also die Uebereinstimmung zweier Umsetzungen derselben Formeln, nicht die
-Uebereinstimmung mit einer veroeffentlichten Abbildung.
+What is evidence here and what is not
+-------------------------------------
+Unlike for BCW17 the endpoint is not an external fact here. The fixed
+components further down come from the same hand computation that produced the
+chain, and ``scripts/reconstruct_alpoege15.py`` carries it out in plain SymPy.
+That the last step is given its target therefore shows the agreement of two
+implementations of the same formulas, and not agreement with a published map.
 
-Die Zwischenabbildungen sind ``CONSTRUCTED``, und die Kette traegt nach RED-7
-die schwaechere Provenienz.
+The intermediate maps are ``CONSTRUCTED``, and under RED-7 the chain carries
+the weaker provenance.
 
-Zur Herkunft und zu der Frage, was die Zahl 15 bedeutet und was nicht, siehe
+On the provenance, and on what the number 15 means and does not mean, see
 ``docs/references.md``.
 """
 
@@ -58,7 +57,7 @@ _1, _2, _3, _4, _5, _6, _7, _8, _9, _10, _11, _12, _13, _14, _15 = X
 R = sp.Rational
 
 
-# Die zwoelf Stabilisierungskoordinaten x4..x15.
+# The twelve stabilisation coordinates x4 to x15.
 CARRIER_INDICES = tuple(range(3, 15))
 
 ALPOEGE15 = PolynomialMap(X, COMPONENTS)
@@ -67,7 +66,7 @@ CARRIERS = {index: sp.expand(COMPONENTS[index] - X[index]) for index in CARRIER_
 
 
 # --------------------------------------------------------------------------
-# Die Abbildung selbst
+# The map itself
 # --------------------------------------------------------------------------
 
 
@@ -77,18 +76,18 @@ def test_dimension_and_degree() -> None:
 
 
 def test_the_determinant_is_one() -> None:
-    """Konstant, also eine Keller-Abbildung -- und normalisiert wie BCW17."""
+    """Constant, so a Keller map, and normalised as BCW17 is."""
     assert ALPOEGE15.determinant() == 1
 
 
 def test_reordering_the_generators_changes_no_value() -> None:
-    """SEA-4 an einer Abbildung, deren Umsortierung bekannt ist.
+    """SEA-4 on a map whose reordering is known.
 
-    Die Suche in 0.4 baut eine Kette, deren Generatoren in der Reihenfolge
-    ihrer Einfuehrung stehen; eine veroeffentlichte Abbildung listet dieselben
-    Generatoren anders. Umsortieren ist Darstellung und kein Schritt, also muss
-    es genau nichts am Wert aendern -- hier in Dimension 15 nachgerechnet, wo
-    ein Fehler in der Monomkodierung nicht mehr zufaellig durchgeht.
+    The search in 0.4 builds a chain whose generators stand in the order they
+    were introduced, while a published map lists the same generators
+    differently. Reordering is presentation and not a step, so it has to change
+    exactly nothing about the value. Computed here in dimension 15, where a
+    defect in the encoding of monomials no longer passes by accident.
     """
     shuffled = X[3:] + X[:3]
 
@@ -103,7 +102,7 @@ def test_reordering_the_generators_changes_no_value() -> None:
 
 
 def test_it_lies_in_MA0_but_not_in_MA1() -> None:  # noqa: N802
-    """Aus demselben Grund wie BCW17: zwei Schritte erreichen nur EA^0."""
+    """For the same reason as BCW17: two steps reach only EA^0."""
     assert ALPOEGE15.is_in_MA(0)
     assert not ALPOEGE15.is_in_MA(1)
 
@@ -113,12 +112,12 @@ def test_the_carrier_block_is_the_stabilization() -> None:
 
 
 # --------------------------------------------------------------------------
-# Die Kollision
+# The collision
 # --------------------------------------------------------------------------
 
 
 def test_alpoege15_is_not_injective() -> None:
-    """Der eigentliche Inhalt: drei verschiedene Urbilder desselben Punktes."""
+    """The substance: three distinct preimages of one point."""
     collision = Collision(COLLISION, IMAGE)
 
     assert collision.verify(ALPOEGE15) is None
@@ -127,15 +126,15 @@ def test_alpoege15_is_not_injective() -> None:
 
 
 def test_the_image_is_the_one_bcw17_carries() -> None:
-    """Dieselbe Normalisierung, also dasselbe Bild, nur kuerzer aufgefuellt."""
+    """The same normalisation, so the same image, padded less far."""
     assert Collision.at(ALPOEGE15, COLLISION).image == tuple(map(sp.nsimplify, IMAGE))
 
 
 def test_the_points_agree_with_bcw17_where_the_chains_agree() -> None:
-    """Die ersten fuenf Schritte sind unveraendert, also die ersten 13 Koordinaten.
+    """The first five steps are unchanged, so the first 13 coordinates are.
 
-    Erst die geteilten Schritte 6 und 7 legen andere Variablen an; alles davor
-    ist Zeichen fuer Zeichen dieselbe Rechnung.
+    Only the shared steps 6 and 7 create different variables. Everything before
+    them is the same computation character for character.
     """
     ours = {tuple(map(sp.nsimplify, point))[:13] for point in COLLISION}
     theirs = {tuple(map(sp.nsimplify, point))[:13] for point in BCW17_COLLISION}
@@ -144,12 +143,12 @@ def test_the_points_agree_with_bcw17_where_the_chains_agree() -> None:
 
 
 # --------------------------------------------------------------------------
-# Der Zusammenhang mit BCW17
+# The connection with BCW17
 # --------------------------------------------------------------------------
 
 
 def test_bcw17_buys_two_values_twice() -> None:
-    """Der Befund, aus dem die Abbildung entstanden ist."""
+    """The finding the map came out of."""
     bcw17_carriers = [
         sp.expand(BCW17_COMPONENTS[index] - sp.Symbol(f"x{index + 1}"))
         for index in range(3, 17)
@@ -164,18 +163,18 @@ def test_bcw17_buys_two_values_twice() -> None:
 
 
 def test_alpoege15_buys_each_value_once() -> None:
-    """Und der Ertrag: kein Traegerwert kommt hier zweimal vor."""
+    """And the gain: no carrier value occurs twice here."""
     values = [sp.expand(value) for value in CARRIERS.values()]
 
     assert len(values) == len(set(values)) == 12
 
 
 def test_eleven_components_are_untouched() -> None:
-    """Was die geteilten Schritte nicht anfassen, bleibt woertlich stehen.
+    """What the shared steps do not touch stays verbatim.
 
-    Die Komponenten 3, 11, 14 und 15 aendern sich -- die ersten beiden, weil
-    ein geteilter Schritt sie als Ziel hat, die letzten beiden, weil sie die
-    Traeger sind, die dabei anders benannt werden.
+    Components 3, 11, 14 and 15 change: the first two because a shared step has
+    them as its target, the last two because they are the carriers that are
+    named differently in the process.
     """
     unchanged = [
         index
@@ -191,14 +190,14 @@ def test_two_dimensions_below_bcw17() -> None:
 
 
 # --------------------------------------------------------------------------
-# Ableitung: die Kette von Alpoege hierher
+# Derivation: the chain from Alpoege to here
 # --------------------------------------------------------------------------
 
 
-# Die sieben Anwendungen von Proposition (3.1): Zielkomponente (nullbasiert),
-# die beiden Faktorplaetze, und die EA-Stufe. Ein Platz ist entweder
-# ("fresh", P) -- die Variable dazu vergibt der ReductionContext -- oder
-# ("carried", j) fuer die Koordinate j, die den Faktor schon traegt.
+# The seven applications of Proposition (3.1): the target component
+# (zero-based), the two factor slots, and the EA level. A slot is either
+# ("fresh", P), whose variable the ReductionContext hands out, or
+# ("carried", j) for the coordinate j that already carries the factor.
 STEPS = (
     (0, ("fresh", -_1 * _3 / 2), ("fresh", _1**2), 1),
     (1, ("fresh", 3 * _1**2 * _2), ("fresh", _1 * _2 * _3 + 3 * _2**2), 1),
@@ -210,22 +209,22 @@ STEPS = (
         0,
     ),
     (2, ("fresh", _1 * _2 * _10), ("fresh", -_1 * _3 - 3 * _2), 0),
-    # x1*x2 liegt seit Schritt 3 als Komponente 8 vor, also Index 7.
+    # x1*x2 has been component 8 since step 3, so index 7.
     (2, ("carried", 7), ("fresh", -_10 * _13 - _2 * _11), 1),
-    # x1**2 liegt seit Schritt 1 als Komponente 5 vor, also Index 4.
+    # x1**2 has been component 5 since step 1, so index 4.
     (10, ("carried", 4), ("fresh", _2 * _3), 1),
 )
 
 
 @pytest.fixture(scope="module")
 def alpoege() -> PolynomialMap:
-    """Ueber QQ, weil die Normalisierung sofort einen Kehrwert braucht."""
+    """Over QQ, because the normalisation needs a reciprocal at once."""
     return over_field(examples.alpoege())
 
 
 @pytest.fixture(scope="module")
 def reduction(alpoege: PolynomialMap) -> Reduction:
-    """Die vollstaendige Kette, mit vorgelegtem Ziel im letzten Schritt."""
+    """The complete chain, with a supplied target in the last step."""
     context = ReductionContext()
     normalization = LinearStep.normalize(alpoege)
     steps: list[LinearStep | BCWStep] = [normalization]
@@ -254,7 +253,7 @@ def reduction(alpoege: PolynomialMap) -> Reduction:
 
 
 def test_the_reduction_verifies(reduction: Reduction) -> None:
-    """Acht Schritte, jeder einzeln geprueft, und jede Naht dazwischen."""
+    """Eight steps, each checked on its own, and every seam between them."""
     assert reduction.verify() is None
     assert len(reduction) == 8
 
@@ -264,7 +263,7 @@ def test_the_reduction_reaches_alpoege15(reduction: Reduction) -> None:
 
 
 def test_two_steps_reuse_a_carrier(reduction: Reduction) -> None:
-    """Der Grund fuer die Dimension: zweimal m = 1 statt zweimal m = 2."""
+    """The reason for the dimension: m = 1 twice instead of m = 2 twice."""
     levels = [step.m for step in reduction if isinstance(step, BCWStep)]
 
     assert levels == [2, 2, 2, 2, 2, 1, 1]
@@ -272,7 +271,7 @@ def test_two_steps_reuse_a_carrier(reduction: Reduction) -> None:
 
 
 def test_the_dimensions_and_degrees(reduction: Reduction) -> None:
-    """3 auf 15 statt auf 17, Grad 7 auf 3."""
+    """3 to 15 instead of to 17, degree 7 to 3."""
     assert reduction.dimensions() == (3, 3, 5, 7, 9, 11, 13, 14, 15)
     assert reduction.degrees() == (7, 7, 7, 7, 7, 5, 4, 4, 3)
 
@@ -291,7 +290,7 @@ def test_the_context_names_x4_to_x15(reduction: Reduction) -> None:
 def test_the_reused_coordinates_are_the_ones_bcw17_duplicates(
     reduction: Reduction,
 ) -> None:
-    """Genau die beiden Werte, die BCW17 zweimal anlegt."""
+    """Exactly the two values BCW17 creates twice."""
     reused = [
         (step.left, step.P)
         for step in reduction
@@ -304,14 +303,14 @@ def test_the_reused_coordinates_are_the_ones_bcw17_duplicates(
 def test_the_collision_is_transported(
     reduction: Reduction, alpoege: PolynomialMap
 ) -> None:
-    """Drei Punkte in k^3 werden drei Punkte in k^15."""
+    """Three points in k^3 become three points in k^15."""
     carried = reduction.transport(Collision.at(alpoege, ALPOEGE_COLLISION))
 
     assert carried == Collision(COLLISION, IMAGE)
 
 
 def test_the_image_does_not_move(reduction: Reduction, alpoege: PolynomialMap) -> None:
-    """Kein Schritt hat m = 0, also bleibt das Bild bis auf Nullen stehen."""
+    """No step has m = 0, so the image stays but for zeros."""
     carried = reduction.transport(Collision.at(alpoege, ALPOEGE_COLLISION))
 
     assert carried.image[:3] == (0, 0, R(-1, 4))
@@ -319,13 +318,13 @@ def test_the_image_does_not_move(reduction: Reduction, alpoege: PolynomialMap) -
 
 
 def test_the_provenance_is_constructed(reduction: Reduction) -> None:
-    """Der Endpunkt ist keine aeussere Tatsache, anders als bei BCW17."""
+    """The endpoint is not an external fact, unlike for BCW17."""
     assert reduction.provenance is Provenance.CONSTRUCTED
     assert reduction[-1].provenance is Provenance.SUPPLIED
 
 
 def test_a_perturbed_target_would_be_caught(reduction: Reduction) -> None:
-    """Gegenprobe: der letzte Schritt prueft wirklich etwas."""
+    """A control: the last step really checks something."""
     last = reduction[-1]
     perturbed = PolynomialMap(X, (COMPONENTS[0] + _4 * _5,) + COMPONENTS[1:])
     broken = BCWStep(last.source, perturbed, last.index, last.left, last.right)
@@ -340,17 +339,15 @@ def test_a_perturbed_target_would_be_caught(reduction: Reduction) -> None:
 def test_the_enumerator_contains_every_step_of_this_chain(
     reduction: Reduction,
 ) -> None:
-    """Die Kontrolle fuer den Kandidatenaufzaehler, an bekannten Schritten.
+    """The control for the candidate enumerator, on known steps.
 
-    Der Vorrat kommt aus der Zielabbildung: die Werte, die ihre Traegerkoor-
-    dinaten halten. Fuer jeden Schritt der Kette muss der Aufzaehler an der
-    Karte davor einen Kandidaten mit derselben Zielkomponente und denselben
-    beiden Faktoren liefern, und die abgeleitete EA-Stufe muss die des
-    Schritts sein.
+    The pool comes from the target map: the values its carrier coordinates
+    hold. For every step of the chain the enumerator has to offer, on the map
+    before it, a candidate with the same target component and the same two
+    factors, and the derived EA level has to be that of the step.
 
-    Ein Aufzaehler, der einen nachweislich existierenden Schritt uebergeht,
-    ist unvollstaendig auf eine Weise, die ein Fehlschlag der Suche allein
-    nicht zeigen wuerde.
+    An enumerator that passes over a step known to exist is incomplete in a way
+    that a failure of the search alone would not show.
     """
     final = reduction.target
     pool = [
@@ -377,24 +374,23 @@ def test_the_enumerator_contains_every_step_of_this_chain(
 
 @pytest.mark.slow
 def test_the_search_recovers_a_chain_to_this_map(reduction: Reduction) -> None:
-    """Die Abnahmebedingung fuer die Suche, an einer bekannten Abbildung.
+    """The acceptance condition for the search, on a known map.
 
-    Quelle ist Alpoeges normalisierte Abbildung, Ziel ist ALPOEGE15, und der
-    Vorrat sind die Werte, die ihre Traegerkoordinaten halten -- mit einer
-    Ergaenzung, die genau die Bedingung unter SEA-8 sichtbar macht. Schritt
-    sieben zielt auf Komponente 10 und schreibt sie um, also steht der Wert,
-    mit dem diese Koordinate eingefuehrt wurde, in der Zielabbildung nicht
-    mehr. Ohne ihn ist die Kette fuer die Suche unerreichbar, nicht bloss
-    ungefunden.
+    The source is Alpoege's normalised map, the target is ALPOEGE15, and the
+    pool holds the values its carrier coordinates hold, with one addition that
+    makes the condition under SEA-8 visible. Step seven aims at component 10
+    and rewrites it, so the value this coordinate was introduced with no longer
+    stands in the target map. Without it the chain is unreachable for the
+    search and not merely unfound.
 
-    Gefunden wird *eine* Kette, nicht *die* Kette. Ihre Gradfolge unterscheidet
-    sich von der ueberlieferten; siehe "No optimality of the sequence" in
+    What is found is *a* chain and not *the* chain. Its sequence of degrees
+    differs from the recorded one; see "No optimality of the sequence" in
     ``docs/contracts.md``.
 
-    ``rewrites=0``, weil dieser Test von der Regel handelt, dass jeder frische
-    Platz einen Vorratswert traegt. Mit der Lockerung nach SEA-13 findet
-    dieselbe Suche die Kette in 400 Karten nicht -- gemessen, und der Grund,
-    warum die Lockerung eine benannte Ausnahme und keine Vorgabe ist.
+    ``rewrites=0``, because this test is about the rule that every fresh slot
+    carries a pool value. With the relaxation of SEA-13 the same search does
+    not find the chain within 400 maps. That is measured, and it is why the
+    relaxation is a named exception and not a default.
     """
     source = reduction.steps[0].target
     pool = {
@@ -413,11 +409,11 @@ def test_the_search_recovers_a_chain_to_this_map(reduction: Reduction) -> None:
 
 @pytest.mark.slow
 def test_without_that_value_the_chain_is_out_of_reach(reduction: Reduction) -> None:
-    """Negativkontrolle zur Bedingung unter SEA-8.
+    """A negative control for the condition under SEA-8.
 
-    Derselbe Lauf mit dem Wert, den die Zielabbildung wirklich traegt. Der
-    Aufzaehler kann den Schritt dann nicht anbieten, und der Fehlschlag sagt
-    nichts ueber die Existenz der Kette -- SEA-6.
+    The same run with the value the target map really carries. The enumerator
+    cannot offer the step then, and the failure says nothing about the
+    existence of the chain, which is SEA-6.
     """
     source = reduction.steps[0].target
     pool = {
