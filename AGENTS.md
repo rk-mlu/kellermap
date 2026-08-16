@@ -22,9 +22,17 @@ This file describes how to work, not what the project is. For that, read
   test is the sharpest statement of what an obligation means, and half of them
   could not be read by a reviewer who does not read German.
 
-  `tests/test_language.py` enforces the rule and carries the remainder of the
-  translation in `NOT_YET_TRANSLATED`. That list only shrinks: a module that
-  has been translated and left in it fails the suite.
+  `tests/test_language.py` enforces the rule. It carried the remainder of the
+  translation in `NOT_YET_TRANSLATED` while the work package ran; that list is
+  empty since the package finished, and every file of the repository is under
+  the rule. The list stays in place with the test that keeps it honest: a
+  module that has been translated and left in it fails the suite.
+
+  The check is a word list and therefore a net with holes. Three German lines
+  got through it and were found by reading, so a green run is not a proof.
+  `scripts/foreign_words.py` is the second instrument: it reports prose words
+  that do not occur in the English part of the repository, and it is read once
+  per file rather than used as a gate.
 - **Python files are pure ASCII.** This is enforced by 
   `pytest tests/test_ascii.py` since WP 4 of version v0.4.0. Umlauts and
   typographic characters belong in `docs/` and `README.md`, not in `.py` files.
@@ -103,13 +111,25 @@ Everything below has to pass before a change is delivered:
 ```
 ruff format --check .
 ruff check .
-mypy src            # strict
-pytest              # fast suite
-pytest -m ""        # including the slow markers
-pytest --cov        # fail_under = 100
+mypy src                                  # strict
+mypy --strict scripts
+pytest                                    # fast suite
+pytest -m ""                              # including the slow markers
+pytest --cov                              # fail_under = 100
 python scripts/reconstruct_bcw17.py
 python scripts/reconstruct_alpoege15.py
+python scripts/reconstruct_alpoege19.py
 ```
+
+`make check` runs the first five, `make check-full` adds the slow markers, and
+`make reconstruct` runs the three scripts. Before a tag, `make release` adds
+`lock-check`, `coverage`, `build-test`, `dist-check` and `test-minimum`.
+
+This list is not the authority. The Makefile is, and two tests in
+`tests/test_documentation.py` hold the two against each other: every command
+named here has to be one a target runs, and every `scripts/reconstruct_*.py`
+in the tree has to be named here. The list stood at two of the three
+reconstructions for a whole milestone before those tests existed.
 
 - **Coverage is 100 per cent and enforced.** A branch that cannot be reached,
   because an obligation checked earlier rules it out, gets

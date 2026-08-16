@@ -99,11 +99,19 @@ import pytest
 
 ROOT = Path(__file__).resolve().parent.parent
 
+# ``AGENTS.md`` names ``docs/``, ``README.md`` and ``CHANGELOG.md`` in the rule
+# and no gate read any of them until now. The rule covered the code and the
+# configuration in practice, which is less than it says.
 SCANNED = (
     "src/kellermap/*.py",
     "src/kellermap/bcw/*.py",
     "scripts/*.py",
     "tests/*.py",
+    "docs/*.md",
+    "README.md",
+    "CONTRIBUTING.md",
+    "AGENTS.md",
+    "CHANGELOG.md",
     "pyproject.toml",
     "Makefile",
     ".gitignore",

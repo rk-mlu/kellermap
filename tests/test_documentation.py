@@ -44,6 +44,7 @@ PROSE = sorted(
     [
         ROOT / "README.md",
         ROOT / "CONTRIBUTING.md",
+        ROOT / "AGENTS.md",
         *(ROOT / "docs").glob("*.md"),
     ],
     key=lambda path: path.name,
@@ -266,6 +267,61 @@ def test_every_open_ended_range_reaches_the_last_obligation(path: Path) -> None:
         f"{path.name} presents {stale} as the whole family, which now runs to "
         f"{ {family: max(numbers) for family, numbers in DEFINITIONS.items()} }"
     )
+
+
+def gate_commands() -> list[str]:
+    """Return the commands of the quality gate block in ``AGENTS.md``.
+
+    The block is the fenced one that follows the heading. Trailing comments are
+    dropped, because they explain and do not run.
+    """
+    text = (ROOT / "AGENTS.md").read_text(encoding="utf-8")
+    after = text[text.index("## Quality gates") :]
+    block = after[after.index("```") + 3 :]
+
+    return [
+        line.split("#")[0].strip()
+        for line in block[: block.index("```")].splitlines()
+        if line.strip()
+    ]
+
+
+def test_every_gate_of_the_agreements_is_a_command_the_makefile_runs() -> None:
+    """Otherwise the list is a wish and the Makefile is the truth.
+
+    A command in the block that no target runs is a gate nobody can fail. The
+    comparison ignores the ``uv run`` prefix, which the Makefile carries and
+    the prose does not.
+    """
+    recipes = [
+        line.strip().removeprefix("uv run ")
+        for line in (ROOT / "Makefile").read_text(encoding="utf-8").splitlines()
+        if line.startswith("\t")
+    ]
+    unknown = [
+        command
+        for command in gate_commands()
+        if not any(recipe.startswith(command) for recipe in recipes)
+    ]
+
+    assert not unknown, f"AGENTS.md names commands no target runs: {unknown}"
+
+
+def test_every_reconstruction_script_is_named_in_the_agreements() -> None:
+    """The list went stale exactly here, and quietly.
+
+    ``scripts/reconstruct_alpoege19.py`` has been a gate since 0.4 and
+    ``make reconstruct`` has run it since 0.4.0rc9. ``AGENTS.md`` named two of
+    the three, and nothing said so.
+    """
+    listed = " ".join(gate_commands())
+    missing = [
+        path.name
+        for path in sorted((ROOT / "scripts").glob("reconstruct_*.py"))
+        if path.name not in listed
+    ]
+
+    assert not missing, f"AGENTS.md does not name {missing}"
 
 
 def test_the_class_sketch_matches_the_constructor() -> None:
