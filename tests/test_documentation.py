@@ -10,7 +10,7 @@ no test can do. They check whether the claims in it still hold: whether a cited
 obligation exists, whether a summary such as ``REV-1 to REV-12`` gives the
 actual number, whether a signature in the normative sketch matches the one
 built, and whether a formula carries the coefficient ``G`` has had since
-BCW-11 hat.
+BCW-11.
 
 They replace no audit. What they replace is the question of whether all the
 places were found this time.

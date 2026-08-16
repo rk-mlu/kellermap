@@ -55,6 +55,9 @@ This file describes how to work, not what the project is. For that, read
 Subject line in the imperative, body wrapped at 72 columns. The body says why,
 not what — the diff already says what. It should record:
 
+- The body of commit stays preferably below 50 lines. The body does not repeat
+  what is already stated in a modified file. One paragraph for each major
+  change, one line for a new or modified gate. 
 - the reason for the change, and the finding or request that prompted it;
 - every place where the implementation deviates from the plan or from
   `docs/contracts.md`, with the reason;

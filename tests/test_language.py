@@ -76,9 +76,18 @@ That is a defect of the derivation and not of the idea. It is bounded: the
 corpus shrinks to nothing as the work package finishes, and a word can be
 struck only once.
 
-This module exempts itself. Its word list is German by necessity, and a check
-that reports its own definition is unusable. That is the only exemption which
-survives the end of work package 2.
+This module is scanned like every other, and it was not always. It exempted
+itself, on the reasoning that its word list is German by necessity and a check
+reporting its own definition is unusable. That reasoning stopped applying once
+the check began reading comments and docstrings only: the word list is an
+assignment, so it is not prose and is invisible here, and the faulty examples
+in the negative controls are arguments inside calls.
+
+The exemption survived that change and did harm. It hid three German comment
+lines in this module for the whole of work package 2, and they were found by
+``scripts/foreign_words.py`` and not by any check. A file-wide exemption is a
+blind spot even when the reason for it has gone, which is why there is none
+now.
 """
 
 import io
@@ -103,9 +112,6 @@ SCANNED = (
 
 # The translation runs module by module. What stands here is the remainder.
 NOT_YET_TRANSLATED = frozenset({})
-
-# This module holds the word list and would report every line of it.
-EXEMPT = frozenset({Path(__file__).name})
 
 # Derived, not written. See the module docstring for how and for what it is
 # worth.
@@ -412,9 +418,7 @@ def scanned() -> list[Path]:
         found += [
             path
             for path in ROOT.glob(pattern)
-            if path.is_file()
-            and "__pycache__" not in path.parts
-            and path.name not in EXEMPT
+            if path.is_file() and "__pycache__" not in path.parts
         ]
 
     return sorted(set(found))
@@ -515,9 +519,8 @@ def test_the_two_it_cannot_catch_are_named() -> None:
     assert not suspicious("Test.")
     assert not suspicious("# zusammenfaellt.")
 
-    # Dieselbe Ursache, an Zeilen, die eine zweite Nachschau des Betreuers
-    # gefunden hat: die Woerter stehen in keinem der Module, aus denen die
-    # Liste abgeleitet wurde.
+    # The same cause, on lines a second reading by the maintainer found: the
+    # words stand in none of the modules the list was derived from.
     assert not suspicious("# Randfaelle")
     assert not suspicious("# RC-1: Determinismus")
 
@@ -577,7 +580,30 @@ def test_quoted_code_inside_prose_is_dropped() -> None:
     assert not suspicious("    The value of ``items`` is not German.")
 
 
-def test_the_module_that_holds_the_list_is_not_scanned() -> None:
-    """Otherwise the list reports itself and the gate is unusable."""
-    assert Path(__file__).name in EXEMPT
-    assert Path(__file__) not in scanned()
+def test_the_module_that_holds_the_list_is_scanned_too() -> None:
+    """It exempted itself, and that hid German in it for a whole work package.
+
+    The exemption was needed while the check read whole files. It is not needed
+    now, and keeping it meant three German comment lines here went unreported
+    from 0.4.0rc9 until the end of work package 2.
+    """
+    assert Path(__file__) in scanned()
+
+
+def test_the_word_list_is_not_prose() -> None:
+    """Which is why the module can be scanned without reporting its own list.
+
+    ``GERMAN_WORDS`` is an assignment and not a docstring, so ``prose`` does
+    not read it. If that changed, every line of the list would be reported and
+    the gate would be unusable.
+    """
+    numbers = {number for number, _ in prose(Path(__file__))}
+    lines = Path(__file__).read_text(encoding="utf-8").splitlines()
+    listed = [
+        number
+        for number, line in enumerate(lines, 1)
+        if line.startswith("    abbildung") or line.startswith("    zwischen")
+    ]
+
+    assert listed, "the word list has moved; this test needs its new anchor"
+    assert not [number for number in listed if number in numbers]
