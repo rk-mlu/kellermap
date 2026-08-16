@@ -1,23 +1,21 @@
-"""Jede Operation gegen jede zulaessige Gestalt eines Schritts.
+"""Every operation against every admissible shape of a step.
 
-Der Grund fuer dieses Modul steht in zwei Befunden, die beide nicht von einem
-Test kamen.
+The reason for this module lies in two findings, and neither came from a test.
 
-``peeling.moves`` zaehlte die Plaetze mit ``combinations`` auf und bot damit nie
-zwei ``Carried``-Plaetze auf derselben Koordinate an, obwohl BCW-6 das seit 0.3
-zulaesst und der Konstruktor es baut. Gefunden hat es ein externes Audit. Und
-``BCWStep.transport`` haengte je ``Fresh``-Platz eine Koordinate an statt je
-frischem Generator, was bei einem Schritt mit einer Variablen in beiden
-Plaetzen fehlschlaegt. Gefunden hat es der Zusammenbau der Kette zur
-neunzehndimensionalen Abbildung.
+``peeling.moves`` enumerated the slots with ``combinations`` and therefore
+never offered two ``Carried`` slots on one coordinate, although BCW-6 has
+admitted that since 0.3 and the constructor builds it. An external audit found
+it. And ``BCWStep.transport`` appended one coordinate per ``Fresh`` slot rather
+than per fresh generator, which fails for a step with one variable in both
+slots. Assembling the chain to the nineteen-dimensional map found that one.
 
-Beide Male war jede einzelne Verpflichtung des Schritt-Typs geprueft, und
-niemand hat gefragt, ob die *uebrigen* Teile dasselbe zulassen. Genau das
-fragen die Tests hier: fuer jede Gestalt, die ``BCWStep`` baut, muessen
-``verify``, ``transport`` und die Aufzaehler sie ebenfalls verarbeiten.
+Both times every single obligation of the step type was checked, and nobody
+asked whether the *remaining* parts admit the same thing. That is what the
+tests here ask: for every shape ``BCWStep`` builds, ``verify``, ``transport``
+and the enumerators have to handle it as well.
 
-Eine neue zulaessige Gestalt gehoert in ``SHAPES``. Faellt dann ein Test um, so
-ist das der Punkt.
+A new admissible shape belongs in ``SHAPES``. If a test then falls over, that
+is the point.
 """
 
 from collections.abc import Callable
@@ -35,8 +33,8 @@ u, v = sp.symbols("u v")
 
 Shape = tuple[str, Callable[[PolynomialMap], BCWStep]]
 
-# Eine Quelle, in der alles gebaut werden kann: Koordinate 1 und 2 sind Traeger,
-# und Koordinate 0 traegt genug, um jede Gestalt etwas entfernen zu lassen.
+# A source in which everything can be built: coordinates 1 and 2 are carriers,
+# and coordinate 0 carries enough for every shape to remove something.
 SOURCE = over_field(
     PolynomialMap(
         (x1, x2, x3),
@@ -52,11 +50,11 @@ SOURCE = over_field(
 # collision and not a pair of points with a hopeful name.
 POINTS = ((1, 0, 0), (-1, 0, 0))
 
-# Dieselbe Quelle, aber mit Traegerkomponenten, die am Kollisionspunkt nicht
-# null werden. Genau daran ist ein Fehler haengen geblieben, den kein Test
-# fand: ``_moved_image`` liess den Koeffizienten weg, und solange die
-# getragenen Bildkoordinaten null sind, faellt das nicht auf, weil das Produkt
-# ohnehin verschwindet. Ein externes Audit hat ihn gemeldet.
+# The same source, but with carrier components that are not zero at the
+# collision point. A defect that no test found hung on exactly that:
+# ``_moved_image`` dropped the coefficient, and while the carried image
+# coordinates are zero this does not show, because the product vanishes anyway.
+# An external audit reported it.
 LOUD = over_field(
     PolynomialMap(
         (x1, x2, x3),
@@ -110,7 +108,7 @@ IDS = [shape[0] for shape in SHAPES]
 def test_the_constructor_builds_it(
     name: str, builder: Callable, expected: int, coefficient: sp.Expr
 ) -> None:
-    """Die Liste selbst: was hier nicht baut, gehoert nicht in ``SHAPES``."""
+    """The list itself: what does not build here does not belong in ``SHAPES``."""
     step = builder(SOURCE, coefficient)
 
     assert step.m == expected
@@ -124,7 +122,7 @@ def test_the_constructor_builds_it(
 def test_verify_accepts_it(
     name: str, builder: Callable, expected: int, coefficient: sp.Expr
 ) -> None:
-    """BCW-1 bis BCW-12, an einem Schritt dieser Gestalt."""
+    """BCW-1 to BCW-12, on a step of this shape."""
     assert builder(SOURCE, coefficient).verify() is None
 
 
@@ -134,9 +132,9 @@ def test_verify_accepts_it(
 def test_transport_carries_a_collision_through_it(
     name: str, builder: Callable, expected: int, coefficient: sp.Expr
 ) -> None:
-    """Der Befund, der diesem Modul seinen Namen gab.
+    """The finding this module was named for.
 
-    Eine Koordinate je frischem Generator, nicht je ``Fresh``-Platz.
+    One coordinate per fresh generator and not per ``Fresh`` slot.
     """
     step = builder(SOURCE, coefficient)
 
@@ -153,16 +151,16 @@ def test_transport_carries_a_collision_through_it(
 def test_the_factors_are_exhibited_for_it(
     name: str, builder: Callable, expected: int, coefficient: sp.Expr
 ) -> None:
-    """Ausstellen statt behaupten: ``G`` und ``H`` sind invertierbar.
+    """Exhibit rather than assert: ``G`` and ``H`` are invertible.
 
-    Beide sind Produkte elementarer Faktoren, also unimodular, und ``H``
-    verschiebt je frischem Generator eine Koordinate.
+    Both are products of elementary factors and therefore unimodular, and ``H``
+    shifts one coordinate per fresh generator.
     """
     step = builder(SOURCE, coefficient)
     ring = step.G.ring
-    # ``from_ring`` und nicht ``identity``: die Gleichheit von
-    # ``PolynomialMap`` vergleicht den Koeffizientenbereich mit, und die
-    # Automorphismen leben ueber ``QQ``.
+    # ``from_ring`` and not ``identity``: equality of ``PolynomialMap``
+    # compares the coefficient domain as well, and the automorphisms live over
+    # ``QQ``.
     identity = PolynomialMap.from_ring(ring, ring.gens)
 
     assert step.G.compose(step.G.inverse()).to_polynomial_map() == identity
@@ -177,11 +175,11 @@ def test_the_factors_are_exhibited_for_it(
 def test_the_peel_offers_it_back(
     name: str, builder: Callable, expected: int, coefficient: sp.Expr
 ) -> None:
-    """Der andere Befund. Der Aufzaehler muss anbieten, was der Typ baut.
+    """The other finding. The enumerator has to offer what the type builds.
 
-    ``moves`` bot zwei ``Carried``-Plaetze auf einer Koordinate nie an, weil es
-    ``combinations`` benutzte statt ``combinations_with_replacement``. Eine
-    Kette mit einem solchen Schritt war damit unerreichbar und nicht ungefunden.
+    ``moves`` never offered two ``Carried`` slots on one coordinate, because it
+    used ``combinations`` instead of ``combinations_with_replacement``. A chain
+    with such a step was therefore unreachable and not unfound.
     """
     step = builder(SOURCE, coefficient)
     offered = list(moves(step.target, spare=1))
@@ -199,7 +197,7 @@ def test_the_peel_offers_it_back(
 def test_the_peel_recovers_a_chain_of_it(
     name: str, builder: Callable, expected: int, coefficient: sp.Expr
 ) -> None:
-    """Und der Weg zurueck fuehrt zu einer geprueften ``Reduction``."""
+    """And the way back leads to a verified ``Reduction``."""
     step = builder(SOURCE, coefficient)
 
     outcome = peel(SOURCE, step.target, spare=1)
@@ -215,14 +213,13 @@ def test_the_peel_recovers_a_chain_of_it(
 def test_the_forward_enumerator_offers_the_ones_it_claims(
     name: str, builder: Callable, expected: int, coefficient: sp.Expr
 ) -> None:
-    """Was der Vorwaertsaufzaehler nicht kann, sagt er hier und nicht spaeter.
+    """What the forward enumerator cannot do it says here and not later.
 
-    ``enumerate_candidates`` teilt eine Verschiebung in zwei Faktoren und kennt
-    keinen Koeffizienten: SEA-9 und SEA-10 beschreiben Faktoren, nicht
-    Gewichte. Ein Schritt mit einem Koeffizienten ungleich eins ist deshalb
-    vorwaerts nicht aufzaehlbar, und das ist eine bekannte Grenze und kein
-    Fehler -- der Abtrag loest den Koeffizienten, und die Tests oben zeigen,
-    dass er jede Gestalt zurueckbekommt.
+    ``enumerate_candidates`` divides a displacement into two factors and knows
+    no coefficient: SEA-9 and SEA-10 describe factors and not weights. A step
+    with a coefficient other than one is therefore not enumerable going
+    forward. That is a known boundary and not a defect. The peel solves for the
+    coefficient, and the tests above show that it recovers every shape.
     """
     step = builder(SOURCE, coefficient)
     values = [
@@ -241,12 +238,12 @@ def test_the_forward_enumerator_offers_the_ones_it_claims(
 def test_the_transported_image_is_scaled_by_the_coefficient(
     coefficient: sp.Expr,
 ) -> None:
-    """``G`` skaliert das entfernte Produkt, also auch im Bild.
+    """``G`` scales the removed product, so it does so at the image too.
 
-    Der Test, den es haette geben muessen. Die Kollisionsbilder der bisherigen
-    Tests hatten in den getragenen Koordinaten eine Null, und ein Produkt mit
-    einer Null merkt sich keinen Faktor. Hier sind sie ``1`` und ``2``, also
-    schlaegt jeder vergessene Koeffizient durch.
+    The test that should have existed. The collision images of the tests until
+    now had a zero in the carried coordinates, and a product with a zero
+    remembers no factor. Here they are ``1`` and ``2``, so any forgotten
+    coefficient shows.
     """
     collision = Collision.at(LOUD, POINTS)
     step = BCWStep.build(LOUD, 0, Carried(1), Carried(2), 1, coefficient)
@@ -265,11 +262,11 @@ def test_the_transported_image_is_scaled_by_the_coefficient(
 def test_a_fresh_slot_contributes_nothing_to_the_image(
     coefficient: sp.Expr,
 ) -> None:
-    """Und ohne getragenen Platz aendert der Koeffizient das Bild nicht.
+    """And without a carried slot the coefficient does not change the image.
 
-    Die Gegenprobe: eine frische Koordinate wird im Bild mit null aufgefuellt,
-    also ist das Produkt null, und kein Koeffizient rettet es. Ohne diese
-    Haelfte waere der Test oben mit einer zu allgemeinen Regel vereinbar.
+    The control: a fresh coordinate is padded with zero at the image, so the
+    product is zero and no coefficient saves it. Without this half the test
+    above would be consistent with a rule that is too general.
     """
     collision = Collision.at(LOUD, POINTS)
     step = BCWStep.build(LOUD, 0, Fresh(x2**2, u), Fresh(x3**2, v), 1, coefficient)
@@ -285,12 +282,11 @@ def test_a_fresh_slot_contributes_nothing_to_the_image(
 def test_the_forward_search_reports_no_result_for_a_weighted_chain(
     coefficient: sp.Expr,
 ) -> None:
-    """SEA-14, und der Unterschied zu SEA-7.
+    """SEA-14, and the difference from SEA-7.
 
-    Ein gewichteter Schritt liegt ausserhalb des Vorwaertsraums, weil eine
-    Division kein Gewicht unterbringt. Das ist kein aufgeschobener Fall,
-    sondern ein durchsuchter Raum ohne die Kette -- also kein Fehler, sondern
-    ein Ergebnis, und der Abtrag findet sie.
+    A weighted step lies outside the forward space, because a division has no
+    place for a weight. That is not a deferred case but a searched space
+    without the chain, so not a defect but a result. The peel finds it.
     """
     step = two_fresh(SOURCE, coefficient)
     pool = {
@@ -308,10 +304,10 @@ def test_the_forward_search_reports_no_result_for_a_weighted_chain(
 
 
 def test_the_forward_search_reports_no_result_for_a_self_fresh_chain() -> None:
-    """Dieselbe Grenze fuer BCW-12.
+    """The same boundary for BCW-12.
 
-    Ein Kandidat traegt zwei Faktoren und SEA-8 gibt jedem einen Namen aus dem
-    Vorrat, also kann eine Koordinate nicht beide Plaetze fuellen.
+    A candidate carries two factors and SEA-8 gives each of them a name from
+    the pool, so one coordinate cannot fill both slots.
     """
     step = self_fresh(SOURCE, sp.Integer(1))
     pool = {u: sp.expand(x2**2)}

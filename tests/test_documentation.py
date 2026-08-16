@@ -1,30 +1,29 @@
-"""Was die Dokumentation ueber den Code sagt, wird hier nachgeschlagen.
+"""What the documentation says about the code is looked up here.
 
-Jedes Audit dieses Meilensteins hat Dokumentationswidersprueche gefunden, und
-jedes Mal wurden sie einzeln behoben. Der Grund, warum das nicht reicht: eine
-Verpflichtung wird umgeschrieben, und die Stellen, die sie erwaehnen, bleiben
-stehen. Niemand faellt darueber, weil nichts sie nachrechnet.
+Every audit of this milestone has found contradictions in the documentation,
+and every time they were repaired one at a time. The reason that does not
+suffice: an obligation is rewritten, and the places that mention it stay as
+they are. Nobody falls over them, because nothing recomputes them.
 
-Die Tests hier rechnen sie nach. Sie pruefen nicht, ob ein Text gut ist -- das
-kann kein Test --, sondern ob die Behauptungen darin noch stimmen: ob eine
-zitierte Verpflichtung existiert, ob eine Zusammenfassung wie ``REV-1 to REV-12``
-die tatsaechliche Zahl nennt, ob eine Signatur im normativen Entwurf zur
-gebauten passt, und ob eine Formel den Koeffizienten traegt, den ``G`` seit
+The tests here recompute them. They do not check whether a text is good, which
+no test can do. They check whether the claims in it still hold: whether a cited
+obligation exists, whether a summary such as ``REV-1 to REV-12`` gives the
+actual number, whether a signature in the normative sketch matches the one
+built, and whether a formula carries the coefficient ``G`` has had since
 BCW-11 hat.
 
-Sie ersetzen kein Audit. Was sie ersetzen, ist die Frage "haben wir diesmal
-alle Stellen gefunden".
+They replace no audit. What they replace is the question of whether all the
+places were found this time.
 
-Jede Pruefung steht seit 0.4.0rc9 zweimal: einmal ueber den Dateien des
-Projekts und einmal ueber einem Text, in den der Fehler absichtlich
-hineingeschrieben ist. Ohne den zweiten Teil ist nicht zu unterscheiden, ob
-eine Pruefung etwas nachweist oder nur zufaellig durchlaeuft. Die erste Luecke,
-die die Gegenkontrollen gefunden haben, war die eigene: ``FAMILIES`` liess eine
-Familie aus.
+Since 0.4.0rc9 every check stands twice: once over the files of the project and
+once over a text with the fault deliberately written into it. Without the
+second part there is no telling whether a check establishes anything or merely
+happens to pass. The first gap the negative controls found was their own:
+``FAMILIES`` left a family out.
 
-Dieses Modul liest auch sich selbst, weil es unter ``CODE`` faellt. Ein
-Beispiel der falschen Gestalt darf deshalb nicht woertlich hier stehen; die
-Gegenkontrollen setzen ihre Texte zusammen.
+This module reads itself as well, because it falls under ``CODE``. An example
+of the wrong shape may therefore not stand here verbatim, and the negative
+controls assemble their texts.
 """
 
 import inspect
@@ -38,9 +37,9 @@ from kellermap.bcw import BCWStep
 ROOT = Path(__file__).resolve().parent.parent
 CONTRACTS = (ROOT / "docs" / "contracts.md").read_text(encoding="utf-8")
 
-# ``CONTRIBUTING.md`` steht hier, weil es Verpflichtungen zitiert. Ein
-# veralteter Bezeichner in einer Anleitung ist derselbe Fehler wie einer in
-# ``contracts.md``, und die Anleitung liest, wer neu dazukommt.
+# ``CONTRIBUTING.md`` stands here because it cites obligations. A stale
+# identifier in a guide is the same defect as one in ``contracts.md``, and the
+# guide is what a newcomer reads.
 PROSE = sorted(
     [
         ROOT / "README.md",
@@ -58,61 +57,60 @@ CODE = sorted(
     key=lambda path: path.name,
 )
 
-# Ein Bezeichner wie ``BCW-11`` am Anfang einer Verpflichtung: fett, mit
-# Gedankenstrich dahinter. Zurueckgezogene stehen weiter auf der Seite und
-# zaehlen mit, denn ein Verweis auf sie ist kein Fehler.
+# An identifier such as ``BCW-11`` at the start of an obligation: in bold,
+# with a dash after it. Withdrawn ones stay on the page and count, because a
+# reference to them is not a defect.
 DEFINED = re.compile("^\\*\\*([A-Z]{2,4}-\\d+) \u2014", re.MULTILINE)
 CITED = re.compile(r"\b([A-Z]{2,4}-\d+)\b")
 
-# Ein Bereich ``X-1 to X-n`` gilt als Zusammenfassung der ganzen Familie, wenn
-# im selben Satz eines der Woerter aus ``CLAIMING_WORD`` steht. Die Woerter
-# stehen nur hier und nicht zusaetzlich in einem Docstring: zwei Listen weichen
-# voneinander ab, sobald jemand eine davon erweitert. Bis 0.4.0rc8 gab es sie,
-# und sie wichen ab -- ``state`` stand im Docstring und nicht im Ausdruck,
-# ``siehe`` und ``obligations of`` umgekehrt.
+# A range ``X-1 to X-n`` counts as a summary of the whole family when one of
+# the words of ``CLAIMING_WORD`` stands in the same sentence. The words stand
+# here and not additionally in a docstring: two lists diverge as soon as
+# somebody extends one of them. Up to 0.4.0rc8 there were two, and they had
+# diverged: ``state`` stood in the docstring and not in the expression, and
+# ``siehe`` and ``obligations of`` the other way round.
 #
-# Die Wortgrenzen sind noetig und nicht Zierde: ohne die vordere trifft
-# ``state`` in ``overstated``, und der Ausdruck meldete den Aufruf einer
-# Gegenkontrolle unten als veralteten Bereich.
+# The word boundaries are needed and not ornament: without the leading one,
+# ``state`` matches inside ``overstated``, and the expression reported the call
+# of a negative control below as a stale range.
 CLAIMING_WORD = re.compile(
     r"\b(?:see|siehe|under|state[sd]?|cover(?:s|ed)?|obligations? of)\b",
     re.IGNORECASE,
 )
 
-# Der Bereich selbst. ``\s+`` und nicht ein Leerzeichen: die Zusammenfassungen
-# in den Docstrings sind auf 79 Spalten umbrochen, und ``LIN-1 to\nLIN-6`` ist
-# derselbe Satz.
+# The range itself. ``\s+`` and not one space: the summaries in the docstrings
+# are wrapped at 79 columns, and ``LIN-1 to\nLIN-6`` is one sentence.
 WHOLE_FAMILY = re.compile(r"\b([A-Z]{2,4})-1\s+(?:to|bis)\s+([A-Z]{2,4})-(\d+)\b")
 
-# Satzende: ein Punkt mit Leerraum dahinter, oder eine Leerzeile. Der Punkt in
-# ``docs/contracts.md`` ist keines. Bis 0.4.0rc8 lief die Suche nach dem
-# Signalwort ueber ein Fenster von vierzig Zeichen ohne Punkt, und genau dieser
-# Dateiname stand darin: von elf Zusammenfassungen im Repository erreichte die
-# Pruefung zwei, und alle drei Docstrings der Form "See ``docs/contracts.md``,
-# X-1 to X-n" lagen ausserhalb.
+# End of sentence: a full stop with whitespace after it, or a blank line. The
+# stop in ``docs/contracts.md`` is neither. Up to 0.4.0rc8 the search for the
+# signal word ran over a window of forty characters containing no full stop,
+# and that file name stood inside it: of eleven summaries in the repository the
+# check reached two, and all three docstrings of the form
+# "See ``docs/contracts.md``, X-1 to X-n" lay outside.
 SENTENCE_END = re.compile(r"\.\s|\n\s*\n")
 
-# ``G`` in der Gestalt ``X... |-> X... - A B``, also mit einem *Produkt* hinter
-# dem Minus und ohne Faktor davor. Eine einzelne Groesse ist die Verschiebung
-# eines ``TranslationStep`` und hat keinen Koeffizienten.
+# ``G`` in the shape ``X... |-> X... - A B``, that is with a *product* after
+# the minus and no factor before it. A single quantity is the displacement of a
+# ``TranslationStep`` and has no coefficient.
 UNWEIGHTED_G = re.compile(
     r"X_?\{?\w*\}?\s*(?:\|--?>|->|\\mapsto|\u2192)\s*X_?\{?\w*\}?\s*-\s*"
     r"(?!coefficient\b|lambda\b|\\lambda\b|c\s+X|c\s*\*)"
     r"[A-Za-z]\w*\s*(?:\*|\s)\s*[A-Za-z]\w*"
 )
 
-# Die Familien, die ``contracts.md`` fuehrt. Die Liste steht hier und wird
-# nicht aus der Seite abgeleitet: sie ist die Zusage, welche Familien geprueft
-# werden, und eine abgeleitete Liste koennte eine Familie verlieren, ohne dass
-# etwas auffaellt. Die Schrittfamilie fehlte darin von 0.3 bis 0.4.0rc8, und
-# weil beide Filter unten gegen ``FAMILIES`` sieben, war jede Zitierung dieser
-# Familie in der Zeit ungeprueft.
+# The families ``contracts.md`` carries. The list stands here and is not
+# derived from the page: it is the promise of which families are checked, and a
+# derived list could lose a family without anything showing. The step family
+# was missing from it from 0.3 to 0.4.0rc8, and because both filters below
+# sieve against ``FAMILIES``, every citation of that family went unchecked in
+# that time.
 FAMILIES = {"BCW", "COL", "LIN", "RC", "RED", "REV", "SEA", "STEP", "TRA"}
 
-# Die Versionsnummer steht an drei Stellen: in ``pyproject.toml``, im
-# Projektstand des README und als oberste Ueberschrift des Changelog. Die
-# erste ist die verbindliche. ``tomllib`` gibt es auf 3.10 nicht, und diese
-# eine Zeile braucht keinen Parser.
+# The version number stands in three places: in ``pyproject.toml``, in the
+# project status of the README, and as the topmost heading of the changelog.
+# The first is the binding one. ``tomllib`` does not exist on 3.10, and this
+# one line needs no parser.
 DECLARED_VERSION = re.compile(r'^version = "(.+)"$', re.MULTILINE)
 README_VERSION = re.compile(r"^Current version: \*\*(.+)\*\*$", re.MULTILINE)
 NEWEST_RELEASE = re.compile(r"^## (\S+)$", re.MULTILINE)
@@ -219,19 +217,18 @@ def formula(arrow: str, subtracted: str) -> str:
 
 
 # --------------------------------------------------------------------------
-# Ueber den Dateien des Projekts
+# Over the files of the project
 # --------------------------------------------------------------------------
 
 
 def test_the_page_defines_exactly_the_families_that_are_checked() -> None:
-    """Gleichheit und nicht Teilmenge.
+    """Equality and not inclusion.
 
-    Als Teilmenge geschrieben durfte ``contracts.md`` eine Familie fuehren,
-    die ``FAMILIES`` nicht kennt, und genau das war der Fall: die
-    Schrittfamilie stand seit 0.3 auf der Seite und in keinem Filter. Der Test
-    lief gruen, weil ``FAMILIES <= set(DEFINITIONS)`` von einer fehlenden
-    Familie nicht verletzt wird. Eine neue Familie zwingt jetzt dazu, diese
-    Zeile mitzupflegen.
+    Written as inclusion, ``contracts.md`` was allowed to carry a family that
+    ``FAMILIES`` does not know, and that was exactly the case: the step family
+    stood on the page from 0.3 and in no filter. The test ran green, because
+    ``FAMILIES <= set(DEFINITIONS)`` is not violated by a missing family. A new
+    family now forces this line to be maintained with it.
     """
     assert FAMILIES == set(DEFINITIONS)
     assert all(numbers for numbers in DEFINITIONS.values())
@@ -239,10 +236,10 @@ def test_the_page_defines_exactly_the_families_that_are_checked() -> None:
 
 @pytest.mark.parametrize("path", PROSE + CODE, ids=lambda path: path.name)
 def test_every_cited_obligation_exists(path: Path) -> None:
-    """Ein Verweis auf eine Verpflichtung, die es nicht gibt, ist ein Fehler.
+    """A reference to an obligation that does not exist is a defect.
 
-    Er entsteht beim Umnummerieren und beim Erfinden aus dem Gedaechtnis, und
-    beides ist in diesem Meilenstein vorgekommen.
+    It arises from renumbering and from inventing from memory, and both have
+    happened in this milestone.
     """
     unknown = unknown_citations(path.read_text(encoding="utf-8"))
 
@@ -251,17 +248,17 @@ def test_every_cited_obligation_exists(path: Path) -> None:
 
 @pytest.mark.parametrize("path", PROSE + CODE, ids=lambda path: path.name)
 def test_every_open_ended_range_reaches_the_last_obligation(path: Path) -> None:
-    """Ein Bereich, der *alle* nennen will, muss bis zur letzten laufen.
+    """A range that means to name *all* of them has to reach the last.
 
-    Genau diese Zusammenfassungen veralten, wenn eine Verpflichtung dazukommt:
-    der Satz sieht weiterhin richtig aus und ist falsch.
+    Exactly these summaries go stale when an obligation is added: the sentence
+    still looks right and is wrong.
 
-    Nicht jeder Bereich will alle nennen. ``verify`` prueft die ersten sieben
-    der zwoelf BCW-Verpflichtungen und nicht mehr, und das ist eine Aussage und
-    kein Versehen. Erfasst werden deshalb nur die Bereiche, deren Umgebung sie
-    als vollstaendig ausgibt; die Woerter, an denen das erkannt wird, stehen in
-    ``CLAIMING_WORD``. Wer eine Auswahl meint, schreibt sie ohne
-    diese Woerter, und wer es nicht tut, faellt hier auf.
+    Not every range means to name all of them. ``verify`` checks the first
+    seven of the twelve BCW obligations and no more, and that is a statement
+    and not an oversight. What is caught is therefore only the ranges whose
+    surroundings present them as complete. The words this is recognised by
+    stand in ``CLAIMING_WORD``. Whoever means a selection writes it without
+    those words, and whoever does not is caught here.
     """
     stale = overstated_ranges(path.read_text(encoding="utf-8"))
 
@@ -272,10 +269,10 @@ def test_every_open_ended_range_reaches_the_last_obligation(path: Path) -> None:
 
 
 def test_the_class_sketch_matches_the_constructor() -> None:
-    """Der normative Entwurf in ``contracts.md`` gegen die gebaute Signatur.
+    """The normative sketch in ``contracts.md`` against the signature built.
 
-    Das Feld ``coefficient`` fehlte dort zwei Release-Kandidaten lang, nachdem
-    BCW-11 es eingefuehrt hatte.
+    The field ``coefficient`` was missing there for two release candidates
+    after BCW-11 introduced it.
     """
     built = set(inspect.signature(BCWStep.build).parameters) - {"cls", "source"}
     missing = unmentioned_parameters(class_sketch("BCWStep"), built)
@@ -285,10 +282,10 @@ def test_the_class_sketch_matches_the_constructor() -> None:
 
 @pytest.mark.parametrize("path", PROSE + CODE, ids=lambda path: path.name)
 def test_no_formula_writes_G_without_its_coefficient(path: Path) -> None:
-    """``G`` skaliert das entfernte Produkt seit BCW-11.
+    """``G`` has scaled the removed product since BCW-11.
 
-    Die ungewichtete Formel stand nach der Aenderung noch an vier Stellen, und
-    drei Audits haben sie nacheinander gefunden.
+    After the change the unweighted formula still stood in four places, and
+    three audits found it one after another.
     """
     unweighted = unweighted_formulas(path.read_text(encoding="utf-8"))
 
@@ -296,11 +293,11 @@ def test_no_formula_writes_G_without_its_coefficient(path: Path) -> None:
 
 
 def test_the_three_places_that_carry_the_version_agree() -> None:
-    """``pyproject.toml``, der Projektstand im README, die oberste Ueberschrift.
+    """``pyproject.toml``, the project status in the README, the top heading.
 
-    Drei Kopien einer Zahl, von Hand gepflegt, und bis 0.4.0rc8 rechnete nichts
-    sie gegeneinander. Verbindlich ist ``pyproject.toml``; die beiden anderen
-    haben ihr zu folgen.
+    Three copies of one number, maintained by hand, and up to 0.4.0rc8 nothing
+    compared them. ``pyproject.toml`` is the binding one and the other two have
+    to follow it.
     """
     declared = only_match(DECLARED_VERSION, ROOT / "pyproject.toml")
 
@@ -309,12 +306,12 @@ def test_the_three_places_that_carry_the_version_agree() -> None:
 
 
 def test_no_release_appears_twice_in_the_changelog() -> None:
-    """Die Version zu vergleichen genuegt nicht, wenn sie zweimal dasteht.
+    """Comparing the version does not suffice when it stands there twice.
 
-    In 0.4.0rc9 stand ``## 0.4.0rc9`` zweimal auf der Seite: ein erster
-    Abschnitt mit den intern gefundenen Befunden und ein zweiter, der sie mit
-    den Auditbefunden zusammenfuehrte. Der Vergleich oben blieb gruen, weil er
-    die erste gefundene Ueberschrift nimmt. Ein externes Audit hat es gesehen.
+    In 0.4.0rc9 the heading ``## 0.4.0rc9`` stood on the page twice: a first
+    section with the findings made internally and a second that merged them
+    with the audit findings. The comparison above stayed green, because it
+    takes the first heading it finds. An external audit saw it.
     """
     headings = releases(ROOT / "CHANGELOG.md")
 
@@ -326,21 +323,21 @@ def test_no_release_appears_twice_in_the_changelog() -> None:
 
 
 # --------------------------------------------------------------------------
-# Die Gegenkontrollen
+# The negative controls
 #
-# Jede prueft, dass die Pruefung darueber anschlaegt, wenn der Fehler da ist,
-# und dass sie die erlaubte Gestalt in Ruhe laesst. Eine Pruefung ohne
-# Gegenkontrolle kann leer sein, ohne dass es jemand merkt.
+# Each checks that the check above it fires when the fault is there, and that
+# it leaves the permitted shape alone. A check without a negative control can
+# be empty without anybody noticing.
 # --------------------------------------------------------------------------
 
 
 @pytest.mark.parametrize("family", sorted(FAMILIES))
 def test_an_invented_obligation_is_caught_in_every_family(family: str) -> None:
-    """Und zwar in jeder, nicht nur in denen, an die gerade gedacht wurde.
+    """In every one of them, and not only in those that came to mind.
 
-    Eine erfundene Nummer der Schrittfamilie lief bis 0.4.0rc8 durch dieses
-    Gate, weil die Familie nicht in ``FAMILIES`` stand. Ueber die Familien zu
-    parametrisieren macht das Auslassen einer einzelnen unmoeglich.
+    An invented number of the step family went through this gate up to
+    0.4.0rc8, because the family did not stand in ``FAMILIES``. Parametrising
+    over the families makes leaving a single one out impossible.
     """
     invented = f"{family}-99"
 
@@ -350,20 +347,20 @@ def test_an_invented_obligation_is_caught_in_every_family(family: str) -> None:
 
 @pytest.mark.parametrize("family", sorted(FAMILIES))
 def test_a_real_obligation_is_not_caught(family: str) -> None:
-    """Sonst faende die Pruefung alles und wiese nichts nach."""
+    """Otherwise the check would find everything and establish nothing."""
     real = f"{family}-{min(DEFINITIONS[family])}"
 
     assert not unknown_citations(f"See {real} for the rest.")
 
 
 def test_an_identifier_outside_the_families_is_not_examined() -> None:
-    """Eine Verpflichtung sieht anders aus als eine Kodierung oder eine Norm."""
+    """An obligation looks different from an encoding or a standard."""
     assert not unknown_citations("Encoded as UTF-8, and see RFC-3629.")
 
 
 @pytest.mark.parametrize("family", sorted(FAMILIES))
 def test_a_range_that_stops_short_is_caught(family: str) -> None:
-    """Der Fall, den ein Zuwachs an Verpflichtungen erzeugt."""
+    """The case an addition of obligations produces."""
     last = max(DEFINITIONS[family])
     short = f"See {family}-1 to {family}-{last - 1}."
 
@@ -372,10 +369,10 @@ def test_a_range_that_stops_short_is_caught(family: str) -> None:
 
 
 def test_a_range_without_a_claiming_word_is_left_alone() -> None:
-    """Eine Auswahl ist erlaubt und soll es bleiben.
+    """A selection is allowed and is to stay allowed.
 
-    ``verify`` prueft sieben der zwoelf BCW-Verpflichtungen, und ein Satz
-    darueber ist eine Aussage und kein veralteter Bereich.
+    ``verify`` checks seven of the twelve BCW obligations, and a sentence about
+    that is a statement and not a stale range.
     """
     last = max(DEFINITIONS["BCW"])
 
@@ -383,7 +380,7 @@ def test_a_range_without_a_claiming_word_is_left_alone() -> None:
 
 
 def test_the_claiming_words_of_both_languages_are_recognised() -> None:
-    """Der Ausdruck traegt beide, und beide kommen im Repository vor."""
+    """The expression carries both, and both occur in the repository."""
     short = max(DEFINITIONS["REV"]) - 1
 
     for phrasing in (
@@ -398,10 +395,10 @@ def test_the_claiming_words_of_both_languages_are_recognised() -> None:
 
 
 def test_a_file_name_between_the_word_and_the_range_does_not_hide_it() -> None:
-    """Der Satz, in dem die Zusammenfassungen der Quelldateien stehen.
+    """The sentence the summaries of the source files stand in.
 
-    ``docs/contracts.md`` traegt zwei Punkte, und ein Fenster ohne Punkte
-    endete davor. Drei Docstrings waren so ungeprueft.
+    ``docs/contracts.md`` carries two full stops, and a window without full
+    stops ended before them. Three docstrings went unchecked that way.
     """
     short = max(DEFINITIONS["REV"]) - 1
     sentence = f"See ``docs/contracts.md``, REV-1 to REV-{short}, for the rest."
@@ -410,10 +407,10 @@ def test_a_file_name_between_the_word_and_the_range_does_not_hide_it() -> None:
 
 
 def test_an_enumeration_is_covered_to_its_end() -> None:
-    """Ein Signalwort vor vier Bereichen sagt etwas ueber alle vier.
+    """One signal word before four ranges says something about all four.
 
-    ``reduction.py`` fuehrt genau eine solche Aufzaehlung. Ein Ausdruck, der
-    beim Signalwort ansetzt, erreicht davon den ersten Bereich.
+    ``reduction.py`` carries exactly one such enumeration. An expression
+    anchored at the signal word reaches the first range of it.
     """
     last = max(DEFINITIONS["RED"])
     sentence = (
@@ -425,7 +422,7 @@ def test_an_enumeration_is_covered_to_its_end() -> None:
 
 
 def test_a_range_wrapped_across_a_line_is_still_one_range() -> None:
-    """Die Docstrings sind auf 79 Spalten umbrochen, mitten im Bereich."""
+    """The docstrings are wrapped at 79 columns, in the middle of a range."""
     short = max(DEFINITIONS["LIN"]) - 1
 
     assert overstated_ranges(f"See LIN-1 to\n    LIN-{short}.") == [
@@ -434,18 +431,18 @@ def test_a_range_wrapped_across_a_line_is_still_one_range() -> None:
 
 
 def test_a_claiming_word_in_another_sentence_does_not_reach_over() -> None:
-    """Sonst faerbt ein einziges ``see`` eine ganze Datei ein."""
+    """Otherwise a single ``see`` colours a whole file."""
     short = max(DEFINITIONS["SEA"]) - 1
 
     assert not overstated_ranges(f"See the page. Here SEA-1 to SEA-{short} is meant.")
 
 
 def test_a_claiming_word_inside_another_word_does_not_count() -> None:
-    """Die Wortgrenze im Ausdruck, mit dem Fall, der sie erzwungen hat.
+    """The word boundary in the expression, with the case that forced it.
 
-    ``overstated`` enthaelt ``state``. Ohne die vordere Wortgrenze meldete der
-    Ausdruck den Aufruf einer Gegenkontrolle als Befund, und das Modul fiel
-    ueber die eigene Pruefung.
+    ``overstated`` contains ``state``. Without the leading word boundary the
+    expression reported the call of a negative control as a finding, and the
+    module fell over its own check.
     """
     short = max(DEFINITIONS["REV"]) - 1
 
@@ -454,46 +451,46 @@ def test_a_claiming_word_inside_another_word_does_not_count() -> None:
 
 
 def test_an_unweighted_G_is_caught() -> None:  # noqa: N802
-    """Die Gestalt, die drei Audits nacheinander gefunden haben."""
+    """The shape three audits found one after another."""
     assert unweighted_formulas(formula("|-->", "A * B"))
     assert unweighted_formulas(formula("->", "P Q"))
     assert unweighted_formulas(formula("\u2192", "P*Q"))
 
 
 def test_a_weighted_G_is_not_caught() -> None:  # noqa: N802
-    """Die beiden Schreibweisen, die das Repository benutzt."""
+    """The two ways of writing it that the repository uses."""
     assert not unweighted_formulas(formula("|-->", "coefficient * A * B"))
     assert not unweighted_formulas(formula("|->", "c X_u X_v"))
 
 
 def test_a_translation_is_not_a_G() -> None:  # noqa: N802
-    """Eine einzelne Groesse hinter dem Minus ist die Verschiebung.
+    """A single quantity after the minus is the displacement.
 
-    ``TranslationStep`` verschiebt um eine Konstante, und die traegt keinen
-    Koeffizienten. Faende der Ausdruck sie, waere TRA-1 nicht mehr
-    aufschreibbar.
+    ``TranslationStep`` displaces by a constant, and that carries no
+    coefficient. If the expression found it, TRA-1 could no longer be written
+    down.
     """
     assert not unweighted_formulas(formula("|->", "c_index"))
     assert not unweighted_formulas(formula("|->", "shift"))
 
 
 def test_a_missing_field_in_the_class_sketch_is_caught() -> None:
-    """Der Fall vom Ende von 0.4: BCW-11 kam, das Feld fehlte im Entwurf."""
+    """The case from the end of 0.4: BCW-11 came and the sketch lacked the field."""
     assert unmentioned_parameters("class BCWStep: source target", {"coefficient"})
     assert not unmentioned_parameters("class BCWStep: coefficient", {"coefficient"})
 
 
 def test_the_sketch_carries_the_filtration_level_as_level() -> None:
-    """Die zweite Schreibweise ist eine Zusage und kein Zufallstreffer."""
+    """The second spelling is a promise and not a lucky hit."""
     assert not unmentioned_parameters("level: int", {"filtration_level"})
     assert unmentioned_parameters("level: int", {"coefficient"})
 
 
 def test_each_version_pattern_reads_its_own_file_and_not_another() -> None:
-    """Die drei Ausdruecke duerfen nicht dieselbe Zeile finden.
+    """The three expressions must not find the same line.
 
-    Faende ``README_VERSION`` nichts und lieferte der Vergleich trotzdem ein
-    Ergebnis, waere die Pruefung darueber leer.
+    If ``README_VERSION`` found nothing and the comparison still gave a result,
+    the check above would be empty.
     """
     assert DECLARED_VERSION.findall('version = "9.9.9"\nother = "1"') == ["9.9.9"]
     assert not DECLARED_VERSION.findall('python_version = "3.10"')
@@ -502,7 +499,7 @@ def test_each_version_pattern_reads_its_own_file_and_not_another() -> None:
 
 
 def test_a_changelog_with_one_release_twice_is_caught(tmp_path: Path) -> None:
-    """Die Gegenkontrolle zu der Pruefung, die den Fall von 0.4.0rc9 gefunden haette."""
+    """The control for the check that would have found the case of 0.4.0rc9."""
     doubled = tmp_path / "CHANGELOG.md"
     doubled.write_text("## 9.9.9\n\nfirst\n\n## 9.9.9\n\nsecond\n", encoding="utf-8")
     single = tmp_path / "single.md"
@@ -520,7 +517,7 @@ def test_a_changelog_with_one_release_twice_is_caught(tmp_path: Path) -> None:
 
 
 def test_a_changelog_without_a_release_heading_fails_loudly(tmp_path: Path) -> None:
-    """Sonst laufen beide Pruefungen darueber gegen eine leere Liste."""
+    """Otherwise both checks above run against an empty list."""
     empty = tmp_path / "CHANGELOG.md"
     empty.write_text("# Changelog\n\nNotable changes per release.\n", encoding="utf-8")
 
@@ -529,7 +526,8 @@ def test_a_changelog_without_a_release_heading_fails_loudly(tmp_path: Path) -> N
 
 
 def test_a_version_pattern_that_finds_nothing_fails_loudly(tmp_path: Path) -> None:
-    """Und nicht still, denn dann liefe der Vergleich gegen eine leere Liste."""
+    """And not silently, because the comparison would then run against an
+    empty list."""
     empty = tmp_path / "pyproject.toml"
     empty.write_text("[project]\n", encoding="utf-8")
 

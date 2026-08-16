@@ -1,13 +1,12 @@
-"""Schritte und Ketten von Schritten.
+"""Steps, and chains of steps.
 
-Der Schwerpunkt liegt auf dem, was ein Zertifikat leisten soll: LIN-1 und
-LIN-6 sind die beiden Verpflichtungen, die an vorgelegten Daten scheitern
-koennen, RED-2 haelt die Kette zusammen, und RED-4 sorgt dafuer, dass ein
-Fehlschlag seinen Ort nennt.
+The weight lies on what a certificate is to achieve. LIN-1 and LIN-6 are the
+two obligations that can fail on supplied data, RED-2 holds the chain together,
+and RED-4 makes a failure name its place.
 
-LIN-2 und LIN-3 folgen aus LIN-1 und koennen an vorgelegten Daten nicht
-scheitern; sie stehen als Selbstpruefung der Bibliothek und sind hier
-entsprechend nur auf ihrem Erfolgspfad geprueft.
+LIN-2 and LIN-3 follow from LIN-1 and cannot fail on supplied data. They stand
+as self-checks of the library and are accordingly checked here on their
+successful path only.
 """
 
 import math
@@ -53,7 +52,7 @@ def swap() -> LinearAutomorphism:
 
 
 # --------------------------------------------------------------------------
-# Das Step-Protokoll
+# The step protocol
 # --------------------------------------------------------------------------
 
 
@@ -62,18 +61,18 @@ def test_a_linear_step_satisfies_the_protocol(normalization: LinearStep) -> None
 
 
 def test_the_protocol_is_structural() -> None:
-    """Nichts muss erben, um ein Schritt zu sein."""
+    """Nothing has to inherit in order to be a step."""
     assert not isinstance(ALPOEGE, Step)
 
 
 def test_verification_is_idempotent(normalization: LinearStep) -> None:
-    """STEP-2: zweimal pruefen ist wie einmal pruefen."""
+    """STEP-2: checking twice is like checking once."""
     assert normalization.verify() is None
     assert normalization.verify() is None
 
 
 # --------------------------------------------------------------------------
-# LinearStep: Konstruktion
+# LinearStep: construction
 # --------------------------------------------------------------------------
 
 
@@ -100,7 +99,7 @@ def test_the_transformation_must_be_linear() -> None:
 
 
 def test_normalize_needs_an_invertible_linear_part() -> None:
-    """Ohne J(F)(0) in GL_n(k) greift Proposition (1.1) nicht."""
+    """Without J(F)(0) in GL_n(k) Proposition (1.1) does not apply."""
     degenerate = over_field(PolynomialMap((x1, x2, x3), (x1**2, x2, x3)))
 
     with pytest.raises(ValueError, match="singular"):
@@ -108,12 +107,11 @@ def test_normalize_needs_an_invertible_linear_part() -> None:
 
 
 def test_normalize_needs_the_origin_to_be_fixed() -> None:
-    """Vor der Linearisierung steht die Translation.
+    """The translation comes before the linearisation.
 
-    Proposition (1.1) zerlegt F als (X + F(0)) o F_(1) o F'. ``normalize``
-    baut den letzten Faktor und setzt die ersten beiden voraus; ohne
-    F(0) = 0 lieferte es bisher einen Schritt, der an seiner eigenen
-    Verifikation scheiterte.
+    Proposition (1.1) decomposes F as (X + F(0)) o F_(1) o F'. ``normalize``
+    builds the last factor and presupposes the first two. Without F(0) = 0 it
+    used to give a step that failed its own verification.
     """
     affine = over_field(examples.unit_translation())
 
@@ -124,10 +122,10 @@ def test_normalize_needs_the_origin_to_be_fixed() -> None:
 
 
 def test_LIN6_a_normalizing_claim_over_a_shifted_source() -> None:  # noqa: N802
-    """Und ein vorgelegter Schritt sagt, woran es liegt.
+    """And a supplied step says what the cause is.
 
-    Bisher meldete LIN-6 nur, dass das Ziel nicht in MA^1 liegt -- richtig,
-    aber die Ursache steht eine Stufe frueher.
+    LIN-6 used to report only that the target does not lie in MA^1. That is
+    correct, and the cause stands one level earlier.
     """
     affine = over_field(examples.unit_translation())
     identity = LinearAutomorphism([Transposition(affine.ring, 0, 1)])
@@ -142,12 +140,12 @@ def test_LIN6_a_normalizing_claim_over_a_shifted_source() -> None:  # noqa: N802
 
 
 def test_a_translation_is_elementary() -> None:
-    """Anders als die Streckung braucht sie keinen eigenen Typ.
+    """Unlike the dilation it needs no type of its own.
 
-    ``X_i |-> X_i - c_i`` verschiebt ``X_i`` um eine Konstante, und die ist
-    frei von ``X_i`` -- BCW nennt genau das elementar. Sie liegt aber in
-    keinem ``EA^d`` mit ``d >= 0``, denn ``EA^d`` ist innerhalb von ``MA^d``
-    erklaert und eine Translation verlaesst ``MA^0``.
+    ``X_i |-> X_i - c_i`` displaces ``X_i`` by a constant, and that constant is
+    free of ``X_i``, which is exactly what BCW call elementary. It lies in no
+    ``EA^d`` with ``d >= 0``, however, because ``EA^d`` is defined inside
+    ``MA^d`` and a translation leaves ``MA^0``.
     """
     affine = over_field(PolynomialMap((x1, x2, x3), (x1 + 1, x2, x3 + 2)))
     translation = ElementaryAutomorphism(
@@ -166,7 +164,7 @@ def test_a_translation_is_elementary() -> None:
 
 
 # --------------------------------------------------------------------------
-# LIN-1 bis LIN-6
+# LIN-1 to LIN-6
 # --------------------------------------------------------------------------
 
 
@@ -199,7 +197,7 @@ def test_LIN1_a_transformation_over_another_ring() -> None:  # noqa: N802
 def test_LIN3_the_determinant_is_accounted_for(  # noqa: N802
     normalization: LinearStep,
 ) -> None:
-    """Von -2 auf 1, und der Faktor -1/2 steht im Zertifikat."""
+    """From -2 to 1, and the factor -1/2 stands in the certificate."""
     assert ALPOEGE.determinant() == -2
     assert normalization.transformation.determinant() == sp.Rational(-1, 2)
     assert normalization.target.determinant() == 1
@@ -208,7 +206,7 @@ def test_LIN3_the_determinant_is_accounted_for(  # noqa: N802
 def test_LIN4_the_transformation_need_not_be_elementary(  # noqa: N802
     normalization: LinearStep,
 ) -> None:
-    """Und ist es hier nicht: Determinante -1/2, EA_n(k) hat nur die 1."""
+    """And here it is not: determinant -1/2, while EA_n(k) has only 1."""
     assert not normalization.transformation.is_elementary
     assert normalization.verify() is None
 
@@ -223,7 +221,7 @@ def test_LIN6_a_step_that_claims_to_normalize_and_does_not(  # noqa: N802
 
 
 def test_LIN6_is_only_claimed_when_declared(swap: LinearAutomorphism) -> None:  # noqa: N802
-    """Derselbe Schritt ohne den Anspruch traegt die Verpflichtung nicht."""
+    """The same step without the claim does not carry the obligation."""
     assert LinearStep.build(ALPOEGE, swap).verify() is None
 
 
@@ -233,7 +231,7 @@ def test_the_normalization_reaches_MA1(normalization: LinearStep) -> None:  # no
 
 
 # --------------------------------------------------------------------------
-# Provenienz
+# Provenance
 # --------------------------------------------------------------------------
 
 
@@ -279,7 +277,7 @@ def test_LIN5_the_points_do_not_move(  # noqa: N802
 def test_LIN5_the_image_moves(  # noqa: N802
     normalization: LinearStep, collision: Collision
 ) -> None:
-    """(-1/4, 0, 0) wird zu (0, 0, -1/4) -- das Bild, das BCW17 traegt."""
+    """(-1/4, 0, 0) becomes (0, 0, -1/4), the image BCW17 carries."""
     moved = normalization.transport(collision)
 
     assert collision.image == (sp.Rational(-1, 4), 0, 0)
@@ -287,14 +285,14 @@ def test_LIN5_the_image_moves(  # noqa: N802
 
 
 def test_transport_rejects_a_foreign_collision(normalization: LinearStep) -> None:
-    """STEP-3: was hereinkommt, wird zuerst gegen die Quelle geprueft.
+    """STEP-3: what comes in is checked against the source first.
 
-    Quelle und Ziel eines linearen Schrittes haben dieselbe Dimension, also
-    unterscheidet die Laenge der gemeldeten Punkte die beiden Pruefungen nicht.
-    Das Bild tut es: die Quelle schickt die Punkte nach ``(-1/4, 0, 0)``, das
-    Ziel nach ``(0, 0, -1/4)``. Ohne diese Zeile blieb der Test gruen, wenn die
-    Eingabepruefung entfernt wurde, weil die Ausgabepruefung denselben Fall
-    eine Zeile spaeter auffing.
+    Source and target of a linear step have the same dimension, so the length
+    of the reported points does not tell the two checks apart. The image does:
+    the source sends the points to ``(-1/4, 0, 0)`` and the target to
+    ``(0, 0, -1/4)``. Without this line the test stayed green when the input
+    check was removed, because the output check caught the same case one line
+    later.
     """
     wrong = Collision(ALPOEGE_POINTS, (0, 0, 0))
 
@@ -312,18 +310,17 @@ def test_transport_verifies_the_result(
 
 
 def test_transport_rejects_its_own_wrong_result(collision: Collision) -> None:
-    """STEP-2 und LIN-5: die Ausgabe wird geprueft, und das ist erreichbar.
+    """STEP-2 and LIN-5: the output is checked, and that is reachable.
 
-    ``transport`` ruft ``verify()`` des Schrittes nicht auf, und ein
-    ``LinearStep`` nimmt sein Ziel entgegen -- das ist es, was LIN-1 zu einer
-    echten Pruefung macht. Bei einem gelieferten Schritt mit falschem Ziel ist
-    die Ausgabepruefung deshalb das Einzige, was zwischen einem falschen
-    Zertifikat und einer scheinbar maschinengeprueften Aussage ueber das Ziel
-    steht.
+    ``transport`` does not call ``verify()`` of the step, and a ``LinearStep``
+    takes its target as given, which is what makes LIN-1 a real check. For a
+    supplied step with a wrong target the output check is therefore the only
+    thing standing between a false certificate and an apparently machine-checked
+    statement about the target.
 
-    Bis 0.4.0rc13 unterschied kein Test die beiden Pruefungen. Eine
-    Mutationsprobe hat es gezeigt: jede liess sich einzeln entfernen, ohne
-    dass die Sammlung rot wurde.
+    Up to 0.4.0rc13 no test told the two checks apart. A mutation probe showed
+    it: either one could be removed on its own without the suite turning
+    red.
     """
     honest = LinearStep.normalize(ALPOEGE)
     wrong = PolynomialMap(
@@ -364,7 +361,7 @@ def test_source_and_target_are_the_ends(normalization: LinearStep) -> None:
 def test_RED2_adjacency_is_checked(  # noqa: N802
     normalization: LinearStep, swap: LinearAutomorphism
 ) -> None:
-    """Der zweite Schritt beginnt nicht dort, wo der erste endet."""
+    """The second step does not begin where the first one ends."""
     detached = LinearStep.build(ALPOEGE, swap)
 
     with pytest.raises(VerificationError) as failure:
@@ -386,7 +383,7 @@ def test_a_well_formed_chain_of_two_verifies(normalization: LinearStep) -> None:
 
 
 def test_LIN6_a_singular_linear_part_in_a_supplied_step() -> None:  # noqa: N802
-    """Ein vorgelegter Schritt darf behaupten, was normalize() ablehnt."""
+    """A supplied step may claim what normalize() refuses."""
     degenerate = over_field(PolynomialMap((x1, x2, x3), (x1**2, x2, x3)))
     identity = LinearAutomorphism([Transposition(degenerate.ring, 0, 1)])
 
@@ -402,7 +399,7 @@ def test_LIN6_a_singular_linear_part_in_a_supplied_step() -> None:  # noqa: N802
 def test_RED5_a_transport_failure_names_its_step(
     normalization: LinearStep, collision: Collision, swap: LinearAutomorphism
 ) -> None:
-    """Der Transport lokalisiert genauso wie die Verifikation."""
+    """The transport locates a failure just as the verification does."""
     detached = LinearStep.build(ALPOEGE, swap)
 
     with pytest.raises(VerificationError) as failure:
@@ -414,17 +411,16 @@ def test_RED5_a_transport_failure_names_its_step(
 def test_RED5_a_foreign_collision_is_not_blamed_on_the_first_step(  # noqa: N802
     normalization: LinearStep,
 ) -> None:
-    """Der Fold prueft die Eingabe selbst, und das ist an der Meldung zu sehen.
+    """The fold checks the input itself, and the message shows it.
 
-    Die Pruefung am Fold und die des ersten Schrittes vergleichen gegen
-    dieselbe Karte: RED-2 verlangt, dass ``steps[0].source`` die Quelle der
-    Kette ist. Was sie unterscheidet, ist die Lokalisierung. Faellt die
-    Kollision erst im ersten Schritt, wird der Fehler mit ``step = 0``
-    versehen, also einem Schritt zugeschrieben, an dem nichts falsch ist -- der
-    Aufrufer hat die falsche Kollision gebracht.
+    The check at the fold and that of the first step compare against the same
+    map: RED-2 requires ``steps[0].source`` to be the source of the chain. What
+    tells them apart is the location. If the collision fails only in the first
+    step, the error is marked ``step = 0`` and thereby attributed to a step at
+    which nothing is wrong. The caller brought the wrong collision.
 
-    Eine Mutationsprobe hat gezeigt, dass die Zeile am Fold sich bis 0.4.0rc13
-    entfernen liess, ohne dass etwas rot wurde.
+    A mutation probe showed that up to 0.4.0rc13 the line at the fold could be
+    removed without anything turning red.
     """
     wrong = Collision(ALPOEGE_POINTS, (0, 0, 0))
 
@@ -480,7 +476,7 @@ def test_RED5_transport_folds_through_the_chain(  # noqa: N802
 def test_RED5_the_number_of_points_is_preserved(  # noqa: N802
     normalization: LinearStep, collision: Collision
 ) -> None:
-    """STEP-4: ein Gegenbeispiel bleibt eines."""
+    """STEP-4: a counterexample stays one."""
     assert len(Reduction([normalization]).transport(collision)) == len(collision)
 
 
@@ -501,7 +497,7 @@ def test_RED3_the_chain_reports_degrees_rather_than_constraining_them(  # noqa: 
 
 
 # --------------------------------------------------------------------------
-# RED-8: Wertsemantik
+# RED-8: value semantics
 # --------------------------------------------------------------------------
 
 
@@ -550,12 +546,12 @@ def test_steps_compare_by_content(swap: LinearAutomorphism) -> None:
 
 
 def test_provenance_is_part_of_the_value(swap: LinearAutomorphism) -> None:
-    """Sonst gaebe es gleiche Objekte mit verschiedenem Attribut.
+    """Otherwise there would be equal objects with different attributes.
 
-    Beide Schritte behaupten dieselbe Identitaet, aber nur der eine belegt
-    sie: beim anderen hat die Bibliothek das Ziel selbst gerechnet. Waeren
-    sie gleich, koennte eine Menge oder ein Cache den staerkeren durch den
-    schwaecheren ersetzen, ohne dass es auffiele.
+    Both steps claim the same identity and only one of them is evidence for it:
+    for the other the library computed the target itself. Were they equal, a
+    set or a cache could replace the stronger by the weaker without anyone
+    noticing.
     """
     supplied = LinearStep(ALPOEGE, swap.apply_to(ALPOEGE), swap)
     constructed = LinearStep.build(ALPOEGE, swap)
@@ -568,7 +564,7 @@ def test_provenance_is_part_of_the_value(swap: LinearAutomorphism) -> None:
 def test_the_public_constructor_cannot_claim_construction(
     swap: LinearAutomorphism,
 ) -> None:
-    """Ein Ziel, das den Konstruktor erreicht, kam von aussen."""
+    """A target that reaches the constructor came from outside."""
     with pytest.raises(TypeError):
         LinearStep(
             ALPOEGE,

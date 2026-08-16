@@ -1,30 +1,30 @@
-"""Was das Quellarchiv ausliefert, und was nicht.
+"""What the source archive ships, and what it does not.
 
-Der Inhalt des sdist hing bis 0.4.0rc15 vom Zustand des Arbeitsverzeichnisses
-ab. ``pyproject.toml`` zaehlte auf, was nicht mitsollte, und eine
-Ausschlussliste ist gegen Namen, die noch niemand gewaehlt hat, nicht zu
-vervollstaendigen: eine Umgebung namens ``.venv314`` stand in keiner der drei
-Listen -- ``pyproject.toml``, ``.gitignore``, ``Makefile`` -- und ``uv build``
-brach mit "Invalid tar file" ab, weil in einer virtuellen Umgebung absolute
-Symlinks stehen. Ein externes Audit hat es gebaut.
+Until 0.4.0rc15 the content of the sdist depended on the state of the working
+directory. ``pyproject.toml`` listed what was not to be shipped, and a list of
+exclusions cannot be completed against names nobody has chosen yet. An
+environment named ``.venv314`` stood in none of the three lists,
+``pyproject.toml``, ``.gitignore`` and the Makefile, and ``uv build`` failed
+with "Invalid tar file", because a virtual environment contains absolute
+symlinks. An external audit built it.
 
-Seither ist es eine Positivliste. Was dort nicht steht, faehrt nicht mit.
+Since then it is a positive list. What is not in it is not shipped.
 
-Zwei Umgebungen werden gelegt, und der Unterschied zwischen ihnen ist der
-Punkt. ``.venv314`` ist der gemeldete Name; ihn deckt seit 0.4.0rc15 auch
-``.gitignore`` ab, und das Bauwerkzeug liest ``.gitignore``. Ein Test mit nur
-dieser Umgebung koennte also gruen sein, ohne dass die Positivliste irgendetwas
-tut. ``venv314`` ohne Punkt deckt keine Ignorierliste ab. An ihr allein haengt,
-ob die Liste in ``pyproject.toml`` traegt, und mit der alten Ausschlussliste
-faehrt sie nachweislich mit und bricht den Bau.
+Two environments are laid down, and the difference between them is the point.
+``.venv314`` is the reported name, which ``.gitignore`` has covered as well
+since 0.4.0rc15, and the build tool reads ``.gitignore``. A test with that
+environment alone could therefore be green without the positive list doing
+anything. ``venv314`` without the dot is covered by no ignore list. It alone
+decides whether the list in ``pyproject.toml`` holds, and against the old list
+of exclusions it demonstrably ships and breaks the build.
 
-Gebaut wird wirklich, und zwar vollstaendig. ``uv build --sdist`` allein haette
-den gemeldeten Fehler nicht gezeigt: er entsteht beim Auspacken des Archivs
-fuer den Wheel-Bau, nicht beim Packen.
+The build really runs, and it runs in full. ``uv build --sdist`` alone would
+not have shown the reported error: it arises when the archive is unpacked for
+the wheel build and not when it is packed.
 
-Zwei Baeue kosten zusammen etwa eineinhalb Sekunden, also steht nichts davon
-hinter einem langsamen Marker. Ein Paketierungsfehler faellt an dem Tag auf,
-an dem er entsteht, und nicht in der naechtlichen Kette.
+Two builds together cost about one and a half seconds, so none of this sits
+behind a slow marker. A packaging defect should surface on the day it is
+introduced and not in the nightly chain.
 """
 
 import shutil
@@ -37,8 +37,8 @@ import pytest
 
 ROOT = Path(__file__).resolve().parent.parent
 
-# Was das Archiv oben tragen soll. ``PKG-INFO`` erzeugt das Bauwerkzeug selbst
-# und steht deshalb nicht in ``pyproject.toml``.
+# What the archive is to carry at the top. The build tool produces ``PKG-INFO``
+# itself, which is why it does not stand in ``pyproject.toml``.
 SHIPPED = {
     "PKG-INFO",
     "src",
@@ -105,7 +105,7 @@ def build(uv: str, copy: Path) -> subprocess.CompletedProcess[str]:
 def uv() -> str:
     found = shutil.which("uv")
 
-    if found is None:  # pragma: no cover - auf jeder Umgebung des Projekts da
+    if found is None:  # pragma: no cover - present in every project setup
         pytest.skip("uv is not on PATH; this gate needs the builder")
 
     return found
@@ -144,21 +144,21 @@ def entries(archive: tarfile.TarFile) -> list[str]:
 def test_a_stray_environment_does_not_break_the_build(
     archive: tarfile.TarFile,
 ) -> None:
-    """Der gemeldete Fehler.
+    """The reported error.
 
-    Dass die Vorrichtung ueberhaupt ein Archiv geliefert hat, ist die Aussage;
-    der Test steht hier, damit ein Fehlschlag beim Namen genannt wird.
+    That the fixture delivered an archive at all is the statement. The test
+    stands here so that a failure is called by its name.
     """
     assert archive.getnames()
 
 
 def test_nothing_from_an_environment_ships(archive: tarfile.TarFile) -> None:
-    """Und zwar keine einzige Datei aus einer der beiden.
+    """And not a single file out of either of them.
 
-    Der erste Versuch reparierte den Bau und lieferte trotzdem
-    ``.venv314/.gitignore`` aus: ohne fuehrenden Schraegstrich gilt ein Muster
-    der Positivliste auf jeder Ebene, und ``uv venv`` legt eine solche Datei in
-    jede Umgebung. Geprueft wird deshalb der Inhalt und nicht der Rueckgabewert.
+    The first attempt repaired the build and shipped ``.venv314/.gitignore``
+    all the same: without a leading slash a pattern of the positive list holds
+    at every level, and ``uv venv`` places such a file in every environment.
+    What is checked is therefore the content and not the return value.
     """
     inside = [name for name in entries(archive) if "venv" in name]
 
@@ -168,11 +168,11 @@ def test_nothing_from_an_environment_ships(archive: tarfile.TarFile) -> None:
 def test_the_archive_carries_exactly_what_is_promised(
     archive: tarfile.TarFile,
 ) -> None:
-    """Die Gegenkontrolle zur Positivliste.
+    """The negative control for the positive list.
 
-    Eine Positivliste kann auch daran scheitern, dass sie zu wenig ausliefert,
-    und ein Archiv ohne Inhalt enthaelt auch keine Umgebung. Der Test oben
-    allein waere damit erfuellt.
+    A positive list can also fail by shipping too little, and an archive
+    without content contains no environment either. The test above alone would
+    be satisfied by that.
     """
     top = {name.split("/", 1)[0] for name in entries(archive)}
 
@@ -182,7 +182,7 @@ def test_the_archive_carries_exactly_what_is_promised(
 def test_the_sources_and_the_fixed_data_are_where_they_belong(
     archive: tarfile.TarFile,
 ) -> None:
-    """Stichproben in die Tiefe, in beide Richtungen."""
+    """Samples in depth, in both directions."""
     inside = set(entries(archive))
 
     assert "src/kellermap/__init__.py" in inside
@@ -190,7 +190,8 @@ def test_the_sources_and_the_fixed_data_are_where_they_belong(
     assert "tests/test_packaging.py" in inside
     assert "docs/contracts.md" in inside
 
-    # Fremde Mathematik ohne ermittelbare Lizenz, siehe pyproject.toml.
+    # Mathematics from another source, licence not establishable; see
+    # pyproject.toml.
     assert "tests/data.py" not in inside
 
     assert not [name for name in inside if "__pycache__" in name]
@@ -200,18 +201,17 @@ def test_an_exclusion_list_lets_an_unforeseen_name_through(
     uv: str,
     tmp_path: Path,
 ) -> None:
-    """Warum es eine Positivliste ist und keine laengere Ausschlussliste.
+    """Why it is a positive list and not a longer list of exclusions.
 
-    Der Bau laeuft hier gegen die Liste, die bis 0.4.0rc15 in
-    ``pyproject.toml`` stand. ``venv314`` steht in keiner ihrer Zeilen und in
-    keiner Ignorierliste, faehrt mit, und das Auspacken des Archivs fuer den
-    Wheel-Bau bricht an dem absoluten Symlink darin ab. Genau der Fehler, den
-    das Audit gemeldet hat, nur unter einem Namen, den auch eine erweiterte
-    Ausschlussliste nicht vorhergesehen haette.
+    The build runs here against the list that stood in ``pyproject.toml`` up to
+    0.4.0rc15. ``venv314`` is in none of its lines and in no ignore list, it
+    ships, and unpacking the archive for the wheel build fails on the absolute
+    symlink inside it. Exactly the error the audit reported, only under a name
+    that a longer list of exclusions would not have foreseen either.
 
-    Ohne diesen Test sagt die Sammlung nichts darueber, ob die Positivliste
-    etwas leistet: den gemeldeten Namen faengt inzwischen schon ``.gitignore``
-    ab, das das Bauwerkzeug mitliest.
+    Without this test the suite says nothing about whether the positive list
+    achieves anything: ``.gitignore``, which the build tool reads, now catches
+    the reported name by itself.
     """
     copy = tmp_path / "project"
     shutil.copytree(ROOT, copy, ignore=LEAVE_OUT)

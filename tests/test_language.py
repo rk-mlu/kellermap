@@ -7,11 +7,15 @@ tests, a test is the sharpest statement of what an obligation means, and half
 of them could not be read by a reviewer who does not read German.
 
 Withdrawing the rule and translating 1847 lines are two different sizes of
-work. The rule is withdrawn here. The translation runs module by module, and
-``NOT_YET_TRANSLATED`` below is what is left of it. The list only shrinks, and
-the test at the end of this module makes that mechanical: a module that has
-been translated and left in the list fails, so the list cannot rot into a
-permanent exemption.
+work. The rule was withdrawn first and the translation ran module by module,
+with ``NOT_YET_TRANSLATED`` below holding what was left of it. The list is empty
+since work package 2 finished, so the rule now covers every file the repository
+has.
+
+It stays here, empty, with the test that keeps it honest: a module that has
+been translated and left in the list fails. That test is what forced the list
+to empty itself, and it is what the list is for if another language ever gets
+an exception.
 
 Only comments and docstrings are read. Code is not prose, and reading it
 produced false reports on identifiers such as ``items`` and ``xreplace``.
@@ -98,17 +102,7 @@ SCANNED = (
 )
 
 # The translation runs module by module. What stands here is the remainder.
-NOT_YET_TRANSLATED = frozenset(
-    {
-        "test_admissible_shapes.py",
-        "test_documentation.py",
-        "test_invariants.py",
-        "test_packaging.py",
-        "test_reduction.py",
-        "test_scripts.py",
-        "test_translation.py",
-    }
-)
+NOT_YET_TRANSLATED = frozenset({})
 
 # This module holds the word list and would report every line of it.
 EXEMPT = frozenset({Path(__file__).name})
@@ -128,34 +122,33 @@ GERMAN_WORDS = """
     angeschlagen anker ankommt anlegt anlegte anleitung annahmen
     annotationen anrichtete anschlaegt anschliessend ansetzt ansicht
     anspruch anstelle anweisung anwendet anwendungen arbeiten arbeitspaket
-    arbeitspakete arbeitsverzeichnisses archiv archivs arithmetik
-    assembled attribut auch auditbefunden auf aufbau auffaellt auffiele
-    auffing aufgefallen aufgefuellt aufgerufen aufgeschobenen
-    aufgeschobener aufgeschrieben aufhaelt aufruf aufrufe aufrufer aufrufs
-    aufschreibbar aufsetzt aufsteigend auftritt aufwand aufzaehlbar
-    aufzaehler aufzaehlung aufzuloesen aus ausdruck ausdruckskonstruktor
-    ausdruecke ausdruecken ausfuehrbar ausfuehrbare ausfuehren ausgabe
-    ausgabepruefung ausgelesen ausgeschrieben ausgeschriebenem ausgibt
-    auslassen ausliefert ausnahme auspacken aussage aussagelos
-    ausschliesslich ausschliesst ausschlussliste aussen ausserhalb
-    aussieht ausstellen auswahl ausweist auswertung automorphismen
-    autoritaet azyklisch baeue bau baubar bauen baum baustein bausteine
-    baut baute bauwerkzeug bedeutet bedingung befund befunden beginnt
-    behaupten behauptet behauptete behauptung behauptungen behoben bei
-    beide beiden beides beilaeufig beim beispiel beisst bekaeme bekamen
-    bekannt bekannte bekannten bekommt belang beleg belegt benannt
-    benannte benennt benutzt benutzte bereich bereiche bereichen bereits
-    bericht beruehren beruht beschaedigte beschleunigung beschreiben
-    beschreibt beschrieben bestaetigen besteht betrifft bevor beweises
-    beweist bewiesen bewusst bezeichner bezeichneten beziehen bibliothek
-    bietet bild bilder bildkoordinaten bindet bis bisher bisherigen
-    bleiben bleibt blieb bloecke bloss brach brauchbar brauchen braucht
-    brauchte bricht bruchkoerper bzw codefingerabdruck dabei dafuer
-    dagegen daher dahinter damit danach daneben dann daran darauf daraus
-    darf darin darstellung darstellungen darueber darum das dass dasselbe
-    dastehen dasteht datei dateien dateiname daten davon davor dazu
-    dazukommt dazwischen decke deckt dekorator dem demselben den denen
-    denkbar denn denselben der deren derselbe derselben des deshalb
+    arbeitspakete arbeitsverzeichnisses archiv archivs arithmetik attribut
+    auch auditbefunden auf aufbau auffaellt auffiele auffing aufgefallen
+    aufgefuellt aufgerufen aufgeschobenen aufgeschobener aufgeschrieben
+    aufhaelt aufruf aufrufe aufrufer aufrufs aufschreibbar aufsetzt
+    aufsteigend auftritt aufwand aufzaehlbar aufzaehler aufzaehlung
+    aufzuloesen aus ausdruck ausdruckskonstruktor ausdruecke ausdruecken
+    ausfuehrbar ausfuehrbare ausfuehren ausgabe ausgabepruefung ausgelesen
+    ausgeschrieben ausgeschriebenem ausgibt auslassen ausliefert ausnahme
+    auspacken aussage aussagelos ausschliesslich ausschliesst
+    ausschlussliste aussen ausserhalb aussieht ausstellen auswahl ausweist
+    auswertung automorphismen autoritaet azyklisch baeue bau baubar bauen
+    baum baustein bausteine baut baute bauwerkzeug bedeutet bedingung
+    befund befunden beginnt behaupten behauptet behauptete behauptung
+    behauptungen behoben bei beide beiden beides beilaeufig beim beispiel
+    beisst bekaeme bekamen bekannt bekannte bekannten bekommt belang beleg
+    belegt benannt benannte benennt benutzt benutzte bereich bereiche
+    bereichen bereits bericht beruehren beruht beschaedigte beschleunigung
+    beschreiben beschreibt beschrieben bestaetigen besteht betrifft bevor
+    beweises beweist bewiesen bewusst bezeichner bezeichneten beziehen
+    bibliothek bietet bild bilder bildkoordinaten bindet bis bisher
+    bisherigen bleiben bleibt blieb bloecke bloss brach brauchbar brauchen
+    braucht brauchte bricht bruchkoerper bzw codefingerabdruck dabei
+    dafuer dagegen daher dahinter damit danach daneben dann daran darauf
+    daraus darf darin darstellung darstellungen darueber darum das dass
+    dasselbe dastehen dasteht datei dateien dateiname daten davon davor
+    dazu dazukommt dazwischen decke deckt dekorator dem demselben den
+    denen denkbar denn denselben der deren derselbe derselben des deshalb
     desselben dessen determinante determinanten determinantenpruefung
     determinantenstrategie determinantenstrategien deutscher diagonale
     dient dies diese dieselbe dieselben diesem diesen dieser dieses
@@ -216,53 +209,52 @@ GERMAN_WORDS = """
     herkunft hervorgeht hier hierher hiesigen hiess hiesse hilfe hilft
     hinaus hineingeschrieben hing hingen hingeschrieben hinschreiben
     hinter hinteren hinterlaesst homogen homogenitaet homomorphismus
-    hopeful hundert identitaet identitaeten ignorieren ignorierliste ihn
-    ihnen ihr ihre ihrem ihren ihrer immer implementierung impliziert
-    indem inhalt injektiv innere innerhalb inspektion instanz intern
-    interne internen invarianten invertierbar invertierbarkeit inzwischen
-    irgendein irgendeinen irgendetwas isolierte isolierung ist jacobi
-    jacobiblock jede jedem jeden jeder jedes jemand jetzt juli kam kamen
-    kandidat kandidaten kandidatenaufzaehler kann kaputten karte karten
-    kehrwert kein keine keinem keinen keiner keines kennt kette ketten
-    klasse klausel klauseln kleinen kleiner kleineren klon klonen klons
-    kodierung koeffizient koeffizienten koeffizientenbereich
-    koeffizientenbereichs koeffizientendomain koennen koennte kollision
-    kollisionsbild kollisionsbilder kollisionspunkt kollisionspunkte
-    kommen kommentar kommentare kommt komplement komponente komponenten
-    komponieren komponiert komposition konsistenz konstant konstante
-    konstanten konstruktion konstruktor konstruktorinvariante kontext
-    kontrolle kontrollieren konversion koordinate koordinaten
-    koordinatenaenderung kopfblock kopie kopien kopieren korollar
-    korrektur korrigiert kosten kostet kreuzprobe kubisch kubische
-    kubischer kuerzer laedt laenge laengere laesst laeufe laeuft lagen
-    landen landet lang lange langsamen lassen lauf laufen lautet lautlos
-    leaked leben leck leere leerem leerer leerraum leerzeichen leerzeile
-    legen legt lehnte leisten leistet lesbar letzte letzten letzteres lief
-    liefe liefern liefert lieferte liegen liegt liess liessen liest
-    lineare linearen linearer linearisierung linearisierungsteil
-    linearteil linearterm linearterme linkskomposition liste listen listet
-    literal literatur lizenz lockerung loest lokalisiert lokalisierung
-    luecke machen macht mal mapsto marke markiert maschinengeprueften
-    maschinenlesbaren mathematischer matrizen mehr mehreren meilenstein
-    meilensteins meint meinte meldet meldete meldeten meldung menge merkt
-    messung methode methoden millisekunden mindestens mitbenutzen
-    miteinander mitgenommen mitliest mitsollte mitteln mitten mittraegt
-    mitzupflegen modul monome monomkodierung monomordnung muessen muesste
-    muss musste muster mutationen mutationsprobe nach nachdem nacheinander
-    nachgerechnet nachgeschlagen nachgezogen nachher nachrechnen
-    nachrechnet nachrechnung nachtraeglich nachweis nachweislich nachweist
-    nachzuziehen naechtlichen naheliegende naht namen namens namenspolitik
-    ndef negativkontrolle nennen nenner nennt neu neue neuen neuer
-    neunzehn neunzehndimensionale neunzehndimensionalen nicht
-    nichtinjektivitaet nichts nie niemand nilpotenz nimmt nirgends noch
-    noetig normalisiert normalisierte normalisierung
-    normalisierungsschritt normativen notierte notiz nullbasiert nullen
-    nullkomponenten nummer nummerierung nur oben oberste objekt objekte
-    obwohl occurrence oder oeffentliche oeffentlichen oefter ohne ohnehin
-    optimierung ordnung ort paarweise packen paket paketierungsfehler
-    parametrisieren passt permutiert pfad pkg plaetze plaetzen platz
-    platzhalter platzkoordinaten polynom polynome polynomgleichheit
-    polynomialmaps polynomidentitaet positionen positivliste praedikat
+    hundert identitaet identitaeten ignorieren ignorierliste ihn ihnen ihr
+    ihre ihrem ihren ihrer immer implementierung impliziert indem inhalt
+    injektiv innere innerhalb inspektion instanz intern interne internen
+    invarianten invertierbar invertierbarkeit inzwischen irgendein
+    irgendeinen irgendetwas isolierte isolierung ist jacobi jacobiblock
+    jede jedem jeden jeder jedes jemand jetzt juli kam kamen kandidat
+    kandidaten kandidatenaufzaehler kann kaputten karte karten kehrwert
+    kein keine keinem keinen keiner keines kennt kette ketten klasse
+    klausel klauseln kleinen kleiner kleineren klon klonen klons kodierung
+    koeffizient koeffizienten koeffizientenbereich koeffizientenbereichs
+    koeffizientendomain koennen koennte kollision kollisionsbild
+    kollisionsbilder kollisionspunkt kollisionspunkte kommen kommentar
+    kommentare kommt komplement komponente komponenten komponieren
+    komponiert komposition konsistenz konstant konstante konstanten
+    konstruktion konstruktor konstruktorinvariante kontext kontrolle
+    kontrollieren konversion koordinate koordinaten koordinatenaenderung
+    kopfblock kopie kopien kopieren korollar korrektur korrigiert kosten
+    kostet kreuzprobe kubisch kubische kubischer kuerzer laedt laenge
+    laengere laesst laeufe laeuft lagen landen landet lang lange langsamen
+    lassen lauf laufen lautet lautlos leben leck leere leerem leerer
+    leerraum leerzeichen leerzeile legen legt lehnte leisten leistet
+    lesbar letzte letzten letzteres lief liefe liefern liefert lieferte
+    liegen liegt liess liessen liest lineare linearen linearer
+    linearisierung linearisierungsteil linearteil linearterm linearterme
+    linkskomposition liste listen listet literatur lizenz lockerung loest
+    lokalisiert lokalisierung luecke machen macht mal mapsto marke
+    markiert maschinengeprueften maschinenlesbaren mathematischer matrizen
+    mehr mehreren meilenstein meilensteins meint meinte meldet meldete
+    meldeten meldung menge merkt messung methode methoden millisekunden
+    mindestens mitbenutzen miteinander mitgenommen mitliest mitsollte
+    mitteln mitten mittraegt mitzupflegen modul monome monomkodierung
+    monomordnung muessen muesste muss musste muster mutationen
+    mutationsprobe nach nachdem nacheinander nachgerechnet nachgeschlagen
+    nachgezogen nachher nachrechnen nachrechnet nachrechnung nachtraeglich
+    nachweis nachweislich nachweist nachzuziehen naechtlichen naheliegende
+    naht namen namens namenspolitik ndef negativkontrolle nennen nenner
+    nennt neu neue neuen neuer neunzehn neunzehndimensionale
+    neunzehndimensionalen nicht nichtinjektivitaet nichts nie niemand
+    nilpotenz nimmt nirgends noch noetig normalisiert normalisierte
+    normalisierung normalisierungsschritt normativen notierte notiz
+    nullbasiert nullen nullkomponenten nummer nummerierung nur oben
+    oberste objekt objekte obwohl oder oeffentliche oeffentlichen oefter
+    ohne ohnehin optimierung ordnung ort paarweise packen paket
+    paketierungsfehler parametrisieren passt permutiert pfad plaetze
+    plaetzen platz platzhalter platzkoordinaten polynom polynome
+    polynomgleichheit polynomidentitaet positionen positivliste praedikat
     preis presents proben produkt produkte projekt projekts projektstand
     protokoll provenienz pruefbar pruefen pruefpfad prueft pruefte
     pruefung pruefungen punkt punkte punkten punktes quadrat quellarchiv
@@ -283,7 +275,7 @@ GERMAN_WORDS = """
     seiner seit seite seitenangaben seither sekunde sekunden
     sekundenbruchteile selben selbst selbstpruefung selbstveroeffentlichte
     senkt sequentiell setzbar setzen setzt sich sicher sichtbar sie sieben
-    siebenundfuenfzig siebzehn siebzehndimensionalen siehe sieht signal
+    siebenundfuenfzig siebzehn siebzehndimensionalen siehe sieht
     signalwort signatur simultan sind skalar skaliert skripte sobald
     sofort solange solche solchen solcher solches soll sollte sondern
     sonst sorgt sortierung soweit spaeter spaetere spaeteren spaeterer
@@ -292,68 +284,68 @@ GERMAN_WORDS = """
     stabilisierungskoordinaten stabilisierungsvariablen staerkeren stammen
     statt stehen steht steigt stelle stellen stellte stichproben stieg
     stimmen stimmt stimmte strategie strategien strategiewahl streckung
-    stripped struktur stueck stuende stuetzt stufe substituiert
-    subtrahiert suche suchen suchlauf suchtreiber summe symbole
-    symbolischen syntaktische syntaxbaum tabelle taeuschen tatsache
-    tatsaechlich tatsaechliche taucht tausch teile teilen teilmenge teilt
-    terminiert testet testlaeufe testsammlung texte textfassung tiefe
-    tippfehler topologisch topologische traeger traegerblock
-    traegerindizes traegerkomponente traegerkomponenten traegerkoor
-    traegerkoordinaten traegern traegervariable traegervariablen
-    traegerwert traegt traf tragen translationsschritt transportiert
-    trauen treffen treiber treiberskripte trifft trotzdem tupel tut typs
-    ueber ueberall ueberein uebereinstimmen uebereinstimmt
-    uebereinstimmten uebereinstimmung uebergang uebergeht ueberhaupt
-    ueberleben ueberlebt ueberlieferten uebernahm uebernimmt uebernommen
-    ueberschreitet ueberschrieben ueberschriebene ueberschrift
-    uebersetzung uebrigen umbau umbrochen umgangen umgebung umgebungen
-    umgebungsvariablen umgekehrt umgeschrieben umkehrbar umnummerieren
-    umschreibung umsetzungen umsortieren umsortiert umsortierung
-    unabhaengig unabhaengige unberuehrt unbrauchbar unerreichbar
-    ungefunden ungeprueft ungewichtete ungleich ungueltige unipotenten
-    unipotenter unmoeglich unten unter unterbringt unterklasse untermonoid
-    unterscheiden unterscheidet unterscheidung unterschied unterschieden
-    untersucht ununterscheidbar unveraenderlich unveraenderliche
-    unveraenderlichkeit unveraendert unvollstaendig urbild urbilder
-    ursache ursprung validiert validierung variablen variablenliste
-    variablennamen variablenreihenfolge veraenderlich veraenderliche
-    veraenderlichem veraenderliches veraendern veraendert veraenderte
-    veralten veralteten veralteter verarbeiten verbindlich verbindliche
-    verbindung verdoppelnden verdoppelt vereinbar verfaelschte verfahren
-    vergeben vergessene vergibt vergleich vergleichen vergleicht
-    verglichen verifikation verifiziert verlaesst verlangt verlangte
-    verlauf verletzt verlieren verlinkt verlorene verlorengegangen
-    vermeidet vermutung veroeffentlicht veroeffentlichte veroeffentlichten
-    verpflichtung verpflichtungen verrechnen verschachtelte verschiebt
-    verschiebung verschieden verschiedene verschiedenem verschiedenen
-    verschiedener verschoben verschobene verschweigen verschwinden
-    verschwindet verschwunden versehen versionsnummer versteckt versuch
-    versuchten vertauscht vertragsversprechen vervollstaendigen verwarf
-    verweis verzeichnis viel vier vierte viertelstunde vierzig virtuellen
-    vollen voller vollstaendig vollstaendige vom von voneinander vor
-    vorangeht voraus voraussetzung vorbedingung vordere vorgabe
-    vorgekommen vorgelegt vorgelegtem vorgelegten vorgelegter vorgibt
-    vorhandenen vorher vorhergesehen vorrat vorratswert vorrichtung
-    vorwaerts vorwaertsaufzaehler vorwaertsraums vorzeichen
-    vorzeichenkonvention waechst waehlt waehrend waere waeren wahl wahr
-    wandelte wandern wandert waren warum weg wege weghebt weichen weil
-    weise weiss weiter weiterer weiterhin welche wenig wenn wer werden
-    werkzeug werte werten wertevorrat wertgleich wertlos wertobjekt werts
-    wertsemantik wichen widerlegt wie wieder wiederbenutzten wiederholt
-    wiederholte wiederverwendete wiese wir wird wirklich wirkungslos
-    woanders woerter woertlich woher woran worauf worden wortgrenze
-    wortgrenzen wuerde wuerden wurde wurden zaehlen zaehler zaehlt zaehlte
-    zahl zahlen zeichen zeigen zeigt zeile zeilen zeitpunkt zerlegt
-    zertifikat ziel zielabbildung ziele zielen zielkomponente
-    zielkoordinate ziels zielt zielte zierde zierrat zitiert zitierte
-    zitierung zuerst zufaellig zufaelliges zufallstreffer zugeschrieben
-    zugleich zugriff zulaessig zulaessige zulaessiges zulaesst zulassen
-    zuletzt zum zurueck zurueckbekommt zurueckgelegt zurueckgezogene
-    zuruecklegen zusaetzlich zusaetzlichen zusaetzlicher zusage zusammen
-    zusammenbau zusammenfassung zusammenfassungen zusammenfuehrte
-    zusammengesetzten zusammenhang zustand zuwachs zuweisung zwar zweck
-    zwei zweier zweierlei zweimal zweite zweiten zweiter zwilling zwingen
-    zwingt zwischen zwischenabbildungen zwoelf
+    struktur stueck stuende stuetzt stufe substituiert subtrahiert suche
+    suchen suchlauf suchtreiber summe symbole symbolischen syntaktische
+    syntaxbaum tabelle taeuschen tatsache tatsaechlich tatsaechliche
+    taucht tausch teile teilen teilmenge teilt terminiert testet
+    testlaeufe testsammlung texte textfassung tiefe tippfehler topologisch
+    topologische traeger traegerblock traegerindizes traegerkomponente
+    traegerkomponenten traegerkoor traegerkoordinaten traegern
+    traegervariable traegervariablen traegerwert traegt traf tragen
+    translationsschritt transportiert trauen treffen treiber
+    treiberskripte trifft trotzdem tupel tut typs ueber ueberall ueberein
+    uebereinstimmen uebereinstimmt uebereinstimmten uebereinstimmung
+    uebergang uebergeht ueberhaupt ueberleben ueberlebt ueberlieferten
+    uebernahm uebernimmt uebernommen ueberschreitet ueberschrieben
+    ueberschriebene ueberschrift uebersetzung uebrigen umbau umbrochen
+    umgangen umgebung umgebungen umgebungsvariablen umgekehrt
+    umgeschrieben umkehrbar umnummerieren umschreibung umsetzungen
+    umsortieren umsortiert umsortierung unabhaengig unabhaengige
+    unberuehrt unbrauchbar unerreichbar ungefunden ungeprueft ungewichtete
+    ungleich ungueltige unipotenten unipotenter unmoeglich unten unter
+    unterbringt unterklasse untermonoid unterscheiden unterscheidet
+    unterscheidung unterschied unterschieden untersucht ununterscheidbar
+    unveraenderlich unveraenderliche unveraenderlichkeit unveraendert
+    unvollstaendig urbild urbilder ursache ursprung validiert validierung
+    variablen variablenliste variablennamen variablenreihenfolge
+    veraenderlich veraenderliche veraenderlichem veraenderliches
+    veraendern veraendert veraenderte veralten veralteten veralteter
+    verarbeiten verbindlich verbindliche verbindung verdoppelnden
+    verdoppelt vereinbar verfaelschte verfahren vergeben vergessene
+    vergibt vergleich vergleichen vergleicht verglichen verifikation
+    verifiziert verlaesst verlangt verlangte verlauf verletzt verlieren
+    verlinkt verlorene verlorengegangen vermeidet vermutung
+    veroeffentlicht veroeffentlichte veroeffentlichten verpflichtung
+    verpflichtungen verrechnen verschachtelte verschiebt verschiebung
+    verschieden verschiedene verschiedenem verschiedenen verschiedener
+    verschoben verschobene verschweigen verschwinden verschwindet
+    verschwunden versehen versionsnummer versteckt versuch versuchten
+    vertauscht vertragsversprechen vervollstaendigen verwarf verweis
+    verzeichnis viel vier vierte viertelstunde vierzig virtuellen vollen
+    voller vollstaendig vollstaendige vom von voneinander vor vorangeht
+    voraus voraussetzung vorbedingung vordere vorgabe vorgekommen
+    vorgelegt vorgelegtem vorgelegten vorgelegter vorgibt vorhandenen
+    vorher vorhergesehen vorrat vorratswert vorrichtung vorwaerts
+    vorwaertsaufzaehler vorwaertsraums vorzeichen vorzeichenkonvention
+    waechst waehlt waehrend waere waeren wahl wahr wandelte wandern
+    wandert waren warum weg wege weghebt weichen weil weise weiss weiter
+    weiterer weiterhin welche wenig wenn wer werden werkzeug werte werten
+    wertevorrat wertgleich wertlos wertobjekt werts wertsemantik wichen
+    widerlegt wie wieder wiederbenutzten wiederholt wiederholte
+    wiederverwendete wiese wir wird wirklich wirkungslos woanders woerter
+    woertlich woher woran worauf worden wortgrenze wortgrenzen wuerde
+    wuerden wurde wurden zaehlen zaehler zaehlt zaehlte zahl zahlen
+    zeichen zeigen zeigt zeile zeilen zeitpunkt zerlegt zertifikat ziel
+    zielabbildung ziele zielen zielkomponente zielkoordinate ziels zielt
+    zielte zierde zierrat zitiert zitierte zitierung zuerst zufaellig
+    zufaelliges zufallstreffer zugeschrieben zugleich zugriff zulaessig
+    zulaessige zulaessiges zulaesst zulassen zuletzt zum zurueck
+    zurueckbekommt zurueckgelegt zurueckgezogene zuruecklegen zusaetzlich
+    zusaetzlichen zusaetzlicher zusage zusammen zusammenbau
+    zusammenfassung zusammenfassungen zusammenfuehrte zusammengesetzten
+    zusammenhang zustand zuwachs zuweisung zwar zweck zwei zweier
+    zweierlei zweimal zweite zweiten zweiter zwilling zwingen zwingt
+    zwischen zwischenabbildungen zwoelf
 """.split()
 
 GERMAN_WORD = re.compile(r"\b(" + "|".join(GERMAN_WORDS) + r")\b", re.IGNORECASE)
@@ -385,11 +377,16 @@ def prose(path: Path) -> list[tuple[int, str]]:
         return list(enumerate(lines, 1))
 
     numbers: set[int] = set()
+    depth = 0
     tokens = list(tokenize.generate_tokens(io.StringIO(text).readline))
     for index, token in enumerate(tokens):
-        if token.type == tokenize.COMMENT:
+        if token.type == tokenize.OP and token.string in "([{":
+            depth += 1
+        elif token.type == tokenize.OP and token.string in ")]}":
+            depth -= 1
+        elif token.type == tokenize.COMMENT:
             numbers.add(token.start[0])
-        elif token.type == tokenize.STRING:
+        elif token.type == tokenize.STRING and depth == 0:
             previous = tokens[index - 1].type if index else tokenize.NEWLINE
             if previous in (
                 tokenize.INDENT,
@@ -553,6 +550,26 @@ def test_code_is_not_prose() -> None:
 
     assert any("bound" in text for text in texts), "the prose is not read"
     assert not [text for text in texts if "raise TypeError" in text]
+
+
+def test_a_string_argument_is_not_a_docstring() -> None:
+    """Bracket depth, and the case that forced it.
+
+    ``tests/test_scripts.py`` passes German source text as test data to the
+    fingerprint tool. Written across two lines inside a call, the string is
+    preceded by an ``NL`` token, and the first version of ``prose`` read every
+    string in that position as a docstring. The data was reported as German
+    prose, which it is not: it is an input, and translating it would destroy
+    the test.
+    """
+    numbers = {number for number, _ in prose(ROOT / "tests" / "test_scripts.py")}
+    lines = (ROOT / "tests" / "test_scripts.py").read_text(encoding="utf-8")
+
+    for number, line in enumerate(lines.splitlines(), 1):
+        if "Ein deutscher Docstring" in line:
+            assert number not in numbers, line
+
+    assert numbers, "the module has docstrings, so something is read"
 
 
 def test_quoted_code_inside_prose_is_dropped() -> None:

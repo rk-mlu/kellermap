@@ -1,14 +1,14 @@
-"""Der Translationsschritt: der erste Faktor von Proposition (1.1).
+"""The translation step: the first factor of Proposition (1.1).
 
-Was an vorgelegten Daten scheitern kann, ist TRA-1 und die erste Klausel von
-TRA-6. TRA-3 und TRA-4 folgen aus TRA-1, TRA-2 ist eine Konstruktorinvariante,
-und die ``MA^0``-Klausel von TRA-6 folgt aus der ersten -- diese vier sind hier
-nur auf ihrem Erfolgspfad geprueft, weil ein Test dafuer das Objekt in einen
-Zustand zwingen muesste, den es nicht erreichen kann.
+What can fail on supplied data is TRA-1 and the first clause of TRA-6. TRA-3
+and TRA-4 follow from TRA-1, TRA-2 is a constructor invariant, and the
+``MA^0`` clause of TRA-6 follows from the first. These four are checked on
+their successful path only, because a test for them would have to force the
+object into a state it cannot reach.
 
-Der Plan fuer dieses Arbeitspaket verlangte Fehlschlagfaelle auch fuer TRA-3,
-TRA-4 und beide Klauseln von TRA-6. Beim Schreiben stellte sich heraus, dass
-drei davon nicht erreichbar sind; die Roadmap ist entsprechend korrigiert.
+The plan for this work package also asked for failure cases for TRA-3, TRA-4
+and both clauses of TRA-6. While writing them it turned out that three of them
+are unreachable, and the roadmap is corrected accordingly.
 """
 
 import math
@@ -35,24 +35,24 @@ T = sp.Symbol("T")
 
 @pytest.fixture
 def keller() -> PolynomialMap:
-    """Eine Keller-Abbildung in ``MA^1``, die den Ursprung festhaelt."""
+    """A Keller map in ``MA^1`` that fixes the origin."""
     return over_field(examples.quadratic_shear())
 
 
 @pytest.fixture
 def moved(keller: PolynomialMap) -> PolynomialMap:
-    """Dieselbe Abbildung, um ``(1, 2)`` verschoben."""
+    """The same map, displaced by ``(1, 2)``."""
     return over_field(PolynomialMap((x, y), (x + y**2 + 1, y + 2)))
 
 
 @pytest.fixture
 def square() -> PolynomialMap:
-    """Nicht injektiv, und um ``(1, 1)`` verschoben: traegt eine Kollision."""
+    """Not injective, and displaced by ``(1, 1)``: it carries a collision."""
     return over_field(PolynomialMap((x, y), (x**2 + 1, y + 1)))
 
 
 # --------------------------------------------------------------------------
-# Konstruktion
+# Construction
 # --------------------------------------------------------------------------
 
 
@@ -69,10 +69,10 @@ def test_normalize_takes_off_F0(moved: PolynomialMap, keller: PolynomialMap) -> 
 
 
 def test_a_map_in_MA0_gets_the_identity_step(keller: PolynomialMap) -> None:  # noqa: N802
-    """Nicht abgelehnt, sondern verschoben um null.
+    """Not refused but displaced by zero.
 
-    Das erspart jedem Aufrufer eine Fallunterscheidung, der nicht vorher weiss,
-    ob seine Abbildung den Ursprung festhaelt.
+    This saves a case distinction for every caller who does not know in advance
+    whether their map fixes the origin.
     """
     step = TranslationStep.normalize(keller)
 
@@ -95,7 +95,7 @@ def test_build_accepts_any_constant_shift(keller: PolynomialMap) -> None:
 def test_the_supplied_route_records_supplied(
     moved: PolynomialMap, keller: PolynomialMap
 ) -> None:
-    """TRA-8: der oeffentliche Konstruktor kann nichts anderes sagen."""
+    """TRA-8: the public constructor can say nothing else."""
     supplied = TranslationStep(moved, keller, (1, 2), normalizing=True)
 
     assert supplied.provenance is Provenance.SUPPLIED
@@ -104,18 +104,18 @@ def test_the_supplied_route_records_supplied(
 
 
 # --------------------------------------------------------------------------
-# TRA-2: die Verschiebung ist konstant
+# TRA-2: the displacement is constant
 # --------------------------------------------------------------------------
 
 
 def test_a_shift_involving_a_generator_is_refused(keller: PolynomialMap) -> None:
-    """Sonst waere die Jacobi-Matrix nicht die Einheitsmatrix."""
+    """Otherwise the Jacobian matrix would not be the identity."""
     with pytest.raises(ValueError, match="coefficient domain"):
         TranslationStep.build(keller, (y, 0))
 
 
 def test_a_shift_outside_the_domain_is_refused() -> None:
-    """Ueber ``ZZ`` ist ``1/2`` keine Konstante des Rings."""
+    """Over ``ZZ`` the value ``1/2`` is not a constant of the ring."""
     integral = examples.quadratic_shear()
 
     with pytest.raises(ValueError, match="coefficient domain"):
@@ -123,10 +123,10 @@ def test_a_shift_outside_the_domain_is_refused() -> None:
 
 
 def test_a_domain_parameter_is_admitted() -> None:
-    """Eine Translation um ``T`` ueber ``k[T]`` ist eine Translation.
+    """A translation by ``T`` over ``k[T]`` is a translation.
 
-    Dieselbe Unterscheidung wie in COL-2 und BCW-3: Parameter des
-    Koeffizientenbereichs sind keine Variablen der Abbildung.
+    The same distinction as in COL-2 and BCW-3: parameters of the coefficient
+    domain are not variables of the map.
     """
     parametric = examples.parametric_shear()
     step = TranslationStep.build(parametric, (T, 1))
@@ -157,12 +157,12 @@ def test_the_dimensions_must_agree(keller: PolynomialMap) -> None:
 
 
 # --------------------------------------------------------------------------
-# TRA-1 und TRA-6: was an vorgelegten Daten scheitern kann
+# TRA-1 and TRA-6: what can fail on supplied data
 # --------------------------------------------------------------------------
 
 
 def test_a_wrong_target_fails_TRA1(moved: PolynomialMap, keller: PolynomialMap) -> None:  # noqa: N802
-    """Negativkontrolle: ohne sie sagt der Erfolgsfall nichts."""
+    """A negative control: without it the passing case says nothing."""
     step = TranslationStep(moved, keller, (1, 3))
 
     with pytest.raises(VerificationError) as failure:
@@ -172,10 +172,10 @@ def test_a_wrong_target_fails_TRA1(moved: PolynomialMap, keller: PolynomialMap) 
 
 
 def test_a_wrong_shift_fails_TRA6(keller: PolynomialMap) -> None:  # noqa: N802
-    """Die Identitaet stimmt, die Behauptung ueber ``F(0)`` nicht.
+    """The identity holds and the claim about ``F(0)`` does not.
 
-    Genau der Unterschied, den TRA-6 macht: ``build`` liefert ein gueltiges
-    Zertifikat, und erst das Praedikat ``normalizing`` bindet es an ``F(0)``.
+    Exactly the distinction TRA-6 draws: ``build`` gives a valid certificate,
+    and only the predicate ``normalizing`` ties it to ``F(0)``.
     """
     step = TranslationStep.build(keller, (5, 0), normalizing=True)
 
@@ -193,7 +193,7 @@ def test_a_step_that_makes_no_claim_carries_no_obligation(
 
 
 def test_verification_is_idempotent(moved: PolynomialMap) -> None:
-    """STEP-2: zweimal pruefen ist wie einmal pruefen."""
+    """STEP-2: checking twice is like checking once."""
     step = TranslationStep.normalize(moved)
 
     assert step.verify() is None
@@ -201,12 +201,12 @@ def test_verification_is_idempotent(moved: PolynomialMap) -> None:
 
 
 # --------------------------------------------------------------------------
-# TRA-3 und TRA-5: die Faktorisierung und der Filtrationsgrad
+# TRA-3 and TRA-5: the factorization and the filtration degree
 # --------------------------------------------------------------------------
 
 
 def test_the_translation_is_exhibited(moved: PolynomialMap) -> None:
-    """TRA-3: ein Faktor je Eintrag ungleich null, aufsteigend."""
+    """TRA-3: one factor per non-zero entry, in ascending order."""
     factors = TranslationStep.normalize(moved).translation.factors
 
     assert [factor.index for factor in factors] == [0, 1]
@@ -229,7 +229,7 @@ def test_the_inverse_is_read_off_the_definition(moved: PolynomialMap) -> None:
 def test_the_transformation_has_filtration_degree_minus_one(
     moved: PolynomialMap,
 ) -> None:
-    """Es liegt in keinem ``EA^d`` mit ``d >= 0``, weil es ``MA^0`` verlaesst."""
+    """It lies in no ``EA^d`` with ``d >= 0``, because it leaves ``MA^0``."""
     exhibited = TranslationStep.normalize(moved).translation
 
     assert exhibited.filtration_degree() == -1
@@ -237,12 +237,12 @@ def test_the_transformation_has_filtration_degree_minus_one(
 
 
 def test_the_step_establishes_no_level(moved: PolynomialMap) -> None:
-    """TRA-5: der Grad gehoert der Transformation, nicht dem Schritt."""
+    """TRA-5: the degree belongs to the transformation and not to the step."""
     assert TranslationStep.normalize(moved).filtration_level == math.inf
 
 
 def test_the_determinant_survives(moved: PolynomialMap) -> None:
-    """TRA-4 auf seinem Erfolgspfad."""
+    """TRA-4 on its successful path."""
     step = TranslationStep.normalize(moved)
 
     assert step.target.determinant() == step.source.determinant() == 1
@@ -265,19 +265,18 @@ def test_transport_moves_the_image_and_not_the_points(square: PolynomialMap) -> 
 
 
 def test_transport_refuses_a_collision_of_another_map(square: PolynomialMap) -> None:
-    """STEP-3: geprueft wird vorher, nicht nur nachher.
+    """STEP-3: the check happens before and not only after.
 
-    Die Verschiebung laesst die Dimension stehen, also unterscheidet die Laenge
-    der gemeldeten Punkte die Eingabe- von der Ausgabepruefung nicht. Das Bild
-    tut es: die Quelle schickt die beiden Punkte nach ``(2, 1)``, das um
-    ``-shift`` verschobene Ziel nach ``(1, 0)``. Ohne die letzte Zeile blieb
-    der Test gruen, wenn die Eingabepruefung entfernt wurde, weil die
-    Ausgabepruefung denselben Fall eine Zeile spaeter auffing.
+    The displacement leaves the dimension as it is, so the length of the
+    reported points does not tell the input check from the output check. The
+    image does: the source sends the two points to ``(2, 1)`` and the target,
+    displaced by ``-shift``, to ``(1, 0)``. Without the last line the test
+    stayed green when the input check was removed, because the output check
+    caught the same case one line later.
 
-    Die Quelle ist hier ``square`` und nicht ``keller``: ``keller`` haelt den
-    Ursprung fest, seine Normalisierung verschiebt um null, und Quelle und Ziel
-    sind dann dieselbe Karte. Ein Test daran koennte die beiden Pruefungen gar
-    nicht unterscheiden.
+    The source here is ``square`` and not ``keller``. ``keller`` fixes the
+    origin, its normalisation displaces by zero, and source and target are then
+    the same map. A test on it could not tell the two checks apart at all.
     """
     step = TranslationStep.normalize(square)
     foreign = Collision(((1, 0), (-1, 0)), (0, 0))
@@ -290,15 +289,15 @@ def test_transport_refuses_a_collision_of_another_map(square: PolynomialMap) -> 
 
 
 def test_transport_refuses_its_own_wrong_result(square: PolynomialMap) -> None:
-    """STEP-2 und TRA-7: die Ausgabe wird geprueft, und das ist erreichbar.
+    """STEP-2 and TRA-7: the output is checked, and that is reachable.
 
-    ``transport`` ruft ``verify()`` des Schrittes nicht auf, und ein
-    ``TranslationStep`` nimmt sein Ziel entgegen. Bei einem gelieferten Schritt
-    mit falschem Ziel ist die Ausgabepruefung das Einzige, was einen falschen
-    Transport aufhaelt.
+    ``transport`` does not call ``verify()`` of the step, and a
+    ``TranslationStep`` takes its target as given. For a supplied step with a
+    wrong target the output check is the only thing that stops a wrong
+    transport.
 
-    Bis 0.4.0rc13 war sie durch keinen Test von der Eingabepruefung
-    unterschieden; eine Mutationsprobe ueber ``contracts.md`` hat es gezeigt.
+    Up to 0.4.0rc13 no test told it apart from the input check. A mutation probe
+    over ``contracts.md`` showed it.
     """
     honest = TranslationStep.normalize(square)
     genuine = Collision.at(square, ((1, 0), (-1, 0)))
@@ -316,7 +315,7 @@ def test_transport_refuses_its_own_wrong_result(square: PolynomialMap) -> None:
 
 
 # --------------------------------------------------------------------------
-# STEP-5 und die Kette
+# STEP-5 and the chain
 # --------------------------------------------------------------------------
 
 
@@ -343,7 +342,7 @@ def test_the_repr_names_the_shift_and_the_provenance(moved: PolynomialMap) -> No
 def test_the_two_factors_of_proposition_1_1_chain(
     moved: PolynomialMap, keller: PolynomialMap
 ) -> None:
-    """Erst die Translation, dann der Linearteil -- in dieser Reihenfolge."""
+    """The translation first, then the linear part, in that order."""
     translation = TranslationStep.normalize(moved)
     linear = LinearStep.normalize(translation.target)
     chain = Reduction([translation, linear])
@@ -356,10 +355,10 @@ def test_the_two_factors_of_proposition_1_1_chain(
 def test_a_translation_does_not_lower_the_reported_level(
     moved: PolynomialMap,
 ) -> None:
-    """RED-6: die Stufe beschreibt das Ziel, die Translation die Quelle.
+    """RED-6: the level describes the target and the translation the source.
 
-    Der BCW-Schritt entfernt ``y^2`` aus der ersten Komponente und erreicht
-    ``EA^0``; die Kette meldet ``0`` und nicht ``-1``.
+    The BCW step removes ``y^2`` from the first component and reaches ``EA^0``.
+    The chain reports ``0`` and not ``-1``.
     """
     from kellermap.bcw import BCWStep, Fresh
 
@@ -375,6 +374,6 @@ def test_a_translation_does_not_lower_the_reported_level(
 
 
 def test_the_linear_step_names_the_translation(moved: PolynomialMap) -> None:
-    """LIN-6: die Ablehnung nennt jetzt einen Schritt, den es gibt."""
+    """LIN-6: the refusal now names a step that exists."""
     with pytest.raises(ValueError, match="TranslationStep.normalize"):
         LinearStep.normalize(moved)

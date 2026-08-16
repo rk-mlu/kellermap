@@ -1,17 +1,17 @@
-"""Die Treiberskripte, soweit sie ohne einen Suchlauf pruefbar sind.
+"""The driver scripts, as far as they can be checked without a search run.
 
-``scripts/`` haelt zweierlei. Die ``reconstruct_*``-Skripte sind Gates und
-laufen als ganze Programme; sie brauchen hier nichts. Die ``search_*``-Skripte
-sind lange Laeufe mit gedrucktem Verlauf, und sie hatten bis 0.4.0rc9 gar keinen
-Test -- ein externes Audit hat es angemerkt und dabei einen Haenger gefunden.
+``scripts/`` holds two kinds of thing. The ``reconstruct_*`` scripts are gates
+and run as whole programs; they need nothing here. The ``search_*`` scripts are
+long runs with printed progress, and up to 0.4.0rc9 they had no test at all. An
+external audit remarked on it and found a hang in the process.
 
-Geprueft wird, was ohne einen vollen Lauf entscheidbar ist: die Runden des
-sich verdoppelnden Budgets, und dass die Mutationsprobe das Repository nicht
-anfasst. Der Rest der Skripte faehrt eine Suche oder zwoelf Testlaeufe und
-gehoert deshalb nicht in die schnelle Sammlung.
+What is checked is what can be decided without a full run: the rounds of the
+doubling budget, and that the mutation probe does not touch the repository. The
+rest of the scripts run a search or twelve test runs and therefore do not
+belong in the fast suite.
 
-Die Skripte sind kein Paket. Sie werden ueber ihren Pfad geladen, so wie
-``scripts/_common.py`` die feste Eingabe unter ``tests/`` laedt.
+The scripts are not a package. They are loaded by path, the way
+``scripts/_common.py`` loads the fixed input under ``tests/``.
 """
 
 import hashlib
@@ -28,12 +28,12 @@ ROOT = Path(__file__).resolve().parent.parent
 def load(name: str) -> ModuleType:
     """Return a module under ``scripts/`` by path.
 
-    Der Eintrag in ``sys.modules`` steht vor ``exec_module`` und nicht danach.
-    ``dataclasses`` schlaegt beim Aufbau einer Klasse ``sys.modules[__module__]``
-    nach, um die Namen der aufgeschobenen Annotationen aufzuloesen, und findet
-    ohne den Eintrag ``None``. ``mutation_probe`` hat eine solche Klasse, die
-    Suchtreiber haben keine -- der Fehler kam also erst mit der zweiten
-    geladenen Datei.
+    The entry in ``sys.modules`` comes before ``exec_module`` and not after.
+    While building a class, ``dataclasses`` looks up
+    ``sys.modules[__module__]`` to resolve the names of deferred annotations,
+    and without the entry it finds ``None``. ``mutation_probe`` has such a
+    class and the search drivers do not, so the defect appeared only with the
+    second file loaded.
     """
     path = ROOT / "scripts" / f"{name}.py"
     spec = importlib.util.spec_from_file_location(f"{name}_script", path)
@@ -53,22 +53,21 @@ def driver() -> ModuleType:
 
 
 def test_the_budget_doubles_and_stops_at_the_ceiling(driver: ModuleType) -> None:
-    """Die Runde, die die Decke ueberschreitet, wird nicht mehr gefahren."""
+    """The round that exceeds the ceiling is no longer run."""
     assert list(driver.rounds(1, 8)) == [1, 2, 4, 8]
     assert list(driver.rounds(3, 10)) == [3, 6]
     assert list(driver.rounds(5, 5)) == [5]
 
 
 def test_a_first_budget_of_zero_is_refused(driver: ModuleType) -> None:
-    """Der Haenger, und warum die Pruefung hier steht und nicht in der Suche.
+    """The hang, and why the check stands here and not in the search.
 
-    Null verdoppelt sich zu null, also lief ``while budget <= ceiling`` ohne
-    Ende und ohne eine Zeile zu drucken. Beide Treiber hatten die Schleife
-    ausgeschrieben und beide hingen; ein externes Audit musste einen Lauf nach
-    einer Sekunde abbrechen.
+    Zero doubles to zero, so ``while budget <= ceiling`` ran without end and
+    without printing a line. Both drivers had the loop written out and both
+    hung; an external audit had to stop a run after a second.
 
-    Fuer ``search`` und ``peel`` ist null ein zulaessiges Budget -- es
-    untersucht nichts und meldet das --, also darf die Pruefung nicht dorthin.
+    For ``search`` and ``peel`` zero is an admissible budget, since it examines
+    nothing and says so, so the check must not go there.
     """
     with pytest.raises(ValueError, match="at least one"):
         list(driver.rounds(0, 100))
@@ -78,17 +77,17 @@ def test_a_first_budget_of_zero_is_refused(driver: ModuleType) -> None:
 
 
 def test_a_ceiling_below_the_first_budget_is_refused(driver: ModuleType) -> None:
-    """Sonst meldet der Treiber keine Kette unter einer nie versuchten Decke."""
+    """Otherwise the driver reports no chain under a ceiling never tried."""
     with pytest.raises(ValueError, match="must not lie below"):
         list(driver.rounds(100, 10))
 
 
 def test_the_check_happens_before_the_first_round(driver: ModuleType) -> None:
-    """Ein Erzeuger prueft sonst erst, wenn jemand ihn abfragt.
+    """A generator otherwise checks only when somebody asks it.
 
-    Hier ist das gutartig, weil beide Aufrufer sofort darueber laufen. Der Test
-    haelt fest, dass es so bleibt: der Fehler kommt beim ersten ``next`` und
-    nicht nach einem gefahrenen Suchlauf.
+    That is benign here, because both callers iterate over it at once. The test
+    records that it stays so: the error comes at the first ``next`` and not
+    after a search run has been made.
     """
     rounds = driver.rounds(0, 100)
 
@@ -97,13 +96,12 @@ def test_the_check_happens_before_the_first_round(driver: ModuleType) -> None:
 
 
 # --------------------------------------------------------------------------
-# Die Mutationsprobe
+# The mutation probe
 #
-# Sie hat bis 0.4.0rc13 das echte ``src/`` veraendert und per ``rmtree`` und
-# ``copytree`` zurueckgelegt. Ein externes Audit fand nach einem als
-# erfolgreich gemeldeten Lauf drei Mutationen im Baum stehen. Die Tests hier
-# pruefen die Zusage, die daraus geworden ist: das Repository wird nicht
-# beschrieben.
+# Up to 0.4.0rc13 it changed the real ``src/`` and put it back with ``rmtree``
+# and ``copytree``. After a run reported as successful, an external audit found
+# three mutations left in the tree. The tests here check the promise that came
+# out of that: the repository is not written to.
 # --------------------------------------------------------------------------
 
 
@@ -122,15 +120,14 @@ def source_hashes() -> dict[str, str]:
 
 
 def test_a_whole_sweep_leaves_the_repository_untouched(probe: ModuleType) -> None:
-    """Die Regression zum Befund.
+    """The regression for the finding.
 
-    Ein ganzer Durchlauf ueber alle zwoelf Proben, mit einem Platzhalter
-    anstelle der Testsammlung: der Umbau, den er prueft, betrifft das Kopieren
-    und Zuruecklegen und nicht das Ausfuehren. Vorher und nachher derselbe
-    Hash ueber jede Python-Datei des Repositorys.
+    A whole sweep over all twelve probes, with a stub in place of the test
+    suite: what it checks is the copying and the restoring and not the running.
+    The same hash over every Python file of the repository before and after.
 
-    Der Platzhalter meldet ``CAUGHT``, damit der Durchlauf keine Fehlmeldung
-    zaehlt; was er meldet, ist fuer diesen Test ohne Belang.
+    The stub reports ``CAUGHT`` so that the sweep counts no miss. What it
+    reports is immaterial for this test.
     """
     before = source_hashes()
 
@@ -141,12 +138,12 @@ def test_a_whole_sweep_leaves_the_repository_untouched(probe: ModuleType) -> Non
 
 
 def test_every_fragment_still_matches_the_code_it_aims_at(probe: ModuleType) -> None:
-    """Eine Probe, deren Fragment verschwunden ist, prueft nichts mehr.
+    """A probe whose fragment has gone checks nothing any more.
 
-    ``apply`` bricht in dem Fall ab, und weil der Durchlauf oben jede der
-    zwoelf Proben anwendet, ist er zugleich die Frischepruefung des ganzen
-    Satzes. Dieser Test sagt es noch einmal fuer sich, damit ein Fehlschlag
-    lesbar ist.
+    ``apply`` stops the run in that case, and because the sweep above applies
+    every one of the twelve probes, it is at the same time the freshness check
+    of the whole set. This test says it once more on its own, so that a failure
+    is readable.
     """
     for entry in probe.PROBES:
         text = (ROOT / entry.path).read_text(encoding="utf-8")
@@ -155,7 +152,7 @@ def test_every_fragment_still_matches_the_code_it_aims_at(probe: ModuleType) -> 
 
 
 def test_a_fragment_that_is_gone_stops_the_run(probe: ModuleType, tmp_path) -> None:  # type: ignore[no-untyped-def]
-    """Und meldet, welche Probe nachzuziehen ist."""
+    """And reports which probe has to be brought up to date."""
     (tmp_path / "src").mkdir()
     (tmp_path / "src" / "thing.py").write_text("kept = 1\n", encoding="utf-8")
     gone = probe.Probe("COL-1", "a promise", "src/thing.py", "absent", "broken")
@@ -165,7 +162,7 @@ def test_a_fragment_that_is_gone_stops_the_run(probe: ModuleType, tmp_path) -> N
 
 
 def test_a_fragment_is_written_back_exactly(probe: ModuleType, tmp_path) -> None:  # type: ignore[no-untyped-def]
-    """Zurueckgelegt wird die eine Datei, und kein Verzeichnis geloescht."""
+    """The one file is put back, and no directory is removed."""
     (tmp_path / "src").mkdir()
     path = tmp_path / "src" / "thing.py"
     path.write_text("kept = 1\nchecked = True\n", encoding="utf-8")
@@ -184,12 +181,12 @@ def test_the_working_copy_carries_what_the_suite_reads(
     probe: ModuleType,
     tmp_path,  # type: ignore[no-untyped-def]
 ) -> None:
-    """Die Sammlung liest mehr als ``src/``.
+    """The suite reads more than ``src/``.
 
-    ``test_documentation.py`` liest ``docs/`` und ``README.md``,
-    ``test_readme.py`` fuehrt die Bloecke des README aus, und die feste
-    Eingabe liegt unter ``tests/``. Fehlt eines davon in der Kopie, meldet
-    jede Probe ``CAUGHT`` aus dem falschen Grund.
+    ``test_documentation.py`` reads ``docs/`` and ``README.md``,
+    ``test_readme.py`` runs the blocks of the README, and the fixed input lies
+    under ``tests/``. If one of them is missing from the copy, every probe
+    reports ``CAUGHT`` for the wrong reason.
     """
     copy = probe.working_copy(tmp_path)
 
@@ -201,11 +198,11 @@ def test_the_working_copy_carries_what_the_suite_reads(
 
 
 # --------------------------------------------------------------------------
-# Der Codefingerabdruck
+# The code fingerprint
 #
-# Er ist die Kontrolle der Arbeitspakete 1 und 2 von 0.5: eine Uebersetzung
-# darf keine Anweisung beruehren. Ein Werkzeug, das eine Zusage nachweist,
-# braucht selbst einen Nachweis, dass es anschlaegt.
+# It is the control of work packages 1 and 2 of 0.5: a translation may touch
+# no instruction. A tool that establishes a promise needs evidence of its own
+# that it fires.
 # --------------------------------------------------------------------------
 
 
@@ -226,7 +223,7 @@ def test_a_changed_docstring_leaves_the_fingerprint_alone(
     fingerprints: ModuleType,
     tmp_path: Path,
 ) -> None:
-    """Der Fall, den das Paket erzeugt."""
+    """The case the work package produces."""
     first = written(
         tmp_path / "a",
         '"""Ein deutscher Docstring."""\n\n\ndef f(x: int) -> int:\n'
@@ -245,7 +242,7 @@ def test_a_changed_comment_leaves_the_fingerprint_alone(
     fingerprints: ModuleType,
     tmp_path: Path,
 ) -> None:
-    """Kommentare stehen nicht im Syntaxbaum und fallen von selbst heraus."""
+    """Comments are not in the syntax tree and drop out by themselves."""
     first = written(tmp_path / "a", "# Ein Kommentar.\nvalue = 1\n")
     second = written(tmp_path / "b", "# A comment.\nvalue = 1\n")
 
@@ -256,8 +253,8 @@ def test_a_changed_instruction_changes_the_fingerprint(
     fingerprints: ModuleType,
     tmp_path: Path,
 ) -> None:
-    """Die Gegenkontrolle. Ohne sie waere ein Werkzeug denkbar, das immer
-    denselben Wert liefert und jede Uebersetzung freispricht.
+    """The negative control. Without it a tool would be conceivable that
+    always gives the same value and clears every translation.
     """
     first = written(tmp_path / "a", "def f(x: int) -> bool:\n    return x > 0\n")
     second = written(tmp_path / "b", "def f(x: int) -> bool:\n    return x >= 0\n")
@@ -269,10 +266,10 @@ def test_a_string_that_is_not_a_docstring_is_kept(
     fingerprints: ModuleType,
     tmp_path: Path,
 ) -> None:
-    """Nur die erste Anweisung eines Rumpfes faellt weg.
+    """Only the first statement of a body is dropped.
 
-    Eine Fehlermeldung ist ein Wert, den der Code benutzt. Sie zu entfernen
-    hiesse, eine geaenderte Meldung zu verschweigen statt sie zu ignorieren.
+    An error message is a value the code uses. Removing it would mean passing
+    over a changed message rather than ignoring it.
     """
     first = written(tmp_path / "a", 'def f() -> None:\n    raise ValueError("one")\n')
     second = written(tmp_path / "b", 'def f() -> None:\n    raise ValueError("two")\n')
@@ -284,7 +281,7 @@ def test_a_body_of_only_a_docstring_stays_valid(
     fingerprints: ModuleType,
     tmp_path: Path,
 ) -> None:
-    """Ein leerer Rumpf waere kein gueltiges Python mehr."""
+    """An empty body would no longer be valid Python."""
     only = written(tmp_path / "a", 'def f() -> None:\n    """Nur ein Docstring."""\n')
     passed = written(tmp_path / "b", "def f() -> None:\n    pass\n")
 
@@ -292,7 +289,7 @@ def test_a_body_of_only_a_docstring_stays_valid(
 
 
 def test_the_report_names_what_changed(fingerprints: ModuleType) -> None:
-    """Ein Bericht, der nur die Zahl nennt, hilft beim Suchen nicht."""
+    """A report that gives the number only is no help in searching."""
     before = {"a.py": "1", "b.py": "2", "c.py": "3"}
     after = {"a.py": "1", "b.py": "9", "d.py": "4"}
 
@@ -306,7 +303,7 @@ def test_the_report_names_what_changed(fingerprints: ModuleType) -> None:
 
 
 def test_the_repository_is_covered(fingerprints: ModuleType) -> None:
-    """``src``, ``tests`` und ``scripts``, und nichts aus ``__pycache__``."""
+    """``src``, ``tests`` and ``scripts``, and nothing from ``__pycache__``."""
     covered = {str(path.relative_to(ROOT)) for path in fingerprints.sources()}
 
     assert "src/kellermap/peeling.py" in covered
@@ -338,10 +335,14 @@ def test_the_default_file_set_is_the_remainder(foreign: ModuleType) -> None:
     ``tests/test_language.py`` still lists. That branch held a nested
     ``__import__`` call which raised ``AttributeError`` on every invocation.
     Nothing caught it, because every run during development passed a file name.
+
+    The remainder is empty since work package 2 finished, so what is checked
+    here is that the branch runs and reads the list, not what the list holds.
+    An empty remainder is the expected state and not a reason to delete the
+    test: the list is the record for the next language that gets one.
     """
     listed = foreign.remainder()
 
-    assert listed, "the remainder is empty; this test outlived its purpose"
     assert all(path.parent.name == "tests" for path in listed)
     assert all(path.exists() for path in listed)
 
@@ -364,8 +365,31 @@ def test_the_script_runs_without_arguments(
     printed = capsys.readouterr().out
     listed = {path.name for path in foreign.remainder()}
 
-    assert listed, "the remainder is empty; this test outlived its purpose"
+    if not listed:
+        assert "Nothing to examine" in printed
+
+        return
+
     assert all(f"{name}:" in printed for name in listed)
+
+
+def test_the_script_reports_on_a_named_module(
+    foreign: ModuleType,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    """The other entry point, which is the one that stays useful.
+
+    With the remainder empty, the test above no longer exercises a report. This
+    one names a module and requires the report to appear, so that the reporting
+    path keeps a test of its own.
+    """
+    monkeypatch.setattr(
+        foreign.sys, "argv", ["foreign_words.py", "tests/test_peeling.py"]
+    )
+
+    assert foreign.main() == 0
+    assert "test_peeling.py:" in capsys.readouterr().out
 
 
 def test_the_module_under_review_is_not_its_own_corpus(foreign: ModuleType) -> None:

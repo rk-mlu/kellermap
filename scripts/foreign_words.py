@@ -53,11 +53,16 @@ def prose(path: Path) -> str:
         return QUOTED_CODE.sub(" ", text)
 
     parts = []
+    depth = 0
     tokens = list(tokenize.generate_tokens(io.StringIO(text).readline))
     for index, token in enumerate(tokens):
-        if token.type == tokenize.COMMENT:
+        if token.type == tokenize.OP and token.string in "([{":
+            depth += 1
+        elif token.type == tokenize.OP and token.string in ")]}":
+            depth -= 1
+        elif token.type == tokenize.COMMENT:
             parts.append(token.string)
-        elif token.type == tokenize.STRING:
+        elif token.type == tokenize.STRING and depth == 0:
             previous = tokens[index - 1].type if index else tokenize.NEWLINE
             if previous in (
                 tokenize.INDENT,
