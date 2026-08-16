@@ -72,20 +72,26 @@ def _copy_coefficient(coefficient: Any, domain: Any) -> Any:
     return coefficient
 
 
-def _reindex(
+def reindex(
     polynomial: PolyElement,
     ring: PolyRing,
     positions: tuple[int, ...],
 ) -> PolyElement:
-    """Rewrite a polynomial for a ring whose generators have been permuted.
+    """Rewrite a polynomial for a ring whose generators are read by position.
 
     ``positions[j]`` is the position the ``j``-th generator of ``ring`` held
     before. An exponent vector is indexed by position, so carrying a term over
     means reading the exponents in that order; the coefficients are untouched
     apart from being rebound to the new domain.
 
-    The polynomial is the same polynomial. Only the encoding of its monomials
-    follows the new generator order.
+    ``positions`` need not be a permutation. It may be shorter than the source
+    ring, in which case the generators it leaves out are dropped, and that is
+    what ``peeling.undo`` uses to remove a coordinate. Dropping is sound only
+    where the omitted exponents are all zero, which the caller establishes;
+    here an omitted exponent would be discarded without a word.
+
+    The polynomial is the same polynomial as long as that holds. Only the
+    encoding of its monomials follows the new generator order.
     """
     return ring.from_terms(
         [
@@ -783,7 +789,7 @@ class PolynomialMap:
         return PolynomialMap.from_ring(
             new_ring,
             tuple(
-                _reindex(self._poly_components[source], new_ring, positions)
+                reindex(self._poly_components[source], new_ring, positions)
                 for source in positions
             ),
         )

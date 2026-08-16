@@ -636,6 +636,32 @@ def test_a_constant_outside_the_domain_is_not_a_move() -> None:
     assert outcome.reduction.steps[0].coefficient == 1
 
 
+def test_a_factor_outside_the_domain_is_not_that_step() -> None:
+    """``undo`` computes in the ring, so a factor has to be a constant of it.
+
+    Until the ring arithmetic, ``undo`` added ``factor * left * right`` as an
+    expression and rebuilt the map with ``from_expr``, which raised
+    ``CoercionFailed`` out of a search. It now gives the answer ``moves`` gives
+    for the same reason: no step over this ring carries that constant, so this
+    was not that step.
+
+    The map is over ``ZZ`` and ``1/2`` is not in it. The dropped coordinates
+    would go, so nothing else refuses the step.
+    """
+    u, v = sp.symbols("u v")
+    current = PolynomialMap((x, y, u, v), (x - u * v / 2, y, u, v))
+    halved = Undo(target=x, slots=(u, v), dropped=(u, v), factor=sp.Rational(1, 2))
+
+    assert current.ring.domain.is_QQ
+    assert undo(current, halved) is not None
+
+    over_integers = PolynomialMap((x, y, u, v), (x - u * v, y, u, v))
+
+    assert over_integers.ring.domain.is_ZZ
+    assert undo(over_integers, halved) is None
+    assert undo(over_integers, Undo(x, (u, v), (u, v), sp.Integer(1))) is not None
+
+
 def test_a_parameter_coefficient_is_found_at_m_zero() -> None:
     """``S*a*x - T*a*x`` is one monomial and not two summands.
 

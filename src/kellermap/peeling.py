@@ -39,7 +39,7 @@ from .bcw import BCWStep, Carried, Fresh
 from .bcw.step import Factor
 from .errors import VerificationError
 from .guards import counts, maps, same_generators, settled
-from .polynomial_map import PolynomialMap, clone_ring
+from .polynomial_map import PolynomialMap, clone_ring, reindex
 from .reduction import Reduction
 
 
@@ -116,40 +116,68 @@ def undo(
     if step.target not in index or any(slot not in index for slot in step.slots):
         return None
 
-    left, right = (current.components[index[slot]] for slot in step.slots)
-    components = list(current.components)
-    components[index[step.target]] = sp.expand(
-        components[index[step.target]] + step.factor * left * right
+    # In the ring and not in expressions. The arithmetic is the same either
+    # way, and the difference is what it costs: rebuilding every component with
+    # ``from_expr`` parsed the whole map back out of expressions at every
+    # examined state. Measured on the published nineteen-dimensional map, 2840
+    # calls and 0.53 of the 2.43 seconds a peel took under ``cProfile``.
+    # ``to_polynomials`` and not the map's own elements, because that is the
+    # public route to them. It is not load-bearing here: ring addition returns
+    # a new element rather than changing one, measured, so working on the map's
+    # own polynomials would not corrupt it either. A test for that would be a
+    # test that cannot fail, and one was written and removed.
+    polynomials = list(current.to_polynomials())
+    ring = polynomials[0].ring
+    domain = ring.domain
+
+    try:
+        coefficient = domain.from_sympy(step.factor)
+    except CoercionFailed:
+        # The factor is not a constant of this coefficient domain, so no step
+        # over this ring carries it. The same answer ``moves`` gives, and for
+        # the same reason.
+        return None
+
+    left, right = (polynomials[index[slot]] for slot in step.slots)
+    polynomials[index[step.target]] += coefficient * left * right
+
+    dropped = tuple(index[variable] for variable in step.dropped)
+    kept = tuple(
+        position
+        for position, variable in enumerate(current.variables)
+        if variable not in step.dropped
     )
 
-    kept = [
-        (variable, component)
-        for variable, component in zip(current.variables, components, strict=True)
-        if variable not in step.dropped
-    ]
+    # A coordinate survives the undoing exactly when some monomial carries a
+    # non-zero exponent in its position. Reading the exponents costs nothing;
+    # ``sp.expand(...).free_symbols`` built an expression for every component
+    # to answer the same question.
     if any(
-        dropped in sp.expand(component).free_symbols
-        for _, component in kept
-        for dropped in step.dropped
+        monomial[position]
+        for source in kept
+        for monomial in polynomials[source].itermonoms()
+        for position in dropped
     ):
         return None
 
-    # Rebuilding from expressions would infer the coefficient domain and the
-    # monomial order afresh: a map over ``QQ`` came back over ``ZZ``, and
-    # ``grlex`` came back as whatever the expressions suggested. Peeling
-    # changes which coordinates there are and nothing else, so the ring is
-    # cloned from the old one.
+    # The ring is cloned from the old one and not inferred. Rebuilding from
+    # expressions would derive the coefficient domain and the monomial order
+    # afresh: a map over ``QQ`` came back over ``ZZ``, and ``grlex`` came back
+    # as whatever the expressions suggested. Peeling changes which coordinates
+    # there are and nothing else.
     #
     # With the generator objects and not with their printed names. Naming them
     # gave plain symbols back, so ``Symbol("x", positive=True)`` in a component
     # no longer matched the ``Symbol("x")`` of the ring and the conversion
     # failed; a name that is not an identifier was reparsed into several
     # generators. Both found by an external audit.
-    reduced = clone_ring(current.ring, tuple(variable for variable, _ in kept))
+    reduced = clone_ring(
+        current.ring, tuple(current.variables[source] for source in kept)
+    )
 
     return PolynomialMap.from_ring(
         reduced,
-        tuple(reduced.from_expr(component) for _, component in kept),
+        tuple(reindex(polynomials[source], reduced, kept) for source in kept),
     )
 
 
