@@ -8,13 +8,13 @@ from kellermap import PolynomialMap, examples
 
 @pytest.fixture
 def F() -> PolynomialMap:
-    """Eine einfache lineare Abbildung mit Jacobi-Determinante -2."""
+    """A simple linear map with Jacobian determinant -2."""
     x, y = sp.symbols("x y")
     return PolynomialMap(variables=(x, y), components=(x + y, x - y))
 
 
 # --------------------------------------------------------------------------
-# Smoke tests: jede oeffentliche Methode wird mindestens einmal aufgerufen.
+# Smoke tests: every public method is called at least once.
 # --------------------------------------------------------------------------
 
 
@@ -28,7 +28,7 @@ def test_matrix(F: PolynomialMap) -> None:
 
 
 def test_matrix_is_cached(F: PolynomialMap) -> None:
-    """Regression: cached_property braucht ein __dict__, also kein slots=True."""
+    """Regression: cached_property needs a __dict__, so no slots=True."""
     assert F.matrix is F.matrix
 
 
@@ -63,7 +63,7 @@ def test_compose_with_identity(F: PolynomialMap) -> None:
 
 
 def test_compose_is_simultaneous(F: PolynomialMap) -> None:
-    """Regression: subs(dict) substituiert sequentiell, xreplace simultan."""
+    """Regression: subs(dict) substitutes sequentially, xreplace at once."""
     x, y = F.variables
     swap = PolynomialMap((x, y), (y, x))
 
@@ -71,7 +71,7 @@ def test_compose_is_simultaneous(F: PolynomialMap) -> None:
 
 
 def test_call_is_simultaneous(F: PolynomialMap) -> None:
-    """Regression: dieselbe Falle wie in compose."""
+    """Regression: the same trap as in compose."""
     x, y = F.variables
     assert F(y, x) == sp.Matrix([y + x, y - x])
 
@@ -99,7 +99,7 @@ def test_repr(F: PolynomialMap) -> None:
 
 
 def test_frozen(F: PolynomialMap) -> None:
-    """frozen=True uebernimmt die Rolle, die slots=True hier nicht spielt."""
+    """frozen=True takes the part that slots=True cannot play here."""
     from dataclasses import FrozenInstanceError
 
     with pytest.raises(FrozenInstanceError):
@@ -111,11 +111,11 @@ def test_hashable(F: PolynomialMap) -> None:
 
 
 # --------------------------------------------------------------------------
-# Gleichheit und Hash
+# Equality and hash
 #
-# eq=False im Dataclass-Dekorator: __eq__ und __hash__ sind handgeschrieben
-# und muessen deshalb eigens geprueft werden. len({F, F}) == 1 testet nur
-# Identitaet, nicht Gleichheit.
+# eq=False in the dataclass decorator: __eq__ and __hash__ are written by hand
+# and therefore have to be checked on their own. len({F, F}) == 1 tests
+# identity only and not equality.
 # --------------------------------------------------------------------------
 
 
@@ -128,7 +128,7 @@ def test_equal_maps_built_separately_compare_equal(F: PolynomialMap) -> None:
 
 
 def test_equality_is_polynomial_not_syntactic(F: PolynomialMap) -> None:
-    """Der Normalisierung durch den PolyRing ist zu trauen."""
+    """The normalisation the PolyRing performs can be trusted."""
     x, y = F.variables
     unexpanded = PolynomialMap((x, y), ((x + y) * (x - y) / (x - y), x - y))
 
@@ -142,14 +142,14 @@ def test_maps_differing_in_a_component_are_unequal(F: PolynomialMap) -> None:
 
 
 def test_maps_differing_in_the_variables_are_unequal() -> None:
-    """Gleiche Komponenten, andere Traegervariablen: verschiedene Abbildungen."""
+    """The same components, other carrier variables: different maps."""
     x, y, u, v = sp.symbols("x y u v")
 
     assert PolynomialMap.identity((x, y)) != PolynomialMap.identity((u, v))
 
 
 def test_variable_order_matters(F: PolynomialMap) -> None:
-    """(x, y) und (y, x) erzeugen verschiedene Ringe."""
+    """(x, y) and (y, x) generate different rings."""
     x, y = F.variables
 
     assert PolynomialMap((y, x), (x + y, x - y)) != F
@@ -161,7 +161,7 @@ def test_equality_with_a_foreign_type_is_not_implemented(F: PolynomialMap) -> No
 
 
 def test_equal_maps_share_a_hash(F: PolynomialMap) -> None:
-    """Das Vertragsversprechen von __hash__: a == b impliziert hash(a) == hash(b)."""
+    """The promise __hash__ makes: a == b implies hash(a) == hash(b)."""
     x, y = F.variables
     twin = examples.sum_and_difference()
 
@@ -170,7 +170,7 @@ def test_equal_maps_share_a_hash(F: PolynomialMap) -> None:
 
 
 # --------------------------------------------------------------------------
-# Validierung
+# Validation
 # --------------------------------------------------------------------------
 
 
@@ -201,14 +201,14 @@ def test_compose_requires_same_variables() -> None:
 
 
 # --------------------------------------------------------------------------
-# Grad und Ordnung relativ zu den eigenen Variablen
+# Degree and order relative to the map's own variables
 # --------------------------------------------------------------------------
 
 
 def test_degree_ignores_parameters() -> None:
-    """Regression: total_degree ohne Generatoren zaehlt Fremdsymbole mit.
+    """Regression: total_degree without generators counts foreign symbols.
 
-    In BCW Paragraph 4 wird ueber k[T] gerechnet; T ist Skalar, keine Variable.
+    BCW Section 4 computes over k[T], where T is a scalar and not a variable.
     """
     x, y, T = sp.symbols("x y T")
     F = PolynomialMap((x, y), (T**5 * x**2, y))
@@ -262,12 +262,12 @@ def test_identity_lies_in_every_MA() -> None:
 
 
 # --------------------------------------------------------------------------
-# Filtrierung MA^d nach BCW, Proposition (3.1), Formel (1)
+# The filtration MA^d of BCW, Proposition (3.1), formula (1)
 # --------------------------------------------------------------------------
 
 
 def test_bcw_G_lies_in_MA1() -> None:
-    """G = (X1 - X3*X4, X2, X3, X4) verschiebt um Ordnung 2, liegt also in MA^1."""
+    """G = (X1 - X3*X4, X2, X3, X4) displaces by order 2, so it lies in MA^1."""
     X1, X2, X3, X4 = sp.symbols("X1 X2 X3 X4")
     G = examples.product_shear()
 
@@ -276,7 +276,7 @@ def test_bcw_G_lies_in_MA1() -> None:
 
 
 def test_bcw_H_lies_in_MA1_when_P_and_Q_are_quadratic() -> None:
-    """Erster Teil des Beweises: deg P, deg Q >= 2, also H in MA^1."""
+    """First part of the proof: deg P, deg Q >= 2, so H lies in MA^1."""
     X1, X2, X3, X4 = sp.symbols("X1 X2 X3 X4")
     H = PolynomialMap((X1, X2, X3, X4), (X1, X2, X3 + X1**2, X4 + X2**2))
 
@@ -285,7 +285,7 @@ def test_bcw_H_lies_in_MA1_when_P_and_Q_are_quadratic() -> None:
 
 
 def test_bcw_H_lies_only_in_MA0_when_P_is_linear() -> None:
-    """Linearisierungsteil: P = X1 hat Grad 1, deshalb fordert BCW nur EA^0."""
+    """The linearisation part: P = X1 has degree 1, so BCW require only EA^0."""
     X1, X2, X3, X4 = sp.symbols("X1 X2 X3 X4")
     H = PolynomialMap((X1, X2, X3, X4), (X1, X2, X3 + X1, X4 + X1 * X2))
 
@@ -295,11 +295,11 @@ def test_bcw_H_lies_only_in_MA0_when_P_is_linear() -> None:
 
 
 # --------------------------------------------------------------------------
-# Regressionstest gegen ein Beispiel aus der Literatur
+# A regression test against an example from the literature
 # --------------------------------------------------------------------------
 
-# Alpoeges Gegenbeispiel zur Jacobi-Vermutung, X-Post vom 20. Juli 2026.
-# Die Kollision ist die von Tao notierte rationale Kollision.
+# Alpoege's counterexample to the Jacobian conjecture, X post of 20 July 2026.
+# The collision is the rational collision Tao recorded.
 
 ALPOEGE_COLLISION = (
     (sp.Integer(0), sp.Integer(0), sp.Rational(-1, 4)),
@@ -325,7 +325,7 @@ def alpoege() -> PolynomialMap:
 
 
 def test_alpoege_is_a_keller_map(alpoege: PolynomialMap) -> None:
-    """Die Jacobi-Determinante ist konstant und invertierbar."""
+    """The Jacobian determinant is constant and invertible."""
     determinant = alpoege.determinant()
 
     assert determinant.free_symbols == set()
@@ -333,10 +333,10 @@ def test_alpoege_is_a_keller_map(alpoege: PolynomialMap) -> None:
 
 
 def test_alpoege_is_not_injective(alpoege: PolynomialMap) -> None:
-    """Der eigentliche Inhalt: drei verschiedene Urbilder desselben Punktes.
+    """The substance: three distinct preimages of one point.
 
-    Zusammen mit der konstanten Determinante widerlegt das die
-    Jacobi-Vermutung in Dimension 3.
+    Together with the constant determinant this refutes the Jacobian
+    conjecture in dimension 3.
     """
     assert len(set(ALPOEGE_COLLISION)) == 3
 
@@ -436,13 +436,13 @@ def test_extend_by_zero_returns_same_object(F: PolynomialMap) -> None:
 
 
 # --------------------------------------------------------------------------
-# Determinantenstrategie: unipotenter Traegerblock und Schur-Komplement
+# The determinant strategy: unipotent carrier block and Schur complement
 # --------------------------------------------------------------------------
 
 X1, X2, X3, X4 = sp.symbols("X1 X2 X3 X4")
 
-# Kandidaten fuer die Kreuzprobe: mit und ohne Traegerblock, mit rationalen
-# und mit symbolischen Koeffizienten.
+# Candidates for the cross-check: with and without a carrier block, with
+# rational and with symbolic coefficients.
 DETERMINANT_CASES = [
     PolynomialMap((X1, X2), (X1, X2)),
     PolynomialMap((X1, X2), (X1 + X2, X1 - X2)),
@@ -460,11 +460,11 @@ DETERMINANT_CASES = [
 def test_determinant_matches_an_expression_valued_computation(
     F: PolynomialMap,
 ) -> None:
-    """Cross-representation test nach ``docs/architecture.md``.
+    """A cross-representation test as ``docs/architecture.md`` requires.
 
-    Die Referenz laeuft vollstaendig ueber ``Expr``: SymPys eigene
-    ``Matrix.jacobian`` und ``Matrix.det``. Damit haengt sie an keinem Teil
-    der hiesigen Integration mit ``DomainMatrix`` oder der Strategiewahl.
+    The reference runs entirely over ``Expr``, through SymPy's own
+    ``Matrix.jacobian`` and ``Matrix.det``. It therefore depends on no part of
+    this project's ``DomainMatrix`` integration or of the choice of strategy.
     """
     reference = sp.Matrix(F.components).jacobian(sp.Matrix(F.variables)).det()
 
@@ -475,15 +475,15 @@ def test_determinant_matches_an_expression_valued_computation(
 def test_schur_complement_agrees_with_the_domain_matrix_path(
     F: PolynomialMap,
 ) -> None:
-    """Beide Strategien muessen dasselbe Polynom liefern."""
+    """Both strategies have to give the same polynomial."""
     reference = F._determinant_by_domain_matrix(F._jacobian_polynomials)
 
     assert F.determinant() == reference.as_expr()
 
 
 def test_elementary_automorphism_is_unipotent_throughout() -> None:
-    """Der Grenzfall: der Kopfblock ist leer, die Determinante folgt aus der
-    Struktur und nicht aus einer Entwicklung."""
+    """The boundary case: the leading block is empty and the determinant
+    follows from the structure and not from an expansion."""
     G = examples.product_shear()
 
     assert G.carrier_indices == (0, 1, 2, 3)
@@ -491,17 +491,17 @@ def test_elementary_automorphism_is_unipotent_throughout() -> None:
 
 
 def test_carrier_requires_a_unit_diagonal_entry() -> None:
-    """dF_i/dX_i muss exakt 1 sein, nicht bloss konstant."""
+    """dF_i/dX_i has to be exactly 1 and not merely constant."""
     F = examples.doubled_shear()
 
     assert F.carrier_indices == (1,)
 
 
 def test_carrier_drops_coordinates_on_a_dependency_cycle() -> None:
-    """X1 haengt von X2 ab und X2 von X1: der Block ist nicht nilpotent.
+    """X1 depends on X2 and X2 on X1: the block is not nilpotent.
 
-    Die Diagonale ist hier zweimal 1, die Erkennung darf sich davon nicht
-    taeuschen lassen, sonst waere die Neumann-Reihe divergent.
+    The diagonal is 1 twice here, and the detection must not be misled by that,
+    otherwise the Neumann series would diverge.
     """
     F = PolynomialMap((X1, X2), (X1 + X2**2, X2 + X1**2))
 
@@ -510,7 +510,7 @@ def test_carrier_drops_coordinates_on_a_dependency_cycle() -> None:
 
 
 def test_carrier_keeps_an_acyclic_chain() -> None:
-    """Dieselbe Diagonale, aber azyklisch: der ganze Block ist brauchbar."""
+    """The same diagonal but acyclic: the whole block is usable."""
     F = PolynomialMap((X1, X2), (X1 + X2**2, X2))
 
     assert F.carrier_indices == (0, 1)
@@ -518,16 +518,15 @@ def test_carrier_keeps_an_acyclic_chain() -> None:
 
 
 def test_schur_complement_refuses_a_non_nilpotent_block() -> None:
-    """Regression fuer einen echten Fehler.
+    """A regression for a real defect.
 
-    Ein erster Entwurf hat die Nilpotenz nicht geprueft, sondern aus dem
-    Abbruch der Neumann-Reihe geschlossen. Bei leerem Kopfblock bricht die
-    Reihe sofort ab, ganz gleich wie L aussieht -- das leere
-    Schur-Komplement lieferte dann Determinante 1 fuer eine Abbildung mit
-    Determinante 1 - 4*X1*X2.
+    A first draft did not check nilpotence but inferred it from the Neumann
+    series terminating. With an empty leading block the series terminates at
+    once, whatever L looks like, and the empty Schur complement then gave
+    determinant 1 for a map of determinant 1 - 4*X1*X2.
 
-    ``carrier_indices`` gibt einen solchen Block nie heraus, der Fall wird
-    hier von Hand erzwungen.
+    ``carrier_indices`` never hands out such a block, so the case is forced by
+    hand here.
     """
     F = PolynomialMap((X1, X2), (X1 + X2**2, X2 + X1**2))
 
@@ -537,8 +536,8 @@ def test_schur_complement_refuses_a_non_nilpotent_block() -> None:
 
 
 def test_unipotent_block_rejects_a_non_unit_diagonal() -> None:
-    """Zweiter Teil der Vorbedingung: D muss I + L sein, nicht bloss
-    dreiecksfoermig."""
+    """The second half of the precondition: D has to be I + L and not merely
+    triangular."""
     F = examples.doubled_shear()
 
     assert F._is_unipotent_block((1,))
@@ -547,17 +546,17 @@ def test_unipotent_block_rejects_a_non_unit_diagonal() -> None:
 
 
 # --------------------------------------------------------------------------
-# Unveraenderlichkeit der oeffentlichen Matrizen
+# Immutability of the public matrices
 # --------------------------------------------------------------------------
 
 
 def test_matrix_is_immutable(F: PolynomialMap) -> None:
-    """Regression fuer einen echten Fehler.
+    """A regression for a real defect.
 
-    ``matrix`` ist gecacht. Solange sie veraenderlich war, verfaelschte eine
-    Zuweisung von aussen jede spaetere Auswertung: nach ``F.matrix[0] = 0``
-    lieferte ``F(1, 2)`` den Wert ``[0, -1]`` statt ``[3, -1]``, obwohl
-    ``components`` unberuehrt blieb.
+    ``matrix`` is cached. While it was mutable, an assignment from outside
+    corrupted every later evaluation: after ``F.matrix[0] = 0``, ``F(1, 2)``
+    gave ``[0, -1]`` instead of ``[3, -1]``, although ``components`` was
+    untouched.
     """
     with pytest.raises(TypeError):
         F.matrix[0] = sp.Integer(0)  # type: ignore[index]
@@ -566,8 +565,8 @@ def test_matrix_is_immutable(F: PolynomialMap) -> None:
 
 
 def test_jacobian_is_immutable(F: PolynomialMap) -> None:
-    """Hier kein Fehler, sondern Konsistenz: die oeffentliche Grenze sagt
-    unveraenderliche SymPy-Objekte zu."""
+    """No defect here but consistency: the public boundary promises immutable
+    SymPy objects."""
     with pytest.raises(TypeError):
         F.jacobian()[0, 0] = sp.Integer(0)  # type: ignore[index]
 
@@ -580,7 +579,7 @@ def test_evaluation_returns_an_immutable_matrix(F: PolynomialMap) -> None:
 
 
 def test_mutable_copies_remain_available(F: PolynomialMap) -> None:
-    """Wer eine veraenderliche Matrix braucht, bekommt sie -- als Kopie."""
+    """Whoever needs a mutable matrix gets one, as a copy."""
     copy = sp.Matrix(F.matrix)
     copy[0] = sp.Integer(0)
 
@@ -588,13 +587,13 @@ def test_mutable_copies_remain_available(F: PolynomialMap) -> None:
 
 
 # --------------------------------------------------------------------------
-# Eindeutigkeit der Generatoren
+# Uniqueness of the generators
 # --------------------------------------------------------------------------
 
 
 def test_from_ring_rejects_duplicate_generators() -> None:
-    """Ein PolyRing ueber (x, x) laesst sich bauen; die beiden Generatoren
-    sind beim Uebergang zu Ausdruecken nicht mehr zu unterscheiden."""
+    """A PolyRing over (x, x) can be built, and the two generators cannot be
+    told apart once they become expressions."""
     from sympy.polys.domains import QQ
     from sympy.polys.rings import ring
 
@@ -606,8 +605,8 @@ def test_from_ring_rejects_duplicate_generators() -> None:
 
 
 def test_duplicate_variables_are_detected_by_name() -> None:
-    """Verschiedene Annahmen, gleicher Name: die Symbole sind ungleich, ihre
-    Ausdruecke aber ununterscheidbar."""
+    """Different assumptions, one name: the symbols differ and their
+    expressions cannot be told apart."""
     plain = sp.Symbol("x")
     positive = sp.Symbol("x", positive=True)
 
@@ -618,7 +617,7 @@ def test_duplicate_variables_are_detected_by_name() -> None:
 
 
 # --------------------------------------------------------------------------
-# Leere Eingaben und ungueltige Ringe
+# Empty input and invalid rings
 # --------------------------------------------------------------------------
 
 
@@ -645,7 +644,7 @@ def test_from_ring_rejects_a_ring_without_generators() -> None:
 
 
 def test_from_ring_rejects_non_symbol_generators() -> None:
-    """``PolyRing`` nimmt einen zusammengesetzten Ausdruck als Generator an."""
+    """``PolyRing`` accepts a composite expression as a generator."""
     from sympy.polys.domains import QQ
     from sympy.polys.rings import ring
 
@@ -680,12 +679,12 @@ def test_from_ring_rejects_a_component_from_another_ring() -> None:
 
 
 # --------------------------------------------------------------------------
-# Verschachtelte defensive Kopien
+# Nested defensive copies
 # --------------------------------------------------------------------------
 
-# Ueber k[T] ist der Koeffizient eines Monoms selbst ein PolyElement, also
-# wieder ein veraenderliches dict. Eine flache Kopie wuerde diese innere
-# Ebene teilen; _copy_polynomial steigt deshalb rekursiv ab.
+# Over k[T] the coefficient of a monomial is itself a PolyElement, so a
+# mutable dict again. A shallow copy would share that inner level, which is why
+# _copy_polynomial descends recursively.
 
 
 def _nested_coefficient(polynomial: object) -> object:
@@ -712,8 +711,8 @@ def test_to_polynomials_copies_nested_coefficients() -> None:
 
 
 def test_from_ring_copies_nested_coefficients() -> None:
-    """Dieselbe Ebene, andere Richtung: die Eingabe darf nachtraeglich
-    veraendert werden, ohne die Abbildung zu treffen."""
+    """The same level, the other direction: the input may be changed
+    afterwards without affecting the map."""
     from sympy.polys.rings import ring
 
     T = sp.Symbol("T")
@@ -729,13 +728,13 @@ def test_from_ring_copies_nested_coefficients() -> None:
 
 
 def test_fraction_field_coefficients_are_copied() -> None:
-    """Ueber k(T) ist ein Koeffizient ein FracElement mit veraenderlichem
-    Zaehler und Nenner.
+    """Over k(T) a coefficient is a FracElement with a mutable numerator and
+    denominator.
 
-    Regression fuer einen echten Fehler: die Kopie stieg nur in PolyElement
-    ab. Weil die Eins der Domain eine einzige geteilte Instanz ist, traf eine
-    Mutation dort jeden Term mit Koeffizient eins -- die Abbildung
-    (x/(T+1) + y, x) wurde zu (x/(T+1), 0).
+    A regression for a real defect: the copy descended into PolyElement only.
+    Because the one of the domain is a single shared instance, a mutation there
+    hit every term with coefficient one, and the map (x/(T+1) + y, x) became
+    (x/(T+1), 0).
     """
     x, y, T = sp.symbols("x y T")
     F = PolynomialMap((x, y), (x / (T + 1) + y, x))
@@ -754,7 +753,7 @@ def test_fraction_field_coefficients_are_copied() -> None:
 
 
 def test_maps_over_different_domains_are_unequal() -> None:
-    """Gleiche Variablen und Komponenten, andere Koeffizientendomain."""
+    """The same variables and components, a different coefficient domain."""
     from sympy.polys.domains import QQ, ZZ
     from sympy.polys.rings import ring
 
@@ -770,13 +769,13 @@ def test_maps_over_different_domains_are_unequal() -> None:
 
 
 # --------------------------------------------------------------------------
-# Der Ring wird nicht geteilt
+# The ring is not shared
 # --------------------------------------------------------------------------
 
-# PolyRing ist kein Wertobjekt: seine gens sind PolyElement, also veraenderliche
-# dicts, und SymPy liest sie in from_expr und ring_new. Ein Aufrufer, der den
-# internen Ring in die Hand bekaeme, koennte aendern, was die Abbildung
-# rechnet -- ohne dass components davon etwas meldeten.
+# PolyRing is not a value object: its gens are PolyElement, so mutable dicts,
+# and SymPy reads them in from_expr and ring_new. A caller who got hold of the
+# internal ring could change what the map computes, without components
+# reporting anything about it.
 
 
 def test_ring_property_does_not_hand_out_the_internal_ring(
@@ -790,8 +789,8 @@ def test_ring_property_does_not_hand_out_the_internal_ring(
 
 
 def test_to_polynomials_does_not_leak_the_ring_either(F: PolynomialMap) -> None:
-    """Ein PolyElement traegt eine Referenz auf seinen Ring; Kopien am internen
-    Ring wuerden ihn direkt wieder herausreichen."""
+    """A PolyElement carries a reference to its ring, so copies taken from the
+    internal ring would hand it straight back out."""
     before = F.displacement().components
 
     F.to_polynomials()[0].ring.gens[0].clear()
@@ -830,11 +829,11 @@ def test_the_variable_factory_never_sees_the_internal_ring(
 
 
 def test_the_handed_out_ring_stays_interchangeable(F: PolynomialMap) -> None:
-    """Die Isolierung darf den Ring nicht unbrauchbar machen.
+    """The isolation must not make the ring useless.
 
-    Der Klon ist wertgleich, komponiert und vergleicht sich also wie der
-    interne -- sonst waere er als Argument fuer ``from_ring`` oder eine
-    Factory wertlos.
+    The clone is equal by value, so it composes and compares like the internal
+    one. Otherwise it would be worthless as an argument to ``from_ring`` or to
+    a factory.
     """
     view = F.ring
 
@@ -842,11 +841,11 @@ def test_the_handed_out_ring_stays_interchangeable(F: PolynomialMap) -> None:
     assert PolynomialMap.from_ring(view, F.to_polynomials()) == F
 
 
-# Der Klon muss ueber PolyRing gebaut werden, nicht ueber PolyRing.clone:
-# letzteres laeuft durch SymPys cacheit, und das Klonen eines Klons gibt
-# dasselbe Objekt zurueck. Eine Isolierung darauf waere fuer jede Abbildung
-# aus from_ring -- also jedes Ergebnis von compose und extend -- wirkungslos,
-# ohne dass ein Test es meldete, der nur den Ausdruckskonstruktor prueft.
+# The clone has to be built through PolyRing and not through PolyRing.clone.
+# The latter runs through SymPy's cacheit, and cloning a clone returns the same
+# object. An isolation resting on it would have no effect for any map from
+# from_ring, that is for every result of compose and extend, and no test that
+# checks the expression constructor alone would report it.
 
 CONSTRUCTION_PATHS = ["expressions", "from_ring", "compose", "extend"]
 
@@ -884,10 +883,10 @@ def test_every_construction_path_is_isolated(path: str) -> None:
 
 
 def test_clone_ring_is_not_sympys_memoised_clone() -> None:
-    """Die Falle festgehalten.
+    """The trap, recorded.
 
-    ``PolyRing.clone`` eines Klons liefert den Klon selbst; ``clone_ring``
-    liefert immer ein eigenes Objekt mit eigenen Generatoren.
+    ``PolyRing.clone`` of a clone gives the clone itself. ``clone_ring`` always
+    gives an object of its own with generators of its own.
     """
     from sympy.polys.domains import QQ
     from sympy.polys.rings import ring
@@ -907,17 +906,16 @@ def test_clone_ring_is_not_sympys_memoised_clone() -> None:
 
 
 # --------------------------------------------------------------------------
-# Die Ansicht wird nicht geteilt, und die Domain auch nicht
+# The view is not shared, and neither is the domain
 # --------------------------------------------------------------------------
 
 
 def test_the_view_ring_is_not_cached(F: PolynomialMap) -> None:
-    """Regression fuer einen echten Fehler.
+    """A regression for a real defect.
 
-    ``_view_ring`` war ein ``cached_property``. Damit bekamen alle Aufrufer
-    denselben Klon, und einer, der ihn veraenderte, beschaedigte die Ansicht
-    fuer alle folgenden -- ``F.ring`` lieferte anschliessend denselben,
-    bereits kaputten Ring zurueck.
+    ``_view_ring`` was a ``cached_property``. Every caller therefore got the
+    same clone, and one that changed it damaged the view for all that followed:
+    ``F.ring`` then gave back the same, already broken ring.
     """
     view = F.ring
     view.gens[0].clear()
@@ -928,7 +926,7 @@ def test_the_view_ring_is_not_cached(F: PolynomialMap) -> None:
 
 
 def test_extension_after_a_mutated_view_is_unaffected(F: PolynomialMap) -> None:
-    """Die Factory bekommt ebenfalls einen frischen Ring."""
+    """The factory is given a fresh ring as well."""
     before = F.extend(1).variables
 
     F.ring.gens[0].clear()
@@ -940,8 +938,8 @@ def test_to_polynomials_binds_each_call_to_its_own_ring(F: PolynomialMap) -> Non
     first, second = F.to_polynomials(), F.to_polynomials()
 
     assert first[0].ring is not second[0].ring
-    # Innerhalb eines Aufrufs teilen sich die Komponenten einen Ring, sonst
-    # liessen sie sich nicht miteinander verrechnen.
+    # Within one call the components share a ring, because otherwise they
+    # could not be computed with each other.
     assert first[0].ring is first[1].ring
 
     first[0].ring.gens[0].clear()
@@ -950,11 +948,11 @@ def test_to_polynomials_binds_each_call_to_its_own_ring(F: PolynomialMap) -> Non
 
 
 def test_the_coefficient_domain_is_cloned_too() -> None:
-    """Regression fuer das zweite Leck.
+    """A regression for the second leak.
 
-    ``clone_ring`` uebernahm die Domain unveraendert. Nach
-    ``caller_domain.gens[0].clear()`` wandelte der angeblich isolierte Ring
-    ``T*u`` in ``0`` um -- lautlos, weil ``components`` weiter stimmte.
+    ``clone_ring`` took the domain over unchanged. After
+    ``caller_domain.gens[0].clear()`` the supposedly isolated ring turned
+    ``T*u`` into ``0``, silently, because ``components`` still agreed.
     """
     from sympy.polys.domains import QQ
     from sympy.polys.rings import ring
@@ -991,7 +989,7 @@ def test_nested_coefficient_domains_are_cloned_at_every_level() -> None:
 
 
 def test_handed_out_coefficients_do_not_carry_the_internal_domain() -> None:
-    """Ein PolyElement-Koeffizient traegt seinen eigenen Ring mit."""
+    """A PolyElement coefficient carries a ring of its own along."""
     from sympy.polys.domains import QQ
     from sympy.polys.rings import PolyElement, ring
 
@@ -1005,10 +1003,10 @@ def test_handed_out_coefficients_do_not_carry_the_internal_domain() -> None:
 
 
 def test_extend_rejects_a_boolean() -> None:
-    """bool ist eine Unterklasse von int.
+    """bool is a subclass of int.
 
-    ``F.extend(True)`` waere sonst eine Erweiterung um genau eine Variable --
-    fast sicher ein Tippfehler und nicht das, was jemand meinte.
+    ``F.extend(True)`` would otherwise be an extension by exactly one variable,
+    almost certainly a typing slip and not what anybody meant.
     """
     x, y = sp.symbols("x y")
     F = examples.shear()
@@ -1027,19 +1025,18 @@ def test_extend_rejects_non_integers(number: object) -> None:
 
 
 # --------------------------------------------------------------------------
-# Der Ausdruckskonstruktor validiert den Ring, den sring baut
+# The expression constructor validates the ring that sring builds
 # --------------------------------------------------------------------------
 
 
 def test_a_coefficient_may_not_shadow_a_coordinate() -> None:
-    """Regression fuer einen echten Fehler.
+    """A regression for a real defect.
 
-    ``sring`` nimmt ein Symbol, das bereits Generator ist, zusaetzlich in die
-    Koeffizientendomain auf, wenn es mit anderen Annahmen auftritt: gleicher
-    Name, verschiedene Objekte. Der Ausdruckskonstruktor pruefte das nicht,
-    ``from_ring`` schon -- die Abbildung sah gueltig aus, druckte in
-    ``components`` dasselbe Zeichen fuer zwei Dinge, und erst ``extend()``
-    scheiterte.
+    ``sring`` additionally takes a symbol that is already a generator into the
+    coefficient domain when it appears with other assumptions, that is under
+    the same name as a different object. The expression constructor did not
+    check this and ``from_ring`` did. The map looked valid, printed the same
+    character for two things in ``components``, and only ``extend()`` failed.
     """
     x, y = sp.Symbol("x"), sp.Symbol("y")
     parameter = sp.Symbol("x", positive=True)
@@ -1049,7 +1046,7 @@ def test_a_coefficient_may_not_shadow_a_coordinate() -> None:
 
 
 def test_a_genuine_parameter_is_still_accepted() -> None:
-    """Die Gegenprobe: ein Parameter mit eigenem Namen bleibt zulaessig."""
+    """The control: a parameter with a name of its own stays admissible."""
     x, y, T = sp.symbols("x y T")
 
     F = examples.parametric_swap()
@@ -1058,7 +1055,7 @@ def test_a_genuine_parameter_is_still_accepted() -> None:
 
 
 # --------------------------------------------------------------------------
-# Monomordnung ueberlebt das Klonen
+# The monomial order survives cloning
 # --------------------------------------------------------------------------
 
 MONOMIAL_ORDERS = ["lex", "grlex", "grevlex"]
@@ -1066,11 +1063,11 @@ MONOMIAL_ORDERS = ["lex", "grlex", "grevlex"]
 
 @pytest.mark.parametrize("order", MONOMIAL_ORDERS)
 def test_cloning_keeps_the_polynomial_ring_order(order: str) -> None:
-    """Regression fuer einen echten Fehler.
+    """A regression for a real defect.
 
-    ``clone_domain`` baute die Domain ohne ihre ``order`` nach. Eine mit
-    ``grlex`` gebaute Domain kam als ``lex`` zurueck -- der Klon war also
-    nicht wertgleich zum Original, entgegen der Zusage in ``docs/api.md``.
+    ``clone_domain`` rebuilt the domain without its ``order``. A domain built
+    with ``grlex`` came back as ``lex``, so the clone was not equal by value to
+    the original, against the promise in ``docs/api.md``.
     """
     from sympy.polys.domains import QQ
     from sympy.polys.rings import ring
@@ -1113,8 +1110,8 @@ def test_cloning_keeps_the_order_at_every_nesting_level() -> None:
 
 
 def test_maps_over_differently_ordered_domains_are_unequal() -> None:
-    """Was der verlorene Order sonst anrichtete: zwei Abbildungen ueber
-    verschiedenen Domains verglichen sich gleich."""
+    """What the lost order did besides: two maps over different domains
+    compared as equal."""
     from sympy.polys.domains import QQ
     from sympy.polys.rings import ring
 
@@ -1128,7 +1125,7 @@ def test_maps_over_differently_ordered_domains_are_unequal() -> None:
 
 
 def test_older_dense_fraction_fields_are_rejected_too() -> None:
-    """Dasselbe fuer ``old_frac_field``, den Bruchkoerper-Zwilling."""
+    """The same for ``old_frac_field``, the fraction field twin."""
     from sympy.polys.domains import QQ
 
     from kellermap.polynomial_map import clone_domain
@@ -1140,10 +1137,10 @@ def test_older_dense_fraction_fields_are_rejected_too() -> None:
 
 
 def test_older_dense_domains_are_rejected_with_a_readable_message() -> None:
-    """``old_poly_ring`` traegt DMP-Koeffizienten statt PolyElement.
+    """``old_poly_ring`` carries DMP coefficients rather than PolyElement.
 
-    Ohne diese Pruefung scheiterte ``from_ring`` an einer ``CoercionFailed``
-    tief in SymPy, die nichts darueber sagte, was zu tun ist.
+    Without this check ``from_ring`` failed with a ``CoercionFailed`` deep
+    inside SymPy which said nothing about what to do.
     """
     from sympy.polys.domains import QQ
     from sympy.polys.rings import ring
@@ -1156,13 +1153,13 @@ def test_older_dense_domains_are_rejected_with_a_readable_message() -> None:
 
 
 # --------------------------------------------------------------------------
-# reordered: Darstellung, nicht Wert
+# reordered: presentation, not value
 # --------------------------------------------------------------------------
 
 
 @pytest.fixture
 def spread() -> PolynomialMap:
-    """Drei Variablen, damit eine Permutation mehr als ein Tausch sein kann."""
+    """Three variables, so that a permutation can be more than one swap."""
     x, y, z = sp.symbols("x y z")
     return PolynomialMap((x, y, z), (x + y**2 * z, y + z**3, z))
 
@@ -1170,10 +1167,10 @@ def spread() -> PolynomialMap:
 def test_reordered_permutes_variables_and_components_together(
     spread: PolynomialMap,
 ) -> None:
-    """Koordinate ``i`` traegt ``variables[i]`` und die Komponente dazu.
+    """Coordinate ``i`` carries ``variables[i]`` and the component with it.
 
-    Wuerde nur die Variablenliste umsortiert, waere das Ergebnis eine andere
-    Abbildung. Der Test haelt beide Listen gegeneinander.
+    If only the list of variables were reordered, the result would be a
+    different map. The test holds both lists against each other.
     """
     x, y, z = spread.variables
 
@@ -1184,10 +1181,10 @@ def test_reordered_permutes_variables_and_components_together(
 
 
 def test_reordering_changes_no_value(spread: PolynomialMap) -> None:
-    """Grad, Ordnung, Filtrationsgrad und Determinante ueberleben.
+    """Degree, order, filtration degree and determinant survive.
 
-    Die Jacobi-Matrix wird in Zeilen und Spalten gleich permutiert, also
-    aendert sich ihre Determinante nicht.
+    The Jacobian matrix is permuted equally in rows and columns, so its
+    determinant does not change.
     """
     x, y, z = spread.variables
 
@@ -1206,18 +1203,17 @@ def test_the_round_trip_returns_the_original(spread: PolynomialMap) -> None:
 
 
 def test_the_identity_order_is_the_map_itself(spread: PolynomialMap) -> None:
-    """Kein Aufwand fuer den haeufigsten Fall, und keine neue Identitaet."""
+    """No cost for the most common case, and no new identity."""
     assert spread.reordered(spread.variables) is spread
 
 
 def test_the_reordered_map_is_not_equal_to_the_original(
     spread: PolynomialMap,
 ) -> None:
-    """Genau deshalb gibt es die Methode.
+    """That is exactly why the method exists.
 
-    Gleichheit vergleicht die Variablen als geordnetes Tupel. Zwei
-    Darstellungen derselben Abbildung sind also ungleich, solange eine von
-    beiden nicht umgeschrieben wird.
+    Equality compares the variables as an ordered tuple. Two presentations of
+    one map are therefore unequal until one of them is rewritten.
     """
     x, y, z = spread.variables
 
@@ -1225,7 +1221,7 @@ def test_the_reordered_map_is_not_equal_to_the_original(
 
 
 def test_reordering_carries_the_carriers_along() -> None:
-    """Traegerindizes sind Positionen und wandern mit der Permutation."""
+    """Carrier indices are positions and move with the permutation."""
     x, y, z = sp.symbols("x y z")
     mixed = PolynomialMap((x, y, z), (x**2, y + z**3, z))
 
@@ -1234,7 +1230,7 @@ def test_reordering_carries_the_carriers_along() -> None:
 
 
 def test_a_composite_domain_survives_the_reordering() -> None:
-    """Die Koeffizienten sind selbst Polynome und werden mitgenommen."""
+    """The coefficients are polynomials themselves and are carried along."""
     x, y = sp.symbols("x y")
     T = sp.Symbol("T")
     parametric = examples.parametric_shear()
@@ -1248,7 +1244,7 @@ def test_a_composite_domain_survives_the_reordering() -> None:
 def test_the_reordered_map_shares_no_ring_with_the_original(
     spread: PolynomialMap,
 ) -> None:
-    """Wie ueberall sonst: der neue Ring ist ein Klon, kein geteiltes Objekt."""
+    """As everywhere else: the new ring is a clone and not a shared object."""
     moved = spread.reordered(
         (spread.variables[1], spread.variables[0], spread.variables[2])
     )
@@ -1270,7 +1266,7 @@ def test_a_non_permutation_is_refused(spread: PolynomialMap, wrong: tuple) -> No
 
 
 def test_a_repeated_variable_is_refused(spread: PolynomialMap) -> None:
-    """Gleiche Laenge, gleiche Menge -- aber eine Variable fehlt."""
+    """The same length, the same set, and one variable missing."""
     x, y, _ = spread.variables
 
     with pytest.raises(ValueError, match="not a permutation"):
@@ -1285,7 +1281,7 @@ def test_a_foreign_variable_is_refused(spread: PolynomialMap) -> None:
 
 
 # --------------------------------------------------------------------------
-# identity: ein Objekt, das nicht zweimal dastehen sollte
+# identity: an object that should not be written out twice
 # --------------------------------------------------------------------------
 
 
@@ -1301,7 +1297,7 @@ def test_the_identity_is_the_identity() -> None:
 
 
 def test_the_identity_takes_any_iterable() -> None:
-    """Wie ``PolynomialMap`` selbst; ein Generator wird einmal ausgelesen."""
+    """As ``PolynomialMap`` itself: a generator is read once."""
     x, y = sp.symbols("x y")
 
     assert PolynomialMap.identity(v for v in (x, y)) == PolynomialMap.identity((x, y))
@@ -1316,6 +1312,6 @@ def test_the_identity_composes_to_nothing() -> None:
 
 
 def test_the_identity_refuses_what_the_constructor_refuses() -> None:
-    """Kein zweiter Pruefpfad: der Konstruktor entscheidet."""
+    """No second checking path: the constructor decides."""
     with pytest.raises(ValueError):
         PolynomialMap.identity(())

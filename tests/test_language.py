@@ -56,10 +56,21 @@ on the translated modules, all of them English -- and it is exactly right as a
 list to read once per module. That is how ``Randfaelle``, ``Determinismus``
 and ``Komposition`` came to light.
 
-Eighty-one words were removed from the derived list by hand because they are
+Eighty-three words were removed from the derived list by hand because they are
 also English: ``die``, ``hat``, ``war``, ``male``, ``post``, ``rot``, ``lock``,
 ``norm``, ``null`` and the like. Each would have been a false report waiting
 for the sentence that uses it.
+
+Four of them were found by the check itself rather than in advance: ``smoke``,
+``dmp``, ``fired`` and ``speak``. All four have the same cause. The corpus the
+list was derived from is the prose of the modules not yet translated, and parts
+of that prose were already English, so English words entered the German list.
+They surface one module at a time, as the sentences that use them come under
+the check, and each is struck out here when it does.
+
+That is a defect of the derivation and not of the idea. It is bounded: the
+corpus shrinks to nothing as the work package finishes, and a word can be
+struck only once.
 
 This module exempts itself. Its word list is German by necessity, and a check
 that reports its own definition is unusable. That is the only exemption which
@@ -90,11 +101,9 @@ SCANNED = (
 NOT_YET_TRANSLATED = frozenset(
     {
         "test_admissible_shapes.py",
-        "test_bcw_step.py",
         "test_documentation.py",
         "test_invariants.py",
         "test_packaging.py",
-        "test_polynomial_map.py",
         "test_reduction.py",
         "test_scripts.py",
         "test_translation.py",
@@ -151,7 +160,7 @@ GERMAN_WORDS = """
     determinantenstrategie determinantenstrategien deutscher diagonale
     dient dies diese dieselbe dieselben diesem diesen dieser dieses
     diesmal dimensionale dimensionen dimensionsfolge dinaten dinge direkt
-    divergent dmp dokumentation dokumentationswidersprueche doppelung
+    divergent dokumentation dokumentationswidersprueche doppelung
     doppelungen dort dorthin drei dreieckig dreiecksfoermig dritte drucken
     druckt druckte duerfen durch durchgeht durchgereicht durchlaeuft
     durchlauf durchsuchter durfte ebene ebenfalls ebenso echte echten
@@ -179,9 +188,9 @@ GERMAN_WORDS = """
     fehler fehlermeldung fehlmeldung fehlschlaegt fehlschlag
     fehlschlagfaelle fehlschluss fehlt fehlte feld fenster fertig feste
     festen festgehalten festhaelt festschreibt fett fiel filtrationsgrad
-    filtrierung filtrierungsgrad filtrierungsstufe finden findet fired
-    fixierte fixierten fixierter flache folgen folgenden folgt fordert
-    formel formeln frage fragen frei freispricht fremde fremden fremdes
+    filtrierung filtrierungsgrad filtrierungsstufe finden findet fixierte
+    fixierten fixierter flache folgen folgenden folgt fordert formel
+    formeln frage fragen frei freispricht fremde fremden fremdes
     fremdsymbole frische frischem frischen frischepruefung frueh frueher
     fruehere frueherer fuehren fuehrende fuehrenden fuehrt fuellen fuenf
     fuenfte fuenfzehnter fuer fussnote gab gaebe galt ganz ganzen ganzer
@@ -275,10 +284,10 @@ GERMAN_WORDS = """
     sekundenbruchteile selben selbst selbstpruefung selbstveroeffentlichte
     senkt sequentiell setzbar setzen setzt sich sicher sichtbar sie sieben
     siebenundfuenfzig siebzehn siebzehndimensionalen siehe sieht signal
-    signalwort signatur simultan sind skalar skaliert skripte smoke sobald
+    signalwort signatur simultan sind skalar skaliert skripte sobald
     sofort solange solche solchen solcher solches soll sollte sondern
     sonst sorgt sortierung soweit spaeter spaetere spaeteren spaeterer
-    spaeteres spalten spart speak spielt spitzenterm sprung spuerbar
+    spaeteres spalten spart spielt spitzenterm sprung spuerbar
     stabilisierende stabilisierten stabilisierung
     stabilisierungskoordinaten stabilisierungsvariablen staerkeren stammen
     statt stehen steht steigt stelle stellen stellte stichproben stieg
