@@ -12,6 +12,7 @@ import sympy as sp
 from kellermap import (
     PolynomialMap,
     VerificationError,
+    enumerate_candidates,
     examples,
     over_field,
     search,
@@ -1170,23 +1171,68 @@ def test_the_message_names_the_argument(integral: PolynomialMap) -> None:
 
 
 def test_a_pool_value_outside_the_ring_is_an_error(integral: PolynomialMap) -> None:
-    """DOM-2 for the third narrowing.
+    """DOM-2 for the third narrowing, and without ``over`` as well.
 
     ``1/2 * y**2`` over ``ZZ`` is not a constant that fails to convert but a
     polynomial that does not exist there. It used to yield no candidate and say
     nothing, exactly as a value describing nothing would.
+
+    Unconditional, unlike the endpoints. Two endpoints over different rings
+    each describe a map and REV-11 answers the pair; a value with coefficients
+    outside the domain describes nothing.
+    """
+    bad = {sp.Symbol("u"): sp.Rational(1, 2) * y**2}
+
+    for named in ({"over": sp.ZZ}, {}):
+        with pytest.raises(VerificationError) as failure:
+            search(integral, integral.extend(2), bad, budget=5, **named)
+
+        assert failure.value.obligation == "DOM-2"
+        assert "u" in failure.value.message
+
+
+def test_the_enumerator_refuses_the_same_value(integral: PolynomialMap) -> None:
+    """The precedent of 0.4.0rc9, applied to the pool.
+
+    ``enumerate_candidates`` is public. ``selection_limit`` was checked in
+    ``search`` and not here until an audit found it; the pool value was the
+    same shape of gap.
     """
     with pytest.raises(VerificationError) as failure:
-        search(
-            integral,
-            integral.extend(2),
-            {sp.Symbol("u"): sp.Rational(1, 2) * y**2},
-            budget=5,
-            over=sp.ZZ,
-        )
+        enumerate_candidates(integral, [sp.Rational(1, 2) * y**2])
 
     assert failure.value.obligation == "DOM-2"
-    assert "u" in failure.value.message
+
+
+def test_a_value_naming_a_later_coordinate_stays_admissible(
+    integral: PolynomialMap,
+) -> None:
+    """The negative control, and the case the first version of this refused.
+
+    ``w6 = w1 x`` becomes convertible only once ``w1`` exists as a generator,
+    and a value like it yielding no candidate is how the dependency between
+    carriers falls out by itself. What is checked are the coefficients and not
+    the generators.
+    """
+    later = sp.Symbol("z")
+
+    assert enumerate_candidates(integral, [y * later]) == ()
+    assert search(integral, integral.extend(2), {sp.Symbol("u"): y * later}, budget=5)
+
+
+def test_the_pool_is_checked_before_the_endpoints_answer(
+    integral: PolynomialMap,
+) -> None:
+    """Otherwise the check moves with the endpoints, which is the rc11 finding.
+
+    Equal endpoints are answered by ``settled`` without a walk, so the search
+    never reaches the enumerator. A bad pool has to raise there too, or the
+    same call is valid or invalid depending on what it was asked to search.
+    """
+    with pytest.raises(VerificationError) as failure:
+        search(integral, integral, {sp.Symbol("u"): sp.Rational(1, 2) * y**2})
+
+    assert failure.value.obligation == "DOM-2"
 
 
 def test_a_pool_value_inside_the_ring_is_not(integral: PolynomialMap) -> None:

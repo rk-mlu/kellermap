@@ -22,12 +22,13 @@ raised. Whether a call is valid is not allowed to depend on how far the walk
 gets.
 """
 
-from collections.abc import Mapping
+from collections.abc import Iterable, Mapping, Sequence
 from typing import Any
 
 import sympy as sp
 from sympy.polys.domains import Domain
 from sympy.polys.polyerrors import CoercionFailed
+from sympy.polys.rings import PolyRing
 
 from .canonical import agree
 from .errors import VerificationError
@@ -216,11 +217,9 @@ def searched_domain(
     either ring answers what they asked, so this raises where the call is made
     instead of reporting an exhausted space.
 
-    A pool value is checked against the ring of the source and not against the
-    domain alone. A value is a polynomial in the source's generators, so
-    ``1/2 * y**2`` over ``ZZ`` is not a constant that fails to convert but a
-    polynomial that does not exist there. Until 0.5 it yielded no candidate and
-    said nothing, exactly as a value describing nothing would.
+    The pool is not checked here. A value that is not a polynomial over the
+    ring is malformed whether or not the caller named one, so
+    ``polynomials_over`` checks it and is called without ``over`` as well.
     """
     if over is None:
         return source.ring.domain
@@ -233,15 +232,56 @@ def searched_domain(
                 f"and the search was asked for {over}",
             )
 
-    ring = source.ring
-    for name, value in (pool or {}).items():
+    return over
+
+
+def polynomials_over(
+    ring: PolyRing,
+    values: Iterable[sp.Expr],
+    names: Sequence[sp.Symbol] | None = None,
+) -> None:
+    """Raise unless every value is a polynomial over ``ring``, DOM-2.
+
+    What is checked is the coefficients and not the generators. A value may
+    name a coordinate the source does not have yet: ``w6 = w1 x`` becomes
+    convertible only once ``w1`` exists, and the enumerator dropping such a
+    value is how the dependency between carriers falls out by itself. So the
+    value is converted into the ring widened by whatever symbols it mentions,
+    and only a coefficient outside the domain is refused.
+
+    That distinction is the whole of this check. ``1/2 * y**2`` over ``ZZ`` and
+    ``y * z`` over ``ZZ[x, y]`` both fail ``ring.from_expr``, and only the
+    first is malformed: the second describes a step that a later coordinate
+    makes reachable. The first version of this guard refused both, and three
+    tests written for the second said so.
+
+    Unconditional, and that is the one asymmetry of this family. Two endpoints
+    over different rings each describe a map, and REV-11 answers the pair
+    without an error; DOM-3 keeps that. A value whose coefficients are outside
+    the domain describes nothing at all, so there is no reading of the call
+    under which it is a narrower search.
+
+    Called from ``enumerate_candidates``, which is public and was the one place
+    a bad value passed unremarked, and called again by ``search`` before its
+    walk. Not a duplicate: a search whose endpoints are equal is answered by
+    ``settled`` and never reaches the enumerator, and whether a call is valid
+    must not depend on how far it gets. An audit made that finding against
+    0.4.0rc11 for the pool itself.
+    """
+    labels = list(names) if names is not None else []
+    known = set(ring.symbols)
+
+    for position, value in enumerate(values):
+        later = sorted(sp.sympify(value).free_symbols - known, key=str)
+        widened, *_ = sp.polys.rings.ring(
+            list(ring.symbols) + later, ring.domain, ring.order
+        )
         try:
-            ring.from_expr(value)
+            widened.from_expr(value)
         except (CoercionFailed, ValueError, TypeError) as exc:
+            named = f"for {labels[position]} " if position < len(labels) else ""
             raise VerificationError(
                 "DOM-2",
-                f"the pool value for {name} is not a polynomial over {over}; "
-                f"got {value}",
+                f"the pool value {named}has coefficients outside "
+                f"{ring.domain}; got {value}",
             ) from exc
-
-    return over

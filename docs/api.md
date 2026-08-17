@@ -1036,17 +1036,29 @@ DOM-2 | the source lies over QQ, and the search was asked for ZZ
 
 ```
 
-A pool value that is not a polynomial over that ring is the same kind of
-contradiction. Over `ZZ` the value below is not one, and without `over` it
-simply yields no candidate, which says as little as a value describing nothing:
+A pool value whose coefficients lie outside the ring is refused whether or not
+`over` was named, because such a value describes nothing at all. Until 0.5 it
+simply yielded no candidate:
 
 ```python
 >>> integral = PolynomialMap((x, y), (x + x**2 * y**3, y))
 >>> try:
-...     search(integral, integral.extend(2), {u: x * y / 2}, over=sp.ZZ)
+...     enumerate_candidates(integral, [x * y / 2])
 ... except VerificationError as failure:
 ...     print(failure.obligation, "|", failure.message)
-DOM-2 | the pool value for u is not a polynomial over ZZ; got x*y/2
+DOM-2 | the pool value has coefficients outside ZZ; got x*y/2
+
+```
+
+A value naming a coordinate the source does not have yet is a different case
+and stays admissible. It is how the dependency between carriers falls out by
+itself: such a value yields no candidate until a later step introduces the
+coordinate.
+
+```python
+>>> z = sp.Symbol("z")
+>>> enumerate_candidates(integral, [y * z])
+()
 
 ```
 

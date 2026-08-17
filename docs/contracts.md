@@ -1714,9 +1714,29 @@ Naming it is the point. A figure that leaves this repository has to say which
 space it belongs to, and a reader cannot recover that from a call that never
 mentioned one.
 
-**DOM-2 — An argument that disagrees with `over` is an error and not a
-result. [0.5]** When `over` is given and the source, the target or a pool value
-does not lie in it, the call raises. It does not report an exhausted space.
+**DOM-2 — An argument that disagrees with the ring is an error and not a
+result. [0.5]** When `over` is given and the source or the target does not lie
+in it, the call raises. It does not report an exhausted space.
+
+A pool value is refused whether or not `over` was given, and that asymmetry is
+deliberate. Two endpoints over different rings each describe a map, and REV-11
+answers the pair without an error. A pool value whose coefficients lie outside
+the domain describes nothing at all, so there is no reading of the call under
+which it is a narrower search.
+
+What is checked of a value are its coefficients and not its generators. A value
+may name a coordinate the source does not have yet — `w6 = w1 x` becomes
+convertible only once `w1` exists — and such a value yielding no candidate is
+how the dependency between carriers falls out by itself. This clause is an
+amendment: the first implementation refused both, and three tests written for
+SEA-13 said so.
+
+`enumerate_candidates` makes the same check. It is public, and until 0.5 a bad
+value passed through it unremarked, which is the gap an audit found for
+`selection_limit` in `0.4.0rc9`. `search` checks again before its walk, because
+a search whose endpoints are equal is answered from the endpoints and never
+reaches the enumerator, and whether a call is valid must not depend on how far
+it gets.
 
 The distinction is the whole of this family. An exhausted space says the search
 covered a space and the chain was not in it, which is a result under SEA-6 and

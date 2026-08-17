@@ -33,7 +33,14 @@ from sympy.polys.rings import PolyElement
 
 from .bcw import BCWStep, Carried, Fresh
 from .bcw.step import Factor
-from .guards import counts, fresh_names, maps, searched_domain, settled
+from .guards import (
+    counts,
+    fresh_names,
+    maps,
+    polynomials_over,
+    searched_domain,
+    settled,
+)
 from .polynomial_map import PolynomialMap
 from .reduction import Reduction
 
@@ -266,11 +273,14 @@ def enumerate_candidates(
 
     ``selection_limit`` is checked here and not only in ``search``. This
     function is public, and until 0.4.0rc9 a negative limit passed through it
-    and still produced candidates.
+    and still produced candidates. The pool values are checked here for the
+    same reason and by the same precedent: until 0.5 a value that is not a
+    polynomial over the source's ring yielded nothing and said nothing.
     """
-    counts(selection_limit=selection_limit)
-
     values = tuple(pool)
+    counts(selection_limit=selection_limit)
+    polynomials_over(source.ring, values)
+
     carriers = {
         _value(source, Carried(index)): index for index in source.carrier_indices
     }
@@ -632,7 +642,8 @@ def search(
     # DOM-1 and DOM-2, before ``settled`` and for the same reason as the checks
     # above. Without ``over`` this is the source's ring and nothing is checked,
     # so a call written against 0.4 keeps its meaning under DOM-3.
-    domain = searched_domain(over, source, target, pool)
+    domain = searched_domain(over, source, target)
+    polynomials_over(source.ring, pool.values(), list(pool))
 
     # REV-11 before the search and not inside it, as in the peel. Until
     # 0.4.0rc8 the test stood only in ``_finish``, that is in the descent. The
