@@ -27,12 +27,13 @@ from itertools import combinations
 from typing import Any, TypeAlias, cast
 
 import sympy as sp
+from sympy.polys.domains import Domain
 from sympy.polys.polyerrors import CoercionFailed
 from sympy.polys.rings import PolyElement
 
 from .bcw import BCWStep, Carried, Fresh
 from .bcw.step import Factor
-from .guards import counts, fresh_names, maps, settled
+from .guards import counts, fresh_names, maps, searched_domain, settled
 from .polynomial_map import PolynomialMap
 from .reduction import Reduction
 
@@ -381,12 +382,17 @@ class SearchOutcome:
         Whether the space the search covers was exhausted. ``False`` means the
         budget ran out first, and then a negative result says even less than
         SEA-6 already allows.
+    domain
+        The coefficient ring the search covered, DOM-4. An exhausted space is
+        worth what the space is worth, and a chain found over ``QQ`` answers a
+        different question from one found over ``ZZ``.
     """
 
     reduction: Reduction | None
     examined: int
     deepest: int
     exhausted: bool
+    domain: Domain
 
 
 def conjugate(source: PolynomialMap, signs: Sequence[sp.Expr]) -> PolynomialMap:
@@ -557,6 +563,7 @@ def search(
     spare: int = 2,
     rewrites: int = 1,
     selection_limit: int = 8,
+    over: Domain | None = None,
 ) -> SearchOutcome:
     """Look for a chain of ``BCWStep`` from ``source`` to ``target``.
 
@@ -622,6 +629,11 @@ def search(
     )
     fresh_names(pool, source)
 
+    # DOM-1 and DOM-2, before ``settled`` and for the same reason as the checks
+    # above. Without ``over`` this is the source's ring and nothing is checked,
+    # so a call written against 0.4 keeps its meaning under DOM-3.
+    domain = searched_domain(over, source, target, pool)
+
     # REV-11 before the search and not inside it, as in the peel. Until
     # 0.4.0rc8 the test stood only in ``_finish``, that is in the descent. The
     # non-answer case was fixed before the search began, and the budget still
@@ -629,7 +641,7 @@ def search(
     # only on a source with ``m = 0`` branches, because without them the
     # descent has nothing to do. An external audit built such a source.
     if settled(source, target):
-        return SearchOutcome(None, 0, 0, True)
+        return SearchOutcome(None, 0, 0, True, domain)
 
     names = tuple(pool)
     values = {name: sp.expand(pool[name]) for name in names}
@@ -658,7 +670,7 @@ def search(
 
         if len(used) == len(names):
             reached = _finish(
-                current, target, order, steps, budget - remaining[0], deepest[0]
+                current, target, order, steps, budget - remaining[0], deepest[0], domain
             )
             if reached is not None:
                 return reached
@@ -708,7 +720,7 @@ def search(
         return outcome
 
     return SearchOutcome(
-        None, budget - max(remaining[0], 0), deepest[0], not cut_off[0]
+        None, budget - max(remaining[0], 0), deepest[0], not cut_off[0], domain
     )
 
 
@@ -828,6 +840,7 @@ def _finish(
     steps: tuple[BCWStep, ...],
     examined: int,
     deepest: int,
+    domain: Domain,
 ) -> SearchOutcome | None:
     """Check the endpoint, and report the chain if it matches.
 
@@ -846,4 +859,4 @@ def _finish(
     if current.reordered(order) != target:
         return None
 
-    return SearchOutcome(Reduction(steps), examined, deepest, False)
+    return SearchOutcome(Reduction(steps), examined, deepest, False, domain)

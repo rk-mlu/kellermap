@@ -1700,7 +1700,9 @@ candidate, exactly as a value that describes nothing would. The enumerator does
 not distinguish "not in this ring" from "nothing here to take".
 
 The obligations below make the space something a caller states and a result
-carries. They are marked `[0.5]` until the milestone closes.
+carries. They are marked `[0.5]` until the milestone closes, which is a
+statement about the milestone and not about whether the code exists: it exists
+since work package 5 and the marker goes when 0.5 is released.
 
 **DOM-1 — The coefficient ring is an argument, and its default is the
 source. [0.5]** `search` and `peel` take `over`, a keyword-only argument
@@ -1794,6 +1796,7 @@ identifier also appears in `str(...)`, but a caller is expected to branch on
 | a shift whose length is not `source.dimension` | `ValueError` |
 | `reordered()` given anything but a permutation of the variables | `ValueError` |
 | a structural case the search does not handle | `NotImplementedError` |
+| an argument over a ring other than `over` | `VerificationError` |
 | arguments of the wrong type | `TypeError` |
 
 The scope of the `filtration_level` row is a correction. It was written for

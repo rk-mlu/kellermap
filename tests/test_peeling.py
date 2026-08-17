@@ -9,7 +9,13 @@ called a ``Reduction``.
 import pytest
 import sympy as sp
 
-from kellermap import PolynomialMap, examples, over_field
+from kellermap import (
+    PolynomialMap,
+    VerificationError,
+    examples,
+    over_field,
+    search,
+)
 from kellermap.bcw import BCWStep, Carried, Fresh
 from kellermap.peeling import (
     PeelOutcome,
@@ -1088,3 +1094,155 @@ def test_a_negative_bound_is_refused() -> None:
     for bound in ("budget", "spare", "pairs", "rising"):
         with pytest.raises(ValueError, match="must not be negative"):
             peel(source, source, **{bound: -1})
+
+
+# --------------------------------------------------------------------------
+# DOM-1 to DOM-4: the coefficient ring as a stated space
+#
+# Three narrowings used to end in an exhausted space, which SEA-6 and REV-7
+# make a result rather than a defect. The space itself was never named.
+# --------------------------------------------------------------------------
+
+
+@pytest.fixture
+def integral() -> PolynomialMap:
+    """A map over ``ZZ``, and its twin over ``QQ`` is one call away."""
+    return PolynomialMap((x, y), (x + y**3, y))
+
+
+def test_without_over_the_ring_comes_from_the_source(integral: PolynomialMap) -> None:
+    """DOM-1. The default is what both functions used before ``over`` existed."""
+    rational = over_field(integral)
+
+    assert peel(integral, integral.extend(2), budget=5).domain == sp.ZZ
+    assert peel(rational, rational.extend(2), budget=5).domain == sp.QQ
+    assert search(integral, integral.extend(2), {}, budget=5).domain == sp.ZZ
+
+
+def test_with_over_the_ring_is_the_one_named(integral: PolynomialMap) -> None:
+    """DOM-1, and DOM-4: the outcome carries it either way."""
+    peeled = peel(integral, integral.extend(2), budget=5, over=sp.ZZ)
+    searched = search(integral, integral.extend(2), {}, budget=5, over=sp.ZZ)
+
+    assert peeled.domain == sp.ZZ
+    assert searched.domain == sp.ZZ
+
+
+def test_an_endpoint_over_another_ring_is_an_error(integral: PolynomialMap) -> None:
+    """DOM-2, for both endpoints and both searches.
+
+    The caller has described two spaces, and no search over either answers what
+    they asked. Before ``over`` this was an exhausted space: true about a space
+    nobody meant, and the defect that cost a release.
+    """
+    rational = over_field(integral)
+
+    for call in (
+        lambda: peel(rational, integral.extend(2), budget=5, over=sp.ZZ),
+        lambda: search(rational, integral.extend(2), {}, budget=5, over=sp.ZZ),
+        lambda: peel(integral, over_field(integral.extend(2)), budget=5, over=sp.ZZ),
+        lambda: search(
+            integral, over_field(integral.extend(2)), {}, budget=5, over=sp.ZZ
+        ),
+    ):
+        with pytest.raises(VerificationError) as failure:
+            call()
+
+        assert failure.value.obligation == "DOM-2"
+        assert "ZZ" in failure.value.message
+        assert "QQ" in failure.value.message
+
+
+def test_the_message_names_the_argument(integral: PolynomialMap) -> None:
+    """Both rings side by side, and which argument brought the other one.
+
+    A message saying only that the rings differ leaves the caller to work out
+    which of their two maps was the odd one.
+    """
+    with pytest.raises(VerificationError) as source_failure:
+        peel(over_field(integral), integral.extend(2), budget=5, over=sp.ZZ)
+
+    with pytest.raises(VerificationError) as target_failure:
+        peel(integral, over_field(integral.extend(2)), budget=5, over=sp.ZZ)
+
+    assert "source" in source_failure.value.message
+    assert "target" in target_failure.value.message
+
+
+def test_a_pool_value_outside_the_ring_is_an_error(integral: PolynomialMap) -> None:
+    """DOM-2 for the third narrowing.
+
+    ``1/2 * y**2`` over ``ZZ`` is not a constant that fails to convert but a
+    polynomial that does not exist there. It used to yield no candidate and say
+    nothing, exactly as a value describing nothing would.
+    """
+    with pytest.raises(VerificationError) as failure:
+        search(
+            integral,
+            integral.extend(2),
+            {sp.Symbol("u"): sp.Rational(1, 2) * y**2},
+            budget=5,
+            over=sp.ZZ,
+        )
+
+    assert failure.value.obligation == "DOM-2"
+    assert "u" in failure.value.message
+
+
+def test_a_pool_value_inside_the_ring_is_not(integral: PolynomialMap) -> None:
+    """The negative control. Otherwise the check above refuses every pool."""
+    outcome = search(
+        integral,
+        integral.extend(2),
+        {sp.Symbol("u"): y**2},
+        budget=5,
+        over=sp.ZZ,
+    )
+
+    assert outcome.domain == sp.ZZ
+
+
+def test_without_over_the_endpoints_keep_the_answer_of_rev_eleven(
+    integral: PolynomialMap,
+) -> None:
+    """DOM-3. A call written against 0.4 keeps its meaning.
+
+    The asymmetry is deliberate. REV-11 is about what a pair of endpoints can
+    be; DOM-2 is about a caller contradicting themselves, which cannot arise
+    without ``over``.
+    """
+    outcome = peel(over_field(integral), integral.extend(2), budget=5)
+
+    assert outcome.reduction is None
+    assert outcome.exhausted
+    assert outcome.examined == 0
+    assert outcome.domain == sp.QQ
+
+
+def test_the_ring_is_checked_before_the_endpoints_answer(
+    integral: PolynomialMap,
+) -> None:
+    """Whether a call is valid must not depend on how far the search gets.
+
+    Equal endpoints are answered by ``settled`` without a walk. A ring named
+    against them still has to be checked, or the same wrong ``over`` would
+    raise on one pair and pass on another.
+    """
+    rational = over_field(integral)
+
+    with pytest.raises(VerificationError) as failure:
+        peel(rational, rational, budget=5, over=sp.ZZ)
+
+    assert failure.value.obligation == "DOM-2"
+
+
+def test_a_found_chain_carries_the_ring(integral: PolynomialMap) -> None:
+    """DOM-4 on a result rather than on a non-answer."""
+    rational = over_field(integral)
+    target = BCWStep.build(
+        rational, 0, Fresh(y, sp.Symbol("u")), Fresh(y**2, sp.Symbol("v")), 1
+    ).target
+    outcome = peel(rational, target, budget=200)
+
+    assert outcome.reduction is not None
+    assert outcome.domain == sp.QQ

@@ -26,8 +26,11 @@ from collections.abc import Mapping
 from typing import Any
 
 import sympy as sp
+from sympy.polys.domains import Domain
+from sympy.polys.polyerrors import CoercionFailed
 
 from .canonical import agree
+from .errors import VerificationError
 from .polynomial_map import PolynomialMap
 from .variables import reserved_names
 
@@ -193,3 +196,52 @@ def settled(source: PolynomialMap, target: PolynomialMap) -> bool:
         return False
 
     return bool(target.reordered(source.variables) == source)
+
+
+def searched_domain(
+    over: Domain | None,
+    source: PolynomialMap,
+    target: PolynomialMap,
+    pool: Mapping[sp.Symbol, sp.Expr] | None = None,
+) -> Domain:
+    """Return the coefficient ring the search covers, DOM-1 and DOM-2.
+
+    Without ``over`` the ring is the source's, which is what ``search`` and
+    ``peel`` used before it existed and is why a call written against 0.4 keeps
+    its meaning. Two endpoints over different rings are then a non-answer under
+    REV-11 and DOM-3, and not an error.
+
+    With ``over`` the caller has stated the space, and an argument over another
+    one contradicts them rather than narrowing the search. No search over
+    either ring answers what they asked, so this raises where the call is made
+    instead of reporting an exhausted space.
+
+    A pool value is checked against the ring of the source and not against the
+    domain alone. A value is a polynomial in the source's generators, so
+    ``1/2 * y**2`` over ``ZZ`` is not a constant that fails to convert but a
+    polynomial that does not exist there. Until 0.5 it yielded no candidate and
+    said nothing, exactly as a value describing nothing would.
+    """
+    if over is None:
+        return source.ring.domain
+
+    for name, argument in (("source", source), ("target", target)):
+        if argument.ring.domain != over:
+            raise VerificationError(
+                "DOM-2",
+                f"the {name} lies over {argument.ring.domain}, "
+                f"and the search was asked for {over}",
+            )
+
+    ring = source.ring
+    for name, value in (pool or {}).items():
+        try:
+            ring.from_expr(value)
+        except (CoercionFailed, ValueError, TypeError) as exc:
+            raise VerificationError(
+                "DOM-2",
+                f"the pool value for {name} is not a polynomial over {over}; "
+                f"got {value}",
+            ) from exc
+
+    return over

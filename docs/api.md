@@ -1008,6 +1008,48 @@ False
 
 ```
 
+### The coefficient ring
+
+An exhausted space is worth what the space is worth. `over` names the
+coefficient ring to search, and the outcome carries it either way:
+
+```python
+>>> from kellermap import peel
+>>> search(start, finish, {u: x * y, v: x * y**2}, over=sp.QQ).domain
+QQ
+>>> peel(finish, finish.extend(1)).domain
+QQ
+
+```
+
+Omitted, `over` is the ring of the source, which is what both functions used
+before it existed. Given, an argument over another ring is a contradiction
+rather than a narrower search, and it is reported where the call is made:
+
+```python
+>>> from kellermap import VerificationError
+>>> try:
+...     search(start, finish, {u: x * y, v: x * y**2}, over=sp.ZZ)
+... except VerificationError as failure:
+...     print(failure.obligation, "|", failure.message)
+DOM-2 | the source lies over QQ, and the search was asked for ZZ
+
+```
+
+A pool value that is not a polynomial over that ring is the same kind of
+contradiction. Over `ZZ` the value below is not one, and without `over` it
+simply yields no candidate, which says as little as a value describing nothing:
+
+```python
+>>> integral = PolynomialMap((x, y), (x + x**2 * y**3, y))
+>>> try:
+...     search(integral, integral.extend(2), {u: x * y / 2}, over=sp.ZZ)
+... except VerificationError as failure:
+...     print(failure.obligation, "|", failure.message)
+DOM-2 | the pool value for u is not a polynomial over ZZ; got x*y/2
+
+```
+
 ## Peeling a chain off a target
 
 `peel(source, target)` walks the other way. It is given the two maps and
@@ -1191,8 +1233,9 @@ True
 | a source or target of a search that is not a `PolynomialMap` | `TypeError` |
 | a value pool that is not a mapping, or a pool name that is not a symbol | `TypeError` |
 | pool names sharing a name, or taking one reserved by the source's ring | `ValueError` |
+| a source, target or pool value over a ring other than `over` | `VerificationError` |
 
-The last three are checked before anything else a search does, so that they do
+The last four are checked before anything else a search does, so that they do
 not depend on whether REV-11 answers the pair from its endpoints.
 
 ```python

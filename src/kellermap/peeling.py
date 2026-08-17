@@ -33,12 +33,13 @@ from dataclasses import dataclass
 from itertools import combinations, combinations_with_replacement
 
 import sympy as sp
+from sympy.polys.domains import Domain
 from sympy.polys.polyerrors import CoercionFailed, ExactQuotientFailed
 
 from .bcw import BCWStep, Carried, Fresh
 from .bcw.step import Factor
 from .errors import VerificationError
-from .guards import counts, maps, same_generators, settled
+from .guards import counts, maps, same_generators, searched_domain, settled
 from .polynomial_map import PolynomialMap, clone_ring, reindex
 from .reduction import Reduction
 
@@ -66,6 +67,11 @@ class PeelOutcome:
     SEA-11 asks; ``exhausted`` says whether the space this peel covers was seen
     to the end.
 
+    ``domain`` is the coefficient ring the peel covered, DOM-4. An exhausted
+    space is worth what the space is worth, and a chain found over ``QQ``
+    answers a different question from one found over ``ZZ``, so the ring is
+    carried with the result rather than left to be read off the call.
+
     There was a ``signs`` field between work packages 9 and 10, holding the
     diagonal of SEA-5. BCW-11 removed the need for it: the constant a step is
     undone with is now the step's own coefficient, so the chain reaches the
@@ -76,6 +82,7 @@ class PeelOutcome:
     examined: int
     deepest: int
     exhausted: bool
+    domain: Domain
 
 
 def removable(current: PolynomialMap) -> dict[sp.Symbol, sp.Symbol]:
@@ -427,6 +434,7 @@ def peel(
     spare: int = 1,
     pairs: int = 16,
     rising: int = 0,
+    over: Domain | None = None,
 ) -> PeelOutcome:
     """Take ``target`` apart until ``source`` is left, then rebuild forwards.
 
@@ -462,6 +470,12 @@ def peel(
     maps(source=source, target=target)
     counts(budget=budget, spare=spare, pairs=pairs, rising=rising)
 
+    # DOM-1 and DOM-2, before ``settled`` and for the same reason as the checks
+    # above: whether a call is valid must not depend on how far the search
+    # gets. Without ``over`` this is the source's ring and nothing is checked,
+    # so a call written against 0.4 keeps its meaning under DOM-3.
+    domain = searched_domain(over, source, target)
+
     # REV-11 before the search and not inside it. Until 0.4.0rc6 the test
     # stood in the descent and prevented only the empty ``Reduction``. The
     # search continued and could return to the source, so it could produce a
@@ -472,7 +486,7 @@ def peel(
     # not only the first. A target over other generators previously cost one
     # examined map to say the same thing.
     if settled(source, target):
-        return PeelOutcome(None, 0, 0, True)
+        return PeelOutcome(None, 0, 0, True, domain)
 
     remaining = [budget]
     deepest = [0]
@@ -516,7 +530,7 @@ def peel(
             # exhausted space. This is not an error, see REV-11.
             if path and current.reordered(source.variables) == source:
                 found = _rebuild(
-                    source, target, path, budget - remaining[0], deepest[0]
+                    source, target, path, budget - remaining[0], deepest[0], domain
                 )
                 if found is not None:
                     return found
@@ -566,7 +580,9 @@ def peel(
     if outcome is not None:
         return outcome
 
-    return PeelOutcome(None, budget - max(remaining[0], 0), deepest[0], not cut_off[0])
+    return PeelOutcome(
+        None, budget - max(remaining[0], 0), deepest[0], not cut_off[0], domain
+    )
 
 
 def _size(reached: PolynomialMap) -> tuple[int, int]:
@@ -637,6 +653,7 @@ def _rebuild(
     path: tuple[Undo, ...],
     examined: int,
     deepest: int,
+    domain: Domain,
 ) -> PeelOutcome | None:
     """Replay the peel forwards and verify every step of it.
 
@@ -669,7 +686,7 @@ def _rebuild(
     if current.reordered(target.variables) != target:  # pragma: no cover - per step
         return None
 
-    return PeelOutcome(Reduction(tuple(steps)), examined, deepest, False)
+    return PeelOutcome(Reduction(tuple(steps)), examined, deepest, False, domain)
 
 
 def _forward(
