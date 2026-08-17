@@ -114,6 +114,7 @@ the implementation is required to guarantee.
 - [Reduction](#reduction)
 - [Search](#search)
 - [Peeling](#peeling)
+- [The coefficient ring](#the-coefficient-ring)
 - [Errors](#errors)
 - [Deliberate non-obligations](#deliberate-non-obligations)
 
@@ -1669,6 +1670,90 @@ REV-4 is worth a second look by a reviewer all the same. The constant it solves
 for is now a coefficient inside a certificate rather than a presentation
 detail beside one, so an error there is an error in what the chain claims.
 BCW-1 catches it: a coefficient that does not fit makes the identity fail.
+
+---
+
+## The coefficient ring
+
+A search returns a chain or an exhausted space, and an exhausted space is a
+statement about a space. The space has never been named. Until 0.5 the
+coefficient ring came from whichever map the caller happened to pass as the
+source, and everything else was measured against it in silence.
+
+Three narrowings have the same shape, and all three end in an exhausted space.
+Measured on the tree before this family existed.
+
+The ring comes from the source alone. Neither `search` nor `peel` takes it, and
+`alpoege` lies over `ZZ` while `over_field(alpoege)` lies over `QQ`. Which
+space a call searches is decided by a map the caller built earlier, possibly
+for another reason.
+
+Endpoints over different rings report an exhausted space. That is one of the
+six invariants of REV-11 and it is true: no chain crosses from `ZZ` to `QQ`,
+because a step takes its factors from the domain of its source. It is also the
+defect that cost a release, when a driver built its source with `over_field`
+and the target lay over `ZZ`. `settled` now answers in nought examined maps
+instead of hours, which makes it fast and leaves it silent.
+
+A pool value outside the ring disappears. `1/2 * y**2` over `ZZ` yields no
+candidate, exactly as a value that describes nothing would. The enumerator does
+not distinguish "not in this ring" from "nothing here to take".
+
+The obligations below make the space something a caller states and a result
+carries. They are marked `[0.5]` until the milestone closes.
+
+**DOM-1 — The coefficient ring is an argument, and its default is the
+source. [0.5]** `search` and `peel` take `over`, a keyword-only argument
+holding the domain to search over. Omitted, it is the domain of the source's
+ring, which is what both functions used before and is why a call written
+against 0.4 keeps its meaning.
+
+Naming it is the point. A figure that leaves this repository has to say which
+space it belongs to, and a reader cannot recover that from a call that never
+mentioned one.
+
+**DOM-2 — An argument that disagrees with `over` is an error and not a
+result. [0.5]** When `over` is given and the source, the target or a pool value
+does not lie in it, the call raises. It does not report an exhausted space.
+
+The distinction is the whole of this family. An exhausted space says the search
+covered a space and the chain was not in it, which is a result under SEA-6 and
+REV-7. A caller who states one ring and passes an argument over another has
+described two spaces, and no search over either answers what they asked. That
+is a wrong call, and a wrong call is reported where it is made.
+
+The exception carries `DOM-2` and names the argument and both rings, so that
+the two are visible side by side rather than left to be inferred.
+
+**DOM-3 — Without `over`, the endpoints keep the answer of REV-11. [0.5]** A
+call that names no ring behaves as it did in 0.4: two endpoints over different
+rings are a non-answer and an exhausted space, decided from the endpoints
+before any walk.
+
+This is a deliberate asymmetry and not an oversight. REV-11 is about what a
+pair of endpoints can be, and it stands. DOM-2 is about a caller contradicting
+themselves, which is a different thing and cannot arise without `over`. The
+alternative, making the mismatch an error everywhere, would change the meaning
+of a call written against 0.4 without the caller doing anything.
+
+**DOM-4 — The outcome carries the ring it searched. [0.5]** `SearchOutcome`
+and `PeelOutcome` hold the domain, whether the caller named it or it came from
+the source.
+
+An exhausted space is only worth what the space is worth, and the same holds
+for a chain: a reduction found over `QQ` and one found over `ZZ` are answers to
+different questions. Carrying the ring in the outcome means a number can be
+quoted with it rather than beside it.
+
+### Which of these can fail on supplied data
+
+DOM-2, which is a check on the arguments a caller brings. DOM-1, DOM-3 and
+DOM-4 are obligations on the library's own conduct.
+
+DOM-2 is worth a second look by a reviewer. It is the one clause in this
+package that turns something previously reported as a result into an
+exception, and a check that fires where it should not would refuse a call that
+0.4 answered.
 
 ---
 

@@ -106,7 +106,7 @@ UNWEIGHTED_G = re.compile(
 # was missing from it from 0.3 to 0.4.0rc8, and because both filters below
 # sieve against ``FAMILIES``, every citation of that family went unchecked in
 # that time.
-FAMILIES = {"BCW", "COL", "LIN", "RC", "RED", "REV", "SEA", "STEP", "TRA"}
+FAMILIES = {"BCW", "COL", "DOM", "LIN", "RC", "RED", "REV", "SEA", "STEP", "TRA"}
 
 # The version number stands in three places: in ``pyproject.toml``, in the
 # project status of the README, and as the topmost heading of the changelog.
@@ -115,6 +115,15 @@ FAMILIES = {"BCW", "COL", "LIN", "RC", "RED", "REV", "SEA", "STEP", "TRA"}
 DECLARED_VERSION = re.compile(r'^version = "(.+)"$', re.MULTILINE)
 README_VERSION = re.compile(r"^Current version: \*\*(.+)\*\*$", re.MULTILINE)
 NEWEST_RELEASE = re.compile(r"^## (\S+)$", re.MULTILINE)
+
+# A live marker such as ``[0.5]`` closing the bold title of an obligation the
+# milestone has not implemented yet. ``AGENTS.md`` says it is removed when the
+# milestone closes, and until now nothing said whether it had been.
+#
+# Closing the title, and not merely written somewhere: the page also talks
+# about markers, and a sentence saying that 0.4 carried one is history rather
+# than a marker. Those are written in backticks and this does not match them.
+MILESTONE_MARKER = re.compile(r"(?<!`)\[(\d+)\.(\d+)\]\*\*")
 
 
 def obligations() -> dict[str, set[int]]:
@@ -407,6 +416,47 @@ def test_no_formula_writes_G_without_its_coefficient(path: Path) -> None:
     unweighted = unweighted_formulas(path.read_text(encoding="utf-8"))
 
     assert not unweighted, f"{path.name} writes G unweighted: {unweighted[:3]}"
+
+
+def test_no_milestone_marker_outlives_its_milestone() -> None:
+    """``AGENTS.md`` says the marker goes when the milestone closes.
+
+    It said so and nothing checked it. A marker names a milestone that has not
+    been released, so the declared version has to be below it. Once
+    ``pyproject.toml`` moves to ``0.5.0``, every ``[0.5]`` on this page fails
+    here, which is what makes the removal a step somebody has to take rather
+    than one somebody has to remember.
+    """
+    declared = only_match(DECLARED_VERSION, ROOT / "pyproject.toml")
+    released = tuple(int(part) for part in declared.split("rc")[0].split("."))
+
+    outlived = sorted(
+        {
+            f"[{major}.{minor}]"
+            for major, minor in MILESTONE_MARKER.findall(CONTRACTS)
+            if (int(major), int(minor), 0) <= released
+        }
+    )
+
+    assert not outlived, f"the page still carries {outlived} at version {declared}"
+
+
+def test_every_marker_closes_the_title_of_an_obligation() -> None:
+    """A marker on nothing is a marker that will never be removed.
+
+    Removing them at the end of a milestone is a walk down the list of
+    obligations, so every one of them has to sit in an obligation's title. A
+    marker in running prose would be missed by that walk and outlive the
+    milestone in silence.
+    """
+    stray = [
+        paragraph.splitlines()[0][:70]
+        for paragraph in CONTRACTS.split("\n\n")
+        if MILESTONE_MARKER.search(paragraph)
+        and not DEFINED.match(paragraph.replace("\n", " "))
+    ]
+
+    assert not stray, f"a milestone marker stands outside an obligation: {stray}"
 
 
 def test_the_three_places_that_carry_the_version_agree() -> None:
