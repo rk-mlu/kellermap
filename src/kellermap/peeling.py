@@ -119,8 +119,10 @@ def undo(
     # In the ring and not in expressions. The arithmetic is the same either
     # way, and the difference is what it costs: rebuilding every component with
     # ``from_expr`` parsed the whole map back out of expressions at every
-    # examined state. Measured on the published nineteen-dimensional map, 2840
-    # calls and 0.53 of the 2.43 seconds a peel took under ``cProfile``.
+    # examined state. On the published nineteen-dimensional map that was 2840
+    # calls, and the peel took about four fifths as long without them. The
+    # measurement, and why it is a pair of runs rather than one number, is
+    # under "Where the time goes" in ``docs/roadmap.md``.
     # ``to_polynomials`` and not the map's own elements, because that is the
     # public route to them. It is not load-bearing here: ring addition returns
     # a new element rather than changing one, measured, so working on the map's

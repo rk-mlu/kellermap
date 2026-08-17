@@ -1471,6 +1471,14 @@ recovers the map before it, and every peeled coordinate must then occur in no
 remaining component. The second half is the check: a coordinate that survives
 the undoing was not introduced by the step that was undone.
 
+Exact means over the coefficient domain of the map and not over some larger
+one. A constant that does not belong to that domain names no step over this
+ring, so undoing with it is a non-answer and not an error, which is the answer
+REV-10 gives when a move cannot be offered for the same reason. The clause is
+added in work package 4 of 0.5, where the arithmetic moved from expressions
+into the ring and made the case reachable: before, such a constant was carried
+through an expression and raised out of the search when the map was rebuilt.
+
 **REV-4 — The constant is solved, not guessed, and it belongs to the step.**
 Undoing a step adds some non-zero constant times the product of its two slot
 components. The constant is fixed by the requirement that the dropped

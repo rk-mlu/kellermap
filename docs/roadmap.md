@@ -811,6 +811,11 @@ boundedness is what makes it a milestone rather than a research programme.
 
 # Version 0.5
 
+**Work packages 1 to 4 are done.** The language of the repository, the gate
+that holds it, `CONTRIBUTING.md`, and `undo` in the ring. What each of them
+changed is in the history of the repository; the numbers work package 4
+produced are under "Where the time goes" below.
+
 ## Untargeted search, and what a result without a target establishes
 
 0.4 searched between two fixed endpoints. This made its result checkable. The
@@ -1051,8 +1056,9 @@ chain is a separate package from a ranking that cannot.
 
 ## Where the time goes
 
-Measured before 0.5 begins, so that the effort goes where it pays. A peel
-against the published nineteen-dimensional map costs about 3.8 seconds under
+Measured before 0.5 began, so that the effort goes where it pays, and measured
+again after work package 4. The table below is the state before it. A peel
+against the published nineteen-dimensional map cost about 3.8 seconds under
 `cProfile`. The profile is flat: no single call dominates.
 
 | | share |
@@ -1069,6 +1075,41 @@ and `expand` 4378 times for eighteen examined maps.
 
 The change that matters is therefore to work in the ring throughout. This is
 WP 4.
+
+### After work package 4
+
+`undo` computes in the ring. The two versions were run alternately in one
+session, because a single absolute number does not reproduce: the same
+measurement on the same machine varied by a third between two sittings. What
+compares is a pair taken back to back.
+
+Four pairs, best of three runs each, on the nineteen-dimensional map:
+
+| | before | after |
+| --- | --- | --- |
+| 1 | 0.956 s | 0.773 s |
+| 2 | 0.919 s | 0.729 s |
+| 3 | 0.893 s | 0.751 s |
+| 4 | 0.904 s | 0.757 s |
+
+About four fifths of the time, and the result is unchanged in every pair:
+eighteen examined maps at depth seventeen, seventeen steps.
+
+Two pairs under `cProfile`, where the shares are readable:
+
+| | before | after |
+| --- | --- | --- |
+| `undo`, cumulative | 1.00 s and 1.10 s | 0.31 s and 0.32 s |
+| calls to `from_expr` | 2840 | 0 |
+
+The call count is the number that does not depend on the machine, and it is
+the one to check first if this is ever measured again.
+
+What is left of the expression work is not in `undo`. `to_polynomials` clones
+the view ring on every call, and `clone_ring` is the largest single cost in
+the profile after `verify`. That is the price of the value semantics several
+audits examined, and it is not touched here. If a later example forces the
+question, it is answered with a fresh measurement and not with this one.
 
 What does not help is `gmpy2`. SymPy uses it for `ZZ` and `QQ` when it is
 installed, and the maintainer asked whether it would help. Measured with and without,
