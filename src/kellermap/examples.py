@@ -467,3 +467,74 @@ def alpoege15_collision() -> Collision:
         ),
         (0, 0, R(-1, 4)) + (0,) * 12,
     )
+
+
+def gao_quartic() -> PolynomialMap:
+    """Return the three-dimensional map of geometric degree four.
+
+    From arXiv:2608.00222, Section 3.5.
+
+    Determinant ``2``, so a Keller map and not normalized. Component degrees 4,
+    11 and 12. The second source map this project has, and the only one whose
+    collision does not live over the rationals: two of its three points are
+    over ``Q(sqrt(-23))``.
+
+    Somebody else's mathematics, licensed CC BY 4.0, which asks for attribution
+    and nothing more. ``docs/references.md`` records the source, what Theorem
+    3.5 claims, what was recomputed here, and what agreement with it does and
+    does not establish.
+
+    Written as the paper writes it. ``p``, ``q`` and ``gamma`` are its closed
+    form, and the two quotients are its own: the paper states the divisibility
+    and this transcribes it rather than the expanded result. That the divisions
+    come out exact is the paper's claim and this project's check, so ``cancel``
+    stands where it can fail and not in a comment.
+
+    The name says geometric degree and not dimension, unlike ``bcw17`` and
+    ``alpoege15``. Those are reductions and their dimension is what
+    distinguishes them; the paper carries two maps in three variables, and the
+    geometric degree, four here and three in Section 3.4, is what tells them apart.
+    """
+    first, second, third = sp.symbols("x y z")
+
+    gamma = 2 - 4 * first * second - first**2 * third
+    carrier = gamma * (1 + first * second)
+    cubic = carrier**3 - 6 * carrier**2 + 6 * carrier
+    quartic = R(3, 8) * carrier**4 - 2 * carrier**3 + R(3, 2) * carrier**2
+
+    return PolynomialMap(
+        (first, second, third),
+        tuple(
+            sp.cancel(sp.together(component))
+            for component in (
+                gamma * first,
+                (cubic + 2 * gamma) / (gamma * first),
+                (quartic + gamma * carrier) / (gamma * first) ** 2,
+            )
+        ),
+    )
+
+
+def gao_quartic_collision() -> Collision:
+    """Return the three points ``gao_quartic`` sends to one image.
+
+    Two of them are over ``Q(sqrt(-23))``, which is what makes this collision
+    different from every other in this repository. It is inside what
+    ``kellermap.canonical`` claims to decide, a quadratic extension; the module
+    says where that claim stops.
+
+    Somebody else's mathematics, like the map. The points are the datum and the
+    image is computed from them, which is what ``Collision.at`` does and what
+    makes it a claim this library can be wrong about. The paper's own sample
+    point is the first of the three.
+    """
+    root = sp.sqrt(23) * sp.I
+
+    return Collision.at(
+        gao_quartic(),
+        (
+            (0, R(1, 2), R(-1, 4)),
+            (2 * root / 23, R(1, 6) + 2 * root / 3, R(-253, 6) + root / 3),
+            (-2 * root / 23, R(1, 6) - 2 * root / 3, R(-253, 6) - root / 3),
+        ),
+    )

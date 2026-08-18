@@ -160,12 +160,21 @@ could not be established until an audit checked the listing and found it; the
 sentence was written from a habit formed on the nineteen-dimensional map, whose
 licence genuinely could not be established, and not from looking.
 
-The decision not to vendor the map stands, and now rests on its own reasons
-rather than a borrowed one. It is not needed here: 0.4 is closed and 0.5 has
-not begun, and a map that would want a `Collision` over a number field is not
-something to add to a release candidate. When 0.5 does take it up, CC BY 4.0
-asks for attribution and nothing more, which this repository gives its fixed
-data anyway.
+The map is in the repository since work package 7 of 0.5, as
+`kellermap.examples.gao_quartic`, with its collision beside it. CC BY 4.0 asks
+for attribution and nothing more, which this repository gives its fixed data
+anyway: the docstring names the paper, the section and the licence, and this
+page carries the rest.
+
+It is written as the paper writes it, from the closed form of `p`, `q` and
+`gamma`, and the two divisions are the paper's own. That they come out exact is
+its claim and this project's check: `PolynomialMap` refuses a component that is
+not a polynomial, so a division that did not divide would fail at construction.
+
+The name says geometric degree and not dimension. `bcw17` and `alpoege15` are
+reductions and their dimension is what distinguishes them; this paper carries
+two maps in three variables, the cuspidal cubic of §3.4 and the quartic here,
+and the geometric degree is what tells them apart.
 
 ### Historical note
 

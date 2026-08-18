@@ -29,13 +29,13 @@ COLLISIONS = [name for name in ALL if name not in NAMES]
 
 
 def test_the_module_holds_what_it_says_it_holds() -> None:
-    """Thirteen small maps that recur, and the two reductions.
+    """Thirteen small maps that recur, the two reductions, and the two sources.
 
-    And three collisions, which are not maps and are therefore not covered by
+    And four collisions, which are not maps and are therefore not covered by
     the criteria below.
     """
-    assert len(NAMES) == 15
-    assert len(COLLISIONS) == 3
+    assert len(NAMES) == 16
+    assert len(COLLISIONS) == 4
 
 
 @pytest.mark.parametrize("name", NAMES)
@@ -154,6 +154,7 @@ def test_not_every_example_has_determinant_one() -> None:
         ("alpoege", "alpoege_collision"),
         ("bcw17", "bcw17_collision"),
         ("alpoege15", "alpoege15_collision"),
+        ("gao_quartic", "gao_quartic_collision"),
     ],
 )
 def test_each_collision_belongs_to_its_map(map_name: str, collision_name: str) -> None:
@@ -206,3 +207,92 @@ def test_the_reference_reductions_are_over_a_field_and_the_source_is_not() -> No
             for component in reduction.to_polynomials()
             for coefficient in component.coeffs()
         )
+
+
+# --------------------------------------------------------------------------
+# The second source map
+#
+# Everything below recomputes a claim of Theorem 3.5 or of the paper's text.
+# Agreement is evidence about mathematics external to this project, which is
+# what a second source is worth and what a second example would not be.
+# --------------------------------------------------------------------------
+
+
+def test_the_quartic_map_matches_theorem_three_five() -> None:
+    """Component degrees 4, 11, 12 and Jacobian determinant identically 2."""
+    quartic = examples.gao_quartic()
+    degrees = [
+        sp.Poly(component, *quartic.variables).total_degree()
+        for component in quartic.components
+    ]
+
+    assert degrees == [4, 11, 12]
+    assert quartic.determinant() == 2
+
+
+def test_the_divisions_of_the_paper_come_out_exact() -> None:
+    """The paper states the divisibility; the example transcribes the quotient.
+
+    ``PolynomialMap`` refuses a component that is not a polynomial, so a
+    division that did not come out exact would fail at construction rather than
+    leave a rational function standing. This test says that the refusal is what
+    is relied on, so that removing the ``cancel`` is not mistaken for a
+    simplification.
+    """
+    quartic = examples.gao_quartic()
+
+    for component in quartic.components:
+        assert sp.together(component).is_polynomial(*quartic.variables)
+
+
+def test_the_quartic_map_is_not_normalized() -> None:
+    """Determinant 2, like Alpoege's -2, and for the same reason.
+
+    Neither source map has had the linear normalisation of Chapter II,
+    Proposition (1.1), applied to it. A reduction of either begins with it.
+    """
+    quartic = examples.gao_quartic()
+
+    assert quartic.determinant() == 2
+    assert quartic.ring.domain.is_QQ
+
+
+def test_the_quartic_collision_lives_over_a_quadratic_extension() -> None:
+    """What makes this collision different from every other one here.
+
+    Two of the three points carry ``sqrt(-23)``. That is inside what
+    ``kellermap.canonical`` claims to decide, and the module says where the
+    claim stops.
+    """
+    collision = examples.gao_quartic_collision()
+    root = sp.sqrt(23) * sp.I
+    carried = [
+        point
+        for point in collision.points
+        if any(
+            root in coordinate.free_symbols or coordinate.has(root)
+            for coordinate in point
+        )
+    ]
+
+    assert len(carried) == 2
+    assert collision.image == (0, 1, 1)
+
+
+def test_the_paper_sample_point_is_the_first_of_the_three() -> None:
+    """The paper gives ``(0, 1/2, -1/4)`` over ``(0, 1, 1)``, and so does this."""
+    collision = examples.gao_quartic_collision()
+
+    assert (0, sp.Rational(1, 2), sp.Rational(-1, 4)) in collision.points
+
+
+def test_the_three_points_are_distinct() -> None:
+    """COL-4, on the collision that made the normal form insufficient.
+
+    Distinctness of algebraic points is what ``cancel`` alone could not decide,
+    and it is the clause a wrong answer would break: a counterexample with two
+    "distinct" preimages that are one point is no counterexample.
+    """
+    collision = examples.gao_quartic_collision()
+
+    assert len({tuple(point) for point in collision.points}) == 3

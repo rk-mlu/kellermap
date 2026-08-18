@@ -321,8 +321,26 @@ QQ
 
 ```
 
-Everything there was written for this project except `alpoege`, which is
-somebody else's mathematics; `docs/references.md` records the source.
+Everything there was written for this project except two source maps, which are
+somebody else's mathematics: `alpoege` and `gao_quartic`. `docs/references.md`
+records both sources, what each paper claims, and what agreement with it does
+and does not establish.
+
+`gao_quartic` is the second, from arXiv:2608.00222, licensed CC BY 4.0. Its
+collision is the only one here whose points are not rational:
+
+```python
+>>> quartic = examples.gao_quartic()
+>>> quartic.degree(), quartic.determinant()
+(12, 2)
+>>> examples.gao_quartic_collision().image
+(0, 1, 1)
+
+```
+
+The name says geometric degree and not dimension. `bcw17` and `alpoege15` are
+reductions and their dimension is what tells them apart; the paper carries two
+maps in three variables, and the geometric degree is what distinguishes those.
 
 ---
 

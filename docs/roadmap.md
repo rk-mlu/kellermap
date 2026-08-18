@@ -811,9 +811,9 @@ boundedness is what makes it a milestone rather than a research programme.
 
 # Version 0.5
 
-**Work packages 1 to 5 are done.** The language of the repository, the gate
-that holds it, `CONTRIBUTING.md`, `undo` in the ring, and the coefficient ring
-as a stated space. What each of them
+**Work packages 1 to 7 are done.** The language of the repository, the gate
+that holds it, `CONTRIBUTING.md`, `undo` in the ring, the coefficient ring as a
+stated space, equality of algebraic numbers, and the second source map. What each of them
 changed is in the history of the repository; the numbers work package 4
 produced are under "Where the time goes" below.
 
