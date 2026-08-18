@@ -161,10 +161,22 @@ sentence was written from a habit formed on the nineteen-dimensional map, whose
 licence genuinely could not be established, and not from looking.
 
 The map is in the repository since work package 7 of 0.5, as
-`kellermap.examples.gao_quartic`, with its collision beside it. CC BY 4.0 asks
-for attribution and nothing more, which this repository gives its fixed data
-anyway: the docstring names the paper, the section and the licence, and this
-page carries the rest.
+`kellermap.examples.gao_quartic`, with its collision beside it.
+
+CC BY 4.0 asks for three things and not one. This page said it asks for
+attribution and nothing more, which an external audit corrected against the
+[licence deed](https://creativecommons.org/licenses/by/4.0/): attribution,
+a link to the licence, and an indication of whether changes were made. All
+three are given here and in the docstring of the map.
+
+- **Attribution.** Gao, *Keller maps of arbitrary geometric degree*,
+  arXiv:2608.00222v1, Section 3.5.
+- **Licence.** CC BY 4.0, <https://creativecommons.org/licenses/by/4.0/>.
+- **Changes.** Yes. The map is transcribed into SymPy from the closed form the
+  paper gives, and the two quotients are carried out rather than left standing.
+  The collision is built from the three points the paper records, and its image
+  is computed here rather than copied. Nothing about the mathematics is
+  altered; the presentation is.
 
 It is written as the paper writes it, from the closed form of `p`, `q` and
 `gamma`, and the two divisions are the paper's own. That they come out exact is

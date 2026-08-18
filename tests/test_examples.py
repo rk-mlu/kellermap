@@ -11,7 +11,15 @@ import inspect
 import pytest
 import sympy as sp
 
-from kellermap import PolynomialMap, examples
+from kellermap import (
+    LinearStep,
+    PolynomialMap,
+    Reduction,
+    enumerate_candidates,
+    examples,
+    over_field,
+)
+from kellermap.bcw import BCWStep
 
 
 def named() -> list[tuple[str, object]]:
@@ -296,3 +304,42 @@ def test_the_three_points_are_distinct() -> None:
     collision = examples.gao_quartic_collision()
 
     assert len({tuple(point) for point in collision.points}) == 3
+
+
+def test_the_quartic_collision_survives_a_chain() -> None:
+    """The transport work package 6 was measured on, as a test rather than a note.
+
+    The roadmap reports that the collision was carried through a linear step, a
+    BCW step and a two-step chain. That was a measurement in a session and
+    nothing in the suite repeated it, which an external audit pointed out: the
+    generic transport tests all use rational points, and nested square roots
+    are what made work package 6 necessary.
+
+    The chain is short on purpose. What is under test is that the algebraic
+    coordinates survive the arithmetic of a step and still verify, not the
+    reduction of this map, which nothing here claims to have.
+    """
+    quartic = over_field(examples.gao_quartic())
+    collision = examples.gao_quartic_collision()
+    normalization = LinearStep.normalize(quartic)
+    candidate = enumerate_candidates(
+        normalization.target, [sp.Symbol("x") * sp.Symbol("y")]
+    )[0]
+    step = BCWStep.build(
+        normalization.target,
+        candidate.index,
+        *candidate.factors(sp.symbols("s t")),
+        1,
+    )
+    chain = Reduction((normalization, step))
+
+    carried = chain.transport(collision)
+
+    assert carried.verify(chain.target) is None
+    assert carried.dimension == chain.target.dimension
+    assert len(carried.points) == 3
+
+    root = sp.sqrt(23) * sp.I
+    algebraic = [point for point in carried.points if any(c.has(root) for c in point)]
+
+    assert len(algebraic) == 2

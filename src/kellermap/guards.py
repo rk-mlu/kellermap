@@ -32,8 +32,8 @@ from sympy.polys.rings import PolyRing
 
 from .canonical import agree
 from .errors import VerificationError
-from .polynomial_map import PolynomialMap
-from .variables import reserved_names
+from .polynomial_map import PolynomialMap, clone_domain
+from .variables import domain_symbol_names, reserved_names
 
 
 def maps(**named: Any) -> None:
@@ -217,12 +217,28 @@ def searched_domain(
     either ring answers what they asked, so this raises where the call is made
     instead of reporting an exhausted space.
 
+    A value that is not a domain at all is a wrong argument and not a
+    contradiction, so it raises ``TypeError`` as the error table says. It was a
+    ``VerificationError`` until an external audit of work package 7 passed
+    ``over="ZZ"`` and read the message: the string prints as ``ZZ``, so the
+    report said the source lies over ``ZZ`` and the search was asked for
+    ``ZZ``. A comparison that cannot fail on equal-looking arguments has to be
+    a type check first.
+
     The pool is not checked here. A value that is not a polynomial over the
     ring is malformed whether or not the caller named one, so
     ``polynomials_over`` checks it and is called without ``over`` as well.
     """
     if over is None:
+        # No clone here. ``PolynomialMap.ring`` hands out a fresh view whose
+        # domain is cloned with it, so this path never shared anything. A
+        # second clone would be a defence against nothing, measured.
         return source.ring.domain
+
+    if not isinstance(over, Domain):
+        raise TypeError(
+            f"over must be a SymPy domain; got {type(over).__name__}: {over!r}"
+        )
 
     for name, argument in (("source", source), ("target", target)):
         if argument.ring.domain != over:
@@ -232,7 +248,14 @@ def searched_domain(
                 f"and the search was asked for {over}",
             )
 
-    return over
+    # A cloned domain and not the caller's, RC-6 and the rule in
+    # ``docs/architecture.md``: a SymPy domain is not a value object. Its
+    # ``gens`` are ``PolyElement``, so mutable dicts, and a caller holding the
+    # one an outcome carries could change what a finished result reports.
+    # Measured by an external audit: clearing ``over.gens[0]`` turned the
+    # generators of an already returned ``SearchOutcome`` from ``(T,)`` into
+    # ``(0,)``.
+    return clone_domain(over)
 
 
 def polynomials_over(
@@ -255,6 +278,15 @@ def polynomials_over(
     makes reachable. The first version of this guard refused both, and three
     tests written for the second said so.
 
+    An indeterminate of the coefficient domain is neither. Over ``ZZ[T]`` the
+    symbol ``T`` is free of the ring's generators and is not a later
+    coordinate, so widening by it asks SymPy for ``ZZ[T][x, y, T]`` and raises
+    ``GeneratorsError``. The domains nest, so the names come from
+    ``domain_symbol_names``, which walks every level: over ``QQ[X3][S]``,
+    reading ``domain.symbols`` alone finds ``S`` and misses ``X3``. An external
+    audit of work package 7 built the ``ZZ[T]`` case, which had worked in 0.4
+    and which DOM-1 promises keeps working.
+
     Unconditional, and that is the one asymmetry of this family. Two endpoints
     over different rings each describe a map, and REV-11 answers the pair
     without an error; DOM-3 keeps that. A value whose coefficients are outside
@@ -270,9 +302,13 @@ def polynomials_over(
     """
     labels = list(names) if names is not None else []
     known = set(ring.symbols)
+    parameters = domain_symbol_names(ring.domain)
 
     for position, value in enumerate(values):
-        later = sorted(sp.sympify(value).free_symbols - known, key=str)
+        free = sp.sympify(value).free_symbols - known
+        later = sorted(
+            (symbol for symbol in free if symbol.name not in parameters), key=str
+        )
         widened, *_ = sp.polys.rings.ring(
             list(ring.symbols) + later, ring.domain, ring.order
         )

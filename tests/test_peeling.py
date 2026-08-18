@@ -1248,6 +1248,125 @@ def test_a_pool_value_inside_the_ring_is_not(integral: PolynomialMap) -> None:
     assert outcome.domain == sp.ZZ
 
 
+@pytest.mark.parametrize(
+    ("label", "domain", "value"),
+    [
+        ("ZZ[T]", sp.ZZ[sp.Symbol("T")], sp.Symbol("T") * y),
+        ("ZZ(T)", sp.ZZ.frac_field(sp.Symbol("T")), sp.Symbol("T") * y),
+        (
+            "QQ[X3][S]",
+            sp.QQ[sp.Symbol("X3")][sp.Symbol("S")],
+            sp.Symbol("S") * sp.Symbol("X3") * y,
+        ),
+    ],
+)
+def test_a_parameter_of_the_domain_is_not_a_later_coordinate(
+    label: str,
+    domain: object,
+    value: sp.Expr,
+) -> None:
+    """The regression an external audit of work package 7 built.
+
+    ``polynomials_over`` widens the ring by whatever symbols a pool value
+    mentions, so that a value naming a coordinate the source does not have yet
+    stays admissible. An indeterminate of the coefficient domain is neither a
+    generator nor a later coordinate, and widening by it asks SymPy for
+    ``ZZ[T][x, y, T]``, which raises ``GeneratorsError``.
+
+    This worked in 0.4 and DOM-1 promises it keeps working. The nested domain
+    is here because the domains nest: reading ``domain.symbols`` alone finds
+    ``S`` and misses ``X3``.
+
+    ``label`` appears in the test name only, so that a failure says which
+    domain broke.
+    """
+    ring = sp.polys.rings.ring([x, y], domain)[0]
+    source = PolynomialMap.from_ring(
+        ring, (ring.from_expr(x) + ring.from_expr(y) ** 3, ring.from_expr(y))
+    )
+    pool = {sp.Symbol("u"): value}
+
+    assert enumerate_candidates(source, [value]) is not None
+    assert search(source, source.extend(2), pool, budget=5).exhausted
+    assert (
+        search(source, source.extend(2), pool, budget=5, over=domain).domain == domain
+    )
+
+
+def test_over_must_be_a_domain() -> None:
+    """A wrong type is a wrong argument and not a contradiction.
+
+    The error table promises ``TypeError`` for an argument of the wrong type.
+    ``over="ZZ"`` gave a ``VerificationError`` saying the source lies over
+    ``ZZ`` and the search was asked for ``ZZ``, because the string prints the
+    same. An external audit read that message.
+    """
+    source = PolynomialMap((x, y), (x + y**3, y))
+
+    for wrong in ("ZZ", 17, [sp.ZZ]):
+        for call in (
+            lambda w=wrong: peel(source, source.extend(2), budget=5, over=w),
+            lambda w=wrong: search(source, source.extend(2), {}, budget=5, over=w),
+        ):
+            with pytest.raises(TypeError, match="must be a SymPy domain"):
+                call()
+
+
+def test_the_outcome_does_not_share_its_domain(integral: PolynomialMap) -> None:
+    """DOM-4 and RC-6 together: a domain is not a value object.
+
+    Its ``gens`` are ``PolyElement``, so mutable dicts. A caller holding the
+    one an outcome carries could change what a finished result reports.
+    Measured by an external audit: clearing ``over.gens[0]`` turned the
+    generators of an already returned outcome from ``(T,)`` into ``(0,)``.
+
+    Both paths are checked, the one that takes ``over`` and the one that reads
+    the source, because the default was the same object as well.
+    """
+    parameter = sp.Symbol("T")
+    over = sp.ZZ[parameter]
+    ring = sp.polys.rings.ring([x, y], over)[0]
+    source = PolynomialMap.from_ring(
+        ring, (ring.from_expr(x) + ring.from_expr(y) ** 3, ring.from_expr(y))
+    )
+
+    named = peel(source, source.extend(2), budget=5, over=over)
+    before = str(named.domain.gens)
+
+    assert named.domain is not over
+    assert named.domain == over
+
+    over.gens[0].clear()
+
+    assert str(over.gens) != before
+    assert str(named.domain.gens) == before
+
+
+def test_the_default_domain_was_never_shared(integral: PolynomialMap) -> None:
+    """And so it is not cloned again, which a first draft did.
+
+    ``PolynomialMap.ring`` hands out a fresh view on every call and clones the
+    domain with it, so the path that reads the source shares nothing. A clone
+    there would be a defence against nothing. Measured, and recorded here
+    because the assertion that looked like it checked this could not fail:
+    ``source.ring.domain`` is a different object every time it is asked for.
+    """
+    parameter = sp.Symbol("T")
+    ring = sp.polys.rings.ring([x, y], sp.ZZ[parameter])[0]
+    source = PolynomialMap.from_ring(
+        ring, (ring.from_expr(x) + ring.from_expr(y) ** 3, ring.from_expr(y))
+    )
+    view = source.ring.domain
+    outcome = peel(source, source.extend(2), budget=5)
+    before = str(outcome.domain.gens)
+
+    assert source.ring.domain is not view
+
+    view.gens[0].clear()
+
+    assert str(outcome.domain.gens) == before
+
+
 def test_without_over_the_endpoints_keep_the_answer_of_rev_eleven(
     integral: PolynomialMap,
 ) -> None:

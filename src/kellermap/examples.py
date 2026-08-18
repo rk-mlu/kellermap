@@ -479,10 +479,18 @@ def gao_quartic() -> PolynomialMap:
     collision does not live over the rationals: two of its three points are
     over ``Q(sqrt(-23))``.
 
-    Somebody else's mathematics, licensed CC BY 4.0, which asks for attribution
-    and nothing more. ``docs/references.md`` records the source, what Theorem
-    3.5 claims, what was recomputed here, and what agreement with it does and
-    does not establish.
+    Somebody else's mathematics: Gao, *Keller maps of arbitrary geometric
+    degree*, arXiv:2608.00222v1, Section 3.5. Licensed CC BY 4.0,
+    https://creativecommons.org/licenses/by/4.0/.
+
+    Changed from the source: transcribed into SymPy from the closed form the
+    paper gives, with the two quotients carried out. The mathematics is not
+    altered, the presentation is. CC BY asks for attribution, a link and an
+    indication of changes, and this repository said for a while that it asks
+    for attribution alone.
+
+    ``docs/references.md`` records what Theorem 3.5 claims, what was recomputed
+    here, and what agreement with it does and does not establish.
 
     Written as the paper writes it. ``p``, ``q`` and ``gamma`` are its closed
     form, and the two quotients are its own: the paper states the divisibility
