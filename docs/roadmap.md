@@ -985,14 +985,27 @@ package that makes the search wider, because a wider search costs more.
 than something read off whatever was passed in. No figure from this milestone
 is comparable with anything until this exists.
 
-**WP 6** admits a collision whose points are not rational. A `Collision`
-currently holds points over the coefficient domain of its map, which puts the
-second family of counterexamples recorded in `docs/references.md`,
-arXiv:2608.00222 §3.5, out of reach. It is the second source map this project
-has. A second source is more useful than a second example: agreement with it is
+**WP 6** admits a collision whose points are not rational, and it turned out
+to be a different package from the one planned here.
+
+The plan said a `Collision` holds points over the coefficient domain of its
+map, which would put the second family of counterexamples, arXiv:2608.00222
+§3.5, out of reach. That was an idea about the code and not a measurement. A
+collision holds SymPy expressions and is evaluated as expressions, so its
+points may live over an extension while the map lies over `QQ`. Built from the
+paper and measured: the collision verifies, and it transports through a linear
+step, a BCW step and a chain.
+
+What was out of reach was equality. `kellermap.canonical` decided rational
+functions and treated a radical as an atom, so two spellings of one algebraic
+number were two points -- COL-4 read backwards -- and a correct image written
+as a nested radical was rejected. `sqrtdenest` runs first now. The module says
+what it claims, rational functions and square roots, and what it does not, a
+radical of higher index.
+
+A second source is more useful than a second example: agreement with it is
 evidence about mathematics external to this project, and not about this
-library's own arithmetic. It comes after WP 5, because a collision over a
-number field is a well-posed question only once the ring is explicit.
+library's own arithmetic.
 
 **WP 7** adds the Gao map. Its licence is established, CC BY 4.0, so unlike the
 nineteen-dimensional map it can be distributed with the library.

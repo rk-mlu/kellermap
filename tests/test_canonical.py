@@ -135,3 +135,95 @@ def test_a_parametric_collision_carries_through(parametric: PolynomialMap) -> No
 
     assert collision.image == (PLAIN, sp.Integer(0))
     assert parametric.determinant() == 2 * (T + 1) * x
+
+
+# --------------------------------------------------------------------------
+# Points over a number field
+#
+# The normal form decided rational functions and treated a radical as an atom.
+# Both directions of that broke, and both were found by measuring rather than
+# by a test failing: the premise of work package 6 was that a collision over a
+# number field could not be carried at all, and it could.
+# --------------------------------------------------------------------------
+
+
+NESTED = (sp.sqrt(2) + sp.sqrt(3), sp.sqrt(5 + 2 * sp.sqrt(6)))
+
+
+def test_two_spellings_of_one_algebraic_number_agree() -> None:
+    """The case ``cancel`` alone reports as two numbers.
+
+    ``(sqrt(2) + sqrt(3))**2 = 5 + 2*sqrt(6)``, and both are positive, so the
+    two are one number. ``cancel`` treats a radical as an atom and cannot see
+    it.
+    """
+    left, right = NESTED
+
+    assert agree(left, right)
+    assert canonical(left) == canonical(right)
+
+
+def test_the_normal_form_is_a_normal_form() -> None:
+    """Equal values have to reach the same expression, not merely compare equal.
+
+    COL-6 ties the hash of a collision to its equality as a set. A procedure
+    that decides ``a == b`` pairwise and leaves two spellings standing would
+    let equality and hashing disagree.
+    """
+    left, right = NESTED
+
+    assert hash(canonical(left)) == hash(canonical(right))
+
+
+def test_the_quadratic_extension_of_the_second_source_map() -> None:
+    """Gao's collision lives over ``Q(sqrt(-23))``, and its points are compared.
+
+    Three spellings of the coordinate that appears in it.
+    """
+    root = sp.sqrt(23) * sp.I
+
+    assert agree(2 * root / 23, 2 * sp.I / sp.sqrt(23))
+    assert agree(root**2, sp.Integer(-23))
+    assert agree(sp.sqrt(-23), root)
+
+
+def test_rational_functions_are_still_decided() -> None:
+    """The class the normal form handled before, unchanged.
+
+    ``sqrtdenest`` runs first now, and it must not disturb the case the module
+    existed for.
+    """
+    parameter = sp.Symbol("T")
+
+    assert agree((parameter**2 - 1) / (parameter - 1), parameter + 1)
+    assert agree(sp.Rational(1, 2), sp.Rational(2, 4))
+    assert not agree(parameter, parameter + 1)
+
+
+def test_distinct_numbers_stay_distinct() -> None:
+    """The negative control. Without it the check above finds everything equal."""
+    assert not agree(sp.sqrt(2), sp.sqrt(3))
+    assert not agree(sp.sqrt(2) + sp.sqrt(3), sp.sqrt(5 + 2 * sp.sqrt(6)) + 1)
+    assert not agree(sp.sqrt(23) * sp.I, -sp.sqrt(23) * sp.I)
+
+
+def test_a_cube_root_is_outside_what_is_claimed() -> None:
+    """The boundary, recorded so that a green run is not read as more.
+
+    ``sqrtdenest`` denests square roots and nothing else. Two spellings of one
+    number of higher degree may still be reported as two, and this test says
+    which case is which rather than leaving a reader to find out.
+    """
+    assert agree(sp.cbrt(2) ** 3, sp.Integer(2))
+
+    # Ramanujan's identity. The two are one number to 124 decimal places, and
+    # the normal form reports them as two.
+    nested = sp.cbrt(sp.cbrt(2) - 1)
+    denested = (
+        sp.cbrt(sp.Rational(1, 9))
+        - sp.cbrt(sp.Rational(2, 9))
+        + sp.cbrt(sp.Rational(4, 9))
+    )
+
+    assert abs(complex(nested - denested)) < 1e-30
+    assert not agree(nested, denested)

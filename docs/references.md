@@ -131,8 +131,25 @@ Two properties matter for how this map could be used, and neither is a defect:
   domain it is a different search space again.
 - The collision above is not rational: two of its three points live over
   `Q(√-23)`. Alpöge's collision is rational, and every `Collision` in this
-  repository so far has been. Carrying this one would need the coefficient
-  domain to be a number field, which nothing here has required yet.
+  repository so far has been.
+
+  This page said that carrying it would need the coefficient domain to be a
+  number field. That was wrong, and it was written from an idea about how the
+  code works rather than from trying it. A collision holds SymPy expressions
+  and is evaluated as expressions, so its points may live over an extension
+  while the map lies over `QQ`: COL-2 forbids a variable of the map, and an
+  algebraic number is a constant. Work package 6 of 0.5 built the map from
+  §3.5, put the three points into a `Collision` and transported them through a
+  linear step, a BCW step and a two-step chain. All of it held on the tree as
+  it stood.
+
+  What did not hold was the normal form. `cancel` treats a radical as an atom,
+  so two spellings of one algebraic number were reported as two points, which
+  is COL-4 read backwards, and a correct image written as a nested radical was
+  rejected, which is the false negative COL-3 warns about one class of number
+  earlier. `kellermap.canonical` denests square roots since 0.5 and says what
+  it does not claim. The points above are inside that class; a cube root would
+  not be.
 
 Gallagher's family, reference [12] of the same paper, contains an instance of
 geometric degree four as well; the author states that the map above was
