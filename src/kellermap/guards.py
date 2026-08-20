@@ -202,7 +202,7 @@ def settled(source: PolynomialMap, target: PolynomialMap) -> bool:
 def searched_domain(
     over: Domain | None,
     source: PolynomialMap,
-    target: PolynomialMap,
+    target: PolynomialMap | None = None,
     pool: Mapping[sp.Symbol, sp.Expr] | None = None,
 ) -> Domain:
     """Return the coefficient ring the search covers, DOM-1 and DOM-2.
@@ -228,6 +228,9 @@ def searched_domain(
     The pool is not checked here. A value that is not a polynomial over the
     ring is malformed whether or not the caller named one, so
     ``polynomials_over`` checks it and is called without ``over`` as well.
+
+    ``target`` is optional because an untargeted search has none. Then only the
+    source is held against ``over``, which is all there is to hold.
     """
     if over is None:
         # No clone here. ``PolynomialMap.ring`` hands out a fresh view whose
@@ -240,7 +243,8 @@ def searched_domain(
             f"over must be a SymPy domain; got {type(over).__name__}: {over!r}"
         )
 
-    for name, argument in (("source", source), ("target", target)):
+    named = [("source", source)] + ([("target", target)] if target is not None else [])
+    for name, argument in named:
         if argument.ring.domain != over:
             raise VerificationError(
                 "DOM-2",

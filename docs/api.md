@@ -42,7 +42,7 @@ what they do.
 ```python
 >>> import kellermap
 >>> kellermap.__all__
-['DEFAULT_VARIABLE_FACTORY', 'Candidate', 'Collision', 'Dilation', 'ElementaryAutomorphism', 'ElementaryFactor', 'FixedVariableFactory', 'IndexedVariableFactory', 'LinearAutomorphism', 'LinearFactor', 'LinearStep', 'PeelOutcome', 'PolynomialMap', 'Provenance', 'Reduction', 'ReductionContext', 'SearchOutcome', 'Step', 'TranslationStep', 'Transposition', 'Transvection', 'Undo', 'VariableFactory', 'VerificationError', 'anchors', 'conjugate', 'diagonal_matching', 'enumerate_candidates', 'lowers_the_weight', 'field_ring', 'over_field', 'peel', 'remaining_weight', 'reserved_names', 'search', 'untargeted_candidates']
+['DEFAULT_VARIABLE_FACTORY', 'Candidate', 'Collision', 'Dilation', 'ElementaryAutomorphism', 'ElementaryFactor', 'FixedVariableFactory', 'IndexedVariableFactory', 'LinearAutomorphism', 'LinearFactor', 'LinearStep', 'PeelOutcome', 'PolynomialMap', 'Provenance', 'Reduction', 'ReductionOutcome', 'ReductionContext', 'SearchOutcome', 'Step', 'TranslationStep', 'Transposition', 'Transvection', 'Undo', 'VariableFactory', 'VerificationError', 'anchors', 'conjugate', 'diagonal_matching', 'enumerate_candidates', 'lowers_the_weight', 'field_ring', 'over_field', 'peel', 'reduce_to_degree3', 'remaining_weight', 'reserved_names', 'search', 'untargeted_candidates']
 
 ```
 
@@ -1019,6 +1019,31 @@ offers nothing there.
 Every step has to lower it. For a step that introduces a generator that follows
 from Proposition (3.1); for a step that introduces none it is a rule this
 project states, and UNT-3 says which is which.
+
+`reduce_to_degree3` walks that space. It takes a source and no target, stops where
+the enumerator runs out, and reports what it saw:
+
+```python
+>>> from kellermap import LinearStep, over_field, reduce_to_degree3
+>>> normalized = LinearStep.normalize(over_field(examples.alpoege())).target
+>>> outcome = reduce_to_degree3(normalized, budget=2000)
+>>> outcome.reduction.target.degree(), len(outcome.reduction.steps)
+(3, 21)
+>>> outcome.exhausted
+True
+
+```
+
+Depth first, with no ranking. Twenty-one steps where the chain computed by hand
+takes eight, and that is the baseline a later ranking has to beat rather than a
+defect. A source that already has degree three is a non-answer, like equal
+endpoints under REV-11:
+
+```python
+>>> reduce_to_degree3(examples.bcw17(), budget=5).reduction is None
+True
+
+```
 
 ---
 

@@ -811,10 +811,10 @@ boundedness is what makes it a milestone rather than a research programme.
 
 # Version 0.5
 
-**Work packages 1 to 8 are done.** The language of the repository, the gate
+**Work packages 1 to 9 are done.** The language of the repository, the gate
 that holds it, `CONTRIBUTING.md`, `undo` in the ring, the coefficient ring as a
-stated space, equality of algebraic numbers, the second source map, and what an
-untargeted enumerator may claim.
+stated space, equality of algebraic numbers, the second source map, what an
+untargeted enumerator may claim, and the untargeted search itself.
 
 The measurement behind work package 8 is on the contract page under "The
 untargeted search", because it is the reason the obligations read as they do
@@ -1031,6 +1031,48 @@ one and forgotten in the other.
 enumerator of WP 8, a stopping criterion of degree three, and an outcome that
 reports what it examined. It will be slow. That is intended: WP 11 and WP 12
 need a measured baseline to be compared against.
+
+Done, and the baseline is this. `reduce_to_degree3` reaches degree three from
+Alpöge's normalized map in 21 steps into dimension 20, examining 21 maps in
+0.3 seconds, and from Gao's in 177 steps into dimension 86, examining 177 maps
+in 40 seconds. Both chains verify. Against those, the chain computed by hand
+takes 8 steps into dimension 17, and `alpoege15` 8 into 15.
+
+Neither search backtracked: examined equals the number of steps in both cases,
+so taking the first candidate every time worked and the cost is the length of
+what it found rather than the width of what it tried. That is what WP 11 has to
+improve, and it says where to look.
+
+It also puts a number on the theorem. BCW prove that every polynomial map
+reduces to degree three, and their proof is an induction that never has to
+choose: any step of the shape of Proposition (3.1) makes progress. A search
+that only takes such steps therefore terminates and arrives, and that is what
+the two runs show rather than something they were lucky to find. What is open
+is not whether a chain exists but how short it is.
+
+### The shape the later packages need
+
+The measurement above says why ranking alone will not be enough. A search that
+never backtracks cannot be improved by preferring one candidate over another
+within a descent that already succeeds; it has to be made to look sideways.
+
+Two things do that, and they belong together.
+
+A bound on the dimension makes the space finite in the direction that matters.
+`reduce_to_degree3` may buy a coordinate at every step, and both runs did; a
+search told that it has at most `k` of them is forced to reuse carriers
+instead, which is the extension that puts `alpoege15` two dimensions below
+`bcw17`.
+
+Dimension as a cost, beside the measure, turns the walk into a shortest-path
+problem. The measure says how far there is to go and the dimension says what
+has been spent, so a search can exhaust every chain in dimension `k` before it
+buys the `k + 1`-st variable, the way Dijkstra's algorithm exhausts a distance
+before it grows. Depth first with no cost does the opposite: it spends a
+dimension whenever that is the first thing offered.
+
+Neither is written here as an obligation, because neither has been measured.
+WP 10 is what measures them.
 
 **WP 10** measures what a search spends. Term growth per step, dimension growth
 per step, and the points at which the two diverge. This package contains no

@@ -10,14 +10,22 @@ Proposition (3.1) and its second half is a rule this project states, and the
 tests are written so that a reader can tell which is which.
 """
 
+import pytest
 import sympy as sp
 
-from kellermap import LinearStep, PolynomialMap, examples, over_field
+from kellermap import (
+    LinearStep,
+    PolynomialMap,
+    VerificationError,
+    examples,
+    over_field,
+)
 from kellermap.bcw import BCWStep, Carried
 from kellermap.untargeted import (
     WEIGHT_BASE,
     leading_splits,
     lowers_the_weight,
+    reduce_to_degree3,
     remaining_weight,
     untargeted_candidates,
 )
@@ -256,3 +264,108 @@ def test_two_different_parts_still_take_two_names() -> None:
         left, right = candidate.factors(sp.symbols("u v"))
 
         assert left.variable != right.variable
+
+
+# --------------------------------------------------------------------------
+# The search itself
+#
+# Depth first, no ranking, no pruning beyond UNT-3. It is slow on purpose:
+# work packages 11 and 12 need a baseline to be compared against, and a
+# baseline with a heuristic in it measures the heuristic.
+# --------------------------------------------------------------------------
+
+
+def test_it_reaches_degree_three_and_the_chain_verifies() -> None:
+    """The whole point, on the map the milestone is about.
+
+    Alpoege's map, normalized, reduced without a target and without being told
+    what to aim for beyond the degree.
+    """
+    source = normalized(examples.alpoege())
+    outcome = reduce_to_degree3(source, budget=2000)
+
+    assert outcome.reduction is not None
+    assert outcome.reduction.source == source
+    assert outcome.reduction.target.degree() == 3
+    assert outcome.reduction.verify() is None
+
+
+def test_the_chain_it_finds_is_longer_than_the_one_computed_by_hand() -> None:
+    """And that is the measurement work packages 11 and 12 exist to improve.
+
+    Twenty-one steps into dimension 20 against the eight steps into dimension
+    17 of ``bcw17``. Taking the first candidate every time is what costs it.
+    Recorded so that a later ranking has a number to beat.
+    """
+    outcome = reduce_to_degree3(normalized(examples.alpoege()), budget=2000)
+
+    assert outcome.reduction is not None
+    assert len(outcome.reduction.steps) == 21
+    assert outcome.reduction.target.dimension == 20
+    assert examples.bcw17().dimension == 17
+
+
+def test_a_source_of_degree_three_is_a_non_answer() -> None:
+    """Nothing to build, and RED-1 wants at least one step.
+
+    The answer REV-11 gives for equal endpoints, for the same reason: the
+    question is well posed and there is no chain to report.
+    """
+    outcome = reduce_to_degree3(examples.bcw17(), budget=5)
+
+    assert outcome.reduction is None
+    assert outcome.examined == 0
+    assert outcome.exhausted
+
+
+def test_the_outcome_carries_the_ring() -> None:
+    """DOM-4, and DOM-1: ``over`` defaults to the ring of the source."""
+    quintic = PolynomialMap((x, y), (x + x**3 * y**2, y))
+
+    assert reduce_to_degree3(quintic, budget=20).domain == sp.ZZ
+    assert (
+        reduce_to_degree3(normalized(examples.alpoege()), budget=2000).domain == sp.QQ
+    )
+
+
+def test_a_ring_the_source_does_not_lie_over_is_an_error() -> None:
+    """DOM-2, through the entry point this package adds."""
+    quintic = PolynomialMap((x, y), (x + x**3 * y**2, y))
+
+    with pytest.raises(VerificationError) as failure:
+        reduce_to_degree3(quintic, budget=20, over=sp.QQ)
+
+    assert failure.value.obligation == "DOM-2"
+
+
+def test_a_budget_that_runs_out_is_not_an_exhausted_space() -> None:
+    """SEA-6 and UNT-4. A cut-off search says even less than a finished one."""
+    outcome = reduce_to_degree3(normalized(examples.gao_quartic()), budget=3)
+
+    assert outcome.reduction is None
+    assert not outcome.exhausted
+    assert outcome.examined == 3
+
+
+def test_every_step_of_a_found_chain_lowers_the_measure() -> None:
+    """UNT-3 as the search applies it, not merely as the enumerator offers it."""
+    outcome = reduce_to_degree3(normalized(examples.alpoege()), budget=2000)
+
+    assert outcome.reduction is not None
+
+    for step in outcome.reduction.steps:
+        assert lowers_the_weight(step.source, step.target)
+
+
+def test_the_result_does_not_depend_on_the_hash_seed() -> None:
+    """The enumerator fixes an order, so two runs give the same chain.
+
+    ``moves`` emitted its constants out of a set until 0.4.0rc6, and at a small
+    budget the order decides which chain is found.
+    """
+    source = normalized(examples.alpoege())
+    first = reduce_to_degree3(source, budget=2000)
+    second = reduce_to_degree3(source, budget=2000)
+
+    assert first.reduction == second.reduction
+    assert first.examined == second.examined

@@ -30,7 +30,9 @@ from .search import (
     search,
 )
 from .untargeted import (
+    ReductionOutcome,
     lowers_the_weight,
+    reduce_to_degree3,
     remaining_weight,
     untargeted_candidates,
 )
@@ -58,6 +60,7 @@ __all__ = [
     "PolynomialMap",
     "Provenance",
     "Reduction",
+    "ReductionOutcome",
     "ReductionContext",
     "SearchOutcome",
     "Step",
@@ -75,6 +78,7 @@ __all__ = [
     "field_ring",
     "over_field",
     "peel",
+    "reduce_to_degree3",
     "remaining_weight",
     "reserved_names",
     "search",

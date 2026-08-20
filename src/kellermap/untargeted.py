@@ -24,10 +24,14 @@ from collections.abc import Iterator
 from dataclasses import dataclass
 
 import sympy as sp
+from sympy.polys.domains import Domain
 
+from .bcw import BCWStep
 from .bcw.step import Carried
-from .guards import counts
+from .context import ReductionContext
+from .guards import counts, maps, searched_domain
 from .polynomial_map import PolynomialMap
+from .reduction import Reduction
 from .search import Candidate, Slot
 
 WEIGHT_BASE = 3
@@ -250,3 +254,138 @@ def _slot(value: sp.Expr, carried: dict[sp.Expr, int]) -> Slot:
         return Carried(holder)
 
     return value
+
+
+@dataclass(frozen=True)
+class ReductionOutcome:
+    """What an untargeted search found, and what it saw on the way.
+
+    Parameters
+    ----------
+    reduction
+        The chain to a map of degree three, or ``None``. ``None`` is not a
+        proof that none exists, by UNT-4: the space walked is the one UNT-3
+        leaves, and UNT-3 rules out steps that BCW-1 to BCW-12 admit.
+    examined
+        How many maps were built and looked at.
+    deepest
+        The longest chain reached, whether or not it arrived.
+    exhausted
+        Whether the space was seen to the end. ``False`` means the budget ran
+        out first, and then a negative result says even less.
+    domain
+        The coefficient ring the search covered, DOM-4.
+    """
+
+    reduction: Reduction | None
+    examined: int
+    deepest: int
+    exhausted: bool
+    domain: Domain
+
+
+def reduce_to_degree3(
+    source: PolynomialMap,
+    *,
+    budget: int = 20000,
+    context: ReductionContext | None = None,
+    over: Domain | None = None,
+) -> ReductionOutcome:
+    """Look for a chain from ``source`` to a map of degree three, UNT-1 to UNT-4.
+
+    Named for the degree it reduces to, because there is only one. BCW call
+    their Section 3 "Reduction to degree 3", and a name saying only that the
+    degree falls would leave a reader asking how far.
+
+    No target and no pool. The candidates are the ones ``untargeted_candidates``
+    offers, the search stops where the enumerator runs out, and that is at
+    degree three by UNT-2.
+
+    Depth first, and without ranking or pruning. Which candidate is tried first
+    is the order the enumerator fixes, and nothing here prefers one over
+    another. That is the point: work packages 11 and 12 need a measured
+    baseline to be compared against, and a baseline with a heuristic in it
+    measures the heuristic.
+
+    ``UNT-3`` is applied, and it is not a heuristic. A step that does not lower
+    the measure is not a slower route but a route that need not end: one step
+    can create ``X_u X_v`` and the next remove it. The rule is what makes an
+    exhausted space a statement, and UNT-4 says which space that is.
+
+    A source that already has degree three is a non-answer and not a failure.
+    There is nothing to build, RED-1 wants at least one step, and the outcome
+    reports no reduction with nothing examined. That is the answer REV-11 gives
+    for equal endpoints, for the same reason.
+
+    ``context`` names the fresh coordinates. A caller cannot supply names by
+    SEA-3 here, because the number of steps is not known before the search, so
+    the policy is passed instead of the names.
+    """
+    maps(source=source)
+    counts(budget=budget)
+    domain = searched_domain(over, source)
+    naming = context if context is not None else ReductionContext()
+
+    remaining = [budget]
+    deepest = [0]
+    cut_off = [False]
+
+    # No store of maps already seen. Independent steps commute, so different
+    # orders reach the same map, and ``peel`` keeps a store for that reason.
+    # Here it would be a decision about the search with no measurement behind
+    # it, and this package is the baseline the later ones are compared against.
+    # Work package 10 is where it belongs if it is worth anything.
+
+    def walk(current: PolynomialMap, steps: tuple[BCWStep, ...]) -> Reduction | None:
+        deepest[0] = max(deepest[0], len(steps))
+
+        if current.degree() <= 3:
+            return Reduction(steps) if steps else None
+        if remaining[0] <= 0:
+            cut_off[0] = True
+
+            return None
+
+        for candidate in untargeted_candidates(current):
+            names = naming.variables(current.ring, candidate.m)
+            step = BCWStep.build(
+                current,
+                candidate.index,
+                *candidate.factors(names),
+                1,
+                candidate.coefficient,
+            )
+            if not lowers_the_weight(current, step.target):  # pragma: no cover
+                # UNT-3 where a search applies it. It cannot fire for what this
+                # enumerator offers, and that is a property of the enumerator
+                # and not of the rule: its two parts multiply to the leading
+                # monomial exactly, so the term is cancelled and never added.
+                # What replaces it has degree at most ``d - 1`` and the two new
+                # components at most ``d - 2``, which together weigh less than
+                # ``3 ** (d - 3)``. Measured over 172 candidates along both long
+                # chains and 32 constructed maps: none was refused here.
+                #
+                # The check stays because the rule belongs to the search. A
+                # later enumerator that does not guarantee it would otherwise
+                # walk a space UNT-4 does not describe.
+                continue
+
+            remaining[0] -= 1
+            found = walk(step.target, (*steps, step))
+            if found is not None:
+                return found
+
+        return None
+
+    if source.degree() <= 3:
+        return ReductionOutcome(None, 0, 0, True, domain)
+
+    reduction = walk(source, ())
+
+    return ReductionOutcome(
+        reduction,
+        budget - max(remaining[0], 0),
+        deepest[0],
+        reduction is not None or not cut_off[0],
+        domain,
+    )
