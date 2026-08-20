@@ -114,6 +114,7 @@ the implementation is required to guarantee.
 - [Reduction](#reduction)
 - [Search](#search)
 - [Peeling](#peeling)
+- [The untargeted search](#the-untargeted-search)
 - [The coefficient ring](#the-coefficient-ring)
 - [Errors](#errors)
 - [Deliberate non-obligations](#deliberate-non-obligations)
@@ -1670,6 +1671,119 @@ REV-4 is worth a second look by a reviewer all the same. The constant it solves
 for is now a coefficient inside a certificate rather than a presentation
 detail beside one, so an error there is an error in what the chain claims.
 BCW-1 catches it: a coefficient that does not fit makes the identity fail.
+
+---
+
+## The untargeted search
+
+`search` and `peel` both need a target. An untargeted search has only a source
+and the instruction to reach degree three, so nothing tells it which step to
+take. This family says what such an enumerator may offer, what bounds it, and
+which of the two halves of that bound is proved and which is decided.
+
+Everything below was measured before it was written. The numbers are from the
+three chains this repository carries and from the moves its own enumerator
+offers along them.
+
+**UNT-1 — Without a target the candidates come from the leading
+monomials. [0.5]** There is no displacement to divide, so Proposition (3.1)
+supplies the rule instead: take a monomial `M` of degree `d = deg(F)` occurring
+in `F`, with coefficient `a`, and write `aM = PQ` with `deg P` and `deg Q` at
+most `d - 2`.
+
+The space that follows is small and does not grow with the dimension.
+Measured: 24 factorizations at the normalized Alpöge map in dimension 3, and
+between 4 and 25 at every map of the two long chains that is still above degree
+three, from dimension 3 up to 19. It is bounded by the number of monomials of
+top degree, and that number stays small because a step removes one and adds
+only monomials below `d`.
+
+A coefficient in the step is not optional here. From the second map of the
+nineteen-dimensional chain onwards, every factorization comes from a leading
+monomial whose coefficient is not one: 25 of 25, then 9 of 9 for thirteen maps,
+then 8 of 8 and 4 of 4. An enumerator that took `P` and `Q`
+monic and carried no coefficient could not express those steps, so BCW-11 is
+what makes this family possible.
+
+**UNT-2 — At degree three the space is empty, and that is the stopping
+rule. [0.5]** `deg P + deg Q = d` with both at most `d - 2` forces `d >= 4`.
+At degree three the enumerator offers nothing, so a search stops because it has
+run out of candidates and not because a separate rule told it to.
+
+Measured at the end of both long chains: no factorizations at all.
+
+**UNT-3 — The measure that bounds the search. [0.5]** Put
+
+    Phi(F) = sum over all monomials M of degree >= 4 in F of 3^(deg M - 3),
+
+and require every step to lower it.
+
+For a step that introduces at least one generator this is a consequence of
+Proposition (3.1) and not an assumption. The step removes a monomial of degree
+`d` and the terms it puts in its place have degree at most
+`max(deg P, deg Q) + 1`, which is at most `d - 1`. Measured over every such
+move the enumerator offers along both long chains: 105 of 105 lower `Phi`.
+
+For a step that introduces no generator it is a rule this project states, not a
+theorem. Such a step subtracts a multiple of `X_u X_v` for two coordinates the
+map already carries. When the target component does not contain that product,
+the subtraction puts it there instead of cancelling it, and the map comes out
+with more to reduce than it had. Measured: 11 of 376 such moves raise `Phi` or
+leave it standing, 8 of them by raising the degree of the target component.
+
+Without the rule the search does not terminate, and the reason is concrete. One
+step can create `X_u X_v` and the next remove it again, so a walk can cycle
+between two maps forever without either being wrong. Nothing in BCW-1 to BCW-12
+forbids either step. `Phi` is what forbids the pair.
+
+The base is 3 and could be 2. A step replaces one monomial of degree `d` by at
+most three of degree `d - 1`, and `3^(d-3)` is exactly what absorbs that, which
+is why the base was chosen so. Measured, base 2 suffices on all three chains
+and base 4 changes nothing, so the choice is a margin and not a necessity.
+
+**UNT-4 — An exhausted space is the space under UNT-3. [0.5]** SEA-6 and REV-7
+already say that finding nothing is not a proof that nothing exists. Here the
+statement is narrower still: the space an untargeted search exhausts is the one
+that UNT-3 leaves, and UNT-3 rules out steps that BCW-1 to BCW-12 admit.
+
+An outcome that reports an exhausted space says the search covered every chain
+whose every step lowers `Phi`. A chain that raises it at one step and reaches
+degree three afterwards would not be found. No such chain is known, and all
+three chains this repository carries lower `Phi` at every one of their 33
+steps, but that is evidence and not a proof.
+
+### Why BCW's own measure is not used
+
+The proof of Proposition (3.1) on page 305 argues by induction on the pair
+`(d, e)`, where `e` is the number of monomials of degree `d` occurring in `F`,
+and shows that either `deg(F') < d` or `deg(F') = d` and `e(F') < e`.
+
+That is a termination proof for BCW's own construction, and it is too coarse
+for a search. Measured along the chains here, `(d, e)` falls at 4 of 8 steps of
+the seventeen-dimensional chain and at 6 of 17 of the nineteen-dimensional one.
+The steps where it does not fall are the ones that build a carrier for a later
+step to reuse, which BCW never do, and which are why `alpoege15` reaches
+fifteen dimensions where `bcw17` reaches seventeen.
+
+Two refinements were measured and are recorded here because they are the
+obvious things to try. Counting per component, as
+`(sum of (d_i - 3), sum of e_i)`, decides the two chains without carrier reuse
+completely and fails six times on the nineteen-dimensional one. Weighting a
+monomial by how often it must still be halved fails five times. Both are linear
+in the degree, and a step that replaces one monomial by three of the next lower
+degree defeats anything linear. That is what the exponent in UNT-3 is for.
+
+### Which of these can fail on supplied data
+
+None of them. An untargeted search takes a source and no target, so there is no
+supplied object for these obligations to be wrong about. UNT-1 and UNT-2 are
+statements about what the enumerator offers, and UNT-3 and UNT-4 are decisions
+about which part of the space is walked.
+
+UNT-3 is the one to read twice. Its first half is proved and its second half is
+not, the two are stated in one obligation because a search cannot apply them
+separately, and a reviewer weighing the family should weigh those halves
+differently.
 
 ---
 

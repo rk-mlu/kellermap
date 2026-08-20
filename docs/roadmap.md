@@ -811,9 +811,17 @@ boundedness is what makes it a milestone rather than a research programme.
 
 # Version 0.5
 
-**Work packages 1 to 7 are done.** The language of the repository, the gate
+**Work packages 1 to 8 are done.** The language of the repository, the gate
 that holds it, `CONTRIBUTING.md`, `undo` in the ring, the coefficient ring as a
-stated space, equality of algebraic numbers, and the second source map. What each of them
+stated space, equality of algebraic numbers, the second source map, and what an
+untargeted enumerator may claim.
+
+The measurement behind work package 8 is on the contract page under "The
+untargeted search", because it is the reason the obligations read as they do
+and not a separate finding. The short version: the space is small and empty at
+degree three, BCW's own induction measure is too coarse for a search, and the
+bound that works is exponential in the degree and proved only for the steps
+that introduce a generator. What each of them
 changed is in the history of the repository; the numbers work package 4
 produced are under "Where the time goes" below.
 

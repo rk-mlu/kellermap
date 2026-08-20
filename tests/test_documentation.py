@@ -106,7 +106,19 @@ UNWEIGHTED_G = re.compile(
 # was missing from it from 0.3 to 0.4.0rc8, and because both filters below
 # sieve against ``FAMILIES``, every citation of that family went unchecked in
 # that time.
-FAMILIES = {"BCW", "COL", "DOM", "LIN", "RC", "RED", "REV", "SEA", "STEP", "TRA"}
+FAMILIES = {
+    "BCW",
+    "COL",
+    "DOM",
+    "LIN",
+    "RC",
+    "RED",
+    "REV",
+    "SEA",
+    "STEP",
+    "TRA",
+    "UNT",
+}
 
 # The version number stands in three places: in ``pyproject.toml``, in the
 # project status of the README, and as the topmost heading of the changelog.
