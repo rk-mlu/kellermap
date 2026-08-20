@@ -85,8 +85,32 @@ class Candidate:
         return (self.left, self.right)
 
     @property
+    def shares_one_generator(self) -> bool:
+        """Return whether both slots are fresh and carry the same value, BCW-12.
+
+        Then one coordinate serves both. Two would carry the same value and
+        cost a dimension for nothing, which is the same saving that puts
+        ``alpoege15`` two dimensions below ``bcw17``.
+
+        It arises when the leading monomial is a square. The untargeted
+        enumerator produces it; ``enumerate_candidates`` never has, measured
+        over 2690 candidates along both long chains, because its two slots come
+        from a pool value and from dividing by it.
+        """
+        left, right = self.slots
+
+        return (
+            not isinstance(left, Carried)
+            and not isinstance(right, Carried)
+            and bool(left == right)
+        )
+
+    @property
     def m(self) -> int:
         """Return how many generators the step would introduce."""
+        if self.shares_one_generator:
+            return 1
+
         return sum(not isinstance(slot, Carried) for slot in self.slots)
 
     def factors(self, names: Iterable[sp.Symbol]) -> tuple[Factor, Factor]:
@@ -94,21 +118,30 @@ class Candidate:
 
         The names come from outside, by SEA-3. Exactly ``m`` of them are
         consumed, and a shorter supply raises rather than inventing one.
+
+        Two fresh slots carrying one value take one name between them, BCW-12.
         """
         supply = iter(names)
         built: list[Factor] = []
+        shared: sp.Symbol | None = None
 
         for slot in self.slots:
             if isinstance(slot, Carried):
                 built.append(slot)
                 continue
+            if shared is not None:
+                built.append(Fresh(slot, shared))
+                continue
             try:
-                built.append(Fresh(slot, next(supply)))
+                name = next(supply)
             except StopIteration:
                 raise ValueError(
                     f"The candidate introduces {self.m} generators, "
                     "and fewer names were supplied."
                 ) from None
+            if self.shares_one_generator:
+                shared = name
+            built.append(Fresh(slot, name))
 
         return (built[0], built[1])
 

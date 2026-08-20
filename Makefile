@@ -1,5 +1,5 @@
 .PHONY: all format lint typecheck test test-slow test-all coverage docs \
-        reconstruct check check-full build-test test-minimum lock-check \
+        reconstruct measure check check-full build-test test-minimum lock-check \
         dist-check release clean
 
 all: check
@@ -51,6 +51,9 @@ reconstruct:
 	uv run python scripts/reconstruct_bcw17.py
 	uv run python scripts/reconstruct_alpoege15.py
 	uv run python scripts/reconstruct_alpoege19.py
+
+measure:
+	uv run python scripts/untargeted_space.py
 
 # --------------------------------------------------------------------------
 # Collected targets
@@ -135,7 +138,7 @@ lock-check:
 	uv lock --check
 
 # All release gates before a tag.
-release: lock-check check-full coverage reconstruct build-test dist-check test-minimum
+release: lock-check check-full coverage reconstruct measure build-test dist-check test-minimum
 
 # --------------------------------------------------------------------------
 

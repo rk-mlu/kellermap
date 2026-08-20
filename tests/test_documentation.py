@@ -26,8 +26,10 @@ of the wrong shape may therefore not stand here verbatim, and the negative
 controls assemble their texts.
 """
 
+import importlib.util
 import inspect
 import re
+import sys
 from pathlib import Path
 
 import pytest
@@ -469,6 +471,37 @@ def test_every_marker_closes_the_title_of_an_obligation() -> None:
     ]
 
     assert not stray, f"a milestone marker stands outside an obligation: {stray}"
+
+
+def test_the_untargeted_figures_appear_on_the_contract_page() -> None:
+    """The measurement script and the page hold the same numbers.
+
+    ``scripts/untargeted_space.py`` recomputes the figures the UNT obligations
+    rest on and asserts them against a copy it holds. That guards the
+    measurement and not the prose: editing a number on the page and not in the
+    script would leave both green.
+
+    This closes it from the other side. Every number the script checks has to
+    occur in the section, so the two copies cannot drift apart in silence.
+    """
+    path = ROOT / "scripts" / "untargeted_space.py"
+    spec = importlib.util.spec_from_file_location("figures_probe", path)
+    assert spec is not None and spec.loader is not None
+    module = importlib.util.module_from_spec(spec)
+    sys.modules[spec.name] = module
+    spec.loader.exec_module(module)
+    section = CONTRACTS[CONTRACTS.index("## The untargeted search") :]
+    section = section[: section.index("\n## ")]
+    # Not inside an identifier. ``SEA-14`` carries ``14``, and a plain word
+    # boundary matched it, so this passed while the figure it looked for had
+    # been edited away.
+    missing = [
+        figure
+        for figure in module.FIGURES
+        if not re.search(rf"(?<![\w-]){figure}\b", section)
+    ]
+
+    assert not missing, f"the page does not state {missing}"
 
 
 def test_the_three_places_that_carry_the_version_agree() -> None:

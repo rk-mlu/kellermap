@@ -46,6 +46,7 @@ make check          # ruff, mypy --strict, the fast suite
 make check-full     # the above, with the slow markers instead of the fast suite
 make coverage       # the suite again, with fail_under = 100
 make reconstruct    # the three independent reconstructions
+make measure        # the figures the untargeted obligations rest on
 ```
 
 `make check` does not run coverage and `make check-full` does not either.
@@ -66,6 +67,7 @@ pytest --cov          # fail_under = 100
 python scripts/reconstruct_bcw17.py
 python scripts/reconstruct_alpoege15.py
 python scripts/reconstruct_alpoege19.py
+python scripts/untargeted_space.py
 ```
 
 Setup is `uv sync`. Python 3.10 to 3.14 are supported and the CI runs both

@@ -1685,6 +1685,12 @@ Everything below was measured before it was written. The numbers are from the
 three chains this repository carries and from the moves its own enumerator
 offers along them.
 
+`scripts/untargeted_space.py` recomputes every figure in this section and stops
+with both numbers side by side when one disagrees. `make measure` runs it and
+`make release` includes it, so a number here cannot go stale quietly. A reader
+who does not trust a figure on a page runs one command instead of rebuilding
+the measurement.
+
 **UNT-1 — Without a target the candidates come from the leading
 monomials. [0.5]** There is no displacement to divide, so Proposition (3.1)
 supplies the rule instead: take a monomial `M` of degree `d = deg(F)` occurring
@@ -1701,6 +1707,19 @@ only monomials below `d`.
 Swapping `P` and `Q` gives the same step up to which name goes where, so it is
 one candidate and not two, which is SEA-2. Counting ordered pairs doubles every
 number above.
+
+When the leading monomial is a square, `P` and `Q` are equal and one coordinate
+serves both, which is BCW-12. The enumerator offers only that shape there. Two
+coordinates carrying one value would cost a dimension for nothing, and it is
+the same saving that puts `alpoege15` two dimensions below `bcw17`. Measured:
+14 of the 172 candidates along the two long chains share a generator, and every
+one of them lands one dimension lower than it would have.
+
+That answers the second question this work package was set. Of the two shapes
+SEA-14 leaves out, the coefficient is necessary and BCW-12 is not: two fresh
+coordinates reach degree three as well. It is worth a dimension at every map
+whose leading monomial is a square, and the nineteen-dimensional chain has
+fourteen of those in a row.
 
 A coefficient in the step is not optional here. From the second map of the
 nineteen-dimensional chain onwards, every factorization comes from a leading
@@ -1726,14 +1745,16 @@ For a step that introduces at least one generator this is a consequence of
 Proposition (3.1) and not an assumption. The step removes a monomial of degree
 `d` and the terms it puts in its place have degree at most
 `max(deg P, deg Q) + 1`, which is at most `d - 1`. Measured over every such
-move the enumerator offers along both long chains: 105 of 105 lower `Phi`.
+move the enumerator offers along both long chains: 105 of 105 lower `Phi`, that
+is 19 of 19 introducing two generators and 86 of 86 introducing one.
 
 For a step that introduces no generator it is a rule this project states, not a
 theorem. Such a step subtracts a multiple of `X_u X_v` for two coordinates the
 map already carries. When the target component does not contain that product,
 the subtraction puts it there instead of cancelling it, and the map comes out
-with more to reduce than it had. Measured: 11 of 376 such moves raise `Phi` or
-leave it standing, 8 of them by raising the degree of the target component.
+with more to reduce than it had. Measured: 365 of 376 such moves lower `Phi`
+and 11 raise it or leave it standing, 8 of those by raising the degree of the
+target component.
 
 Without the rule the search does not terminate, and the reason is concrete. One
 step can create `X_u X_v` and the next remove it again, so a walk can cycle

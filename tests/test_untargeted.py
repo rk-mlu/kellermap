@@ -205,3 +205,54 @@ def test_a_slot_on_the_component_the_step_acts_on_is_not_offered() -> None:
     for candidate in untargeted_candidates(source):
         for slot in candidate.slots:
             assert not (isinstance(slot, Carried) and slot.index == candidate.index)
+
+
+def test_a_square_leading_monomial_is_offered_as_one_generator() -> None:
+    """BCW-12, and it is worth a dimension.
+
+    When the leading monomial is a square the two parts are equal, and one
+    coordinate serves both. Two would carry the same value and cost a dimension
+    for nothing.
+
+    ``m`` reports one, so SEA-3 consumes one name and not two, and the step
+    lands one dimension below what two fresh coordinates would reach. Measured
+    over the two long chains: 14 of 172 candidates share a generator.
+    """
+    square = PolynomialMap((x, y), (x + x**2 * y**2, y))
+    shared = [
+        candidate
+        for candidate in untargeted_candidates(square)
+        if candidate.shares_one_generator
+    ]
+
+    assert len(shared) == 1
+
+    candidate = shared[0]
+
+    assert candidate.m == 1
+    assert candidate.left == candidate.right
+
+    one_name = candidate.factors([sp.Symbol("u")])
+    step = BCWStep.build(square, candidate.index, *one_name, 1, candidate.coefficient)
+    step.verify()
+
+    assert one_name[0].variable == one_name[1].variable
+    assert step.target.dimension == square.dimension + 1
+
+
+def test_two_different_parts_still_take_two_names() -> None:
+    """The negative control. Otherwise every candidate would share a name."""
+    square = PolynomialMap((x, y), (x + x**2 * y**2, y))
+    separate = [
+        candidate
+        for candidate in untargeted_candidates(square)
+        if not candidate.shares_one_generator
+    ]
+
+    assert separate
+
+    for candidate in separate:
+        assert candidate.m == 2
+        left, right = candidate.factors(sp.symbols("u v"))
+
+        assert left.variable != right.variable
