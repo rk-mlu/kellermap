@@ -66,11 +66,18 @@ class Candidate:
     left, right
         The two slots. A ``Carried`` slot names a coordinate of the source; any
         other slot is an expression, the value a fresh coordinate would carry.
+    coefficient
+        What ``G`` scales the removed product by, BCW-11. One for a candidate
+        from ``enumerate_candidates``, which divides a displacement and so has
+        no weight to place; SEA-14 states that boundary. The untargeted
+        enumerator sets it, because it takes ``P`` and ``Q`` monic and the
+        coefficient of the leading monomial has to go somewhere.
     """
 
     index: int
     left: Slot
     right: Slot
+    coefficient: sp.Expr = sp.Integer(1)
 
     @property
     def slots(self) -> tuple[Slot, Slot]:

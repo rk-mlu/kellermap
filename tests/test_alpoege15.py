@@ -42,6 +42,7 @@ from kellermap import (
 )
 from kellermap.bcw import BCWStep, Carried, Fresh
 from kellermap.reduction import LinearStep
+from kellermap.untargeted import lowers_the_weight
 from tests.test_bcw17 import BCW17_COLLISION
 from tests.test_bcw17 import COMPONENTS as BCW17_COMPONENTS
 
@@ -424,3 +425,21 @@ def test_without_that_value_the_chain_is_out_of_reach(reduction: Reduction) -> N
     outcome = search(source, ALPOEGE15, pool, budget=400, rewrites=0)
 
     assert outcome.reduction is None
+
+
+def test_every_step_lowers_the_untargeted_measure(reduction: Reduction) -> None:
+    """UNT-3, on a chain whose steps are known to be right.
+
+    The evidence behind the measure is that it falls along the chains this
+    repository carries. Stating it here rather than in ``test_untargeted.py``
+    puts it where the chain is, and a chain that stopped satisfying it would
+    fail beside the tests that say what it is.
+
+    The linear normalisation is not a BCW step and is not asked to lower
+    anything. It divides out the linear part and leaves the degree alone.
+    """
+    for step in reduction.steps:
+        if not isinstance(step, BCWStep):
+            continue
+
+        assert lowers_the_weight(step.source, step.target), step

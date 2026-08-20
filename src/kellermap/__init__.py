@@ -29,6 +29,11 @@ from .search import (
     enumerate_candidates,
     search,
 )
+from .untargeted import (
+    lowers_the_weight,
+    remaining_weight,
+    untargeted_candidates,
+)
 from .variables import (
     DEFAULT_VARIABLE_FACTORY,
     FixedVariableFactory,
@@ -66,9 +71,12 @@ __all__ = [
     "conjugate",
     "diagonal_matching",
     "enumerate_candidates",
+    "lowers_the_weight",
     "field_ring",
     "over_field",
     "peel",
+    "remaining_weight",
     "reserved_names",
     "search",
+    "untargeted_candidates",
 ]

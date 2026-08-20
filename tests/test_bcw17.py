@@ -50,6 +50,7 @@ from kellermap import (
 )
 from kellermap.bcw import BCWStep, Fresh
 from kellermap.reduction import LinearStep
+from kellermap.untargeted import lowers_the_weight
 
 BCW17 = examples.bcw17()
 X = BCW17.variables
@@ -486,3 +487,21 @@ def test_the_enumerator_contains_every_step_of_this_chain(
 
         assert found, f"step {position} is missing from the enumeration"
         assert found[0].filtration_level(step.source) == step.filtration_level
+
+
+def test_every_step_lowers_the_untargeted_measure(reduction: Reduction) -> None:
+    """UNT-3, on a chain whose steps are known to be right.
+
+    The evidence behind the measure is that it falls along the chains this
+    repository carries. Stating it here rather than in ``test_untargeted.py``
+    puts it where the chain is, and a chain that stopped satisfying it would
+    fail beside the tests that say what it is.
+
+    The linear normalisation is not a BCW step and is not asked to lower
+    anything. It divides out the linear part and leaves the degree alone.
+    """
+    for step in reduction.steps:
+        if not isinstance(step, BCWStep):
+            continue
+
+        assert lowers_the_weight(step.source, step.target), step

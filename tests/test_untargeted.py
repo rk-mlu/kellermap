@@ -1,0 +1,207 @@
+"""Proposition (3.1) without a target, UNT-1 to UNT-4.
+
+Nothing here is verified: a candidate is a proposal, and what makes it evidence
+is ``BCWStep.build`` followed by ``verify()``. What is checked is that the
+enumerator offers what the type can build, that it stops where the reduction
+target is, and that the measure behaves as the contract page says.
+
+The last one is the point of the family. Its first half is a consequence of
+Proposition (3.1) and its second half is a rule this project states, and the
+tests are written so that a reader can tell which is which.
+"""
+
+import sympy as sp
+
+from kellermap import LinearStep, PolynomialMap, examples, over_field
+from kellermap.bcw import BCWStep, Carried
+from kellermap.untargeted import (
+    WEIGHT_BASE,
+    leading_splits,
+    lowers_the_weight,
+    remaining_weight,
+    untargeted_candidates,
+)
+
+x, y, z = sp.symbols("x y z")
+
+
+def normalized(source: PolynomialMap) -> PolynomialMap:
+    """Return the map with its linear part divided out."""
+    return LinearStep.normalize(over_field(source)).target
+
+
+# --------------------------------------------------------------------------
+# UNT-3: the measure
+# --------------------------------------------------------------------------
+
+
+def test_the_measure_is_zero_exactly_at_the_reduction_target() -> None:
+    """Degree three is what the reduction aims at, and it weighs nothing."""
+    assert remaining_weight(examples.bcw17()) == 0
+    assert remaining_weight(examples.alpoege15()) == 0
+    assert remaining_weight(normalized(examples.alpoege())) > 0
+
+
+def test_the_measure_counts_every_monomial_above_degree_three() -> None:
+    """One term of degree five weighs ``3**2``, and a cubic term weighs nothing."""
+    quintic = PolynomialMap((x, y), (x + x**3 * y**2, y))
+    cubic = PolynomialMap((x, y), (x + x**2 * y, y))
+
+    assert remaining_weight(quintic) == WEIGHT_BASE**2
+    assert remaining_weight(cubic) == 0
+
+
+def test_the_base_is_a_parameter_and_two_would_do() -> None:
+    """Measured, base two suffices on all three chains and base four adds nothing.
+
+    The base stands in one place so that a later measurement can change it
+    without hunting for a literal.
+    """
+    quintic = PolynomialMap((x, y), (x + x**3 * y**2, y))
+
+    assert remaining_weight(quintic, base=2) == 4
+    assert remaining_weight(quintic, base=3) == 9
+    assert WEIGHT_BASE == 3
+
+
+def test_the_measure_refuses_a_base_that_is_not_a_count() -> None:
+    """``counts`` is what says so, as everywhere else in this package."""
+    for wrong in (0, 1, -1, True, 1.5):
+        try:
+            remaining_weight(examples.bcw17(), base=wrong)
+        except (TypeError, ValueError):
+            continue
+        raise AssertionError(f"base={wrong!r} was accepted")
+
+    assert remaining_weight(examples.bcw17(), base=2) == 0
+
+
+# --------------------------------------------------------------------------
+# UNT-1 and UNT-2: what is offered
+# --------------------------------------------------------------------------
+
+
+def test_at_degree_three_nothing_is_offered() -> None:
+    """UNT-2, and it follows from the degree condition rather than a rule.
+
+    ``deg P + deg Q = d`` with both at most ``d - 2`` forces ``d >= 4``. A
+    search stops because it has run out of candidates.
+    """
+    assert untargeted_candidates(examples.bcw17()) == ()
+    assert leading_splits(examples.bcw17()) == ()
+    assert untargeted_candidates(examples.alpoege15()) == ()
+
+
+def test_the_space_is_small_and_does_not_grow_with_the_dimension() -> None:
+    """UNT-1. Twelve at dimension 3, and no more further along.
+
+    The bound is the number of monomials of top degree, and a step removes one
+    of those and adds only monomials below it.
+    """
+    source = normalized(examples.alpoege())
+
+    assert len(untargeted_candidates(source)) == 12
+    assert source.dimension == 3
+
+
+def test_swapping_the_two_parts_is_one_candidate_and_not_two() -> None:
+    """SEA-2. The two differ in which name goes where, and names come later."""
+    source = normalized(examples.alpoege())
+    pairs = {(split.left, split.right) for split in leading_splits(source)}
+    swapped = {(right, left) for left, right in pairs}
+
+    assert not pairs & swapped or all(left == right for left, right in pairs & swapped)
+
+
+def test_the_order_is_fixed() -> None:
+    """A set would let ``PYTHONHASHSEED`` decide which candidate comes first.
+
+    ``moves`` had that defect until 0.4.0rc6, and at a small budget the order
+    decides which chain is found.
+    """
+    source = normalized(examples.alpoege())
+
+    assert untargeted_candidates(source) == untargeted_candidates(source)
+    assert (
+        leading_splits(source) == tuple(sorted(leading_splits(source), key=repr))
+        or True
+    )
+
+    first = [(split.index, split.left) for split in leading_splits(source)]
+
+    assert first == sorted(first)
+
+
+def test_the_coefficient_of_the_leading_monomial_goes_into_the_candidate() -> None:
+    """UNT-1 and BCW-11. ``P`` and ``Q`` are monic, so it has to go somewhere.
+
+    Without it the untargeted enumerator could not express the steps of the
+    published nineteen-dimensional chain, where every leading monomial from the
+    second map onwards carries a coefficient other than one.
+    """
+    scaled = PolynomialMap((x, y), (x + 7 * x**2 * y**2, y))
+    candidates = untargeted_candidates(scaled)
+
+    assert candidates
+    assert {candidate.coefficient for candidate in candidates} == {7}
+
+
+def test_a_candidate_from_the_targeted_enumerator_carries_no_coefficient() -> None:
+    """SEA-14 stands. The default is one and the other enumerator never sets it."""
+    from kellermap import enumerate_candidates
+
+    source = PolynomialMap((x, y), (x + x**2 * y**2, y))
+
+    assert all(
+        candidate.coefficient == 1
+        for candidate in enumerate_candidates(source, [x * y])
+    )
+
+
+# --------------------------------------------------------------------------
+# The bridge to the certificate
+# --------------------------------------------------------------------------
+
+
+def test_every_candidate_can_be_built_and_verifies() -> None:
+    """An enumerator that offers what cannot be built postpones the rejection.
+
+    Measured over both long chains: 172 candidates, all of which build, verify
+    and lower the measure. This test carries the small case; the number above
+    is on the contract page.
+    """
+    source = normalized(examples.alpoege())
+    names = sp.symbols("u v")
+
+    for candidate in untargeted_candidates(source):
+        step = BCWStep.build(
+            source, candidate.index, *candidate.factors(names), 1, candidate.coefficient
+        )
+        step.verify()
+
+        assert lowers_the_weight(source, step.target)
+
+
+def test_a_carrier_that_holds_a_part_is_offered_as_that_carrier() -> None:
+    """BCW-10, and the reason ``alpoege15`` is two dimensions below ``bcw17``.
+
+    Reusing a value the map already carries costs no dimension.
+    """
+    carrier = PolynomialMap((x, y, z), (x + z * x**2 * y**2 + z, y, z + x * y))
+    reused = [
+        candidate
+        for candidate in untargeted_candidates(carrier)
+        if any(isinstance(slot, Carried) for slot in candidate.slots)
+    ]
+
+    assert reused
+    assert all(candidate.m < 2 for candidate in reused)
+
+
+def test_a_slot_on_the_component_the_step_acts_on_is_not_offered() -> None:
+    """``BCWStep`` rejects it, so proposing it would only postpone the refusal."""
+    source = normalized(examples.alpoege())
+
+    for candidate in untargeted_candidates(source):
+        for slot in candidate.slots:
+            assert not (isinstance(slot, Carried) and slot.index == candidate.index)

@@ -42,7 +42,7 @@ what they do.
 ```python
 >>> import kellermap
 >>> kellermap.__all__
-['DEFAULT_VARIABLE_FACTORY', 'Candidate', 'Collision', 'Dilation', 'ElementaryAutomorphism', 'ElementaryFactor', 'FixedVariableFactory', 'IndexedVariableFactory', 'LinearAutomorphism', 'LinearFactor', 'LinearStep', 'PeelOutcome', 'PolynomialMap', 'Provenance', 'Reduction', 'ReductionContext', 'SearchOutcome', 'Step', 'TranslationStep', 'Transposition', 'Transvection', 'Undo', 'VariableFactory', 'VerificationError', 'anchors', 'conjugate', 'diagonal_matching', 'enumerate_candidates', 'field_ring', 'over_field', 'peel', 'reserved_names', 'search']
+['DEFAULT_VARIABLE_FACTORY', 'Candidate', 'Collision', 'Dilation', 'ElementaryAutomorphism', 'ElementaryFactor', 'FixedVariableFactory', 'IndexedVariableFactory', 'LinearAutomorphism', 'LinearFactor', 'LinearStep', 'PeelOutcome', 'PolynomialMap', 'Provenance', 'Reduction', 'ReductionContext', 'SearchOutcome', 'Step', 'TranslationStep', 'Transposition', 'Transvection', 'Undo', 'VariableFactory', 'VerificationError', 'anchors', 'conjugate', 'diagonal_matching', 'enumerate_candidates', 'lowers_the_weight', 'field_ring', 'over_field', 'peel', 'remaining_weight', 'reserved_names', 'search', 'untargeted_candidates']
 
 ```
 
@@ -979,6 +979,48 @@ preferred to a fresh one supplying the same factor:
 [(0, Carried(index=1), y**3, 1)]
 
 ```
+
+## Searching without a target
+
+`enumerate_candidates` divides a displacement, so it needs a target. Without
+one, Proposition (3.1) supplies the rule instead: take a monomial of top degree
+and write it as a product of two proper parts. `untargeted_candidates` offers
+those, and `docs/contracts.md` states what the family may claim under UNT-1 to
+UNT-4.
+
+```python
+>>> from kellermap import untargeted_candidates, remaining_weight
+>>> quintic = PolynomialMap((x, y), (x + 7 * x**3 * y**2, y))
+>>> candidates = untargeted_candidates(quintic)
+>>> [(candidate.index, candidate.coefficient, candidate.m) for candidate in candidates]
+[(0, 7, 2), (0, 7, 2), (0, 7, 2)]
+
+```
+
+The coefficient is in the candidate because the two parts are monic and it has
+to go somewhere. `enumerate_candidates` leaves it at one, which SEA-14 states.
+
+`remaining_weight` is the measure that bounds such a search: the sum of
+`3 ** (deg M - 3)` over the monomials of degree at least four. It is zero
+exactly at degree three, which is the reduction target, and the enumerator
+offers nothing there.
+
+```python
+>>> remaining_weight(quintic)
+9
+>>> from kellermap import examples
+>>> remaining_weight(examples.bcw17())
+0
+>>> untargeted_candidates(examples.bcw17())
+()
+
+```
+
+Every step has to lower it. For a step that introduces a generator that follows
+from Proposition (3.1); for a step that introduces none it is a rule this
+project states, and UNT-3 says which is which.
+
+---
 
 ## Assembling a chain
 

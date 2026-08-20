@@ -1692,11 +1692,15 @@ in `F`, with coefficient `a`, and write `aM = PQ` with `deg P` and `deg Q` at
 most `d - 2`.
 
 The space that follows is small and does not grow with the dimension.
-Measured: 24 factorizations at the normalized Alpöge map in dimension 3, and
-between 4 and 25 at every map of the two long chains that is still above degree
+Measured: 12 candidates at the normalized Alpöge map in dimension 3, and
+between 2 and 13 at every map of the two long chains that is still above degree
 three, from dimension 3 up to 19. It is bounded by the number of monomials of
 top degree, and that number stays small because a step removes one and adds
 only monomials below `d`.
+
+Swapping `P` and `Q` gives the same step up to which name goes where, so it is
+one candidate and not two, which is SEA-2. Counting ordered pairs doubles every
+number above.
 
 A coefficient in the step is not optional here. From the second map of the
 nineteen-dimensional chain onwards, every factorization comes from a leading
