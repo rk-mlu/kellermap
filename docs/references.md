@@ -188,7 +188,46 @@ reductions and their dimension is what distinguishes them; this paper carries
 two maps in three variables, the cuspidal cubic of §3.4 and the quartic here,
 and the geometric degree is what tells them apart.
 
-### Historical note
+### alpoege13, the first chain a search found
+
+Seven steps from Alpöge's normalized map into dimension 13, degree three,
+determinant one, carrying the three points of Alpöge's collision. Found in work
+package 11 of milestone 0.5 by a greedy walk over the widened offer of UNT-6 to
+UNT-9, not by hand.
+
+`scripts/reconstruct_alpoege13.py` recomputes it in plain SymPy without the
+library, as the other three reconstructions do for their chains. It is the one
+where that matters most: the other three write down a computation somebody did
+by hand, and this one writes down a computation a program did.
+
+The determinant is checked at three sample points rather than as a polynomial.
+Thirteen variables over `QQ` are past what expression-level elimination
+manages, and the technique the library uses to get past it is the
+implementation the script exists to be independent of. A value other than one
+falsifies the claim; agreement at three points does not prove it, and the
+script says so.
+
+### What it establishes
+
+Three distinct preimages of one image, in dimension 13, at degree three. That
+is against the eight steps into 15 of `alpoege15` and the eight into 17 of
+`bcw17`.
+
+### What it does not establish
+
+Not minimality. The walk that found it takes the best single step at every map
+and never looks sideways, and a search that spent dimension as a cost might do
+better.
+
+Not priority. Alpöge, Gallagher and Gao work on these maps, and the literature
+has not been checked again since this number appeared. Until it has, the number
+stays inside the repository: nothing in `README.md` or `CHANGELOG.md` mentions
+it, and what a comparison would show has to be written beside it when it does.
+
+The rule that produced it is measured on this map alone. The same rule did not
+finish on Gao's in twenty-five minutes.
+
+## Historical note
 
 **Rodríguez Díaz, L. O.** *On the Origin of the Jacobian Conjecture.* Comptes
 Rendus Mathématique **364** (2026), 363–370.

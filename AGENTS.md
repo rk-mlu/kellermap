@@ -119,11 +119,12 @@ pytest --cov                              # fail_under = 100
 python scripts/reconstruct_bcw17.py
 python scripts/reconstruct_alpoege15.py
 python scripts/reconstruct_alpoege19.py
+python scripts/reconstruct_alpoege13.py
 python scripts/untargeted_space.py
 ```
 
 `make check` runs the first five, `make check-full` adds the slow markers,
-`make reconstruct` runs the three reconstructions and `make measure` the
+`make reconstruct` runs the four reconstructions and `make measure` the
 figures behind the untargeted family. Before a tag, `make release` adds
 `lock-check`, `coverage`, `build-test`, `dist-check` and `test-minimum`.
 

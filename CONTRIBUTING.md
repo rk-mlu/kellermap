@@ -45,7 +45,7 @@ Everything below has to pass.
 make check          # ruff, mypy --strict, the fast suite
 make check-full     # the above, with the slow markers instead of the fast suite
 make coverage       # the suite again, with fail_under = 100
-make reconstruct    # the three independent reconstructions
+make reconstruct    # the four independent reconstructions
 make measure        # the figures the untargeted obligations rest on
 ```
 
@@ -67,6 +67,7 @@ pytest --cov          # fail_under = 100
 python scripts/reconstruct_bcw17.py
 python scripts/reconstruct_alpoege15.py
 python scripts/reconstruct_alpoege19.py
+python scripts/reconstruct_alpoege13.py
 python scripts/untargeted_space.py
 ```
 

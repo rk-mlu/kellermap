@@ -51,6 +51,7 @@ reconstruct:
 	uv run python scripts/reconstruct_bcw17.py
 	uv run python scripts/reconstruct_alpoege15.py
 	uv run python scripts/reconstruct_alpoege19.py
+	uv run python scripts/reconstruct_alpoege13.py
 
 measure:
 	uv run python scripts/untargeted_space.py
