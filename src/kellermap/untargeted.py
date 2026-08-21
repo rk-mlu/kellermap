@@ -196,6 +196,88 @@ def leading_splits(source: PolynomialMap) -> tuple[Split, ...]:
     return tuple(found)
 
 
+def grouped_splits(source: PolynomialMap) -> tuple[Split, ...]:
+    """Return the wider candidates of UNT-6 and UNT-7.
+
+    ``P`` is a monomial of degree ``d // 2`` dividing at least two of the
+    monomials of degree four or more in one component, and ``Q`` is the sum of
+    their cofactors. The step removes all of them at once, where
+    ``leading_splits`` removes one.
+
+    This goes beyond Proposition (3.1) and the contract page says so. BCW write
+    ``aM = PQ`` for a single monomial, which forces both factors to be
+    monomials. BCW-6 admits the wider shape already, and work package 10
+    measured what it is worth: the high-yield steps of the chains computed by
+    hand all use a factor with several terms, and the narrow enumerator offers
+    none.
+
+    ``d // 2`` is UNT-7, a stated choice and not a proved one. Admissibility
+    bounds the degree of a factor between two and ``d - 2``, and ``d // 2`` lies
+    inside that for every ``d >= 4``.
+
+    The coefficient of a grouped candidate is one. The coefficients of the
+    monomials go into ``Q``, which is a sum and can carry them, where a single
+    monomial has to hand its own to the step.
+
+    ``Split`` carries a monomial and this yields a sum, so ``monomial`` holds
+    the divisor and ``left`` and ``right`` hold the two parts as before, with
+    ``right`` left empty. The candidates are built from ``coefficient`` and the
+    two sides directly.
+    """
+    degree = source.degree()
+    if degree <= 3:
+        return ()
+
+    wanted = degree // 2
+    found: list[Split] = []
+    for index, component in enumerate(source.to_polynomials()):
+        high = sorted(
+            (monomial, coefficient)
+            for monomial, coefficient in component.terms()
+            if sum(monomial) >= 4
+        )
+        if len(high) < 2:
+            continue
+        for divisor in _divisors_of_degree([monomial for monomial, _ in high], wanted):
+            covered = [
+                (monomial, coefficient)
+                for monomial, coefficient in high
+                if all(a >= b for a, b in zip(monomial, divisor, strict=True))
+            ]
+            if len(covered) < 2:
+                continue
+            # No check that a cofactor stays within ``degree - 2``. It cannot
+            # leave it: a monomial has degree at most ``d``, the divisor has
+            # degree ``d // 2``, so a cofactor has degree at most
+            # ``d - d // 2``, and that is at most ``d - 2`` for every
+            # ``d >= 4``. At four and five the two are equal and above that the
+            # slack grows. A branch was written and removed after coverage
+            # showed it unreached and the arithmetic showed it unreachable.
+            found.append(
+                Split(
+                    index=index,
+                    monomial=divisor,
+                    coefficient=sp.Integer(1),
+                    left=divisor,
+                    right=(),
+                )
+            )
+
+    return tuple(found)
+
+
+def _divisors_of_degree(
+    monomials: list[tuple[int, ...]],
+    degree: int,
+) -> list[tuple[int, ...]]:
+    """Return every exponent vector of that degree dividing one of them."""
+    found: set[tuple[int, ...]] = set()
+    for monomial in monomials:
+        found |= {divisor for divisor in _divisors(monomial) if sum(divisor) == degree}
+
+    return sorted(found)
+
+
 def untargeted_candidates(source: PolynomialMap) -> tuple[Candidate, ...]:
     """Return the steps Proposition (3.1) could take at ``source``, UNT-1.
 
@@ -231,7 +313,47 @@ def untargeted_candidates(source: PolynomialMap) -> tuple[Candidate, ...]:
             )
         )
 
+    # UNT-6 after UNT-1, so that a call written before the offer was widened
+    # still sees the same candidates in the same places. The order within each
+    # group is the one its enumerator fixes.
+    for split in grouped_splits(source):
+        divisor = _monomial(split.left, variables)
+        cofactors = _cofactor_sum(source, split.index, split.left)
+        found.append(
+            Candidate(
+                index=split.index,
+                left=_slot(divisor, carried),
+                right=_slot(cofactors, carried),
+                coefficient=sp.Integer(1),
+            )
+        )
+
     return tuple(found)
+
+
+def _cofactor_sum(
+    source: PolynomialMap,
+    index: int,
+    divisor: tuple[int, ...],
+) -> sp.Expr:
+    """Return the sum of the cofactors the divisor leaves, UNT-6.
+
+    Every monomial of degree four or more in the component that the divisor
+    divides, with its coefficient, divided by it and added up. The step removes
+    all of them in one move.
+    """
+    component = source.to_polynomials()[index]
+    domain = source.ring.domain
+    total = sp.Integer(0)
+    for monomial, coefficient in sorted(component.terms()):
+        if sum(monomial) < 4:
+            continue
+        if not all(a >= b for a, b in zip(monomial, divisor, strict=True)):
+            continue
+        rest = tuple(a - b for a, b in zip(monomial, divisor, strict=True))
+        total += domain.to_sympy(coefficient) * _monomial(rest, source.variables)
+
+    return sp.expand(total)
 
 
 def _carried_values(source: PolynomialMap) -> dict[sp.Expr, int]:
@@ -359,7 +481,13 @@ def reduce_to_degree3(
                 current,
                 candidate.index,
                 *candidate.factors(names),
-                1,
+                # UNT-8. Not observable here yet, and that is stated rather
+                # than hidden: only a wide candidate reaches ``EA^0``, and this
+                # walk never builds one, because it takes the first candidate
+                # that lowers the measure and the narrow ones come first. A
+                # mutation fixing this at one passes every test. It will not
+                # once something chooses from the offer.
+                candidate.filtration_level(current),
                 candidate.coefficient,
             )
             if not lowers_the_weight(current, step.target):  # pragma: no cover
@@ -369,7 +497,7 @@ def reduce_to_degree3(
                 # monomial exactly, so the term is cancelled and never added.
                 # What replaces it has degree at most ``d - 1`` and the two new
                 # components at most ``d - 2``, which together weigh less than
-                # ``3 ** (d - 3)``. Measured over 172 candidates along both long
+                # ``3 ** (d - 3)``. Measured over 272 candidates along both long
                 # chains and 32 constructed maps: none was refused here.
                 #
                 # The check stays because the rule belongs to the search. A

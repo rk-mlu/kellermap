@@ -1,4 +1,4 @@
-"""Proposition (3.1) without a target, UNT-1 to UNT-5.
+"""Proposition (3.1) without a target, UNT-1 to UNT-9.
 
 Nothing here is verified: a candidate is a proposal, and what makes it evidence
 is ``BCWStep.build`` followed by ``verify()``. What is checked is that the
@@ -23,6 +23,7 @@ from kellermap import (
 from kellermap.bcw import BCWStep, Carried
 from kellermap.untargeted import (
     WEIGHT_BASE,
+    grouped_splits,
     leading_splits,
     lowers_the_weight,
     reduce_to_degree3,
@@ -101,14 +102,18 @@ def test_at_degree_three_nothing_is_offered() -> None:
 
 
 def test_the_space_is_small_and_does_not_grow_with_the_dimension() -> None:
-    """UNT-1. Twelve at dimension 3, and no more further along.
+    """UNT-1 and UNT-6. Twelve narrow candidates and ten wide ones at dimension 3.
 
-    The bound is the number of monomials of top degree, and a step removes one
-    of those and adds only monomials below it.
+    The bound on the narrow part is the number of monomials of top degree, and
+    a step removes one of those and adds only monomials below it. The wide part
+    is bounded by the divisors of degree ``d // 2`` that divide at least two of
+    them, which is smaller still.
     """
     source = normalized(examples.alpoege())
 
-    assert len(untargeted_candidates(source)) == 12
+    assert len(leading_splits(source)) == 12
+    assert len(grouped_splits(source)) == 10
+    assert len(untargeted_candidates(source)) == 22
     assert source.dimension == 3
 
 
@@ -177,13 +182,21 @@ def test_every_candidate_can_be_built_and_verifies() -> None:
     Measured over both long chains: 172 candidates, all of which build, verify
     and lower the measure. This test carries the small case; the number above
     is on the contract page.
+
+    The level comes from the candidate since UNT-8. Fixing it at one made this
+    test fail as soon as the offer widened, which is the check reporting that
+    a wide candidate reaches ``EA^0``.
     """
     source = normalized(examples.alpoege())
     names = sp.symbols("u v")
 
     for candidate in untargeted_candidates(source):
         step = BCWStep.build(
-            source, candidate.index, *candidate.factors(names), 1, candidate.coefficient
+            source,
+            candidate.index,
+            *candidate.factors(names),
+            candidate.filtration_level(source),
+            candidate.coefficient,
         )
         step.verify()
 
@@ -396,3 +409,178 @@ def test_the_result_does_not_depend_on_the_hash_seed() -> None:
 
     assert first.reduction == second.reduction
     assert first.examined == second.examined
+
+
+# --------------------------------------------------------------------------
+# UNT-6 to UNT-9: the widened offer
+#
+# Work package 10 found that the high-yield steps use a factor with several
+# terms and the narrow enumerator offers none, so no ranking over what it
+# offered could reach them. These are the candidates that close that.
+# --------------------------------------------------------------------------
+
+
+def test_a_grouped_candidate_removes_several_monomials_at_once() -> None:
+    """UNT-6. ``P`` divides more than one, and ``Q`` is the sum of the cofactors.
+
+    Where ``leading_splits`` removes the one monomial it acts on, this removes
+    every monomial of degree four or more that the divisor divides.
+    """
+    source = normalized(examples.alpoege())
+    grouped = grouped_splits(source)
+
+    assert grouped
+
+    wide = [
+        candidate
+        for candidate in untargeted_candidates(source)
+        if len(sp.Add.make_args(sp.expand(candidate.right))) > 1
+        or len(sp.Add.make_args(sp.expand(candidate.left))) > 1
+    ]
+
+    assert wide
+
+
+def test_the_divisor_has_degree_d_over_two() -> None:
+    """UNT-7, and it is the stated choice rather than a proved one.
+
+    Admissibility bounds a factor between degree two and ``d - 2``, and
+    ``d // 2`` lies inside that for every ``d >= 4``. At degrees four and five
+    it falls to two, which is then the only admissible value.
+    """
+    source = normalized(examples.alpoege())
+    wanted = source.degree() // 2
+
+    assert wanted == 3
+
+    for split in grouped_splits(source):
+        assert sum(split.monomial) == wanted
+
+
+def test_the_widened_offer_contains_the_step_worth_most() -> None:
+    """The measurement of work package 10, now inside the space.
+
+    The best step at this map removes 102 of the measure, and it is the one the
+    chain computed by hand takes. The narrow enumerator's best was 66.
+    """
+    source = normalized(examples.alpoege())
+    drops = []
+    for position, candidate in enumerate(untargeted_candidates(source)):
+        names = sp.symbols(f"w{position}_0 w{position}_1")
+        step = BCWStep.build(
+            source,
+            candidate.index,
+            *candidate.factors(names),
+            candidate.filtration_level(source),
+            candidate.coefficient,
+        )
+        step.verify()
+        drops.append(remaining_weight(source) - remaining_weight(step.target))
+
+    assert max(drops) == 102
+
+
+def test_the_filtration_level_follows_from_the_step() -> None:
+    """UNT-8. Fixing it at one loses exactly the steps that remove most.
+
+    The step worth 102 has a ``Q`` with a linear term, so ``H`` reaches
+    ``EA^0``. Proposition (3.1) admits that for the part of its argument that
+    makes ``F'`` linear in each variable.
+    """
+    source = normalized(examples.alpoege())
+    levels = {
+        candidate.filtration_level(source)
+        for candidate in untargeted_candidates(source)
+    }
+
+    assert levels == {0, 1}
+
+
+def test_a_fixed_level_would_refuse_a_candidate_the_enumerator_offers() -> None:
+    """UNT-8, as the thing a caller has to do and not only as a number.
+
+    ``reduce_to_degree3`` takes the level from the candidate. A mutation that
+    fixed it at one passed every other test in this module, because the search
+    never backtracks and takes a narrow candidate first, so it never builds a
+    wide one. This says what would happen if it did.
+    """
+    source = normalized(examples.alpoege())
+    refused = 0
+    for position, candidate in enumerate(untargeted_candidates(source)):
+        names = sp.symbols(f"f{position}_0 f{position}_1")
+        try:
+            BCWStep.build(
+                source,
+                candidate.index,
+                *candidate.factors(names),
+                1,
+                candidate.coefficient,
+            ).verify()
+        except VerificationError as failure:
+            assert failure.obligation == "BCW-6"
+            refused += 1
+
+    assert refused, "no candidate needs EA^0, so this test says nothing"
+
+    for position, candidate in enumerate(untargeted_candidates(source)):
+        names = sp.symbols(f"g{position}_0 g{position}_1")
+        BCWStep.build(
+            source,
+            candidate.index,
+            *candidate.factors(names),
+            candidate.filtration_level(source),
+            candidate.coefficient,
+        ).verify()
+
+
+def test_the_search_does_not_reach_the_wider_candidates_yet() -> None:
+    """Recorded as a measurement, not asserted as a good thing.
+
+    The offer contains the step that removes 102 of the measure since UNT-6,
+    and ``reduce_to_degree3`` still takes 21 steps into dimension 20. It walks
+    depth first in the order the enumerator fixes, never backtracks, and the
+    wide candidates come after the narrow ones, so it never builds one.
+
+    Widening the offer was work package 11. Choosing from it is not in any
+    obligation yet, and this test is what will fail when it is.
+    """
+    source = normalized(examples.alpoege())
+    outcome = reduce_to_degree3(source, budget=3000)
+
+    assert outcome.reduction is not None
+    assert len(outcome.reduction.steps) == 21
+    assert outcome.reduction.target.dimension == 20
+
+
+def test_a_grouped_factor_a_carrier_holds_is_offered_as_that_carrier() -> None:
+    """UNT-9, for the wide candidates as for the narrow ones.
+
+    Reusing a value the map already carries costs no dimension, and it is what
+    the extension is worth: seven steps into dimension 17 without it and seven
+    into 13 with it, measured on a prototype.
+    """
+    source = normalized(examples.alpoege())
+    first = untargeted_candidates(source)[0]
+    names = sp.symbols("c0 c1")
+    step = BCWStep.build(
+        source,
+        first.index,
+        *first.factors(names),
+        first.filtration_level(source),
+        first.coefficient,
+    )
+    after = step.target
+    reused = [
+        candidate
+        for candidate in untargeted_candidates(after)
+        if any(isinstance(slot, Carried) for slot in candidate.slots)
+    ]
+
+    assert reused
+    assert all(candidate.m < 2 for candidate in reused)
+
+
+def test_nothing_is_offered_at_degree_three() -> None:
+    """UNT-2 covers the wide candidates too."""
+    assert grouped_splits(examples.bcw17()) == ()
+    assert untargeted_candidates(examples.bcw17()) == ()

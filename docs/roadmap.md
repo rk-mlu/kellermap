@@ -811,10 +811,11 @@ boundedness is what makes it a milestone rather than a research programme.
 
 # Version 0.5
 
-**Work packages 1 to 9 are done.** The language of the repository, the gate
+**Work packages 1 to 11 are done.** The language of the repository, the gate
 that holds it, `CONTRIBUTING.md`, `undo` in the ring, the coefficient ring as a
 stated space, equality of algebraic numbers, the second source map, what an
-untargeted enumerator may claim, and the untargeted search itself.
+untargeted enumerator may claim, the untargeted search itself, what it spends,
+and the widened offer.
 
 The measurement behind work package 8 is on the contract page under "The
 untargeted search", because it is the reason the obligations read as they do
@@ -1117,6 +1118,17 @@ normalized Alpöge map: seven steps into dimension 13, against the eight into 15
 of `alpoege15` and the 21 into 20 of the narrow enumerator. The chain has degree
 three and determinant one, and Alpöge's three points transport through it and
 verify.
+
+Implemented. The offer at the normalized Alpöge map is 22 candidates, twelve
+narrow and ten wide, and it contains the step that removes 102 of the measure,
+against 66 before. Over both long chains, 272 candidates build, verify and
+lower the measure.
+
+`reduce_to_degree3` still takes 21 steps into dimension 20. It walks depth
+first in the order the enumerator fixes, never backtracks, and the wide
+candidates come after the narrow ones, so it never builds one. Widening the
+offer was this package; choosing from it is in no obligation yet, and a test
+records the number that will change when it is.
 
 What that shows and what it does not is on the contract page under the
 obligations. It is not a claim of minimality, the search being greedy, and not

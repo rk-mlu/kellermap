@@ -95,7 +95,7 @@ def maps_of(chain: Reduction) -> Iterator[PolynomialMap]:
     yield chain.target
 
 
-FIGURES = (2, 13, 12, 172, 14, 19, 86, 376, 365, 105)
+FIGURES = (2, 22, 272, 14, 19, 86, 376, 365, 105)
 """Every number this script asserts, for the test that ties it to the page.
 
 ``105`` is the sum of the moves introducing one or two generators, which the
@@ -135,7 +135,7 @@ def main() -> int:
                     source,
                     candidate.index,
                     *candidate.factors(names),
-                    1,
+                    candidate.filtration_level(source),
                     candidate.coefficient,
                 )
                 step.verify()
@@ -145,15 +145,15 @@ def main() -> int:
 
     print("UNT-1, the size of the space")
     check("smallest count above degree three", min(above), 2)
-    check("largest count above degree three", max(above), 13)
-    check("count at the normalized Alpoege map", offered[0], 12)
+    check("largest count above degree three", max(above), 22)
+    check("count at the normalized Alpoege map", offered[0], 22)
 
     print("\nUNT-2, empty at the reduction target")
     check("counts at maps of degree three", set(ends), {0})
 
     print("\nUNT-1 and UNT-3, the bridge to the certificate")
-    check("candidates built and verified", built, 172)
-    check("of those, lowering the measure", lowering, 172)
+    check("candidates built and verified", built, 272)
+    check("of those, lowering the measure", lowering, 272)
     check("of those, sharing one generator", shared, 14)
 
     print("\nUNT-3, the two halves")

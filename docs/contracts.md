@@ -1698,9 +1698,10 @@ in `F`, with coefficient `a`, and write `aM = PQ` with `deg P` and `deg Q` at
 most `d - 2`.
 
 The space that follows is small and does not grow with the dimension.
-Measured: 12 candidates at the normalized Alpöge map in dimension 3, and
-between 2 and 13 at every map of the two long chains that is still above degree
-three, from dimension 3 up to 19. It is bounded by the number of monomials of
+Measured: 22 candidates at the normalized Alpöge map in dimension 3, and
+between 2 and 22 at every map of the two long chains that is still above degree
+three, from dimension 3 up to 19. Twelve of the 22 are narrow and ten are the
+wider ones of UNT-6. It is bounded by the number of monomials of
 top degree, and that number stays small because a step removes one and adds
 only monomials below `d`.
 
@@ -1712,7 +1713,7 @@ When the leading monomial is a square, `P` and `Q` are equal and one coordinate
 serves both, which is BCW-12. The enumerator offers only that shape there. Two
 coordinates carrying one value would cost a dimension for nothing, and it is
 the same saving that puts `alpoege15` two dimensions below `bcw17`. Measured:
-14 of the 172 candidates along the two long chains share a generator, and every
+14 of the 272 candidates along the two long chains share a generator, and every
 one of them lands one dimension lower than it would have.
 
 That answers the second question this work package was set. Of the two shapes
@@ -1746,7 +1747,8 @@ Proposition (3.1) and not an assumption. The step removes a monomial of degree
 `d` and the terms it puts in its place have degree at most
 `max(deg P, deg Q) + 1`, which is at most `d - 1`. Measured over every such
 move the enumerator offers along both long chains: 105 of 105 lower `Phi`, that
-is 19 of 19 introducing two generators and 86 of 86 introducing one.
+is 19 of 19 introducing two generators and 86 of 86 introducing one. Over the
+widened offer, all 272 candidates lower it.
 
 For a step that introduces no generator it is a rule this project states, not a
 theorem. Such a step subtracts a multiple of `X_u X_v` for two coordinates the
