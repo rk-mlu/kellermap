@@ -454,3 +454,73 @@ def test_prose_excludes_code_and_quoted_code(foreign: ModuleType) -> None:
     assert "bound" in text
     assert "raise TypeError" not in text
     assert not foreign.QUOTED_CODE.search(text)
+
+
+# --------------------------------------------------------------------------
+# The cost measurement
+#
+# Not a gate. It answers a question, like the mutation probe, and nothing in
+# it is a promise. What is checked is that it runs and that the law it reports
+# is the one the roadmap states.
+# --------------------------------------------------------------------------
+
+
+@pytest.fixture(scope="module")
+def cost() -> ModuleType:
+    return load("search_cost")
+
+
+def test_the_term_law_holds_for_every_untargeted_step(cost: ModuleType) -> None:
+    """Terms grow by exactly ``2 + 2m`` where both factors are monomials.
+
+    The finding of work package 10, and the reason term growth measures
+    nothing on its own: it is a function of the dimension bought. The step
+    removes the monomial it acts on, puts three in its place, and each fresh
+    coordinate brings a component of two terms.
+    """
+    from kellermap import LinearStep, examples, over_field, reduce_to_degree3
+
+    normalized = LinearStep.normalize(over_field(examples.alpoege())).target
+    chain = reduce_to_degree3(normalized, budget=2000).reduction
+
+    assert chain is not None
+
+    for step in chain.steps:
+        grew = cost.terms(step.target) - cost.terms(step.source)
+
+        assert grew == 2 + 2 * step.m, step
+
+
+def test_the_untargeted_enumerator_uses_no_multi_term_factor(
+    cost: ModuleType,
+) -> None:
+    """Which is why a ranking over what it offers cannot reach the good steps.
+
+    A product of polynomials is a monomial only when both are, and the
+    enumerator splits a leading monomial. ``bcw17`` takes five steps of seven
+    with a factor of several terms, and the one that removes 102 of the measure
+    has a factor with four.
+    """
+    from kellermap import LinearStep, examples, over_field, reduce_to_degree3
+
+    normalized = LinearStep.normalize(over_field(examples.alpoege())).target
+    chain = reduce_to_degree3(normalized, budget=2000).reduction
+
+    assert chain is not None
+    assert all(max(cost.factor_terms(step)) == 1 for step in chain.steps)
+
+
+def test_the_cost_script_runs(
+    cost: ModuleType,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    """It is a report, so what is checked is that it produces one."""
+    monkeypatch.setattr(cost.sys, "argv", ["search_cost.py"])
+
+    assert cost.main() == 0
+
+    printed = capsys.readouterr().out
+
+    assert "bcw17, by hand" in printed
+    assert "found without a target" in printed

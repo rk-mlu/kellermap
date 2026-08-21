@@ -1080,6 +1080,34 @@ heuristic. It produces numbers and a way of reproducing them, like the profile
 below and `scripts/mutation_probe.py`. Both are scripts that answer a question.
 Neither is a gate.
 
+Done. `scripts/search_cost.py` prints the per-step table for every chain this
+repository can build. Three things came out of it, and the third changes what
+WP 11 and WP 12 are.
+
+**Term growth is a function of the dimension bought, so it measures nothing on
+its own.** For the untargeted search, `terms` grows by exactly `2 + 2m` at
+every one of the 21 steps, with no exception: the step removes the monomial it
+acts on, puts three in its place, and each fresh coordinate brings a component
+of two terms. The two quantities do not diverge because they are the same
+quantity. Where the hand chains break the law, it is because a factor has
+several terms, five times in `bcw17` and five in `alpoege15`, or because a new
+term cancels one already there, once in `alpoege19`.
+
+**The measure falls in very unequal amounts.** Along the untargeted chain, the
+first step removes 45 and most later ones remove 3, which is one monomial of
+degree four. Along `bcw17` one step removes 102. That is the quantity worth
+ranking by, and `terms` is not.
+
+**The gap is coverage and not ranking.** The high-yield steps all use a factor
+with several terms: `bcw17` takes five such steps of seven, and its 102 comes
+from a factor with four. The untargeted enumerator uses none, because it splits
+a leading monomial and a product of polynomials is a monomial only when both
+are. A ranking over the candidates it offers cannot reach those steps, because
+they are not in the space.
+
+That is the finding to act on. WP 11 as planned ranks what is offered; the
+measurement says the offer is what wants widening first.
+
 **WP 11** ranks candidates by the criteria WP 10 found to predict something.
 Duplicated carrier values are tried first. They can be read directly off the
 components, and they are what produced `alpoege15`. Ranking changes which chain
