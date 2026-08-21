@@ -986,7 +986,7 @@ preferred to a fresh one supplying the same factor:
 one, Proposition (3.1) supplies the rule instead: take a monomial of top degree
 and write it as a product of two proper parts. `untargeted_candidates` offers
 those, and `docs/contracts.md` states what the family may claim under UNT-1 to
-UNT-5.
+UNT-9.
 
 ```python
 >>> from kellermap import untargeted_candidates, remaining_weight

@@ -5,6 +5,11 @@ source and the instruction to reach degree three, so nothing tells it which
 step to take. ``docs/contracts.md`` states what this module may offer and what
 bounds it, and it carries the measurements those obligations rest on.
 
+UNT-1 to UNT-5 are what this module implements. UNT-6 to UNT-9 widen the offer
+to factors that are sums, and they are written and not yet built: the family
+was measured before it was implemented, and the page says which figures come
+from a prototype.
+
 Two things here are worth reading before the code.
 
 The candidates come from the leading monomials, because that is the only rule

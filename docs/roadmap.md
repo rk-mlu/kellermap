@@ -1108,7 +1108,21 @@ they are not in the space.
 That is the finding to act on. WP 11 as planned ranks what is offered; the
 measurement says the offer is what wants widening first.
 
-**WP 11** ranks candidates by the criteria WP 10 found to predict something.
+**WP 11** widens the offer, and it was planned to rank it. WP 10 found that
+ranking cannot help: the high-yield steps use a factor with several terms and
+the enumerator offers none, so they are not in the space to be ranked.
+
+UNT-6 to UNT-9 state the wider space. Measured on a prototype, greedily on the
+normalized Alpöge map: seven steps into dimension 13, against the eight into 15
+of `alpoege15` and the 21 into 20 of the narrow enumerator. The chain has degree
+three and determinant one, and Alpöge's three points transport through it and
+verify.
+
+What that shows and what it does not is on the contract page under the
+obligations. It is not a claim of minimality, the search being greedy, and not
+a claim of priority, the literature not having been checked again. The divisor
+degree `d // 2` is measured on one map, and the same rule did not finish on
+Gao's in twenty-five minutes.
 Duplicated carrier values are tried first. They can be read directly off the
 components, and they are what produced `alpoege15`. Ranking changes which chain
 is found first and how long the search takes. It does not turn one chain into a

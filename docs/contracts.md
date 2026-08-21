@@ -1799,6 +1799,92 @@ returns at once with no steps, nothing examined and the space exhausted. A
 branch was written and removed: a mutation showed it changed no outcome. The
 clause states the answer, and UNT-2 is why no code has to.
 
+**UNT-6 — A factor may be a sum, and that is an extension. [0.5]** The
+enumerator also offers a candidate whose second factor has several terms: `P` a
+monomial that divides more than one of the monomials of degree at least four in
+one component, and `Q` the sum of the cofactors, so that the step removes all
+of them at once.
+
+This goes beyond Proposition (3.1) and the page says so. BCW write `aM = PQ`
+for a single monomial `M`, which forces both factors to be monomials over an
+integral domain. BCW-6 admits the wider shape already: `G` subtracts
+`c * X_u * X_v` for any two slots, and what the slots carry is not required to
+be a monomial. UNT-1 describes the narrow space and this describes the rest of
+what BCW-6 admits.
+
+The measurement is why it is here. Work package 10 found that the high-yield
+steps of the chains computed by hand all use a factor with several terms: five
+of seven in `bcw17`, and the step that removes 102 of the measure has a factor
+with four. The narrow enumerator uses none, so no ranking over what it offers
+can reach those steps. The gap was coverage and not order.
+
+**UNT-7 — The degree of the divisor is `d // 2`, and that is a stated
+choice. [0.5]** `P` has degree `d // 2` where `d` is the degree of the map.
+Admissibility bounds it on both sides -- `deg P` and `deg Q` are at least two
+and at most `d - 2` -- and `d // 2` lies inside that for every `d >= 4`, which
+is also why it falls to two at degrees four and five, where two is the only
+admissible value.
+
+It is measured and not proved. On the normalized Alpöge map at degree seven,
+the best step a divisor of that degree allows removes 102 of the measure,
+against 69 at degree two and 72 at degree five. Driven greedily to degree three
+it takes seven steps, where a fixed divisor degree of two takes twelve and
+`d - 2` takes twelve.
+
+What that establishes is narrow, and the wording is deliberate. The choice was
+measured on one map. The same rule on Gao's map did not finish in
+twenty-five minutes, because at degree twelve the divisors of degree six are
+many and the sums are long. A rule measured on one example is an observation
+about that example.
+
+**UNT-8 — The filtration level follows from the step. [0.5]** It is not
+prescribed. A step whose `Q` carries a linear term reaches `EA^0` and not
+`EA^1`, and Proposition (3.1) admits that: BCW take `H` from `EA^0` for the
+part of the argument that makes `F'` linear in each variable.
+
+An enumerator that fixed the level at one would lose exactly the best steps.
+The 102 above is such a step: with `EA^1` demanded it fails BCW-6, and with the
+level left to follow it stands.
+
+**UNT-9 — A factor a carrier already holds is offered as that
+carrier. [0.5]** Then the step buys no coordinate for it. BCW-10 admits it, and
+it is what the whole extension is worth in dimension.
+
+Measured on the normalized Alpöge map, greedily under UNT-6 to UNT-8: seven
+steps into dimension 17 without carrier reuse and seven into dimension 13 with
+it, buying two coordinates for the first three steps and one for each of the
+last four. The search finds that pattern without being told that carriers
+exist.
+
+### What the dimension thirteen does and does not establish
+
+The chain is checked to the standard this repository holds a chain to: degree
+three, determinant one, and Alpöge's three points transported through it and
+verified against the endpoint, three distinct preimages of one image in
+dimension 13.
+
+It establishes that this rule finds such a chain. It does not establish
+minimality. The search is greedy: it takes the best single step at every map
+and never looks sideways, which is the limitation a cost on the dimension would
+lift. Nor does it establish priority. Before the number leaves this repository,
+the literature is checked again and what a comparison does and does not show is
+written beside it.
+
+The figures above come from a prototype and not from the shipped enumerator.
+They come under `scripts/untargeted_space.py` when the work package is
+implemented, which is where every other figure of this family already is.
+
+### Which of these can fail on supplied data
+
+None of them, for the reason UNT-1 to UNT-5 give: an untargeted search takes a
+source and no target.
+
+UNT-7 is the one to read twice. It is the only obligation in this family whose
+content is a number chosen by measurement rather than a shape forced by an
+argument, and the measurement is from one map.
+
+---
+
 ### Why BCW's own measure is not used
 
 The proof of Proposition (3.1) on page 305 argues by induction on the pair
