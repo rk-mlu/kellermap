@@ -1771,11 +1771,33 @@ already say that finding nothing is not a proof that nothing exists. Here the
 statement is narrower still: the space an untargeted search exhausts is the one
 that UNT-3 leaves, and UNT-3 rules out steps that BCW-1 to BCW-12 admit.
 
+`reduce_to_degree3` walks that space and `ReductionOutcome` reports it, with
+the same four fields the other two searches report and the ring of DOM-4
+beside them.
+
 An outcome that reports an exhausted space says the search covered every chain
 whose every step lowers `Phi`. A chain that raises it at one step and reaches
 degree three afterwards would not be found. No such chain is known, and all
 three chains this repository carries lower `Phi` at every one of their 33
 steps, but that is evidence and not a proof.
+
+**UNT-5 — A source of degree three is the base case and not a
+failure. [0.5]** There is nothing to reduce, so there is nothing to build.
+RED-1 wants at least one step, so no `Reduction` can describe the situation,
+and the outcome reports no reduction with nothing examined and the space
+exhausted.
+
+This is the base case of the induction in Proposition (3.1), which stops at
+`d <= 3` with nothing to prove, and it is the same shape of answer REV-11 gives
+for two endpoints that are already equal. A caller who wants to tell it from a
+search that found nothing asks the source for its degree; that is cheaper than
+the search and it is not the search's question.
+
+UNT-2 makes this consistent rather than special, and the implementation has no
+branch for it. At degree three the enumerator offers nothing, so the walk
+returns at once with no steps, nothing examined and the space exhausted. A
+branch was written and removed: a mutation showed it changed no outcome. The
+clause states the answer, and UNT-2 is why no code has to.
 
 ### Why BCW's own measure is not used
 

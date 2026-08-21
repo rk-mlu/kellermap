@@ -1,4 +1,4 @@
-"""Proposition (3.1) applied without a target, UNT-1 to UNT-4.
+"""Proposition (3.1) applied without a target, UNT-1 to UNT-5.
 
 ``search`` and ``peel`` both need a target. An untargeted search has only a
 source and the instruction to reach degree three, so nothing tells it which
@@ -291,7 +291,7 @@ def reduce_to_degree3(
     context: ReductionContext | None = None,
     over: Domain | None = None,
 ) -> ReductionOutcome:
-    """Look for a chain from ``source`` to a map of degree three, UNT-1 to UNT-4.
+    """Look for a chain from ``source`` to a map of degree three, UNT-1 to UNT-5.
 
     Named for the degree it reduces to, because there is only one. BCW call
     their Section 3 "Reduction to degree 3", and a name saying only that the
@@ -312,10 +312,12 @@ def reduce_to_degree3(
     can create ``X_u X_v`` and the next remove it. The rule is what makes an
     exhausted space a statement, and UNT-4 says which space that is.
 
-    A source that already has degree three is a non-answer and not a failure.
-    There is nothing to build, RED-1 wants at least one step, and the outcome
-    reports no reduction with nothing examined. That is the answer REV-11 gives
-    for equal endpoints, for the same reason.
+    A source that already has degree three is the base case and not a failure,
+    UNT-5. There is nothing to build, RED-1 wants at least one step, and the
+    outcome reports no reduction with nothing examined. That is the answer
+    REV-11 gives for equal endpoints, for the same reason. It needs no branch:
+    the enumerator offers nothing at degree three, so the walk returns that by
+    itself.
 
     ``context`` names the fresh coordinates. A caller cannot supply names by
     SEA-3 here, because the number of steps is not known before the search, so
@@ -377,9 +379,11 @@ def reduce_to_degree3(
 
         return None
 
-    if source.degree() <= 3:
-        return ReductionOutcome(None, 0, 0, True, domain)
-
+    # No special case for a source of degree three. UNT-5 is what the walk
+    # already does: the enumerator offers nothing there by UNT-2, so the first
+    # frame returns at once with no steps, nothing examined and the space
+    # exhausted. A branch here changed no outcome, and a mutation showed it,
+    # so it is gone.
     reduction = walk(source, ())
 
     return ReductionOutcome(

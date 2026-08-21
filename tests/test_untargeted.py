@@ -1,4 +1,4 @@
-"""Proposition (3.1) without a target, UNT-1 to UNT-4.
+"""Proposition (3.1) without a target, UNT-1 to UNT-5.
 
 Nothing here is verified: a candidate is a proposal, and what makes it evidence
 is ``BCWStep.build`` followed by ``verify()``. What is checked is that the
@@ -305,11 +305,38 @@ def test_the_chain_it_finds_is_longer_than_the_one_computed_by_hand() -> None:
     assert examples.bcw17().dimension == 17
 
 
-def test_a_source_of_degree_three_is_a_non_answer() -> None:
-    """Nothing to build, and RED-1 wants at least one step.
+@pytest.mark.slow
+def test_the_second_source_map_reaches_degree_three_too() -> None:
+    """The other half of the baseline, and the one nothing pinned.
 
-    The answer REV-11 gives for equal endpoints, for the same reason: the
-    question is well posed and there is no chain to report.
+    Gao's map, normalized, is degree 12 where Alpoege's is 7, and the search
+    pays for it: 177 steps into dimension 86 against 21 into 20. The figures
+    stand in ``docs/roadmap.md`` and nothing recomputed them, which is the gap
+    ``scripts/untargeted_space.py`` closed for the figures of work package 8.
+
+    Marked slow: about forty seconds. Work packages 10 to 12 measure against
+    this number and are meant to beat it, so it has to be a number and not a
+    recollection.
+    """
+    source = normalized(examples.gao_quartic())
+    outcome = reduce_to_degree3(source, budget=3000)
+
+    assert outcome.reduction is not None
+    assert outcome.reduction.verify() is None
+    assert outcome.reduction.target.degree() == 3
+    assert len(outcome.reduction.steps) == 177
+    assert outcome.reduction.target.dimension == 86
+    assert outcome.examined == 177
+    assert outcome.deepest == 177
+
+
+def test_a_source_of_degree_three_is_the_base_case() -> None:
+    """UNT-5. Nothing to reduce, so nothing to build.
+
+    The base case of the induction in Proposition (3.1), which stops at
+    ``d <= 3`` with nothing to prove. RED-1 wants at least one step, so no
+    ``Reduction`` can describe it, and the answer has the shape REV-11 gives
+    for two endpoints that are already equal.
     """
     outcome = reduce_to_degree3(examples.bcw17(), budget=5)
 
