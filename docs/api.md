@@ -986,7 +986,7 @@ preferred to a fresh one supplying the same factor:
 one, Proposition (3.1) supplies the rule instead: take a monomial of top degree
 and write it as a product of two proper parts. `untargeted_candidates` offers
 those, and `docs/contracts.md` states what the family may claim under UNT-1 to
-UNT-9.
+UNT-11.
 
 ```python
 >>> from kellermap import untargeted_candidates, remaining_weight
@@ -1028,16 +1028,22 @@ the enumerator runs out, and reports what it saw:
 >>> normalized = LinearStep.normalize(over_field(examples.alpoege())).target
 >>> outcome = reduce_to_degree3(normalized, budget=2000)
 >>> outcome.reduction.target.degree(), len(outcome.reduction.steps)
-(3, 21)
+(3, 7)
+>>> outcome.reduction.target.dimension
+13
 >>> outcome.exhausted
 True
 
 ```
 
-Depth first, with no ranking. Twenty-one steps where the chain computed by hand
-takes eight, and that is the baseline a later ranking has to beat rather than a
-defect. A source that already has degree three is a non-answer, like equal
-endpoints under REV-11:
+Depth first, and the candidates are ordered by what a step removes, UNT-10.
+Seven steps into dimension 13, where the chains computed by hand take eight
+into 15 and eight into 17. What that shows and what it does not is on the
+contract page; `scripts/reconstruct_alpoege13.py` recomputes the chain without
+this library.
+
+A source that already has degree three is a non-answer, like equal endpoints
+under REV-11:
 
 ```python
 >>> outcome = reduce_to_degree3(examples.bcw17(), budget=5)

@@ -1858,6 +1858,47 @@ it, buying two coordinates for the first three steps and one for each of the
 last four. The search finds that pattern without being told that carriers
 exist.
 
+**UNT-10 — The candidates are ordered, by what a step removes and then by
+what it buys. [0.5]** ``untargeted_candidates`` returns them sorted: first by
+how much of `Phi` the step would remove, largest first, and among equals by how
+many coordinates it would buy, fewest first.
+
+Measured over the widened offer, on the two source maps, with every chain
+verified and nothing else changed:
+
+| order | Alpöge | Gao |
+| --- | --- | --- |
+| the order the enumerator happened to fix | 21 steps, dimension 20 | 177, 86 |
+| largest removal | 7, 14 | 30, 42 |
+| removal per coordinate bought | 8, 13 | -- |
+| fewest coordinates, then removal | 8, 13 | -- |
+| **largest removal, then fewest coordinates** | **7, 13** | **29, 39** |
+
+The last is at least as good as every other in both quantities and best in
+both examples. It is a measured choice and not a proved one, and it was
+measured on two maps.
+
+Two of the rules reach dimension 13 as well and take a step more, so ordering
+by the dimension is enough here. Spending the dimension as a cost and
+exhausting each one before buying the next would say something else: that no
+chain exists in dimension `k`, rather than that one was found in `k + 1`. That
+is a statement about what is not there, and it belongs where the other such
+statements are.
+
+**UNT-11 — An order discards nothing. [0.5]** Every chain the search of UNT-3
+can reach stays reachable under any order, and a bad order costs length and not
+correctness. The obligation is the promise, and the promise is what separates
+this from pruning.
+
+Measured on both maps: the number of maps examined equals the number of steps
+in every run, under every order. The walk still never backtracks, so what
+changed is which chain it walks into and not how much of the space it saw.
+
+WP 12 discards, and cannot give this promise: a bound that prunes too much
+reports a reachable chain as an exhausted space, and that result is wrong
+rather than slow. The two are separate packages so that a failure in the second
+cannot have its cause in the first.
+
 ### What the dimension thirteen does and does not establish
 
 The chain is checked to the standard this repository holds a chain to: degree

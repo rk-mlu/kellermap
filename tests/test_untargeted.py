@@ -21,11 +21,13 @@ from kellermap import (
     over_field,
 )
 from kellermap.bcw import BCWStep, Carried
+from kellermap.context import ReductionContext
 from kellermap.untargeted import (
     WEIGHT_BASE,
     grouped_splits,
     leading_splits,
     lowers_the_weight,
+    ordered_steps,
     reduce_to_degree3,
     remaining_weight,
     untargeted_candidates,
@@ -303,18 +305,24 @@ def test_it_reaches_degree_three_and_the_chain_verifies() -> None:
     assert outcome.reduction.verify() is None
 
 
-def test_the_chain_it_finds_is_longer_than_the_one_computed_by_hand() -> None:
-    """And that is the measurement work packages 11 and 12 exist to improve.
+def test_the_chain_it_finds_is_shorter_than_the_one_computed_by_hand() -> None:
+    """Seven steps into dimension 13, and this is the whole of the milestone.
 
-    Twenty-one steps into dimension 20 against the eight steps into dimension
-    17 of ``bcw17``. Taking the first candidate every time is what costs it.
-    Recorded so that a later ranking has a number to beat.
+    Against the eight steps into dimension 15 of ``alpoege15`` and the eight
+    into 17 of ``bcw17``, both computed by hand. It took three packages to get
+    here: the offer had to contain the step, work package 11, and something had
+    to choose it, work package 11.1.
+
+    The number is a record and not a claim. What it establishes and what it
+    does not is on the contract page, and ``scripts/reconstruct_alpoege13.py``
+    recomputes the chain without the library.
     """
     outcome = reduce_to_degree3(normalized(examples.alpoege()), budget=2000)
 
     assert outcome.reduction is not None
-    assert len(outcome.reduction.steps) == 21
-    assert outcome.reduction.target.dimension == 20
+    assert len(outcome.reduction.steps) == 7
+    assert outcome.reduction.target.dimension == 13
+    assert examples.alpoege15().dimension == 15
     assert examples.bcw17().dimension == 17
 
 
@@ -323,13 +331,12 @@ def test_the_second_source_map_reaches_degree_three_too() -> None:
     """The other half of the baseline, and the one nothing pinned.
 
     Gao's map, normalized, is degree 12 where Alpoege's is 7, and the search
-    pays for it: 177 steps into dimension 86 against 21 into 20. The figures
-    stand in ``docs/roadmap.md`` and nothing recomputed them, which is the gap
-    ``scripts/untargeted_space.py`` closed for the figures of work package 8.
+    pays for it: 29 steps into dimension 39 against 7 into 13. It was 177 into
+    86 before the offer was widened and ordered, so the two packages are worth
+    six times the length here and three times on Alpoege's.
 
-    Marked slow: about forty seconds. Work packages 10 to 12 measure against
-    this number and are meant to beat it, so it has to be a number and not a
-    recollection.
+    Marked slow: about twenty seconds. Work packages 12 and 13 measure against
+    this number, so it has to be a number and not a recollection.
     """
     source = normalized(examples.gao_quartic())
     outcome = reduce_to_degree3(source, budget=3000)
@@ -337,10 +344,10 @@ def test_the_second_source_map_reaches_degree_three_too() -> None:
     assert outcome.reduction is not None
     assert outcome.reduction.verify() is None
     assert outcome.reduction.target.degree() == 3
-    assert len(outcome.reduction.steps) == 177
-    assert outcome.reduction.target.dimension == 86
-    assert outcome.examined == 177
-    assert outcome.deepest == 177
+    assert len(outcome.reduction.steps) == 29
+    assert outcome.reduction.target.dimension == 39
+    assert outcome.examined == 29
+    assert outcome.deepest == 29
 
 
 def test_a_source_of_degree_three_is_the_base_case() -> None:
@@ -533,23 +540,53 @@ def test_a_fixed_level_would_refuse_a_candidate_the_enumerator_offers() -> None:
         ).verify()
 
 
-def test_the_search_does_not_reach_the_wider_candidates_yet() -> None:
-    """Recorded as a measurement, not asserted as a good thing.
+def test_the_search_takes_the_step_that_removes_most() -> None:
+    """UNT-10, at the first map, where the difference is largest.
 
-    The offer contains the step that removes 102 of the measure since UNT-6,
-    and ``reduce_to_degree3`` still takes 21 steps into dimension 20. It walks
-    depth first in the order the enumerator fixes, never backtracks, and the
-    wide candidates come after the narrow ones, so it never builds one.
-
-    Widening the offer was work package 11. Choosing from it is not in any
-    obligation yet, and this test is what will fail when it is.
+    The step worth 102 entered the offer with work package 11 and was not
+    taken, because the walk went in the order the enumerator fixed. It is the
+    first step of the chain now.
     """
     source = normalized(examples.alpoege())
     outcome = reduce_to_degree3(source, budget=3000)
 
     assert outcome.reduction is not None
-    assert len(outcome.reduction.steps) == 21
-    assert outcome.reduction.target.dimension == 20
+
+    first = outcome.reduction.steps[0]
+
+    assert remaining_weight(source) - remaining_weight(first.target) == 102
+
+
+def test_an_order_discards_nothing() -> None:
+    """UNT-11, which is the promise that separates this from pruning.
+
+    The walk still never backtracks, so the number of maps examined equals the
+    number of steps. What the order changed is which chain it walks into, not
+    how much of the space it saw.
+    """
+    outcome = reduce_to_degree3(normalized(examples.alpoege()), budget=3000)
+
+    assert outcome.reduction is not None
+    assert outcome.examined == len(outcome.reduction.steps)
+
+
+def test_the_steps_come_out_in_the_order_of_the_obligation() -> None:
+    """Largest removal first, and among equals fewest coordinates bought."""
+    source = normalized(examples.alpoege())
+    naming = ReductionContext()
+    steps = ordered_steps(source, naming)
+
+    assert steps
+
+    keys = [
+        (
+            remaining_weight(step.target) - remaining_weight(source),
+            step.target.dimension - source.dimension,
+        )
+        for step in steps
+    ]
+
+    assert keys == sorted(keys)
 
 
 def test_a_grouped_factor_a_carrier_holds_is_offered_as_that_carrier() -> None:

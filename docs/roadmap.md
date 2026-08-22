@@ -953,7 +953,8 @@ for the duration and moves to `0.5.0rc1` in one step at the end.
 | 8 | 0.4.8 | What an untargeted enumerator may claim, and the measurement behind it |
 | 9 | 0.4.9 | The untargeted search, without ranking |
 | 10 | 0.4.10 | What a search spends: term growth and dimension growth, measured |
-| 11 | 0.4.11 | Ranking |
+| 11 | 0.4.11 | Widening the offer |
+| 11.1 | 0.4.11.1 | Choosing from it |
 | 12 | 0.4.12 | Pruning |
 | 13 | 0.4.13 | Benchmarks, and what they establish |
 | 14 | 0.4.14 | Documentation and release |
@@ -1124,11 +1125,9 @@ narrow and ten wide, and it contains the step that removes 102 of the measure,
 against 66 before. Over both long chains, 272 candidates build, verify and
 lower the measure.
 
-`reduce_to_degree3` still takes 21 steps into dimension 20. It walks depth
-first in the order the enumerator fixes, never backtracks, and the wide
-candidates come after the narrow ones, so it never builds one. Widening the
-offer was this package; choosing from it is in no obligation yet, and a test
-records the number that will change when it is.
+`reduce_to_degree3` still took 21 steps into dimension 20 after this package,
+because it walked in the order the enumerator fixed. WP 11.1 is what changed
+that.
 
 What that shows and what it does not is on the contract page under the
 obligations. It is not a claim of minimality, the search being greedy, and not
@@ -1139,6 +1138,32 @@ Duplicated carrier values are tried first. They can be read directly off the
 components, and they are what produced `alpoege15`. Ranking changes which chain
 is found first and how long the search takes. It does not turn one chain into a
 different chain, and the tests check this.
+
+**WP 11.1** chooses from the offer. WP 11 put the step worth 102 into the
+space and the search still does not take it, because it walks in the order the
+enumerator fixes and never backtracks.
+
+Choosing is not pruning and the two are separate packages for the reason WP 12
+gives about itself. An order discards nothing: every chain the search of WP 9
+can reach stays reachable, and a wrong order costs length and not correctness.
+A bound can be wrong, and a failure in the second must not be able to have its
+cause in the first.
+
+The table said "Ranking" for WP 11 while the prose said the offer was widened
+instead. That is corrected here rather than left standing.
+
+Done. UNT-10 orders by what a step removes and breaks ties by what it buys.
+Measured over the widened offer, every chain verified:
+
+| | Alpöge | Gao |
+| --- | --- | --- |
+| the order the enumerator happened to fix | 21 steps, dimension 20 | 177, 86 |
+| largest removal, then fewest coordinates | 7, 13 | 29, 39 |
+
+`reduce_to_degree3` now finds `alpoege13` by itself, which is what
+`scripts/reconstruct_alpoege13.py` holds and what the three packages together
+were for. The walk still never backtracks and discards nothing, UNT-11, so what
+changed is which chain it walks into and not how much of the space it saw.
 
 **WP 12** discards branches that cannot reach degree three within what is left.
 This is the forward counterpart of REV-9, and it carries the same risk. A

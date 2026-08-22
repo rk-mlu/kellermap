@@ -470,13 +470,20 @@ def cost() -> ModuleType:
     return load("search_cost")
 
 
-def test_the_term_law_holds_for_every_untargeted_step(cost: ModuleType) -> None:
-    """Terms grow by exactly ``2 + 2m`` where both factors are monomials.
+def test_the_term_law_holds_exactly_where_both_factors_are_monomials(
+    cost: ModuleType,
+) -> None:
+    """The finding of work package 10, and the boundary work package 11 crossed.
 
-    The finding of work package 10, and the reason term growth measures
-    nothing on its own: it is a function of the dimension bought. The step
+    Terms grow by exactly ``2 + 2m`` when both factors are monomials: the step
     removes the monomial it acts on, puts three in its place, and each fresh
-    coordinate brings a component of two terms.
+    coordinate brings a component of two terms. That is why term growth
+    measured nothing on its own for the narrow enumerator.
+
+    A factor with several terms puts more than three in place and breaks it,
+    which is what the widened offer buys. The law is stated here as the
+    condition it holds under rather than deleted, because it is what said that
+    the gap was coverage and not order.
     """
     from kellermap import LinearStep, examples, over_field, reduce_to_degree3
 
@@ -485,21 +492,28 @@ def test_the_term_law_holds_for_every_untargeted_step(cost: ModuleType) -> None:
 
     assert chain is not None
 
+    monomial_steps = 0
     for step in chain.steps:
         grew = cost.terms(step.target) - cost.terms(step.source)
+        if max(cost.factor_terms(step)) > 1:
+            continue
+        monomial_steps += 1
 
         assert grew == 2 + 2 * step.m, step
 
+    assert monomial_steps, "no step has monomial factors; this test says nothing"
 
-def test_the_untargeted_enumerator_uses_no_multi_term_factor(
+
+def test_the_untargeted_search_now_uses_multi_term_factors(
     cost: ModuleType,
 ) -> None:
-    """Which is why a ranking over what it offers cannot reach the good steps.
+    """What work packages 11 and 11.1 were for, as a number.
 
-    A product of polynomials is a monomial only when both are, and the
-    enumerator splits a leading monomial. ``bcw17`` takes five steps of seven
-    with a factor of several terms, and the one that removes 102 of the measure
-    has a factor with four.
+    Work package 10 found that the high-yield steps of the chains computed by
+    hand all use a factor with several terms and that the narrow enumerator
+    offered none, so no order over what it offered could reach them. UNT-6
+    widened the offer and UNT-10 ordered it, and the chain the search finds now
+    uses such factors.
     """
     from kellermap import LinearStep, examples, over_field, reduce_to_degree3
 
@@ -507,7 +521,11 @@ def test_the_untargeted_enumerator_uses_no_multi_term_factor(
     chain = reduce_to_degree3(normalized, budget=2000).reduction
 
     assert chain is not None
-    assert all(max(cost.factor_terms(step)) == 1 for step in chain.steps)
+
+    several = [step for step in chain.steps if max(cost.factor_terms(step)) > 1]
+
+    assert several
+    assert len(chain.steps) == 7
 
 
 def test_the_cost_script_runs(

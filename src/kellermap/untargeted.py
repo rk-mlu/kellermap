@@ -411,6 +411,58 @@ class ReductionOutcome:
     domain: Domain
 
 
+def ordered_steps(
+    source: PolynomialMap,
+    naming: ReductionContext,
+) -> tuple[BCWStep, ...]:
+    """Return the steps this map offers, in the order of UNT-10.
+
+    Built and not merely proposed, because the order is by what a step removes
+    and that is not known before the step exists. A candidate whose step does
+    not lower the measure is left out here, which is UNT-3 applied where the
+    order is decided.
+
+    Largest removal first, and among equals fewest coordinates bought. Measured
+    over the widened offer on both source maps: 7 steps into dimension 13 for
+    Alpoege and 29 into 39 for Gao, against 21 into 20 and 177 into 86 in the
+    order the enumerator happens to fix.
+
+    An order discards nothing, UNT-11. Every step that lowers the measure is
+    still here, and a bad order costs the length of what is found and not
+    whether anything is.
+    """
+    built: list[tuple[tuple[int, int], BCWStep]] = []
+    before = remaining_weight(source)
+
+    for candidate in untargeted_candidates(source):
+        names = naming.variables(source.ring, candidate.m)
+        step = BCWStep.build(
+            source,
+            candidate.index,
+            *candidate.factors(names),
+            # UNT-8. Only a wide candidate reaches ``EA^0``, and until UNT-10
+            # the walk never built one, so this line was not observable. It is
+            # now: the order builds every candidate before choosing.
+            candidate.filtration_level(source),
+            candidate.coefficient,
+        )
+        removed = before - remaining_weight(step.target)
+        if removed <= 0:  # pragma: no cover
+            # UNT-3 where the order is decided. It cannot fire for what this
+            # enumerator offers, for the reason given at ``remaining_weight``:
+            # the factors multiply into the monomials they remove, so the term
+            # is cancelled and what replaces it weighs less. Measured over 272
+            # candidates along both long chains, none was refused here.
+            #
+            # It stays because the rule belongs to the search. A later
+            # enumerator that does not guarantee it would otherwise order a
+            # step that walks a space UNT-4 does not describe.
+            continue
+        built.append(((-removed, step.target.dimension - source.dimension), step))
+
+    return tuple(step for _, step in sorted(built, key=lambda pair: pair[0]))
+
+
 def reduce_to_degree3(
     source: PolynomialMap,
     *,
@@ -475,36 +527,7 @@ def reduce_to_degree3(
 
             return None
 
-        for candidate in untargeted_candidates(current):
-            names = naming.variables(current.ring, candidate.m)
-            step = BCWStep.build(
-                current,
-                candidate.index,
-                *candidate.factors(names),
-                # UNT-8. Not observable here yet, and that is stated rather
-                # than hidden: only a wide candidate reaches ``EA^0``, and this
-                # walk never builds one, because it takes the first candidate
-                # that lowers the measure and the narrow ones come first. A
-                # mutation fixing this at one passes every test. It will not
-                # once something chooses from the offer.
-                candidate.filtration_level(current),
-                candidate.coefficient,
-            )
-            if not lowers_the_weight(current, step.target):  # pragma: no cover
-                # UNT-3 where a search applies it. It cannot fire for what this
-                # enumerator offers, and that is a property of the enumerator
-                # and not of the rule: its two parts multiply to the leading
-                # monomial exactly, so the term is cancelled and never added.
-                # What replaces it has degree at most ``d - 1`` and the two new
-                # components at most ``d - 2``, which together weigh less than
-                # ``3 ** (d - 3)``. Measured over 272 candidates along both long
-                # chains and 32 constructed maps: none was refused here.
-                #
-                # The check stays because the rule belongs to the search. A
-                # later enumerator that does not guarantee it would otherwise
-                # walk a space UNT-4 does not describe.
-                continue
-
+        for step in ordered_steps(current, naming):
             remaining[0] -= 1
             found = walk(step.target, (*steps, step))
             if found is not None:
