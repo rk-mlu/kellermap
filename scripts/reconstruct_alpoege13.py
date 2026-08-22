@@ -123,6 +123,36 @@ class Bought:
 
 
 @dataclass(frozen=True)
+class Scaled:
+    """A shared step whose product is scaled, BCW-11.
+
+    ``G`` subtracts ``coefficient * X_j * (X_k + P)``. The enumerator takes its
+    factors monic and puts the coefficient in the step, where a hand
+    computation would have written the scalar into one of them. The two are the
+    same map and this follows the enumerator, because that is what
+    ``examples.alpoege13`` is.
+    """
+
+    target: int
+    carrier: int
+    other: sp.Expr
+    fresh: sp.Symbol
+    coefficient: sp.Expr
+
+    def apply(self, components: tuple[sp.Expr, ...]) -> tuple[sp.Expr, ...]:
+        head = list(components)
+        head[self.target] = sp.expand(
+            head[self.target]
+            - self.coefficient * components[self.carrier] * (self.fresh + self.other)
+        )
+
+        return tuple(head) + (sp.expand(self.fresh + self.other),)
+
+    def appended(self, point: dict[sp.Symbol, sp.Expr]) -> tuple[sp.Expr, ...]:
+        return (-sp.expand(self.other.xreplace(point)),)
+
+
+@dataclass(frozen=True)
 class Shared:
     """One factor supplied by an existing coordinate, one fresh variable.
 
@@ -151,7 +181,7 @@ class Shared:
 
 # The seven steps. The first two have a ``Q`` of four and three terms and reach
 # ``EA^0``, which is where the chain gains most of its ground.
-STEPS: tuple[Bought | Shared, ...] = (
+STEPS: tuple[Bought | Shared | Scaled, ...] = (
     Bought(
         2,
         _1 * _2**2,
@@ -162,11 +192,12 @@ STEPS: tuple[Bought | Shared, ...] = (
     Bought(1, _1**2 * _2, 3 * _1 * _2 * _3 + 9 * _2**2 + 6 * _3, _6, _7),
     Bought(2, _1 * _2, -_4 * _1 * _3 - 3 * _4 * _2 - _5 * _2, _8, _9),
     # x1*x2 has been component 7 since step 3.
-    Shared(1, 7, -3 * _6 * _3 - _7 * _1, _10),
+    Shared(1, 7, -_1 * _7 - 3 * _3 * _6, _10),
     # The same carrier again, on another component.
     Shared(4, 7, _1 * _3, _11),
-    # x1*x3 has been component 10 since step 5.
-    Shared(0, 10, -(_1**2) / 2, _12),
+    # x1*x3 has been component 10 since step 5. The factor is monic and the
+    # scalar rides in the step, which is what the enumerator produces.
+    Scaled(0, 10, _1**2, _12, R(-1, 2)),
     Shared(2, 10, _4 * _8, _13),
 )
 
@@ -218,7 +249,7 @@ POINTS = (
         R(9, 2),
         R(-3, 4),
         R(-13, 2),
-        R(1, 2),
+        -1,
         R(27, 8),
     ),
     (
@@ -233,7 +264,7 @@ POINTS = (
         R(9, 2),
         R(3, 4),
         R(13, 2),
-        R(1, 2),
+        -1,
         R(-27, 8),
     ),
 )

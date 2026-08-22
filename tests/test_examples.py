@@ -37,13 +37,13 @@ COLLISIONS = [name for name in ALL if name not in NAMES]
 
 
 def test_the_module_holds_what_it_says_it_holds() -> None:
-    """Thirteen small maps that recur, the two reductions, and the two sources.
+    """Thirteen small maps that recur, three reductions, and the two sources.
 
-    And four collisions, which are not maps and are therefore not covered by
+    And five collisions, which are not maps and are therefore not covered by
     the criteria below.
     """
-    assert len(NAMES) == 16
-    assert len(COLLISIONS) == 4
+    assert len(NAMES) == 17
+    assert len(COLLISIONS) == 5
 
 
 @pytest.mark.parametrize("name", NAMES)
@@ -163,6 +163,7 @@ def test_not_every_example_has_determinant_one() -> None:
         ("bcw17", "bcw17_collision"),
         ("alpoege15", "alpoege15_collision"),
         ("gao_quartic", "gao_quartic_collision"),
+        ("alpoege13", "alpoege13_collision"),
     ],
 )
 def test_each_collision_belongs_to_its_map(map_name: str, collision_name: str) -> None:
@@ -343,3 +344,48 @@ def test_the_quartic_collision_survives_a_chain() -> None:
     algebraic = [point for point in carried.points if any(c.has(root) for c in point)]
 
     assert len(algebraic) == 2
+
+
+# --------------------------------------------------------------------------
+# The chain a search found
+# --------------------------------------------------------------------------
+
+
+def test_the_thirteen_dimensional_map_is_what_the_search_finds() -> None:
+    """The example, the search and the reconstruction denote one map.
+
+    ``scripts/reconstruct_alpoege13.py`` was written before the enumerator
+    could find the chain, from a prototype, and the shipped enumerator found a
+    different one: the prototype wrote a scalar into a factor where the
+    enumerator takes its factors monic and puts it in the step. Both chains are
+    valid and reach dimension 13, and ``alpoege13`` has to name one map.
+
+    This is what says the three agree.
+    """
+    from kellermap import LinearStep, over_field, reduce_to_degree3
+
+    source = LinearStep.normalize(over_field(examples.alpoege())).target
+    outcome = reduce_to_degree3(source, budget=2000)
+
+    assert outcome.reduction is not None
+    assert outcome.reduction.target == examples.alpoege13()
+    assert len(outcome.reduction.steps) == 7
+
+
+def test_it_is_two_dimensions_below_the_chain_computed_by_hand() -> None:
+    """Thirteen against fifteen, in seven steps against eight.
+
+    A record and not a claim of minimality. What it establishes is in
+    ``docs/references.md``.
+    """
+    assert examples.alpoege13().dimension == 13
+    assert examples.alpoege15().dimension == 15
+    assert examples.bcw17().dimension == 17
+
+
+def test_its_collision_continues_alpoeges() -> None:
+    """The first three coordinates are Alpoege's own three points."""
+    carried = examples.alpoege13_collision()
+    start = examples.alpoege_collision()
+
+    assert {point[:3] for point in carried.points} == set(start.points)

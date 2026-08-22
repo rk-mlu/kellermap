@@ -1165,6 +1165,42 @@ Measured over the widened offer, every chain verified:
 were for. The walk still never backtracks and discards nothing, UNT-11, so what
 changed is which chain it walks into and not how much of the space it saw.
 
+### How wide the space is below a bound
+
+Measured before deciding what WP 12 should attempt, because the obvious hope
+was that a bound on the dimension would force the search sideways and yield a
+statement about what is not there.
+
+Every distinct map reachable from Alpöge's normalized map under a bound of
+twelve coordinates, by depth, after merging the paths that arrive at the same
+map:
+
+| depth | distinct maps | seconds |
+| --- | --- | --- |
+| 1 | 22 | 0 |
+| 2 | 485 | 3 |
+| 3 | 7736 | 62 |
+
+The branching is about sixteen per level and does not fall: at depth three not
+one map has reached degree three. The chain that exists has seven steps, so
+depth four is around 120 000 maps, depth five around two million, and depth
+seven past 10^8. That is a lower bound on the work, because the time grows
+faster than the count as the maps themselves grow.
+
+So a statement that no chain reaches degree three in dimension twelve is not
+available from this direction. Not by pruning and not by shortest paths: both
+have to exhaust the same space below the bound, and ordering the walk does not
+make it smaller. Dijkstra's algorithm would decide which map to open next, and
+there are 10^8 of them.
+
+Two things follow. `alpoege13` stays a find and does not become a claim of
+minimality, which `docs/references.md` already says and which now rests on a
+number rather than on caution. And WP 12 is what it says below and no more: it
+makes the search faster and says nothing about what does not exist. A statement
+about dimension twelve would have to come from an argument about the structure,
+or a bound showing that seven steps are needed. That is mathematics and not a
+work package.
+
 **WP 12** discards branches that cannot reach degree three within what is left.
 This is the forward counterpart of REV-9, and it carries the same risk. A
 bound that prunes too much reports a reachable chain as an exhausted space.

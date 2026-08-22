@@ -546,3 +546,122 @@ def gao_quartic_collision() -> Collision:
             (-2 * root / 23, R(1, 6) - 2 * root / 3, R(-253, 6) - root / 3),
         ),
     )
+
+
+def alpoege13() -> PolynomialMap:
+    """Return the thirteen-dimensional cubic reduction of Alpoege's map.
+
+    Degree three, determinant one, and it carries Alpoege's collision, so it is
+    itself a counterexample to the Jacobian conjecture and not merely a Keller
+    map. The tests compute all of that rather than assert it.
+
+    Two dimensions below ``alpoege15`` and four below ``bcw17``, in seven steps
+    where those take eight.
+
+    The first map here that a search found rather than a person. Work package
+    11 of milestone 0.5 widened what an untargeted enumerator offers to factors
+    that are sums, and 11.1 ordered the offer by what a step removes;
+    ``reduce_to_degree3`` then produced this chain with no target and no pool.
+
+    What that establishes and what it does not is in ``docs/references.md``. It
+    is not a claim of minimality, the search being greedy, and not a claim of
+    priority, the literature not having been checked again.
+    ``scripts/reconstruct_alpoege13.py`` recomputes the chain in plain SymPy
+    without this library.
+    """
+    x = sp.symbols("x1:14")
+
+    return PolynomialMap(
+        x,
+        (
+            x[0] ** 2 * x[10] / 2
+            - 3 * x[0] ** 2 * x[1] / 2
+            + x[0] * x[11] * x[2] / 2
+            + x[0]
+            + x[10] * x[11] / 2,
+            -x[0] * x[9] * x[1]
+            + 12 * x[0] * x[1] ** 2
+            + 3 * x[0] * x[2]
+            + x[0] * x[6] * x[7]
+            - x[9] * x[7]
+            - 9 * x[1] ** 2 * x[5]
+            + x[1]
+            + 3 * x[2] * x[5] * x[7]
+            - 6 * x[2] * x[5]
+            - x[5] * x[6],
+            -x[0] * x[12] * x[2]
+            + 3 * x[0] * x[1] * x[2]
+            - x[0] * x[1] * x[8]
+            - 3 * x[0] * x[2] * x[3]
+            - x[10] * x[12]
+            - x[10] * x[3] * x[7]
+            + 4 * x[1] ** 2
+            + 3 * x[1] * x[3] * x[7]
+            - 7 * x[1] * x[3]
+            + x[1] * x[4] * x[7]
+            + x[2]
+            - x[3] * x[4]
+            - x[7] * x[8],
+            x[0] * x[1] ** 2 + x[3],
+            -x[0] * x[10] * x[1]
+            + 3 * x[0] * x[1] ** 2
+            - x[0] * x[2] * x[7]
+            + 3 * x[0] * x[2]
+            - x[10] * x[7]
+            + 7 * x[1]
+            + x[4],
+            x[0] ** 2 * x[1] + x[5],
+            3 * x[0] * x[1] * x[2] + 9 * x[1] ** 2 + 6 * x[2] + x[6],
+            x[0] * x[1] + x[7],
+            -x[0] * x[2] * x[3] - 3 * x[1] * x[3] - x[1] * x[4] + x[8],
+            -x[0] * x[6] + x[9] - 3 * x[2] * x[5],
+            x[0] * x[2] + x[10],
+            x[0] ** 2 + x[11],
+            x[12] + x[3] * x[7],
+        ),
+    )
+
+
+def alpoege13_collision() -> Collision:
+    """Return the three points ``alpoege13`` sends to one image.
+
+    Alpoege's three points, carried through the seven steps. The image is
+    computed from them, which is what ``Collision.at`` does and what makes it a
+    claim this library can be wrong about.
+    """
+    return Collision.at(
+        alpoege13(),
+        (
+            (0, 0, R(-1, 4), 0, 0, 0, R(3, 2), 0, 0, 0, 0, 0, 0),
+            (
+                1,
+                R(-3, 2),
+                R(13, 2),
+                R(-9, 4),
+                -6,
+                R(3, 2),
+                -30,
+                R(3, 2),
+                R(9, 2),
+                R(-3, 4),
+                R(-13, 2),
+                -1,
+                R(27, 8),
+            ),
+            (
+                -1,
+                R(3, 2),
+                R(13, 2),
+                R(9, 4),
+                6,
+                R(-3, 2),
+                -30,
+                R(3, 2),
+                R(9, 2),
+                R(3, 4),
+                R(13, 2),
+                -1,
+                R(-27, 8),
+            ),
+        ),
+    )
