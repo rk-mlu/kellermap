@@ -504,6 +504,33 @@ def test_the_untargeted_figures_appear_on_the_contract_page() -> None:
     assert not missing, f"the page does not state {missing}"
 
 
+def test_the_order_table_agrees_with_the_measurement_script() -> None:
+    """The table of UNT-10, row by row rather than number by number.
+
+    ``test_the_untargeted_figures_appear_on_the_contract_page`` requires every
+    number the script checks to occur in the section, and that is too weak
+    here: changing 14 to 15 in one row left it green, because 15 occurs
+    elsewhere. A row is a label and a pair, so the pair is checked against the
+    label.
+    """
+    path = ROOT / "scripts" / "untargeted_space.py"
+    spec = importlib.util.spec_from_file_location("orders_probe", path)
+    assert spec is not None and spec.loader is not None
+    module = importlib.util.module_from_spec(spec)
+    sys.modules[spec.name] = module
+    spec.loader.exec_module(module)
+
+    section = CONTRACTS[CONTRACTS.index("**UNT-10") :]
+    section = section[: section.index("**UNT-11")]
+    missing = [
+        label
+        for label, (steps, dimension) in module.ALPOEGE_ORDERS.items()
+        if f"| {label} | {steps}, {dimension} " not in section
+    ]
+
+    assert not missing, f"the table does not carry the rows for {missing}"
+
+
 def test_the_three_places_that_carry_the_version_agree() -> None:
     """``pyproject.toml``, the project status in the README, the top heading.
 

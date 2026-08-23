@@ -1858,21 +1858,30 @@ it, buying two coordinates for the first three steps and one for each of the
 last four. The search finds that pattern without being told that carriers
 exist.
 
-**UNT-10 — The candidates are ordered, by what a step removes and then by
-what it buys. [0.5]** ``untargeted_candidates`` returns them sorted: first by
-how much of `Phi` the step would remove, largest first, and among equals by how
-many coordinates it would buy, fewest first.
+**UNT-10 — The steps are ordered, by what one removes and then by what it
+buys. [0.5]** `ordered_steps` returns them sorted: first by how much of `Phi`
+the step removes, largest first, and among equals by how many coordinates it
+buys, fewest first.
+
+The steps and not the candidates. How much a step removes is not known before
+the step exists, so the order cannot be a property of a proposal;
+`untargeted_candidates` keeps the order its own enumeration fixes, which UNT-1
+describes. A first wording of this clause named the wrong function, and an
+example in `docs/api.md` written from it disagreed with the code.
 
 Measured over the widened offer, on the two source maps, with every chain
 verified and nothing else changed:
 
 | order | Alpöge | Gao |
 | --- | --- | --- |
-| the order the enumerator happened to fix | 21 steps, dimension 20 | 177, 86 |
+| the order the enumerator happened to fix | 21, 20 | 177, 86 |
 | largest removal | 7, 14 | 30, 42 |
 | removal per coordinate bought | 8, 13 | -- |
 | fewest coordinates, then removal | 8, 13 | -- |
-| **largest removal, then fewest coordinates** | **7, 13** | **29, 39** |
+| largest removal, then fewest coordinates | 7, 13 | 29, 39 |
+
+Each cell is the number of steps and the dimension reached. The last row is
+what the library does.
 
 The last is at least as good as every other in both quantities and best in
 both examples. It is a measured choice and not a proved one, and it was

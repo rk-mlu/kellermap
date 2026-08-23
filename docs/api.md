@@ -1042,6 +1042,27 @@ into 15 and eight into 17. What that shows and what it does not is on the
 contract page; `scripts/reconstruct_alpoege13.py` recomputes the chain without
 this library.
 
+`untargeted_candidates` offers 22 candidates at that map, in the order its own
+enumeration fixes. The order of UNT-10 is on the steps, because how much a step
+removes is not known before the step exists:
+
+```python
+>>> from kellermap import remaining_weight, untargeted_candidates
+>>> from kellermap.context import ReductionContext
+>>> from kellermap.untargeted import ordered_steps
+>>> len(untargeted_candidates(normalized))
+22
+>>> first = ordered_steps(normalized, ReductionContext())[0]
+>>> remaining_weight(normalized) - remaining_weight(first.target)
+102
+
+```
+
+An order discards nothing, UNT-11. Every candidate that lowers the measure is
+still offered, and a different order would find a longer chain rather than
+none. That is what separates ordering from pruning, and it is why the two are
+separate packages.
+
 A source that already has degree three is a non-answer, like equal endpoints
 under REV-11:
 
