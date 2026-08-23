@@ -54,6 +54,12 @@ Coverage is a target of its own, and so is `make reconstruct`. `make release`
 runs all of them before a tag, together with `lock-check`, `build-test`,
 `dist-check` and `test-minimum`.
 
+`make coverage` is a superset of `make check`'s test run, so there is no reason
+to run both. On a slow machine, `make check-full` and
+`scripts/mutation_probe.py` are the two that dominate: 259 and 187 seconds
+against 135 for everything else together. `AGENTS.md` records how that is
+divided when the assistant and the maintainer work on one change.
+
 Or the individual gates:
 
 ```

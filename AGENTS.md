@@ -134,6 +134,43 @@ named here has to be one a target runs, and every `scripts/reconstruct_*.py`
 in the tree has to be named here. The list stood at two of the three
 reconstructions for a whole milestone before those tests existed.
 
+### Who runs which
+
+The suite has outgrown the assistant's machine. Measured there, one delivery
+at the end of milestone 0.5:
+
+| gate | seconds |
+| --- | --- |
+| `ruff format --check`, `ruff check`, both `mypy` runs | 9 |
+| `pytest --cov` | 97 |
+| `make reconstruct` | 3 |
+| `make measure` | 19 |
+| `uv build` and `twine check` | 6 |
+| `pytest -m ""` | 259 |
+| `scripts/mutation_probe.py` | 187 |
+
+The first five are the assistant's, every delivery, about 135 seconds. The last
+two are the maintainer's.
+
+`pytest` and `pytest --cov` are not both run. The second is a superset of the
+first and costs 97 seconds against 54, so running both spends 151 seconds to
+learn what 97 already say.
+
+`pytest -m ""` moves because the slow markers are most of it: three tests take
+181 of the 259 seconds. The assistant runs the fast suite through `--cov` and
+says so; a claim about the slow markers that was not run does not go into a
+commit message.
+
+`scripts/mutation_probe.py` moves for a different reason, and with an
+exception. It re-runs the suite twelve times, so it grows with the suite and is
+the second-largest cost. But it is the only thing that catches an obligation
+added without a control, so the assistant runs it whenever a change adds or
+alters an obligation, a check, or a negative control, and not otherwise.
+
+The commit message says what was run. Where a gate was left to the maintainer,
+it is named as such rather than omitted, so that a green list is a list of
+things somebody actually ran.
+
 - **Coverage is 100 per cent and enforced.** A branch that cannot be reached,
   because an obligation checked earlier rules it out, gets
   `# pragma: no cover` with the reason written beside it. Never write a test
