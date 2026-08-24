@@ -354,10 +354,80 @@ Set beside each other, at the same degree-≤3 stage:
 | published explicit reduction | 19 |
 | this project, without reusing carriers | 17 |
 | this project, reusing two carriers | 15 |
+| this project, found by search | 13 |
 
 The steps down from 39 to 17 come from choosing the factorization better —
 `P · Q` may be any subsum of the target component, so one step can remove
-several monomials. The step from 17 to 15 comes from reusing a carrier.
+several monomials. The step from 17 to 15 comes from reusing a carrier, and
+the step from 15 to 13 from letting a search choose both, which is what work
+packages 11 and 11.1 of milestone 0.5 built.
+
+### Degree three is not cubic homogeneous
+
+The table above is one milestone of the Reduction Theorem and not its end. BCW
+prove it in three steps: reduction to degree three, making `J(F)` unipotent,
+and homogenization. Every figure in the table is at the first of those.
+
+That matters for reading any other number against them, because the published
+figures that are easiest to find are at the third. Long, arXiv:2607.18186,
+tracks the same reduction of the same map and reports 39 variables at degree
+three and 79 after the homogeneous reduction, which he describes as
+conservative rather than optimized. So the last stage roughly doubles the
+count, and a figure from after it is not comparable with a figure from before
+it.
+
+### Thompson's twenty-four variables
+
+Named as a benchmark in `docs/roadmap.md` since milestone 0.5 was planned, and
+until now recorded nowhere on this page. The gap is corrected here.
+
+W. Thompson, posted to the Secret Blogging Seminar on 20 July 2026 and archived
+at https://github.com/wtho704/explicit-cubic-homogeneous-jacobian-counterexample.
+Following Alpöge's counterexample, an explicit Bass–Connell–Wright reduction to
+a map in 24 variables in which every non-zero component of the displacement is
+a homogeneous cubic. Reported alongside it: 54 cubic monomials, Jacobian
+determinant identically one, an explicit rational collision, two independently
+written exact verifiers, and a nilpotence certificate.
+
+Two things about it belong here rather than in a comparison.
+
+It is cubic homogeneous, so it is at BCW's third stage and not the first. It is
+therefore comparable with Long's 79 and not with the 13 of `alpoege13`. This
+project has not carried out the homogenization at all, so it has no figure at
+that stage and cannot claim one. Whether a chain from `alpoege13` would
+homogenize to fewer than 24 is an open question here, and guessing at it would
+be exactly the kind of claim `AGENTS.md` forbids.
+
+The nilpotence index was corrected. Thompson reports `(JN)^17 = 0`; an
+independent verification, Zenodo record 21504303 of 23 July 2026, reports the
+index as 18 rather than 17 while confirming the map itself. That correction is
+recorded because a page that cites a result should cite its state and not its
+first announcement.
+
+Thompson states plainly that he claims neither priority nor global minimality,
+and asks whether an earlier explicit cubic-homogeneous reduction is known. This
+project takes the same position for the same reason, and it is worth saying
+that the posture is shared rather than borrowed.
+
+### What the comparison establishes
+
+At the degree-≤3 stage, 13 is the smallest count this project has found
+recorded anywhere, against 15 and 17 of its own earlier chains, 19 published,
+and 39 tracked as a bound.
+
+That is a statement about what a literature search turned up on 24 August 2026,
+by one reader, and about a stage that is not where most published figures sit.
+It is not a claim of priority: an earlier or smaller reduction may exist and
+simply not have been found. It is not a claim of minimality either; the reasons
+are under "What it does not establish" in the section on `alpoege13`, and the
+measurement behind them is in `docs/roadmap.md` under WP 12.
+
+What it does establish is narrower and is the first target the roadmap set for
+this comparison: the published nineteen-variable reduction is reproduced here
+with a machine-verifiable certificate, seventeen steps each checked against
+BCW-1 to BCW-12, and the endpoint compared against data this project did not
+compute. Reproducing a published figure and improving on one are separate
+results and are reported separately.
 
 ### Is reusing a carrier known?
 

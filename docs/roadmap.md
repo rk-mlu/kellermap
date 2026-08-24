@@ -811,7 +811,7 @@ boundedness is what makes it a milestone rather than a research programme.
 
 # Version 0.5
 
-**Work packages 1 to 12 are done.** The language of the repository, the gate
+**Work packages 1 to 13 are done.** The language of the repository, the gate
 that holds it, `CONTRIBUTING.md`, `undo` in the ring, the coefficient ring as a
 stated space, equality of algebraic numbers, the second source map, what an
 untargeted enumerator may claim, the untargeted search itself, what it spends,
@@ -1255,6 +1255,27 @@ twenty-four-variable result and Long's reduction, arXiv:2607.18186, are the
 benchmarks named so far. Before any number leaves the repository the literature
 is checked again, and `docs/references.md` states what the comparison
 establishes and what it does not.
+
+Done, and the check changed what the comparison says. `docs/references.md`
+carries it; the three findings are these.
+
+Thompson's twenty-four variables were named here as a benchmark and recorded on
+the references page nowhere at all. They are now, together with a correction
+another group made to the nilpotence index.
+
+The figures are not at the same stage. BCW prove the Reduction Theorem in three
+steps and every number in this project's table is at the first of them, degree
+three. Thompson's 24 is cubic homogeneous, which is the third, and Long reports
+39 at the first stage and 79 after the third for the same reduction. The last
+stage roughly doubles the count, so a figure from after it does not sit beside
+one from before it. This project has not carried out the homogenization and
+therefore has no figure at that stage.
+
+The first target is met and the second is stated narrowly. The published
+nineteen-variable reduction is reproduced with a machine-verifiable certificate.
+At the degree-three stage, 13 is the smallest count a search of the literature
+turned up, which is a statement about what one reader found on one day and not
+a claim of priority.
 
 **WP 14** removes the milestone markers from `contracts.md`, brings the
 documentation up to date, and prepares the release.
