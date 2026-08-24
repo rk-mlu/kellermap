@@ -811,11 +811,12 @@ boundedness is what makes it a milestone rather than a research programme.
 
 # Version 0.5
 
-**Work packages 1 to 11 are done.** The language of the repository, the gate
+**Work packages 1 to 12 are done.** The language of the repository, the gate
 that holds it, `CONTRIBUTING.md`, `undo` in the ring, the coefficient ring as a
 stated space, equality of algebraic numbers, the second source map, what an
 untargeted enumerator may claim, the untargeted search itself, what it spends,
-and the widened offer.
+the widened offer, the order over it, and a bound that turned out not to be
+worth writing.
 
 The measurement behind work package 8 is on the contract page under "The
 untargeted search", because it is the reason the obligations read as they do
@@ -1206,6 +1207,46 @@ This is the forward counterpart of REV-9, and it carries the same risk. A
 bound that prunes too much reports a reachable chain as an exhausted space.
 That result is wrong, not merely slow. The package needs a negative control:
 every chain that the unpruned search of WP 9 finds must still be found.
+
+Measured, and no code written. Two bounds were derived and both are provable
+from the construction rather than observed.
+
+The degree bound. A step replaces a monomial of degree `d` by terms of degree
+at most `max(deg P, deg Q) + 1`, and `deg P + deg Q = d` forces
+`max >= ceil(d/2)`, so the degree falls at most to `ceil(d/2) + 1`. Iterating
+that to three is a lower bound on the steps still needed.
+
+The component bound. A step acts on exactly one component, so it can clear at
+most one of the components still carrying a monomial of degree four or more.
+Their number is a lower bound on the steps still needed.
+
+Both are correct and neither cuts anything worth having. Along the chains the
+search finds, with a step limit set to the length the chain actually has:
+
+| | steps offered | cut by the bound |
+| --- | --- | --- |
+| alpoege | 73 | 5, seven per cent |
+| gao_quartic | 914 | 0, none |
+
+The reason is that both bounds are local. They read one map and say how many
+steps it needs at least, while what makes a chain long is that every step
+removes one monomial or one group, which neither quantity sees. On Gao's map
+the component bound *rises* over the first thirteen steps, from 3 to 10,
+because each step creates two components that may themselves carry high
+monomials; a bound that grows during the search cannot cut early. It becomes
+exact only over the last three maps, where nothing is left to decide.
+
+The other half of it was measured under WP 11: with a step limit one below the
+chain that exists, pruning saved 22 of 4067 examined maps on Alpöge's.
+
+So this package is a measurement and not an implementation. The requirement it
+set itself is met in its strongest form: every chain the unpruned search finds
+is still found, because nothing is pruned. Code that cuts nothing is surface
+that wants maintaining.
+
+A bound that would cut has to be non-local -- something about how much a single
+step can remove, not about the state of one map. Nothing here suggests one, and
+guessing would produce a heuristic where UNT-4 requires a stated rule.
 
 **WP 13** compares. Reproducing published dimensions with machine-verifiable
 certificates is the first correctness target. Improving them is the secondary
