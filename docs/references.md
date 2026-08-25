@@ -430,6 +430,13 @@ without this library, on 25 August 2026:
 | `G20`: Jacobian determinant | 1 | 1 at two sample points |
 | `G20`: collision, and `gamma(q)` | as printed | agrees exactly |
 
+The map is held in `tests/data.py` as `MACFARLANE_COMPONENTS` and not in
+`kellermap.examples`, for the reason the nineteen-dimensional map is: the
+repository carries no licence file, so the values are not taken into the
+package. It is called `macfarlane13` here and not `F13`, because `alpoege13`
+already names Alpöge's map in dimension 13 and the author of the reduction is
+what tells the two apart.
+
 So thirteen variables at degree three were reached a month before this project
 reached them, by a different route, and `alpoege13` is not first. The two maps
 are not the same map: `alpoege13` carries 58 terms and a three-point collision
@@ -441,6 +448,28 @@ This is why the wording of the section above was written as it was, and it is
 worth saying what that was worth. The claim not made was the claim that would
 now be wrong. What survives is a statement about a search on one day, and the
 correction cost nothing but this paragraph.
+
+### It is inside this project's search space
+
+Asked because the derivation is unlike anything here, and answered by running
+the backward search at it. `peel` reaches `macfarlane13` from Alpöge's
+normalized map in seven steps, examining eight maps, in about a second. The
+chain verifies and its endpoint is his map after reordering the generators.
+
+`scripts/reconstruct_macfarlane13.py` carries those seven steps and recomputes
+them in plain SymPy without the library, together with his map from the
+published coefficients. Twelve checks.
+
+Two of the steps carry a coefficient other than one, `-2` and `3`, and four
+have a factor with several terms. Both shapes are extensions of Proposition
+(3.1) that this project states as BCW-11 and BCW-6, and both are inside what
+UNT-1 to UNT-11 offer.
+
+What that settles is the question the two maps raise. The gap is not what the
+space contains but which chain an order picks: the forward search takes the
+step worth 102 at the first map and arrives at `alpoege13`, and this chain
+starts elsewhere and arrives here. Both are seven steps into dimension 13 from
+the same source.
 
 The twenty-variable map also fills the gap this page left open. The best
 cubic-homogeneous count recorded here is 20 and not 24, and this project still

@@ -151,3 +151,97 @@ ALPOEGE_IMAGE = (R(-1, 4), 0, 0)
 CARRIERS = {w[j]: sp.expand(COMPONENTS[3 + j] - w[j]) for j in range(16)}
 
 W2_INTRODUCED = x**3 * y
+
+
+# --------------------------------------------------------------------------
+# macfarlane13
+#
+# A. Macfarlane, https://github.com/Amacfa/keller-counterexamples-13-20,
+# timestamped 22 July 2026. Thirteen variables, degree three, determinant one,
+# and a two-point collision. Obtained by restricting W. Thompson's
+# twenty-four-variable cubic-homogeneous form to an invariant subspace, which
+# is a construction this project does not have.
+#
+# Here for the same reason as the nineteen-dimensional map above: the
+# repository carries no licence, so the values are not taken into the package.
+# ``docs/references.md`` records what was recomputed from them and what the
+# agreement establishes.
+#
+# It is not the same map as ``kellermap.examples.alpoege13``, which has 58
+# terms and a three-point collision. It is reachable by the same kind of chain:
+# ``scripts/reconstruct_macfarlane13.py`` carries seven BCW steps from
+# Alpoege's normalized map that arrive at it exactly.
+# --------------------------------------------------------------------------
+
+m = sp.symbols("m1:14")
+
+MACFARLANE_VARIABLES = m
+
+_R = (
+    -m[10] * m[11],
+    3 * m[0] * m[2] - m[7] * m[8] - 3 * m[4] * m[5],
+    -m[7] * m[9] + 4 * m[1] ** 2 - m[3] * m[4] - m[5] * m[6],
+    2 * m[11] * m[12],
+    3 * m[1] ** 2,
+    sp.Integer(0),
+    3 * m[1] * m[2] - m[1] * m[4],
+    m[0] * m[1],
+    6 * m[0] * m[2] - 3 * m[0] * m[4] - 3 * m[2] * m[5],
+    -m[0] * m[6] + 7 * m[1] ** 2 - m[2] * m[3],
+    m[0] * m[2],
+    -R(1, 2) * m[0] ** 2,
+    m[1] ** 2,
+)
+
+_GAMMA = (
+    -2 * m[0] * m[2] * m[7]
+    + m[0] * m[4] * m[7]
+    - R(1, 3) * m[0] * m[1] * m[8]
+    + 4 * m[0] * m[1] ** 2
+    + m[2] * m[5] * m[7]
+    - 3 * m[1] ** 2 * m[5],
+    m[0] * m[6] * m[7]
+    - m[0] * m[1] * m[9]
+    - 7 * m[1] ** 2 * m[7]
+    + m[2] * m[3] * m[7]
+    - 3 * m[1] ** 2 * m[3]
+    - 3 * m[1] * m[2] * m[5]
+    + m[1] * m[4] * m[5],
+    m[0] ** 2 * m[12] - 2 * m[11] * m[1] ** 2,
+    -R(1, 2) * m[0] ** 2 * m[10] + m[0] * m[11] * m[2],
+    m[0] * m[1] * m[2],
+    m[0] ** 2 * m[1],
+)
+
+# B: Q^6 -> Q^13, linear, as the source prints it.
+_B = (
+    -_GAMMA[3] - R(3, 2) * _GAMMA[5],
+    3 * _GAMMA[0],
+    _GAMMA[1] + 3 * _GAMMA[4],
+    -_GAMMA[2],
+    _GAMMA[4],
+    _GAMMA[5],
+) + (sp.Integer(0),) * 7
+
+MACFARLANE_COMPONENTS = tuple(sp.expand(m[i] + _R[i] + _B[i]) for i in range(13))
+
+MACFARLANE_POINTS = (
+    (0, 0, R(-1, 4), 0, 0, 0, 0, 0, 0, 0, 0, 0, 0),
+    (
+        1,
+        R(-3, 2),
+        R(13, 2),
+        R(-9, 4),
+        3,
+        R(3, 2),
+        R(99, 4),
+        R(3, 2),
+        R(-3, 4),
+        R(-45, 8),
+        R(-13, 2),
+        R(1, 2),
+        R(-9, 4),
+    ),
+)
+
+MACFARLANE_IMAGE = (0, 0, R(-1, 4), 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
