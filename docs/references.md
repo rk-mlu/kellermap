@@ -409,18 +409,60 @@ and asks whether an earlier explicit cubic-homogeneous reduction is known. This
 project takes the same position for the same reason, and it is worth saying
 that the posture is shared rather than borrowed.
 
+### Thirteen variables were reached a month earlier
+
+A. Macfarlane, https://github.com/Amacfa/keller-counterexamples-13-20,
+timestamped 22 July 2026. An explicit thirteen-variable Keller map of degree
+three with determinant one and a two-point collision, obtained by restricting
+Thompson's twenty-four-variable cubic-homogeneous form to an invariant
+subspace. The same repository carries a twenty-variable cubic-homogeneous map
+by the same construction, four below Thompson's.
+
+Both were recomputed here from the published coefficients, in SymPy and
+without this library, on 25 August 2026:
+
+| | reported | recomputed |
+| --- | --- | --- |
+| `F13`: dimension, degree | 13, 3 | agrees |
+| `F13`: Jacobian determinant | 1 | 1 at three sample points |
+| `F13`: `F(p) = F(q) = p`, `p ≠ q` | yes | agrees |
+| `G20`: dimension, every non-linear term cubic | 20 | agrees |
+| `G20`: Jacobian determinant | 1 | 1 at two sample points |
+| `G20`: collision, and `gamma(q)` | as printed | agrees exactly |
+
+So thirteen variables at degree three were reached a month before this project
+reached them, by a different route, and `alpoege13` is not first. The two maps
+are not the same map: `alpoege13` carries 58 terms and a three-point collision
+and comes from Alpöge's map directly, `F13` carries a two-point collision and
+comes from compressing Thompson's normal form. Neither is a refinement of the
+other.
+
+This is why the wording of the section above was written as it was, and it is
+worth saying what that was worth. The claim not made was the claim that would
+now be wrong. What survives is a statement about a search on one day, and the
+correction cost nothing but this paragraph.
+
+The twenty-variable map also fills the gap this page left open. The best
+cubic-homogeneous count recorded here is 20 and not 24, and this project still
+has no figure at that stage, having never carried out the homogenization.
+
 ### What the comparison establishes
 
-At the degree-≤3 stage, 13 is the smallest count this project has found
-recorded anywhere, against 15 and 17 of its own earlier chains, 19 published,
-and 39 tracked as a bound.
+At the degree-≤3 stage, 13 is the smallest count recorded, and it is reached
+independently twice: by Macfarlane on 22 July 2026 from Thompson's normal form,
+and by this project on 24 August 2026 from Alpöge's map by search. Against 15
+and 17 of this project's own earlier chains, 19 published, and 39 tracked as a
+bound.
 
-That is a statement about what a literature search turned up on 24 August 2026,
-by one reader, and about a stage that is not where most published figures sit.
-It is not a claim of priority: an earlier or smaller reduction may exist and
-simply not have been found. It is not a claim of minimality either; the reasons
-are under "What it does not establish" in the section on `alpoege13`, and the
-measurement behind them is in `docs/roadmap.md` under WP 12.
+It is not a claim of priority, and the section above says who was earlier. It
+is not a claim of minimality either; the reasons are under "What it does not
+establish" in the section on `alpoege13`, and the measurement behind them is in
+`docs/roadmap.md` under WP 12.
+
+What the second arrival is worth is a different thing and worth stating: two
+routes that share no construction reached the same count, one by compressing a
+larger normal form and one by searching upward from the original map. That is
+evidence about the number 13 rather than about either method.
 
 What it does establish is narrower and is the first target the roadmap set for
 this comparison: the published nineteen-variable reduction is reproduced here

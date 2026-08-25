@@ -1273,9 +1273,16 @@ therefore has no figure at that stage.
 
 The first target is met and the second is stated narrowly. The published
 nineteen-variable reduction is reproduced with a machine-verifiable certificate.
-At the degree-three stage, 13 is the smallest count a search of the literature
-turned up, which is a statement about what one reader found on one day and not
-a claim of priority.
+
+Thirteen variables at degree three were reached a month earlier, by a different
+route. The maintainer found the repository after the first pass of this package
+and both of its maps were recomputed here and hold. `alpoege13` is therefore not
+first, and `docs/references.md` says so and says who was.
+
+That is the value of the wording the page already carried. The claim not made
+is the claim that would now be wrong, and the correction cost a paragraph.
+Reaching the same count twice by routes that share no construction is evidence
+about the number and not about either method.
 
 **WP 14** removes the milestone markers from `contracts.md`, brings the
 documentation up to date, and prepares the release.
