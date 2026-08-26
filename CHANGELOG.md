@@ -4,7 +4,7 @@ Notable changes per release. The milestone plan and its reasoning live in
 `docs/roadmap.md`, the binding obligations of the verification surface in
 `docs/contracts.md`.
 
-## 0.5.0rc3
+## 0.5.0rc4
 
 Searching without a target. The question changes from "does this chain reach
 that map" to "reduce this map to degree three", and the answer is a chain the
@@ -118,6 +118,26 @@ All six found by an external audit of rc1.
   different chains can share. It compares a fingerprint of the steps.
 
 All five found by an external audit of rc2.
+
+### Fixed in rc4
+
+- The three outcome types ignored the coefficient ring in equality and
+  hashing. Two results that agree on everything else and not on the ring are
+  not the same result, which is the reason DOM-4 exists. Introduced in rc3 by
+  the fix for the field name.
+- `domain` looked optional: declaring it as an `InitVar` beside a property of
+  the same name made the property object the parameter's default, so omitting
+  it raised `AttributeError` from inside instead of `TypeError` at the call.
+  The three constructors are written out by hand now.
+- `references.md` explained the wrong candidate positions by a missing
+  convention for matching. There is one, it gives 15 and 6, and the figures
+  were simply wrong; the evasion is replaced by the correction.
+- Two audit references named the wrong release candidate.
+- `MACFARLANE_THIRD_POINT` in `tests/data.py` was cited by `references.md` and
+  checked by nothing; the reconstruction script checked its own copy. A test
+  compares the cited value against the chain the library computes.
+
+All five found by an external audit of rc3.
 
 ### Known limits
 

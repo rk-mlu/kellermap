@@ -389,3 +389,46 @@ def test_its_collision_continues_alpoeges() -> None:
     start = examples.alpoege_collision()
 
     assert {point[:3] for point in carried.points} == set(start.points)
+
+
+def test_the_third_point_in_the_fixed_data_is_the_one_the_chain_carries() -> None:
+    """The value ``docs/references.md`` cites, against the library's own chain.
+
+    ``tests/data.py`` holds ``MACFARLANE_THIRD_POINT`` and
+    ``scripts/reconstruct_macfarlane13.py`` holds a second copy that it checks.
+    Nothing checked the first, so the cited value could drift from the computed
+    one unnoticed. An audit of ``0.5.0rc3`` pointed that out.
+    """
+    from kellermap import Collision, LinearStep, over_field, peel
+    from tests.data import (
+        MACFARLANE_COMPONENTS,
+        MACFARLANE_THIRD_POINT,
+        MACFARLANE_VARIABLES,
+    )
+
+    renaming = dict(zip(MACFARLANE_VARIABLES, sp.symbols("x1:14"), strict=True))
+    target = PolynomialMap(
+        sp.symbols("x1:14"),
+        tuple(sp.expand(c.xreplace(renaming)) for c in MACFARLANE_COMPONENTS),
+    )
+    normalization = LinearStep.normalize(over_field(examples.alpoege()))
+    chain = peel(normalization.target, target, budget=400, spare=3, pairs=6).reduction
+
+    assert chain is not None
+
+    start = Collision.at(
+        over_field(examples.alpoege()), examples.alpoege_collision().points
+    )
+    carried = chain.transport(normalization.transport(start))
+    order = tuple(int(str(v)[1:]) for v in chain.target.variables)
+
+    def in_his_numbering(point: tuple[sp.Expr, ...]) -> tuple[sp.Expr, ...]:
+        placed: list[sp.Expr] = [sp.Integer(0)] * 13
+        for position, index in enumerate(order):
+            placed[index - 1] = sp.sympify(point[position])
+
+        return tuple(placed)
+
+    third = in_his_numbering(carried.points[2])
+
+    assert third == tuple(sp.sympify(c) for c in MACFARLANE_THIRD_POINT)

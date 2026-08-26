@@ -29,7 +29,7 @@ rebuilt forwards with ``BCWStep.build``, verified, and only then a
 from __future__ import annotations
 
 from collections.abc import Iterator
-from dataclasses import InitVar, dataclass, field
+from dataclasses import dataclass, field
 from itertools import combinations, combinations_with_replacement
 from typing import cast
 
@@ -59,7 +59,7 @@ class Undo:
     factor: sp.Expr
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, init=False)
 class PeelOutcome:
     """What a peel returns.
 
@@ -83,11 +83,32 @@ class PeelOutcome:
     examined: int
     deepest: int
     exhausted: bool
-    domain: InitVar[Domain]
-    _domain: Domain = field(init=False, repr=False, compare=False)
+    _domain: Domain = field(repr=False)
 
-    def __post_init__(self, domain: Domain) -> None:
-        """Store a copy, so the caller keeps no handle on it."""
+    __match_args__ = ("reduction", "examined", "deepest", "exhausted", "domain")
+
+    def __init__(
+        self,
+        reduction: Reduction | None,
+        examined: int,
+        deepest: int,
+        exhausted: bool,
+        domain: Domain,
+    ) -> None:
+        """Take the ring as ``domain`` and keep a copy of it.
+
+        Written out rather than generated. Naming the field ``_domain`` so that
+        the property can be ``domain`` put the underscore into the generated
+        signature, the repr and ``__match_args__``; declaring ``domain`` as an
+        ``InitVar`` beside a property of the same name made the property object
+        the parameter's default, so the argument looked optional and omitting
+        it raised ``AttributeError`` instead of ``TypeError``. An audit found
+        the first, and the audit after it found the second.
+        """
+        object.__setattr__(self, "reduction", reduction)
+        object.__setattr__(self, "examined", examined)
+        object.__setattr__(self, "deepest", deepest)
+        object.__setattr__(self, "exhausted", exhausted)
         object.__setattr__(self, "_domain", clone_domain(domain))
 
     def __repr__(self) -> str:

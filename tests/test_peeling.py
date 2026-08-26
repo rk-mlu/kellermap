@@ -1418,7 +1418,7 @@ def test_the_outcome_reports_its_ring_when_printed() -> None:
 
     ``_domain`` is kept out of the generated ``repr`` so that the name a caller
     sees is the property, so the ring is put back by hand. An audit of
-    ``0.5.0rc1`` found the underscore in the public signature; taking it out
+    ``0.5.0rc2`` found the underscore in the public signature; taking it out
     took the ring out of the repr with it.
     """
     source = PolynomialMap((x, y), (x + y**3, y))

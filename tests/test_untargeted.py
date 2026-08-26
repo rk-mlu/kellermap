@@ -11,6 +11,7 @@ tests are written so that a reader can tell which is which.
 """
 
 import hashlib
+import inspect
 import os
 import subprocess
 import sys
@@ -22,7 +23,10 @@ import sympy as sp
 from kellermap import (
     Candidate,
     LinearStep,
+    PeelOutcome,
     PolynomialMap,
+    ReductionOutcome,
+    SearchOutcome,
     VerificationError,
     examples,
     over_field,
@@ -189,7 +193,7 @@ def test_the_order_survives_another_hash_seed() -> None:
 
     # The chain itself and not two numbers about it. Comparing the step count
     # and the dimension let two different chains agree, which an audit of
-    # 0.5.0rc1 pointed out about the first version of this test.
+    # 0.5.0rc2 pointed out about the first version of this test.
     reference = reduce_to_degree3(normalized(examples.alpoege()), budget=2000)
 
     assert reference.reduction is not None
@@ -874,7 +878,7 @@ def test_the_outcome_hands_out_a_copy_of_its_domain() -> None:
 
     assert outcome.domain is not outcome.domain
 
-    # The constructor parameter is public. An audit of 0.5.0rc1 pointed out
+    # The constructor parameter is public. An audit of 0.5.0rc2 pointed out
     # that storing the copy in ``_domain`` had put that name into the generated
     # signature, the repr and ``__match_args__``.
     assert type(outcome).__match_args__[-1] == "domain"
@@ -884,3 +888,39 @@ def test_the_outcome_hands_out_a_copy_of_its_domain() -> None:
 
     assert str(outcome.domain.gens) == before
     assert outcome.domain == sp.ZZ[parameter]
+
+
+@pytest.mark.parametrize("outcome_type", [SearchOutcome, PeelOutcome, ReductionOutcome])
+def test_the_ring_is_part_of_what_an_outcome_is(outcome_type: type) -> None:
+    """DOM-4 in equality and hashing, which is where it went missing.
+
+    A search over ``QQ`` answers a different question from one over ``ZZ``, so
+    two outcomes that agree on everything else and not on the ring are not the
+    same outcome. Keeping the copied ring out of the generated comparison made
+    them equal, and equal in hash; an audit of 0.5.0rc2 measured it on all
+    three types.
+    """
+    over_integers = outcome_type(None, 0, 0, True, sp.ZZ)
+    over_rationals = outcome_type(None, 0, 0, True, sp.QQ)
+
+    assert over_integers != over_rationals
+    assert hash(over_integers) != hash(over_rationals)
+
+    # The control: everything else equal and the ring equal is equal.
+    assert over_integers == outcome_type(None, 0, 0, True, sp.ZZ)
+
+
+@pytest.mark.parametrize("outcome_type", [SearchOutcome, PeelOutcome, ReductionOutcome])
+def test_the_ring_is_a_required_argument(outcome_type: type) -> None:
+    """And it looked optional.
+
+    Declaring ``domain`` as an ``InitVar`` beside a property of the same name
+    made the property object the parameter's default, so omitting the argument
+    raised ``AttributeError`` from inside instead of ``TypeError`` at the call.
+    """
+    parameter = inspect.signature(outcome_type).parameters["domain"]
+
+    assert parameter.default is inspect.Parameter.empty
+
+    with pytest.raises(TypeError):
+        outcome_type(None, 0, 0, True)

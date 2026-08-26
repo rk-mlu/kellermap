@@ -1,6 +1,6 @@
 [project]
 name = "kellermap"
-version = "0.5.0rc3"
+version = "0.5.0rc4"
 description = "Polynomial Keller maps and certified transformations of them, working towards the Bass–Connell–Wright degree reduction."
 readme = "README.md"
 requires-python = ">=3.10"

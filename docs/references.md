@@ -503,12 +503,13 @@ against everything `untargeted_candidates` offers at the map before it:
 | 6 | yes |
 | 7 | yes |
 
-Two of seven. This table carried the position of the two matching candidates,
-17 and 9; a second audit reached 15 and 6 for the same steps. The number
-depends on how a step is matched against a proposal -- whether a carried slot
-is compared by its index or by the value it holds -- and no convention for that
-is written down. What holds without one is which steps match, so the positions
-are gone. Already the first step removes a term that is not a leading
+Two of seven. This table carried the positions of the two matching candidates,
+17 and 9. They were wrong: building each candidate with the names the step
+actually uses and comparing the resulting step gives 15 and 6, zero-based, and
+that comparison is unambiguous. A first correction blamed a missing convention
+for matching rather than the figures, which was an evasion. The positions are
+left out because they are an artefact of the enumeration order and say nothing
+a reader needs, not because they cannot be determined. Already the first step removes a term that is not a leading
 monomial of its component, which is what UNT-1 requires and what `peel` does
 not. All seven lower `Phi`, and `peel` searches a wider space than
 `untargeted.py` offers.
