@@ -4,7 +4,7 @@ Notable changes per release. The milestone plan and its reasoning live in
 `docs/roadmap.md`, the binding obligations of the verification surface in
 `docs/contracts.md`.
 
-## 0.5.0rc1
+## 0.5.0rc2
 
 Searching without a target. The question changes from "does this chain reach
 that map" to "reduce this map to degree three", and the answer is a chain the
@@ -17,8 +17,10 @@ hand take eight steps into fifteen and eight into seventeen.
 
 What that is worth and what it is not is in `docs/references.md`. Thirteen
 variables at degree three were reached a month earlier by A. Macfarlane, by a
-route this library has no construction for, and no priority is claimed. His map
-lies inside this search space: the backward search reaches it in seven steps.
+route this library has no construction for, and no priority is claimed. A
+seven-step BCW chain reaches his map from the same source, found by `peel`;
+that chain is not one the untargeted enumerator can currently produce, and an
+earlier draft of this entry said otherwise.
 No minimality is claimed either, and the measurement behind that refusal is in
 `docs/roadmap.md`.
 
@@ -72,6 +74,25 @@ a gate holds it there.
 - `over` of the wrong type raised `VerificationError` where the error table
   promises `TypeError`, and `SearchOutcome.domain` shared a mutable domain with
   the caller. Both found by an external audit.
+
+### Fixed in rc2
+
+- `reduce_to_degree3` overran its budget: the check sat on entry to a frame and
+  not between siblings, so at `budget=1` twenty-two child maps were built and
+  one was reported. `examined` now says which of the two it counts, and it is
+  the maps the walk descended into.
+- `context` of the wrong type raised `AttributeError` from inside, and only
+  when the source had degree above three. It raises `TypeError` at either
+  degree.
+- `SearchOutcome.domain` and the other two handed the same object out on every
+  read, so a caller could reach into a frozen outcome. The accessor copies.
+- The Gao attribution carried a title assembled from the abstract rather than
+  the paper's own, which is the part CC BY asks for first.
+- `docs/references.md` claimed that Macfarlane's map lies in the space the
+  untargeted enumerator describes. Two of the seven steps do; the rest are
+  outside it. `peel` searches a wider space, and the page says so now.
+
+All six found by an external audit of rc1.
 
 ### Known limits
 

@@ -69,7 +69,10 @@ kellermap/
 │                         Candidate, enumerate_candidates, anchors,
 │                         conjugate, diagonal_matching
 ├── peeling.py            peel, Undo, moves, factor
-├── guards.py             what both walks check before they begin
+├── untargeted.py         reduce_to_degree3, the walk with no target:
+│                         untargeted_candidates, ordered_steps,
+│                         remaining_weight, ReductionOutcome
+├── guards.py             what the three walks check before they begin
 ├── examples.py           the Keller maps written out more than once
 ├── errors.py             VerificationError
 └── bcw/                  BCWStep
@@ -91,18 +94,24 @@ Keeping the subpackage one level down also removes an ambiguity the code
 carried while the package itself was called `bcw`: `BCW` now always means the
 1982 paper.
 
-`search.py` and `peeling.py` are specific to one reduction method as well: both
-look for a sequence of `BCWStep`. They are outside the subpackage because they
-are not certificates. Neither returns evidence of anything. A `SearchOutcome`
-and a `PeelOutcome` hold a chain that has been built and verified, or nothing,
-and `peel` builds its chain forwards with `BCWStep.build` before it returns
-one. Looking for a factorization and certifying one are separate questions, and
-the directory says so.
+`search.py`, `peeling.py` and `untargeted.py` are specific to one reduction
+method as well: all three look for a sequence of `BCWStep`. They are outside
+the subpackage because they are not certificates. None returns evidence of
+anything. A `SearchOutcome`, a `PeelOutcome` and a `ReductionOutcome` hold a
+chain that has been built and verified, or nothing. Looking for a
+factorization and certifying one are separate questions, and the directory says
+so.
 
-`guards.py` holds the two questions both of them answer before they spend
-anything: whether the bounds are numbers a walk can count with, and whether the
+Three walks and not two, since 0.5, and they differ in what bounds them.
+`search` is given a target and a pool and divides a displacement. `peel` is
+given a target and divides it backwards. `untargeted` is given neither and
+splits a leading monomial instead, which is a narrower rule and therefore a
+different space: a step `peel` can take need not be one `untargeted_candidates`
+offers, and an audit of `0.5.0rc1` found a page claiming otherwise.
+
+`guards.py` holds the questions all three answer before they spend anything: whether the bounds are numbers a walk can count with, and whether the
 endpoints leave a chain to look for at all (REV-11). It is a module rather than
-a helper in either file because the two searches share nothing else, and
+a helper in any one file because the searches share nothing else, and
 because the alternative was tried: both checks existed twice, with different
 messages, and the copies drifted. One refused a negative `selection_limit`
 where the other did not, and one made the REV-11 test before the walk where the

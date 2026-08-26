@@ -11,9 +11,11 @@ factors that are sums and UNT-10 and UNT-11 order it. All eleven are built.
 Two things here are worth reading before the code.
 
 The candidates come from the leading monomials, because that is the only rule
-left once there is no displacement to divide. The space is small: between 4
-and 25 factorizations at every map of the two long chains that is still above
-degree three, from dimension 3 up to 19.
+left once there is no displacement to divide. The space is small: between 2
+and 22 candidates at every map of the two long chains that is still above
+degree three, from dimension 3 up to 19. This carried 4 and 25, which were
+factorization counts from before the offer was widened and before swapped
+pairs were merged; ``scripts/untargeted_space.py`` checks the two that hold.
 
 The measure is exponential in the degree, and that is not a preference.
 A step replaces one monomial of degree ``d`` by at most three of degree
@@ -25,6 +27,7 @@ from __future__ import annotations
 
 from collections.abc import Iterator
 from dataclasses import dataclass
+from typing import cast
 
 import sympy as sp
 from sympy.polys.domains import Domain
@@ -33,7 +36,7 @@ from .bcw import BCWStep
 from .bcw.step import Carried
 from .context import ReductionContext
 from .guards import counts, maps, searched_domain
-from .polynomial_map import PolynomialMap
+from .polynomial_map import PolynomialMap, clone_domain
 from .reduction import Reduction
 from .search import Candidate, Slot
 
@@ -418,7 +421,13 @@ class ReductionOutcome:
         proof that none exists, by UNT-4: the space walked is the one UNT-3
         leaves, and UNT-3 rules out steps that BCW-1 to BCW-12 admit.
     examined
-        How many maps were built and looked at.
+        How many maps the walk descended into, which is what ``budget`` bounds.
+
+        Not how many were built. Ordering the steps at a map builds every
+        candidate it offers, so the arithmetic done is larger than this number
+        by that factor: at the normalized Alpoege map, 22 builds for each map
+        entered. An external audit asked which of the two this counts, because
+        the answer was written as though it were both.
     deepest
         The longest chain reached, whether or not it arrived.
     exhausted
@@ -435,7 +444,24 @@ class ReductionOutcome:
     examined: int
     deepest: int
     exhausted: bool
-    domain: Domain
+    _domain: Domain
+
+    @property
+    def domain(self) -> Domain:
+        """Return the coefficient ring, DOM-4, as a copy.
+
+        A copy on every read. A SymPy domain is not a value object: its
+        generators are ``PolyElement``, so mutable dicts, and a caller holding
+        the one this outcome carries could change what a finished result
+        reports. Cloning at construction closed the aliasing with the argument;
+        an external audit of 0.5.0rc1 pointed out that the accessor still hands
+        the same object out every time.
+
+        Measured: 0.1 microseconds for ``QQ``, 23 for ``ZZ[T]``, 55 for
+        ``QQ[X3][S]``, against a search that spends milliseconds per map. The
+        frozen dataclass promises value semantics and this is what they cost.
+        """
+        return cast(Domain, clone_domain(self._domain))
 
 
 def ordered_steps(
@@ -507,11 +533,10 @@ def reduce_to_degree3(
     offers, the search stops where the enumerator runs out, and that is at
     degree three by UNT-2.
 
-    Depth first, and without ranking or pruning. Which candidate is tried first
-    is the order the enumerator fixes, and nothing here prefers one over
-    another. That is the point: work packages 11 and 12 need a measured
-    baseline to be compared against, and a baseline with a heuristic in it
-    measures the heuristic.
+    Depth first, and without pruning. The candidates are ordered by what a step
+    removes, UNT-10, and the first that lowers the measure is taken. This said
+    "without ranking" while it was the baseline of work package 9 and kept
+    saying it after work package 11.1 gave it an order.
 
     ``UNT-3`` is applied, and it is not a heuristic. A step that does not lower
     the measure is not a slower route but a route that need not end: one step
@@ -544,6 +569,17 @@ def reduce_to_degree3(
     maps(source=source)
     counts(budget=budget)
     domain = searched_domain(over, source)
+    if context is not None and not isinstance(context, ReductionContext):
+        # Before anything else, and before the base case in particular. A
+        # source of degree three never names a coordinate, so a wrong context
+        # passed unremarked there and raised an ``AttributeError`` from inside
+        # only when the degree was higher. Whether an argument is well formed
+        # must not depend on the data, which is the finding an audit made
+        # against 0.4.0rc11 for the value pool.
+        raise TypeError(
+            "context must be a ReductionContext; "
+            f"got {type(context).__name__}: {context!r}"
+        )
     naming = context if context is not None else ReductionContext()
 
     remaining = [budget]
@@ -567,12 +603,28 @@ def reduce_to_degree3(
             return None
 
         for step in ordered_steps(current, naming):
+            if remaining[0] <= 0:
+                # The sibling loop has to stop too. Checking only on entry let
+                # a frame keep descending into its remaining siblings after the
+                # budget was gone: at ``budget=1`` an external audit counted 22
+                # child maps built and one reported. ``search`` and ``peel``
+                # both check inside their loops.
+                cut_off[0] = True
+
+                return None
+
             remaining[0] -= 1
             found = walk(step.target, (*steps, step))
             if found is not None:
                 return found
 
-        return None
+        return None  # pragma: no cover
+        # Unreachable since the budget is checked between siblings. Every step
+        # offered lowers ``Phi``, which is well founded, so a descent that is
+        # not cut off reaches degree three; and one that is cut off returns
+        # above, at the budget check, before the loop can run out. It was
+        # reachable while the check sat only on entry, which is the defect an
+        # audit of 0.5.0rc1 found.
 
     # No special case for a source of degree three. UNT-5 is what the walk
     # already does: the enumerator offers nothing there by UNT-2, so the first

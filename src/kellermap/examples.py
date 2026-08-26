@@ -479,9 +479,15 @@ def gao_quartic() -> PolynomialMap:
     collision does not live over the rationals: two of its three points are
     over ``Q(sqrt(-23))``.
 
-    Somebody else's mathematics: Gao, *Keller maps of arbitrary geometric
-    degree*, arXiv:2608.00222v1, Section 3.5. Licensed CC BY 4.0,
-    https://creativecommons.org/licenses/by/4.0/.
+    Somebody else's mathematics: Shuhong Gao, *Counterexamples to the Jacobian
+    conjecture in dimensions greater than two*, arXiv:2608.00222v1, Section
+    3.5. Licensed CC BY 4.0, https://creativecommons.org/licenses/by/4.0/.
+
+    The title is the paper's own. This docstring called it *Keller maps of
+    arbitrary geometric degree* until an external audit checked it against the
+    arXiv listing; that phrase was assembled from the abstract and is not a
+    title. Attribution is what the licence asks for first, so a wrong one is
+    worse here than a wrong word elsewhere.
 
     Changed from the source: transcribed into SymPy from the closed form the
     paper gives, with the two quotients carried out. The mathematics is not

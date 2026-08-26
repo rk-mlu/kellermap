@@ -10,6 +10,11 @@ Proposition (3.1) and its second half is a rule this project states, and the
 tests are written so that a reader can tell which is which.
 """
 
+import os
+import subprocess
+import sys
+from pathlib import Path
+
 import pytest
 import sympy as sp
 
@@ -33,6 +38,8 @@ from kellermap.untargeted import (
     remaining_weight,
     untargeted_candidates,
 )
+
+ROOT = Path(__file__).resolve().parent.parent
 
 x, y, z = sp.symbols("x y z")
 
@@ -134,18 +141,49 @@ def test_the_order_is_fixed() -> None:
 
     ``moves`` had that defect until 0.4.0rc6, and at a small budget the order
     decides which chain is found.
+
+    What this shows is that the order is total and that two calls agree, not
+    that another interpreter with a different hash seed would agree. It carried
+    a clause ending in ``or True``, which can never fail; an external audit of
+    0.5.0rc1 found it. The seed itself is exercised below, in a fresh process.
     """
     source = normalized(examples.alpoege())
 
     assert untargeted_candidates(source) == untargeted_candidates(source)
-    assert (
-        leading_splits(source) == tuple(sorted(leading_splits(source), key=repr))
-        or True
-    )
 
     first = [(split.index, split.left) for split in leading_splits(source)]
 
     assert first == sorted(first)
+
+
+def test_the_order_survives_another_hash_seed() -> None:
+    """The control the test above cannot be.
+
+    A hash seed only differs between processes, so this starts one. Without it
+    the claim that ``PYTHONHASHSEED`` cannot reach the order rests on reading
+    the code.
+    """
+    program = (
+        "import sys; sys.path.insert(0, '.');"
+        "from kellermap import LinearStep, examples, over_field, reduce_to_degree3;"
+        "F = LinearStep.normalize(over_field(examples.alpoege())).target;"
+        "o = reduce_to_degree3(F, budget=2000);"
+        "print(len(o.reduction.steps), o.reduction.target.dimension)"
+    )
+    seen = set()
+    for seed in ("0", "1", "12345"):
+        environment = dict(os.environ, PYTHONHASHSEED=seed)
+        result = subprocess.run(
+            [sys.executable, "-c", program],
+            capture_output=True,
+            text=True,
+            check=True,
+            cwd=ROOT,
+            env=environment,
+        )
+        seen.add(result.stdout.strip())
+
+    assert seen == {"7 13"}
 
 
 def test_the_coefficient_of_the_leading_monomial_goes_into_the_candidate() -> None:
@@ -182,7 +220,7 @@ def test_a_candidate_from_the_targeted_enumerator_carries_no_coefficient() -> No
 def test_every_candidate_can_be_built_and_verifies() -> None:
     """An enumerator that offers what cannot be built postpones the rejection.
 
-    Measured over both long chains: 172 candidates, all of which build, verify
+    Measured over both long chains: 272 candidates, all of which build, verify
     and lower the measure. This test carries the small case; the number above
     is on the contract page.
 
@@ -240,7 +278,7 @@ def test_a_square_leading_monomial_is_offered_as_one_generator() -> None:
 
     ``m`` reports one, so SEA-3 consumes one name and not two, and the step
     lands one dimension below what two fresh coordinates would reach. Measured
-    over the two long chains: 14 of 172 candidates share a generator.
+    over the two long chains: 14 of 272 candidates share a generator.
     """
     square = PolynomialMap((x, y), (x + x**2 * y**2, y))
     shared = [
@@ -757,3 +795,68 @@ def test_a_group_of_one_cofactor_is_not_offered() -> None:
     wider = PolynomialMap((x, y, z), (x + y**5 * z**5 + y**5 * z**4, y, z))
 
     assert grouped_splits(wider)
+
+
+# --------------------------------------------------------------------------
+# The audit of 0.5.0rc1
+# --------------------------------------------------------------------------
+
+
+def test_the_budget_bounds_the_siblings_too() -> None:
+    """The loop checked the budget on entry and not between siblings.
+
+    At ``budget=1`` an external audit counted 22 child maps built at the root
+    and one reported. The count is what ``budget`` bounds, so the loop has to
+    stop when it is gone.
+    """
+    source = normalized(examples.alpoege())
+
+    for budget in (1, 2, 3):
+        outcome = reduce_to_degree3(source, budget=budget)
+
+        assert outcome.examined == budget
+        assert not outcome.exhausted
+        assert outcome.reduction is None
+
+
+def test_a_context_of_the_wrong_type_raises_whatever_the_degree() -> None:
+    """Whether an argument is well formed must not depend on the data.
+
+    A source of degree three never names a coordinate, so a wrong context
+    passed unremarked there and raised an ``AttributeError`` from inside only
+    at higher degree. That is the finding an audit made against 0.4.0rc11 for
+    the value pool, in another place.
+    """
+    quartic = PolynomialMap((x, y), (x + y**4, y))
+
+    for source in (examples.bcw17(), quartic):
+        with pytest.raises(TypeError, match="must be a ReductionContext"):
+            reduce_to_degree3(source, budget=5, context="bad")
+
+    # The control: a real context is accepted at both degrees.
+    assert reduce_to_degree3(examples.bcw17(), budget=5, context=ReductionContext())
+    assert reduce_to_degree3(quartic, budget=20, context=ReductionContext())
+
+
+def test_the_outcome_hands_out_a_copy_of_its_domain() -> None:
+    """Cloning at construction closed the aliasing with the argument only.
+
+    The accessor handed the same object out every time, so a caller could
+    reach into a frozen outcome through ``domain.gens``. An audit of
+    ``0.5.0rc1`` pointed that out. It costs a clone per read: 0.1 microseconds
+    for ``QQ``, 55 for ``QQ[X3][S]``.
+    """
+    parameter = sp.Symbol("T")
+    ring = sp.polys.rings.ring([x, y], sp.ZZ[parameter])[0]
+    source = PolynomialMap.from_ring(
+        ring, (ring.from_expr(x) + ring.from_expr(y) ** 4, ring.from_expr(y))
+    )
+    outcome = reduce_to_degree3(source, budget=20)
+    before = str(outcome.domain.gens)
+
+    assert outcome.domain is not outcome.domain
+
+    outcome.domain.gens[0].clear()
+
+    assert str(outcome.domain.gens) == before
+    assert outcome.domain == sp.ZZ[parameter]

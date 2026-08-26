@@ -169,8 +169,8 @@ attribution and nothing more, which an external audit corrected against the
 a link to the licence, and an indication of whether changes were made. All
 three are given here and in the docstring of the map.
 
-- **Attribution.** Gao, *Keller maps of arbitrary geometric degree*,
-  arXiv:2608.00222v1, Section 3.5.
+- **Attribution.** Shuhong Gao, *Counterexamples to the Jacobian conjecture in
+  dimensions greater than two*, arXiv:2608.00222v1, Section 3.5.
 - **Licence.** CC BY 4.0, <https://creativecommons.org/licenses/by/4.0/>.
 - **Changes.** Yes. The map is transcribed into SymPy from the closed form the
   paper gives, and the two quotients are carried out rather than left standing.
@@ -188,7 +188,24 @@ reductions and their dimension is what distinguishes them; this paper carries
 two maps in three variables, the cuspidal cubic of §3.4 and the quartic here,
 and the geometric degree is what tells them apart.
 
-### alpoege13, the first chain a search found
+### Third-party material
+
+The library is MIT. Two pieces of mathematics in it are not this project's and
+carry their own terms.
+
+`kellermap.examples.gao_quartic` and `gao_quartic_collision` are from Shuhong
+Gao, arXiv:2608.00222v1, licensed CC BY 4.0. Attribution, the licence link and
+a statement of changes are in the section above and in the docstring of the
+map.
+
+`tests/data.py` holds the published nineteen-dimensional map and
+`macfarlane13`. Neither source carries a licence file, so neither is in the
+distribution: `pyproject.toml` ships `scripts/` and `src/`, and the values stay
+in the test tree. What is checked against them is recorded here.
+
+Nothing else in the repository is somebody else's.
+
+## alpoege13, the first chain a search found
 
 Seven steps from Alpöge's normalized map into dimension 13, degree three,
 determinant one, carrying the three points of Alpöge's collision. Found in work
@@ -219,10 +236,12 @@ Not minimality. The walk that found it takes the best single step at every map
 and never looks sideways, and a search that spent dimension as a cost might do
 better.
 
-Not priority. Alpöge, Gallagher and Gao work on these maps, and the literature
-has not been checked again since this number appeared. Until it has, the number
-stays inside the repository: nothing in `README.md` or `CHANGELOG.md` mentions
-it, and what a comparison would show has to be written beside it when it does.
+Not priority, and this is now settled rather than pending. The literature was
+checked under work package 13 and thirteen variables at degree three were
+reached a month earlier by A. Macfarlane; the section above says so. The number
+appears in `README.md` and `CHANGELOG.md` with that sentence beside it. This
+paragraph said the check was still outstanding until an audit of `0.5.0rc1`
+read it after the check had been made.
 
 The rule that produced it is measured on this map alone. The same rule did not
 finish on Gao's in twenty-five minutes.
@@ -449,7 +468,7 @@ worth saying what that was worth. The claim not made was the claim that would
 now be wrong. What survives is a statement about a search on one day, and the
 correction cost nothing but this paragraph.
 
-### It is inside this project's search space
+### A chain reaches it, and it is not an untargeted chain
 
 Asked because the derivation is unlike anything here, and answered by running
 the backward search at it. `peel` reaches `macfarlane13` from Alpöge's
@@ -460,16 +479,33 @@ chain verifies and its endpoint is his map after reordering the generators.
 them in plain SymPy without the library, together with his map from the
 published coefficients. Twelve checks.
 
-Two of the steps carry a coefficient other than one, `-2` and `3`, and four
-have a factor with several terms. Both shapes are extensions of Proposition
-(3.1) that this project states as BCW-11 and BCW-6, and both are inside what
-UNT-1 to UNT-11 offer.
+**This page claimed more than that and was wrong.** It said the map lies inside
+the space the untargeted search describes and that only the order of the steps
+differs. An external audit of `0.5.0rc1` compared each of the seven transitions
+against everything `untargeted_candidates` offers at the map before it:
 
-What that settles is the question the two maps raise. The gap is not what the
-space contains but which chain an order picks: the forward search takes the
-step worth 102 at the first map and arrives at `alpoege13`, and this chain
-starts elsewhere and arrives here. Both are seven steps into dimension 13 from
-the same source.
+| step | matching candidate |
+| ---: | :--- |
+| 1 to 5 | none |
+| 6 | candidate 17 |
+| 7 | candidate 9 |
+
+Two of seven. Already the first step removes a term that is not a leading
+monomial of its component, which is what UNT-1 requires and what `peel` does
+not. All seven lower `Phi`, and `peel` searches a wider space than
+`untargeted.py` offers.
+
+So the correct statement is the narrow one: a seven-step BCW chain reaches
+`macfarlane13` from the same source, and that chain is not one the untargeted
+enumerator can currently produce. Whether the map is reachable by some other
+untargeted chain is open and was never tested; the claim conflated `peel`
+finding a chain with the map lying in the offer.
+
+The error is instructive about its own kind. `peel` divides a displacement and
+so is bounded by the target; `untargeted_candidates` splits a leading monomial
+and is bounded by nothing but the map. That the two spaces differ is stated in
+UNT-1 and in the docstring of `enumerate_candidates`, and the sentence was
+written anyway.
 
 The twenty-variable map also fills the gap this page left open. The best
 cubic-homogeneous count recorded here is 20 and not 24, and this project still
