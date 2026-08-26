@@ -39,7 +39,7 @@ along with it. Since 0.3 the same holds for a fifteen-dimensional one.
 
 ## Project Status
 
-Current version: **0.4.0**
+Current version: **0.5.0rc1**
 
 The first milestone covered the algebraic foundations:
 
@@ -86,12 +86,27 @@ one, and reaches the published nineteen-dimensional Keller map of degree three:
   rendering in plain SymPy, and a search result. The search finds a different
   seventeen-step chain, which is the point: a chain, not the chain.
 
-**Next, 0.5.** Searching without a target. The question changes from "does this
-chain reach that map" to "how few new dimensions does it take to reach degree
-three", which is an optimisation and not a comparison: no target means no
-reordering and no change of coordinates to reconcile, and what is compared
-against the literature is the dimension reached. `docs/roadmap.md` carries the
-plan; `CHANGELOG.md` lists what each release changed.
+The fifth milestone searches without a target. The question changes from "does
+this chain reach that map" to "reduce this map to degree three", and the answer
+is a chain the library found:
+
+- `reduce_to_degree3()` is given a source and nothing else. It reaches degree
+  three from Alpöge's normalized map in seven steps into dimension 13 and from
+  Gao's in twenty-nine into thirty-nine. Both chains verify.
+- The chains computed by hand take eight steps into fifteen and eight into
+  seventeen. What the improvement is worth and what it is not is in
+  `docs/references.md`: thirteen variables were reached a month earlier by
+  another route, and no priority or minimality is claimed for either.
+- `over=` makes the coefficient ring something a caller states. `canonical`
+  decides equality of algebraic numbers, so a collision may live over a
+  quadratic extension. The repository is English throughout, tests included,
+  and a gate holds it there.
+
+**Next, 0.6.** The third stage of the Reduction Theorem, homogenization. Every
+figure above is at the first stage, degree three, while most published figures
+are cubic homogeneous, so the two cannot be set beside each other yet.
+`docs/roadmap.md` carries the plan; `CHANGELOG.md` lists what each release
+changed.
 
 ---
 

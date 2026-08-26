@@ -1692,7 +1692,7 @@ who does not trust a figure on a page runs one command instead of rebuilding
 the measurement.
 
 **UNT-1 — Without a target the candidates come from the leading
-monomials. [0.5]** There is no displacement to divide, so Proposition (3.1)
+monomials.** There is no displacement to divide, so Proposition (3.1)
 supplies the rule instead: take a monomial `M` of degree `d = deg(F)` occurring
 in `F`, with coefficient `a`, and write `aM = PQ` with `deg P` and `deg Q` at
 most `d - 2`.
@@ -1730,13 +1730,13 @@ monic and carried no coefficient could not express those steps, so BCW-11 is
 what makes this family possible.
 
 **UNT-2 — At degree three the space is empty, and that is the stopping
-rule. [0.5]** `deg P + deg Q = d` with both at most `d - 2` forces `d >= 4`.
+rule.** `deg P + deg Q = d` with both at most `d - 2` forces `d >= 4`.
 At degree three the enumerator offers nothing, so a search stops because it has
 run out of candidates and not because a separate rule told it to.
 
 Measured at the end of both long chains: no factorizations at all.
 
-**UNT-3 — The measure that bounds the search. [0.5]** Put
+**UNT-3 — The measure that bounds the search.** Put
 
     Phi(F) = sum over all monomials M of degree >= 4 in F of 3^(deg M - 3),
 
@@ -1768,7 +1768,7 @@ most three of degree `d - 1`, and `3^(d-3)` is exactly what absorbs that, which
 is why the base was chosen so. Measured, base 2 suffices on all three chains
 and base 4 changes nothing, so the choice is a margin and not a necessity.
 
-**UNT-4 — An exhausted space is the space under UNT-3. [0.5]** SEA-6 and REV-7
+**UNT-4 — An exhausted space is the space under UNT-3.** SEA-6 and REV-7
 already say that finding nothing is not a proof that nothing exists. Here the
 statement is narrower still: the space an untargeted search exhausts is the one
 that UNT-3 leaves, and UNT-3 rules out steps that BCW-1 to BCW-12 admit.
@@ -1791,7 +1791,7 @@ three chains this repository carries lower `Phi` at every one of their 33
 steps, but that is evidence and not a proof.
 
 **UNT-5 — A source of degree three is the base case and not a
-failure. [0.5]** There is nothing to reduce, so there is nothing to build.
+failure.** There is nothing to reduce, so there is nothing to build.
 RED-1 wants at least one step, so no `Reduction` can describe the situation,
 and the outcome reports no reduction with nothing examined and the space
 exhausted.
@@ -1808,7 +1808,7 @@ returns at once with no steps, nothing examined and the space exhausted. A
 branch was written and removed: a mutation showed it changed no outcome. The
 clause states the answer, and UNT-2 is why no code has to.
 
-**UNT-6 — A factor may be a sum, and that is an extension. [0.5]** The
+**UNT-6 — A factor may be a sum, and that is an extension.** The
 enumerator also offers a candidate whose second factor has several terms: `P` a
 monomial that strictly divides more than one of the monomials of degree at
 least four in one component, and `Q` the sum of the cofactors, so that the step
@@ -1847,7 +1847,7 @@ not carried here. Where a page names a bound in one family and not in another,
 the second is where to look.
 
 **UNT-7 — The degree of the divisor is `d // 2`, and that is a stated
-choice. [0.5]** `P` has degree `d // 2` where `d` is the degree of the map.
+choice.** `P` has degree `d // 2` where `d` is the degree of the map.
 Admissibility bounds it on both sides -- `deg P` and `deg Q` are at least two
 and at most `d - 2` -- and `d // 2` lies inside that for every `d >= 4`, which
 is also why it falls to two at degrees four and five, where two is the only
@@ -1865,7 +1865,7 @@ twenty-five minutes, because at degree twelve the divisors of degree six are
 many and the sums are long. A rule measured on one example is an observation
 about that example.
 
-**UNT-8 — The filtration level follows from the step. [0.5]** It is not
+**UNT-8 — The filtration level follows from the step.** It is not
 prescribed. A step whose `Q` carries a linear term reaches `EA^0` and not
 `EA^1`, and Proposition (3.1) admits that: BCW take `H` from `EA^0` for the
 part of the argument that makes `F'` linear in each variable.
@@ -1882,7 +1882,7 @@ The 102 above is such a step: with `EA^1` demanded it fails BCW-6, and with the
 level left to follow it stands.
 
 **UNT-9 — A factor a carrier already holds is offered as that
-carrier. [0.5]** Then the step buys no coordinate for it. BCW-10 admits it, and
+carrier.** Then the step buys no coordinate for it. BCW-10 admits it, and
 it is what the whole extension is worth in dimension.
 
 Measured on the normalized Alpöge map, greedily under UNT-6 to UNT-8: seven
@@ -1892,7 +1892,7 @@ last four. The search finds that pattern without being told that carriers
 exist.
 
 **UNT-10 — The steps are ordered, by what one removes and then by what it
-buys. [0.5]** `ordered_steps` returns them sorted: first by how much of `Phi`
+buys.** `ordered_steps` returns them sorted: first by how much of `Phi`
 the step removes, largest first, and among equals by how many coordinates it
 buys, fewest first.
 
@@ -1927,7 +1927,7 @@ chain exists in dimension `k`, rather than that one was found in `k + 1`. That
 is a statement about what is not there, and it belongs where the other such
 statements are.
 
-**UNT-11 — An order discards nothing. [0.5]** Every chain the search of UNT-3
+**UNT-11 — An order discards nothing.** Every chain the search of UNT-3
 can reach stays reachable under any order, and a bad order costs length and not
 correctness. The obligation is the promise, and the promise is what separates
 this from pruning.
@@ -2033,12 +2033,11 @@ candidate, exactly as a value that describes nothing would. The enumerator does
 not distinguish "not in this ring" from "nothing here to take".
 
 The obligations below make the space something a caller states and a result
-carries. They are marked `[0.5]` until the milestone closes, which is a
-statement about the milestone and not about whether the code exists: it exists
-since work package 5 and the marker goes when 0.5 is released.
+carries. The markers they carried while 0.5 was open are gone; the milestone closed
+them.
 
 **DOM-1 — The coefficient ring is an argument, and its default is the
-source. [0.5]** `search` and `peel` take `over`, a keyword-only argument
+source.** `search` and `peel` take `over`, a keyword-only argument
 holding the domain to search over. Omitted, it is the domain of the source's
 ring, which is what both functions used before and is why a call written
 against 0.4 keeps its meaning.
@@ -2048,7 +2047,7 @@ space it belongs to, and a reader cannot recover that from a call that never
 mentioned one.
 
 **DOM-2 — An argument that disagrees with the ring is an error and not a
-result. [0.5]** When `over` is given and the source or the target does not lie
+result.** When `over` is given and the source or the target does not lie
 in it, the call raises. It does not report an exhausted space.
 
 A pool value is refused whether or not `over` was given, and that asymmetry is
@@ -2080,7 +2079,7 @@ is a wrong call, and a wrong call is reported where it is made.
 The exception carries `DOM-2` and names the argument and both rings, so that
 the two are visible side by side rather than left to be inferred.
 
-**DOM-3 — Without `over`, the endpoints keep the answer of REV-11. [0.5]** A
+**DOM-3 — Without `over`, the endpoints keep the answer of REV-11.** A
 call that names no ring behaves as it did in 0.4: two endpoints over different
 rings are a non-answer and an exhausted space, decided from the endpoints
 before any walk.
@@ -2091,7 +2090,7 @@ themselves, which is a different thing and cannot arise without `over`. The
 alternative, making the mismatch an error everywhere, would change the meaning
 of a call written against 0.4 without the caller doing anything.
 
-**DOM-4 — The outcome carries the ring it searched. [0.5]** `SearchOutcome`
+**DOM-4 — The outcome carries the ring it searched.** `SearchOutcome`
 and `PeelOutcome` hold the domain, whether the caller named it or it came from
 the source.
 

@@ -4,6 +4,83 @@ Notable changes per release. The milestone plan and its reasoning live in
 `docs/roadmap.md`, the binding obligations of the verification surface in
 `docs/contracts.md`.
 
+## 0.5.0rc1
+
+Searching without a target. The question changes from "does this chain reach
+that map" to "reduce this map to degree three", and the answer is a chain the
+library found rather than one it was given.
+
+`reduce_to_degree3` takes a source and nothing else. It reaches degree three
+from Alpoege's normalized map in seven steps into dimension 13 and from Gao's
+in twenty-nine into thirty-nine, and both chains verify. The chains computed by
+hand take eight steps into fifteen and eight into seventeen.
+
+What that is worth and what it is not is in `docs/references.md`. Thirteen
+variables at degree three were reached a month earlier by A. Macfarlane, by a
+route this library has no construction for, and no priority is claimed. His map
+lies inside this search space: the backward search reaches it in seven steps.
+No minimality is claimed either, and the measurement behind that refusal is in
+`docs/roadmap.md`.
+
+The repository is English throughout since this milestone, tests included, and
+a gate holds it there.
+
+### Added
+
+- `kellermap.untargeted` — an enumerator and a search that need no target.
+  `untargeted_candidates` offers the steps Proposition (3.1) allows at a map,
+  `ordered_steps` sorts them by what they remove, `remaining_weight` is the
+  measure that bounds the walk, and `reduce_to_degree3` walks it. Obligations
+  UNT-1 to UNT-11.
+- `over=` on `search` and `peel`, so the coefficient ring is something a caller
+  states rather than something inferred. `SearchOutcome` and `PeelOutcome`
+  carry the ring they searched. Obligations DOM-1 to DOM-4.
+- `examples.gao_quartic` and `gao_quartic_collision` — the second source map
+  this project has, from arXiv:2608.00222 Section 3.5, licensed CC BY 4.0. Its
+  collision is the only one here whose points are not rational.
+- `examples.alpoege13` and `alpoege13_collision` — the thirteen-dimensional
+  cubic reduction the search finds, with Alpoege's three points carried
+  through.
+- `scripts/reconstruct_alpoege13.py` and `scripts/reconstruct_macfarlane13.py`
+  — two more independent renderings in plain SymPy, and
+  `scripts/untargeted_space.py` and `scripts/search_cost.py`, which recompute
+  the figures the UNT obligations rest on.
+- `tests/test_language.py` — a gate that keeps the repository in English, with
+  `scripts/foreign_words.py` as its audit instrument.
+
+### Changed
+
+- `kellermap.canonical` denests square roots, so two spellings of one algebraic
+  number are one point. Without it a `Collision` could be built whose points
+  coincide, which COL-4 forbids, and a correct image written as a nested
+  radical was rejected. The module states what it does not claim: a radical of
+  higher index.
+- `undo` in `peeling` computes in the polynomial ring rather than in SymPy
+  expressions. Measured by alternating runs: about a fifth off the peel.
+- `Candidate` carries a coefficient and reports the filtration level a step
+  reaches, in both directions.
+
+### Fixed
+
+- A grouped candidate could take the monomial equal to its divisor, leaving a
+  constant cofactor, so `H` reached `EA^-1` and the chain that came back did
+  not verify. Found by an external audit. The filtration level reported `0`
+  there, which is why it stayed silent.
+- `polynomials_over` treated an indeterminate of the coefficient domain as a
+  later coordinate, so a pool value over `ZZ[T]` raised `GeneratorsError` where
+  0.4 had answered. Found by an external audit.
+- `over` of the wrong type raised `VerificationError` where the error table
+  promises `TypeError`, and `SearchOutcome.domain` shared a mutable domain with
+  the caller. Both found by an external audit.
+
+### Known limits
+
+- `reduce_to_degree3` recurses once per step, so a chain longer than about 970
+  steps raises `RecursionError` rather than reporting that it was cut off. The
+  longest chain produced here is twenty-nine.
+- No figure at BCW's third stage. The homogenization is not implemented, so
+  nothing here compares with a cubic-homogeneous count.
+
 ## 0.4.0
 
 Searching for a reduction rather than verifying one that is presented, and the
