@@ -41,72 +41,61 @@ along with it. Since 0.3 the same holds for a fifteen-dimensional one.
 
 Current version: **0.5.0rc1**
 
-The first milestone covered the algebraic foundations:
+### What the library does
 
-- Polynomial maps over a sparse `PolyRing`, with value semantics
-- Simultaneous composition
-- Jacobian matrices and determinants
-- Stable extensions, with an injectable variable factory
-- Elementary automorphisms and the group `EA_n(k)`
+- **Polynomial maps** over a sparse `PolyRing`, with value semantics:
+  composition, extension, reordering, Jacobian matrices and determinants.
+- **Elementary and linear automorphisms**, `EA_n(k)` and `GL_n(k)`, the latter
+  as an ordered product of Gauss operations.
+- **Certified steps.** `BCWStep` is one application of Bass–Connell–Wright,
+  Proposition (3.1), that verifies rather than asserts: it keeps the
+  factorization it was given and checks it, and a failure names the obligation
+  it broke. `LinearStep` and `TranslationStep` are the two factors of the
+  linear normalization.
+- **Chains.** `Reduction` joins steps and checks the adjacency;
+  `ReductionContext` checks that a naming policy stays consistent along one.
+- **Collisions.** `Collision` is the evidence that a map is not injective, and
+  it is transported across every step, so a reduction of a counterexample is
+  still a counterexample.
+- **Three searches.** `search` walks from a source towards a target and is told
+  what a fresh coordinate may carry; `peel` walks back from a target and is
+  told nothing else; `reduce_to_degree3` is given a source alone and reduces it
+  to degree three.
+- **Example maps** that recur, including two source maps this project did not
+  write and the reductions it derived from them.
+- **Obligations, not conventions.** Every promise the verification surface
+  makes is written in `docs/contracts.md` under a stable identifier, and the
+  exception that fails cites it.
 
-The second adds the verification framework:
+### This milestone, 0.5
 
-- `Collision`, the evidence that a map is not injective, carried across steps
-- The group `GL_n(k)` as an ordered product of Gauss operations, and why only
-  its transvections are elementary in the sense of the paper
-- `BCWStep`, one certified application of Proposition (3.1)
-- `Reduction`, a chain of steps with its adjacency checked
-- `ReductionContext`, which checks that a naming policy stays consistent across
-  a chain
-- Every obligation stated normatively in `docs/contracts.md`, one numbered
-  identifier at a time, and cited by the exception when it fails
+Searching without a target. The question changes from "does this chain reach
+that map" to "reduce this map to degree three", and the answer is a chain the
+library found rather than one it was given.
 
-The third milestone adds steps that reuse a carrier an earlier step
-introduced:
+`reduce_to_degree3` reaches degree three from Alpöge's normalized map in seven
+steps into dimension 13, and from Gao's in twenty-nine into thirty-nine. Both
+chains verify and both carry the collision. The chains computed by hand take
+eight steps into fifteen and eight into seventeen.
 
-- A step is given two factor slots. `Fresh` introduces a new generator that
-  carries the factor; `Carried` reuses a coordinate that already carries it.
-- A step therefore introduces two, one or no generators, and a reduction that
-  reuses carriers reaches a lower dimension.
-- `alpoege15`, this project's own reduction of Alpöge's map to dimension 15,
-  is derived and verified.
+What that is worth and what it is not is in `docs/references.md`. Thirteen
+variables at degree three were reached a month earlier by another route, no
+priority is claimed, and no minimality either.
 
-The fourth milestone searches for a reduction rather than verifying a presented
-one, and reaches the published nineteen-dimensional Keller map of degree three:
+The coefficient ring became something a caller states rather than something
+inferred, `canonical` learned to decide equality of algebraic numbers so a
+collision may live over a quadratic extension, and the repository is English
+throughout, tests included, with a gate that holds it there.
 
-- `TranslationStep` completes the linear normalization for maps outside `MA^0`.
-- `search()` walks from the source and is told what a fresh coordinate may
-  carry. `peel()` walks from the target and is told nothing else; it recovers
-  the fifteen-dimensional reduction in eight maps and the nineteen-dimensional
-  one in eighteen.
-- A step may scale the product it removes and may put one fresh coordinate in
-  both slots. Both go beyond Proposition (3.1), both are marked as extensions,
-  and the published chain needs both.
-- That chain is a verified `Reduction` in the test suite, an independent
-  rendering in plain SymPy, and a search result. The search finds a different
-  seventeen-step chain, which is the point: a chain, not the chain.
+### Next, 0.6
 
-The fifth milestone searches without a target. The question changes from "does
-this chain reach that map" to "reduce this map to degree three", and the answer
-is a chain the library found:
+The third stage of the Reduction Theorem, homogenization. Every figure above is
+at the first stage, degree three, while most published figures are cubic
+homogeneous, so the two cannot yet be set beside each other.
 
-- `reduce_to_degree3()` is given a source and nothing else. It reaches degree
-  three from Alpöge's normalized map in seven steps into dimension 13 and from
-  Gao's in twenty-nine into thirty-nine. Both chains verify.
-- The chains computed by hand take eight steps into fifteen and eight into
-  seventeen. What the improvement is worth and what it is not is in
-  `docs/references.md`: thirteen variables were reached a month earlier by
-  another route, and no priority or minimality is claimed for either.
-- `over=` makes the coefficient ring something a caller states. `canonical`
-  decides equality of algebraic numbers, so a collision may live over a
-  quadratic extension. The repository is English throughout, tests included,
-  and a gate holds it there.
-
-**Next, 0.6.** The third stage of the Reduction Theorem, homogenization. Every
-figure above is at the first stage, degree three, while most published figures
-are cubic homogeneous, so the two cannot be set beside each other yet.
-`docs/roadmap.md` carries the plan; `CHANGELOG.md` lists what each release
-changed.
+`docs/roadmap.md` carries the plan and the measurements behind it.
+`CHANGELOG.md` lists what each release changed, and the milestones before this
+one are there rather than here.
 
 ---
 
