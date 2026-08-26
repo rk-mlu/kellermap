@@ -1032,9 +1032,12 @@ the enumerator runs out, and reports what it saw:
 >>> outcome.reduction.target.dimension
 13
 >>> outcome.exhausted
-True
+False
 
 ```
+
+`exhausted` is `False` on a chain that was found, as it is for `search` and
+`peel`: a walk that stops at the first chain did not see the space to the end.
 
 Depth first, and the candidates are ordered by what a step removes, UNT-10.
 Seven steps into dimension 13, where the chains computed by hand take eight

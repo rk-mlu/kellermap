@@ -1777,6 +1777,13 @@ that UNT-3 leaves, and UNT-3 rules out steps that BCW-1 to BCW-12 admit.
 the same four fields the other two searches report and the ring of DOM-4
 beside them.
 
+One thing the outcome cannot report. `reduce_to_degree3` walks by recursion,
+one frame per step, so a source needing a chain longer than the interpreter's
+recursion limit allows raises `RecursionError` rather than reporting that it
+was cut off. Measured at about 970 steps against a default budget of 20000. It
+is stated rather than repaired: the longest chain produced here is 29 steps,
+and the docstring says where the ceiling is.
+
 An outcome that reports an exhausted space says the search covered every chain
 whose every step lowers `Phi`. A chain that raises it at one step and reaches
 degree three afterwards would not be found. No such chain is known, and all
@@ -1948,9 +1955,10 @@ lift. Nor does it establish priority. Before the number leaves this repository,
 the literature is checked again and what a comparison does and does not show is
 written beside it.
 
-The figures above come from a prototype and not from the shipped enumerator.
-They come under `scripts/untargeted_space.py` when the work package is
-implemented, which is where every other figure of this family already is.
+The figures above come from the shipped enumerator and are checked by
+`scripts/untargeted_space.py`, which `make measure` runs. They came from a
+prototype while the obligations were written ahead of the code, and this
+sentence said so until the code arrived.
 
 ### Which of these can fail on supplied data
 

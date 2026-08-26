@@ -5,10 +5,8 @@ source and the instruction to reach degree three, so nothing tells it which
 step to take. ``docs/contracts.md`` states what this module may offer and what
 bounds it, and it carries the measurements those obligations rest on.
 
-UNT-1 to UNT-5 are what this module implements. UNT-6 to UNT-9 widen the offer
-to factors that are sums, and they are written and not yet built: the family
-was measured before it was implemented, and the page says which figures come
-from a prototype.
+ UNT-6 to UNT-9 widen the offer to
+factors that are sums and UNT-10 and UNT-11 order it. All eleven are built.
 
 Two things here are worth reading before the code.
 
@@ -387,11 +385,20 @@ def _slot(value: sp.Expr, carried: dict[sp.Expr, int]) -> Slot:
     """Return the slot for a factor, reusing a carrier where one holds it.
 
     No case here refuses. A slot on the component the step acts on is what
-    ``BCWStep`` rejects, and it cannot arise: the component would have to be a
-    carrier whose whole displacement is the part, and a part has degree at most
-    ``d - 2``, so that component has degree below ``d`` and carries no leading
-    monomial to split. There is no branch for it rather than an unreachable
-    one.
+    ``BCWStep`` rejects, and it cannot arise.
+
+    For a narrow candidate the component would have to be a carrier whose whole
+    displacement is the part, and a part has degree at most ``d - 2``, so that
+    component has degree below ``d`` and carries no leading monomial to split.
+
+    For a grouped candidate the acting component holds at least two monomials
+    of degree four or more, while a carrier's displacement is one polynomial:
+    it is neither the divisor, which is a single monomial, nor the cofactor
+    sum, whose degree is strictly smaller than the component's. An external
+    audit pointed out that the argument above covered only the first case,
+    which was where a reader would look for the second.
+
+    There is no branch for either rather than an unreachable one.
     """
     holder = carried.get(value)
     if holder is not None:
@@ -416,7 +423,10 @@ class ReductionOutcome:
         The longest chain reached, whether or not it arrived.
     exhausted
         Whether the space was seen to the end. ``False`` means the budget ran
-        out first, and then a negative result says even less.
+        out first, and then a negative result says even less. Also ``False``
+        when a chain was found, because a walk that stops at the first one did
+        not see the space to the end. ``search`` and ``peel`` report it the
+        same way.
     domain
         The coefficient ring the search covered, DOM-4.
     """
@@ -518,6 +528,18 @@ def reduce_to_degree3(
     ``context`` names the fresh coordinates. A caller cannot supply names by
     SEA-3 here, because the number of steps is not known before the search, so
     the policy is passed instead of the names.
+
+    The walk recurses once per step, so the longest chain it can report is
+    bounded by the interpreter and not by ``budget``. Measured: one frame per
+    step over a base of about twenty, so roughly 970 steps at the default
+    recursion limit of 1000, against ``budget=20000``. A source needing a
+    longer chain raises ``RecursionError`` instead of reporting a cut-off
+    outcome, which is not the answer UNT-4 promises.
+
+    Stated and not repaired, because nothing measured comes near it: the
+    longest chain this project has produced is 29 steps, for Gao's map, and the
+    default budget is the misleading part rather than the recursion. An
+    external audit of 25 August 2026 found it.
     """
     maps(source=source)
     counts(budget=budget)
@@ -563,6 +585,11 @@ def reduce_to_degree3(
         reduction,
         budget - max(remaining[0], 0),
         deepest[0],
-        reduction is not None or not cut_off[0],
+        # ``False`` when a chain was found, as ``search`` and ``peel`` report
+        # it. A walk that stops at the first chain did not see the space to the
+        # end, so saying it did would be a claim it cannot support. This read
+        # ``True`` there until an external audit put the three side by side and
+        # UNT-4 promises the same four fields as the other two.
+        False if reduction is not None else not cut_off[0],
         domain,
     )

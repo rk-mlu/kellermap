@@ -558,6 +558,25 @@ def test_the_search_takes_the_step_that_removes_most() -> None:
     assert remaining_weight(source) - remaining_weight(first.target) == 102
 
 
+def test_a_found_chain_is_not_an_exhausted_space() -> None:
+    """UNT-4, and the three searches now read the same.
+
+    A walk that stops at the first chain did not see the space to the end.
+    This returned ``True`` there until an external audit put ``search``,
+    ``peel`` and ``reduce_to_degree3`` side by side.
+    """
+    outcome = reduce_to_degree3(normalized(examples.alpoege()), budget=3000)
+
+    assert outcome.reduction is not None
+    assert not outcome.exhausted
+
+    # The control: with nothing to find, an exhausted space is still reported.
+    settled = reduce_to_degree3(examples.bcw17(), budget=5)
+
+    assert settled.reduction is None
+    assert settled.exhausted
+
+
 def test_an_order_discards_nothing() -> None:
     """UNT-11, which is the promise that separates this from pruning.
 
