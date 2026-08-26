@@ -4,7 +4,7 @@ Notable changes per release. The milestone plan and its reasoning live in
 `docs/roadmap.md`, the binding obligations of the verification surface in
 `docs/contracts.md`.
 
-## 0.5.0rc2
+## 0.5.0rc3
 
 Searching without a target. The question changes from "does this chain reach
 that map" to "reduce this map to degree three", and the answer is a chain the
@@ -78,8 +78,10 @@ a gate holds it there.
 ### Fixed in rc2
 
 - `reduce_to_degree3` overran its budget: the check sat on entry to a frame and
-  not between siblings, so at `budget=1` twenty-two child maps were built and
-  one was reported. `examined` now says which of the two it counts, and it is
+  not between siblings, so at `budget=1` the walk descended into all twenty-two
+  children of the root and reported one. All twenty-two are still built there,
+  because ordering builds every candidate before choosing; what was wrong was
+  descending into them. `examined` now says which of the two it counts, and it is
   the maps the walk descended into.
 - `context` of the wrong type raised `AttributeError` from inside, and only
   when the source had degree above three. It raises `TypeError` at either
@@ -93,6 +95,29 @@ a gate holds it there.
   outside it. `peel` searches a wider space, and the page says so now.
 
 All six found by an external audit of rc1.
+
+### Fixed in rc3
+
+- `scripts/reconstruct_macfarlane13.py` still claimed the map lies in the space
+  the untargeted enumerator describes. rc2 corrected that in `references.md`
+  and here and left the script, which is a correction made in two places out of
+  three.
+- `references.md` cited the positions of the two matching candidates. A second
+  audit reached different positions for the same steps, because no convention
+  for matching a step against a proposal is written down. The positions are
+  gone and which steps match stays.
+- Four documentation leftovers: the docstring of `alpoege13` said the
+  literature check was outstanding, a test comment said "no ranking",
+  `architecture.md` opened its search section with "two directions", and the
+  rc2 entry above said twenty-two maps were built where the defect was
+  descending into them.
+- The outcomes stored the copied ring in `_domain`, which put that name into
+  the generated signature, the repr and `__match_args__`. The parameter is
+  `domain` again, by `InitVar`, and the repr reports the ring by hand.
+- The hash-seed test compared the step count and the dimension, which two
+  different chains can share. It compares a fingerprint of the steps.
+
+All five found by an external audit of rc2.
 
 ### Known limits
 

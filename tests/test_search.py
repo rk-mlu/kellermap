@@ -1062,3 +1062,13 @@ def test_a_reachable_extension_is_not_settled_away() -> None:
 
     assert search(source, target, {u: x * y, v: x * y**2}).examined > 0
     assert peel(source, target, budget=50).examined > 0
+
+
+def test_the_outcome_reports_its_ring_when_printed() -> None:
+    """DOM-4, in the repr. ``PeelOutcome`` and ``ReductionOutcome`` do the same."""
+    source = PolynomialMap((x, y), (x + x**2 * y**2, y))
+    printed = repr(search(source, source.extend(2), {sp.Symbol("u"): x * y}, budget=5))
+
+    assert printed.startswith("SearchOutcome(reduction=")
+    assert "domain=ZZ" in printed
+    assert "_domain" not in printed

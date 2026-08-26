@@ -497,13 +497,18 @@ the space the untargeted search describes and that only the order of the steps
 differs. An external audit of `0.5.0rc1` compared each of the seven transitions
 against everything `untargeted_candidates` offers at the map before it:
 
-| step | matching candidate |
+| step | matches a candidate |
 | ---: | :--- |
-| 1 to 5 | none |
-| 6 | candidate 17 |
-| 7 | candidate 9 |
+| 1 to 5 | no |
+| 6 | yes |
+| 7 | yes |
 
-Two of seven. Already the first step removes a term that is not a leading
+Two of seven. This table carried the position of the two matching candidates,
+17 and 9; a second audit reached 15 and 6 for the same steps. The number
+depends on how a step is matched against a proposal -- whether a carried slot
+is compared by its index or by the value it holds -- and no convention for that
+is written down. What holds without one is which steps match, so the positions
+are gone. Already the first step removes a term that is not a leading
 monomial of its component, which is what UNT-1 requires and what `peel` does
 not. All seven lower `Phi`, and `peel` searches a wider space than
 `untargeted.py` offers.

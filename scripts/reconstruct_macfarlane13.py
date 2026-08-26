@@ -15,18 +15,26 @@ W. Thompson's twenty-four-variable cubic-homogeneous form to an invariant
 subspace. That construction is not in this library and nothing here reproduces
 it.
 
-What is claimed is narrower and is the point of the file. The map lies inside
-the space this project's untargeted search describes: seven steps of BCW
-Proposition (3.1), of exactly the shapes UNT-1 to UNT-9 admit, lead from
-Alpoege's normalized map to it. The backward search found them in eight
-examined maps; they are transcribed here and recomputed without the library.
+What is claimed is narrower and is the point of the file. A chain of seven BCW
+steps leads from Alpoege's normalized map to his, found by the backward search
+in eight examined maps, transcribed here and recomputed without the library.
 
-That matters because it settles a question the other direction leaves open.
-``kellermap.examples.alpoege13`` is a different map, with 58 terms and a
-three-point collision against this one's two, and the forward search finds that
-one rather than this. The two are not variants of each other. Reaching this map
-by a chain says the gap is which chain the order picks and not what the space
-contains.
+That chain is not one the untargeted enumerator can produce. Compared step by
+step against everything ``untargeted_candidates`` offers at the map before
+each: the first five match nothing it offers, and the last two do. ``peel``
+divides a displacement and is bounded by the target; the untargeted enumerator
+splits a leading monomial, which is a narrower rule, so a step one can take
+need not be one the other offers.
+
+This file said the opposite through two release candidates, in the same words
+``docs/references.md`` and ``CHANGELOG.md`` used. Those two were corrected after
+an audit of ``0.5.0rc1`` and this one was not, which is what a correction made
+in two places out of three looks like.
+
+What the chain does settle is narrower still. ``kellermap.examples.alpoege13``
+is a different map, with 58 terms and a three-point collision against this
+one's two, and the forward search finds that one. Whether some untargeted chain
+reaches this map is open and has not been tested.
 
 Two of the seven steps carry a coefficient other than one, `-2` and `3`, and
 four have a factor with several terms. Neither shape is in Proposition (3.1) as

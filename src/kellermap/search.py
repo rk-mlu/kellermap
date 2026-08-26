@@ -22,7 +22,7 @@ See ``docs/contracts.md``, SEA-8 to SEA-10.
 from __future__ import annotations
 
 from collections.abc import Iterable, Iterator, Mapping, Sequence
-from dataclasses import dataclass
+from dataclasses import InitVar, dataclass, field
 from itertools import combinations
 from typing import Any, TypeAlias, cast
 
@@ -450,7 +450,25 @@ class SearchOutcome:
     examined: int
     deepest: int
     exhausted: bool
-    _domain: Domain
+    domain: InitVar[Domain]
+    _domain: Domain = field(init=False, repr=False, compare=False)
+
+    def __post_init__(self, domain: Domain) -> None:
+        """Store a copy, so the caller keeps no handle on it."""
+        object.__setattr__(self, "_domain", clone_domain(domain))
+
+    def __repr__(self) -> str:
+        """Show the ring as well, since the generated one cannot.
+
+        ``_domain`` is kept out of the generated ``repr`` so that the field a
+        caller sees is the property, and DOM-4 wants the ring reported, so it
+        is put back by hand.
+        """
+        return (
+            f"{type(self).__name__}(reduction={self.reduction!r}, "
+            f"examined={self.examined}, deepest={self.deepest}, "
+            f"exhausted={self.exhausted}, domain={self._domain})"
+        )
 
     @property
     def domain(self) -> Domain:

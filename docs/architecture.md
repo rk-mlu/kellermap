@@ -505,7 +505,10 @@ arithmetic must not widen one quietly.
 
 ## Looking for a step sequence
 
-Two directions, and they have almost nothing in common beyond what they return.
+Three walks, and they have almost nothing in common beyond what they return.
+Two of them are given a target and differ in the direction they take it from;
+the third is given none. This said "two directions" until 0.5 added the third,
+and an audit read it after the paragraph above already listed all three.
 
 `search(source, target, pool)` walks from the source. It has to be told what a
 fresh coordinate may carry, because nothing in the source says: the pool is
@@ -530,9 +533,18 @@ rebuilt forwards with `BCWStep.build`, verified, and only then a `Reduction`.
 That the two agree is checked and not assumed, which is REV-5 and the reason
 peeling could be added without touching what a certificate means.
 
+`reduce_to_degree3(source)` is told neither a target nor a pool. With no
+displacement to divide it splits a leading monomial instead, which UNT-1
+describes, and that is a narrower rule than either of the other two follow: a
+step `peel` can take need not be one this enumerator offers. The chain it walks
+into is decided by the order of UNT-10 and bounded by the measure of UNT-3,
+which is what makes an exhausted space a statement rather than a report about a
+budget.
+
 Peeling reaches the published nineteen-dimensional map in eighteen examined
 maps; the forward search does not reach it under any setting tried, and SEA-14
-says which chains are outside it in principle. Both directions are bounded by
+says which chains are outside it in principle. Both targeted directions are
+bounded by
 rules that are decisions rather than facts, and every one of those rules is
 named in `contracts.md` so that a failure can be attributed to one.
 

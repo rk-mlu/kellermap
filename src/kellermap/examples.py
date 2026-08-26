@@ -570,8 +570,10 @@ def alpoege13() -> PolynomialMap:
     ``reduce_to_degree3`` then produced this chain with no target and no pool.
 
     What that establishes and what it does not is in ``docs/references.md``. It
-    is not a claim of minimality, the search being greedy, and not a claim of
-    priority, the literature not having been checked again.
+    is not a claim of minimality, the search being greedy, and not of priority
+    either: the literature was checked and thirteen variables at degree three
+    were reached a month earlier, by another route. This docstring said the
+    check was still outstanding after it had been made.
     ``scripts/reconstruct_alpoege13.py`` recomputes the chain in plain SymPy
     without this library.
     """

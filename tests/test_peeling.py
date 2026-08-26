@@ -1411,3 +1411,19 @@ def test_a_found_chain_carries_the_ring(integral: PolynomialMap) -> None:
 
     assert outcome.reduction is not None
     assert outcome.domain == sp.QQ
+
+
+def test_the_outcome_reports_its_ring_when_printed() -> None:
+    """DOM-4, in the repr, which the generated one cannot show.
+
+    ``_domain`` is kept out of the generated ``repr`` so that the name a caller
+    sees is the property, so the ring is put back by hand. An audit of
+    ``0.5.0rc1`` found the underscore in the public signature; taking it out
+    took the ring out of the repr with it.
+    """
+    source = PolynomialMap((x, y), (x + y**3, y))
+    printed = repr(peel(source, source.extend(2), budget=5))
+
+    assert printed.startswith("PeelOutcome(reduction=")
+    assert "domain=QQ" in printed or "domain=ZZ" in printed
+    assert "_domain" not in printed

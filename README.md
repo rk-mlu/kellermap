@@ -39,7 +39,7 @@ along with it. Since 0.3 the same holds for a fifteen-dimensional one.
 
 ## Project Status
 
-Current version: **0.5.0rc2**
+Current version: **0.5.0rc3**
 
 ### What the library does
 

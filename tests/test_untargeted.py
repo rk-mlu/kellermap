@@ -10,6 +10,7 @@ Proposition (3.1) and its second half is a rule this project states, and the
 tests are written so that a reader can tell which is which.
 """
 
+import hashlib
 import os
 import subprocess
 import sys
@@ -164,11 +165,12 @@ def test_the_order_survives_another_hash_seed() -> None:
     the code.
     """
     program = (
-        "import sys; sys.path.insert(0, '.');"
+        "import hashlib, sys; sys.path.insert(0, '.');"
         "from kellermap import LinearStep, examples, over_field, reduce_to_degree3;"
         "F = LinearStep.normalize(over_field(examples.alpoege())).target;"
         "o = reduce_to_degree3(F, budget=2000);"
-        "print(len(o.reduction.steps), o.reduction.target.dimension)"
+        "text = repr([(s.index, s.P, s.Q, s.coefficient) for s in o.reduction.steps]);"
+        "print(hashlib.sha256(text.encode()).hexdigest())"
     )
     seen = set()
     for seed in ("0", "1", "12345"):
@@ -183,7 +185,23 @@ def test_the_order_survives_another_hash_seed() -> None:
         )
         seen.add(result.stdout.strip())
 
-    assert seen == {"7 13"}
+    assert len(seen) == 1, "the chain depends on the hash seed"
+
+    # The chain itself and not two numbers about it. Comparing the step count
+    # and the dimension let two different chains agree, which an audit of
+    # 0.5.0rc1 pointed out about the first version of this test.
+    reference = reduce_to_degree3(normalized(examples.alpoege()), budget=2000)
+
+    assert reference.reduction is not None
+
+    text = repr(
+        [
+            (step.index, step.P, step.Q, step.coefficient)
+            for step in reference.reduction.steps
+        ]
+    )
+
+    assert seen == {hashlib.sha256(text.encode()).hexdigest()}
 
 
 def test_the_coefficient_of_the_leading_monomial_goes_into_the_candidate() -> None:
@@ -323,9 +341,9 @@ def test_two_different_parts_still_take_two_names() -> None:
 # --------------------------------------------------------------------------
 # The search itself
 #
-# Depth first, no ranking, no pruning beyond UNT-3. It is slow on purpose:
-# work packages 11 and 12 need a baseline to be compared against, and a
-# baseline with a heuristic in it measures the heuristic.
+# Depth first and without pruning. It had no ranking either while it was the
+# baseline of work package 9, and this comment kept saying so after work
+# package 11.1 gave it the order of UNT-10.
 # --------------------------------------------------------------------------
 
 
@@ -855,6 +873,12 @@ def test_the_outcome_hands_out_a_copy_of_its_domain() -> None:
     before = str(outcome.domain.gens)
 
     assert outcome.domain is not outcome.domain
+
+    # The constructor parameter is public. An audit of 0.5.0rc1 pointed out
+    # that storing the copy in ``_domain`` had put that name into the generated
+    # signature, the repr and ``__match_args__``.
+    assert type(outcome).__match_args__[-1] == "domain"
+    assert "domain=" in repr(outcome)
 
     outcome.domain.gens[0].clear()
 
