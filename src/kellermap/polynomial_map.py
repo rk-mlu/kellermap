@@ -5,7 +5,7 @@ from collections.abc import Iterable, Sequence
 from dataclasses import dataclass
 from functools import cached_property
 from graphlib import CycleError, TopologicalSorter
-from typing import Any, cast
+from typing import Any, cast, overload
 
 import sympy as sp
 from sympy.polys.fields import FracElement
@@ -113,6 +113,67 @@ _UNSUPPORTED_DOMAIN = (
     "older dense domains. Use QQ[T] or QQ.frac_field(T) instead of "
     "QQ.old_poly_ring(T)."
 )
+
+
+class CopiedDomain:
+    """A dataclass field that copies the coefficient ring in both directions.
+
+    Under the name ``domain`` it is a real field: the generated ``__init__``
+    writes it, ``dataclasses.fields`` reports it, ``dataclasses.replace`` can
+    pass it, and the generated equality, hash, ``repr`` and ``__match_args__``
+    all include it. The copy lives in ``_domain``, which is not a field.
+
+    Why a descriptor and not a property. A SymPy domain is not a value object:
+    its generators are ``PolyElement``, so mutable dicts, and ``gens`` is
+    public. A caller who reads ``outcome.domain`` and clears a generator would
+    change what a frozen result reports. Copying on read prevents that, and a
+    plain property cannot be named ``domain`` while a field is.
+
+    That name clash cost four release candidates. The copy was first made at
+    construction, which left the read sharing; then stored in a field called
+    ``_domain``, which put the underscore into the public signature; then
+    reached through an ``InitVar`` beside a property of the same name, which
+    made the property object the parameter's default; then through a
+    hand-written constructor, which broke ``dataclasses.replace`` because the
+    field name and the parameter name disagreed. An external audit of
+    0.5.0rc4 pointed out that a descriptor is a field and can carry the name,
+    which is what dataclasses call a descriptor-typed field and what Python
+    3.10 already supports.
+
+    Raising ``AttributeError`` on class access is how a descriptor says it has
+    no default, so ``domain`` stays a required argument.
+    """
+
+    @overload
+    def __get__(
+        self, instance: None, owner: type[Any] | None = None
+    ) -> CopiedDomain: ...
+
+    @overload
+    def __get__(self, instance: object, owner: type[Any] | None = None) -> Any: ...
+
+    def __get__(
+        self, instance: object | None, owner: type[Any] | None = None
+    ) -> CopiedDomain | Any:
+        """Return a copy, or say there is no default."""
+        if instance is None:
+            raise AttributeError("domain has no default")
+
+        return clone_domain(object.__getattribute__(instance, "_domain"))
+
+    def __set__(self, instance: object, domain: Any) -> None:
+        """Store a copy, so the store does not alias the argument.
+
+        Not observable, and that is said rather than left to be discovered. A
+        read clones again, and ``clone_domain`` rebuilds a composite domain
+        from its symbols, so a mutation of the argument does not survive into
+        what a reader sees: dropping this line passes the whole suite, measured.
+
+        It stays because the reading is what makes it unobservable, not the
+        writing. A ``clone_domain`` that copied instead of rebuilding would
+        leave the store aliased and this is the line that would still hold.
+        """
+        object.__setattr__(instance, "_domain", clone_domain(domain))
 
 
 def clone_domain(domain: Any) -> Any:

@@ -4,7 +4,7 @@ Notable changes per release. The milestone plan and its reasoning live in
 `docs/roadmap.md`, the binding obligations of the verification surface in
 `docs/contracts.md`.
 
-## 0.5.0rc4
+## 0.5.0rc5
 
 Searching without a target. The question changes from "does this chain reach
 that map" to "reduce this map to degree three", and the answer is a chain the
@@ -138,6 +138,21 @@ All five found by an external audit of rc2.
   compares the cited value against the chain the library computes.
 
 All five found by an external audit of rc3.
+
+### Fixed in rc5
+
+- `dataclasses.replace` failed on all three outcome types: a hand-written
+  constructor took `domain` while the field was `_domain`, so `fields()` and
+  the signature disagreed. `domain` is a descriptor-typed field now, which is
+  a field under that name and still copies the ring on read.
+- The equality test required different hashes for different results, which
+  asks more than Python promises. It requires inequality, and equal hashes for
+  equal results.
+- One audit reference named the wrong release candidate, and one line in
+  `references.md` was not wrapped.
+
+All three found by an external audit of rc4, which also supplied the
+descriptor.
 
 ### Known limits
 

@@ -10,9 +10,12 @@ Proposition (3.1) and its second half is a rule this project states, and the
 tests are written so that a reader can tell which is which.
 """
 
+import copy
+import dataclasses
 import hashlib
 import inspect
 import os
+import pickle
 import subprocess
 import sys
 from pathlib import Path
@@ -897,17 +900,59 @@ def test_the_ring_is_part_of_what_an_outcome_is(outcome_type: type) -> None:
     A search over ``QQ`` answers a different question from one over ``ZZ``, so
     two outcomes that agree on everything else and not on the ring are not the
     same outcome. Keeping the copied ring out of the generated comparison made
-    them equal, and equal in hash; an audit of 0.5.0rc2 measured it on all
-    three types.
+    them equal, and equal in hash. The gap was introduced in 0.5.0rc3 by the
+    fix for the field name and found by the audit of it.
+
+    Equality and not the hash. Two unequal values may share a hash, so
+    requiring different hashes asks more than Python promises; what the
+    contract does require is that equal values hash alike, and that is what is
+    checked. An audit of 0.5.0rc4 pointed out the overreach.
     """
     over_integers = outcome_type(None, 0, 0, True, sp.ZZ)
     over_rationals = outcome_type(None, 0, 0, True, sp.QQ)
 
     assert over_integers != over_rationals
-    assert hash(over_integers) != hash(over_rationals)
 
-    # The control: everything else equal and the ring equal is equal.
-    assert over_integers == outcome_type(None, 0, 0, True, sp.ZZ)
+    # The control: everything else equal and the ring equal is equal, and
+    # hashes alike.
+    same = outcome_type(None, 0, 0, True, sp.ZZ)
+
+    assert over_integers == same
+    assert hash(over_integers) == hash(same)
+
+
+@pytest.mark.parametrize("outcome_type", [SearchOutcome, PeelOutcome, ReductionOutcome])
+def test_an_outcome_is_still_an_ordinary_dataclass(outcome_type: type) -> None:
+    """What four attempts at the field name cost, and what the fifth keeps.
+
+    ``domain`` is a descriptor-typed field, so it is a field: the generated
+    constructor writes it, ``fields`` reports it and ``_domain`` not, and
+    ``replace`` can pass it. Copying on read stays, which is what a property
+    was for and what a property could not have while a field carried the name.
+
+    ``dataclasses.replace`` broke in 0.5.0rc4, when a hand-written constructor
+    took ``domain`` while the field was ``_domain``. An audit found it and
+    named the descriptor.
+    """
+    outcome = outcome_type(None, 0, 0, True, sp.ZZ)
+
+    assert [field.name for field in dataclasses.fields(outcome_type)] == [
+        "reduction",
+        "examined",
+        "deepest",
+        "exhausted",
+        "domain",
+    ]
+    assert dataclasses.replace(outcome, examined=1).examined == 1
+    assert dataclasses.replace(outcome, examined=1).domain == sp.ZZ
+    assert copy.deepcopy(outcome) == outcome
+    assert pickle.loads(pickle.dumps(outcome)) == outcome
+
+    match outcome:
+        case outcome_type(reduction=None, domain=ring):
+            assert ring == sp.ZZ
+        case _:  # pragma: no cover - the pattern above matches
+            raise AssertionError("the pattern did not match")
 
 
 @pytest.mark.parametrize("outcome_type", [SearchOutcome, PeelOutcome, ReductionOutcome])
@@ -917,6 +962,8 @@ def test_the_ring_is_a_required_argument(outcome_type: type) -> None:
     Declaring ``domain`` as an ``InitVar`` beside a property of the same name
     made the property object the parameter's default, so omitting the argument
     raised ``AttributeError`` from inside instead of ``TypeError`` at the call.
+    A descriptor says it has no default by raising ``AttributeError`` on class
+    access, which is what keeps the argument required now.
     """
     parameter = inspect.signature(outcome_type).parameters["domain"]
 

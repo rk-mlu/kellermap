@@ -509,10 +509,11 @@ actually uses and comparing the resulting step gives 15 and 6, zero-based, and
 that comparison is unambiguous. A first correction blamed a missing convention
 for matching rather than the figures, which was an evasion. The positions are
 left out because they are an artefact of the enumeration order and say nothing
-a reader needs, not because they cannot be determined. Already the first step removes a term that is not a leading
-monomial of its component, which is what UNT-1 requires and what `peel` does
-not. All seven lower `Phi`, and `peel` searches a wider space than
-`untargeted.py` offers.
+a reader needs, not because they cannot be determined.
+
+Already the first step removes a term that is not a leading monomial of its
+component, which is what UNT-1 requires and what `peel` does not. All seven
+lower `Phi`, and `peel` searches a wider space than `untargeted.py` offers.
 
 So the correct statement is the narrow one: a seven-step BCW chain reaches
 `macfarlane13` from the same source, and that chain is not one the untargeted
