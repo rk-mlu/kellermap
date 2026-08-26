@@ -811,12 +811,15 @@ boundedness is what makes it a milestone rather than a research programme.
 
 # Version 0.5
 
-**Work packages 1 to 13 are done.** The language of the repository, the gate
-that holds it, `CONTRIBUTING.md`, `undo` in the ring, the coefficient ring as a
+**The milestone is closed.** The language of the repository, the gate that
+holds it, `CONTRIBUTING.md`, `undo` in the ring, the coefficient ring as a
 stated space, equality of algebraic numbers, the second source map, what an
 untargeted enumerator may claim, the untargeted search itself, what it spends,
-the widened offer, the order over it, and a bound that turned out not to be
-worth writing.
+the widened offer, the order over it, a bound that turned out not to be worth
+writing, the comparison with the literature, and the release.
+
+The list ran to work package 13 and named twelve things: the comparison was
+missing from it while its number was in the count.
 
 The measurement behind work package 8 is on the contract page under "The
 untargeted search", because it is the reason the obligations read as they do
