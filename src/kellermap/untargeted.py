@@ -239,10 +239,19 @@ def grouped_splits(source: PolynomialMap) -> tuple[Split, ...]:
         if len(high) < 2:
             continue
         for divisor in _divisors_of_degree([monomial for monomial, _ in high], wanted):
+            # Strictly larger, twice over. ``_cofactor_sum`` carries the same
+            # condition and is the one that keeps ``Q`` free of a constant
+            # term; this one decides whether a candidate is offered at all. A
+            # group that counts the divisor among its two members leaves one
+            # cofactor, and a wide candidate with one cofactor is a narrow
+            # split written twice. Measured: dropping this line changes no
+            # count on either source map and adds one duplicate on the map the
+            # audit of 25 August 2026 built.
             covered = [
                 (monomial, coefficient)
                 for monomial, coefficient in high
-                if all(a >= b for a, b in zip(monomial, divisor, strict=True))
+                if sum(monomial) > sum(divisor)
+                and all(a >= b for a, b in zip(monomial, divisor, strict=True))
             ]
             if len(covered) < 2:
                 continue
@@ -347,6 +356,14 @@ def _cofactor_sum(
     total = sp.Integer(0)
     for monomial, coefficient in sorted(component.terms()):
         if sum(monomial) < 4:
+            continue
+        if sum(monomial) <= sum(divisor):
+            # The repair of UNT-6. A monomial equal to the divisor leaves the
+            # cofactor ``1``, so ``Q`` gets a constant term, order zero, and
+            # ``H`` reaches ``EA^-1``, which BCW-6 admits at no level.
+            # ``peeling`` and ``search.anchors`` both guard this and both say
+            # so; it was not carried here until an external audit found a chain
+            # that failed its own first step.
             continue
         if not all(a >= b for a, b in zip(monomial, divisor, strict=True)):
             continue

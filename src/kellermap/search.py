@@ -171,6 +171,14 @@ class Candidate:
         order among them. BCW-6 confines the declared level to ``{0, 1}``, so
         anything above one is reported as one; a step may declare a weaker
         bound than it reaches, and this reports the strongest admissible one.
+
+        Above one only. A factor with a constant term has order zero and its
+        ``H`` reaches ``EA^-1``, which BCW-6 admits at no level, so ``-1`` is
+        returned and ``BCWStep.build`` refuses it by name. Reporting zero there
+        was a second defect and the reason the first one was silent: the step
+        was built with a level it does not reach and only ``verify`` said so,
+        which nothing in the untargeted walk called. An external audit found
+        the chain that came out of it.
         """
         orders = [
             _order(_value(source, slot))
@@ -180,7 +188,7 @@ class Candidate:
         if not orders:
             return 1
 
-        return 1 if min(orders) >= 2 else 0
+        return min(min(orders) - 1, 1)
 
 
 def _order(polynomial: PolyElement) -> int:

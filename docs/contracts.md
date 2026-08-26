@@ -1803,9 +1803,13 @@ clause states the answer, and UNT-2 is why no code has to.
 
 **UNT-6 — A factor may be a sum, and that is an extension. [0.5]** The
 enumerator also offers a candidate whose second factor has several terms: `P` a
-monomial that divides more than one of the monomials of degree at least four in
-one component, and `Q` the sum of the cofactors, so that the step removes all
-of them at once.
+monomial that strictly divides more than one of the monomials of degree at
+least four in one component, and `Q` the sum of the cofactors, so that the step
+removes all of them at once.
+
+Strictly, in both senses. A monomial equal to the divisor is not grouped, and a
+group of fewer than two is not offered, because a wide candidate with one
+cofactor is a narrow split written twice.
 
 This goes beyond Proposition (3.1) and the page says so. BCW write `aM = PQ`
 for a single monomial `M`, which forces both factors to be monomials over an
@@ -1819,6 +1823,21 @@ steps of the chains computed by hand all use a factor with several terms: five
 of seven in `bcw17`, and the step that removes 102 of the measure has a factor
 with four. The narrow enumerator uses none, so no ranking over what it offers
 can reach those steps. The gap was coverage and not order.
+
+**Every factor has order at least one.** `Q` is a sum of cofactors, so a
+monomial equal to the divisor would leave the cofactor `1` and give `Q` a
+constant term. Then `H` reaches `EA^-1`, which BCW-6 admits at no level. The
+enumerator therefore groups only the monomials strictly larger than the
+divisor.
+
+This clause is an amendment, and it was written after the code rather than
+before it. The first implementation grouped every monomial the divisor divides
+and produced candidates that `BCWStep.verify` rejects; an external audit of the
+snapshot of 25 August 2026 found a chain that reached degree three, reported an
+exhausted space and failed its own first step. The hazard was already guarded
+twice, in `peeling` and in `search.anchors`, and both places say why; it was
+not carried here. Where a page names a bound in one family and not in another,
+the second is where to look.
 
 **UNT-7 — The degree of the divisor is `d // 2`, and that is a stated
 choice. [0.5]** `P` has degree `d // 2` where `d` is the degree of the map.
@@ -1843,6 +1862,13 @@ about that example.
 prescribed. A step whose `Q` carries a linear term reaches `EA^0` and not
 `EA^1`, and Proposition (3.1) admits that: BCW take `H` from `EA^0` for the
 part of the argument that makes `F'` linear in each variable.
+
+Following the step means downwards as well. A factor with a constant term
+reaches `EA^-1`, and the level reported is `-1`, which `BCWStep.build` refuses
+by name. Reporting `0` there was the reason the defect above stayed silent: the
+step was built at a level it does not reach, and only `verify` said so, which
+nothing in the untargeted walk calls. Clamping a level upwards is a weaker
+declaration and allowed; clamping it downwards is a false one.
 
 An enumerator that fixed the level at one would lose exactly the best steps.
 The 102 above is such a step: with `EA^1` demanded it fails BCW-6, and with the

@@ -14,6 +14,7 @@ import pytest
 import sympy as sp
 
 from kellermap import (
+    Candidate,
     LinearStep,
     PolynomialMap,
     VerificationError,
@@ -621,3 +622,119 @@ def test_nothing_is_offered_at_degree_three() -> None:
     """UNT-2 covers the wide candidates too."""
     assert grouped_splits(examples.bcw17()) == ()
     assert untargeted_candidates(examples.bcw17()) == ()
+
+
+# --------------------------------------------------------------------------
+# The audit of 25 August 2026
+#
+# Every test above uses one of two shipped maps or a hand-written quintic. An
+# external audit fuzzed over a family instead and found a chain that reached
+# degree three, reported an exhausted space, and failed its own first step.
+# These tests are that family.
+# --------------------------------------------------------------------------
+
+
+AUDIT_REPRODUCERS = (
+    (x + y**5 + y**5 * z**5, y, z),
+    (x + y**4 + y**4 * z**4, y, z),
+    (x + y**4 * z + y**4 * z**5, y, z),
+)
+"""Maps of the shape ``x + a*M + b*M*N`` that broke the enumerator.
+
+The condition is narrow and not exotic: a component needs a monomial of degree
+exactly ``d // 2 >= 4`` that divides another monomial of degree at least four,
+so the map needs degree eight or more. Nothing shipped has that shape, which is
+why two maps and a quintic said nothing.
+"""
+
+
+@pytest.mark.parametrize("components", AUDIT_REPRODUCERS)
+def test_a_chain_that_is_returned_verifies(components: tuple[sp.Expr, ...]) -> None:
+    """The promise the whole repository is built to keep.
+
+    A chain came back, reported an exhausted space, reached degree three, and
+    its first step failed BCW-6. ``grouped_splits`` had grouped the monomial
+    equal to the divisor, whose cofactor is ``1``, so ``Q`` had a constant term
+    and ``H`` reached ``EA^-1``.
+    """
+    source = PolynomialMap((x, y, z), components)
+    outcome = reduce_to_degree3(source, budget=2000)
+
+    assert outcome.reduction is not None
+    assert outcome.reduction.verify() is None
+    assert outcome.reduction.target.degree() == 3
+
+
+@pytest.mark.parametrize("components", AUDIT_REPRODUCERS)
+def test_every_candidate_offered_has_factors_of_order_at_least_one(
+    components: tuple[sp.Expr, ...],
+) -> None:
+    """UNT-6, at the clause the audit added.
+
+    Checked on the candidates rather than through a chain, so that a failure
+    names the enumerator and not the walk.
+    """
+    source = PolynomialMap((x, y, z), components)
+    candidates = untargeted_candidates(source)
+
+    assert candidates
+
+    for candidate in candidates:
+        assert candidate.filtration_level(source) >= 0
+
+
+def test_a_factor_with_a_constant_term_reports_the_level_it_reaches() -> None:
+    """UNT-8 downwards, which is why the defect above was silent.
+
+    The level was reported as zero where the step reaches ``EA^-1``, so
+    ``BCWStep.build`` accepted it and only ``verify`` objected. Nothing in the
+    untargeted walk calls ``verify``.
+    """
+    source = PolynomialMap((x, y), (x + y**4, y))
+    constant = Candidate(index=0, left=y**2, right=y**2 + 1)
+
+    assert constant.filtration_level(source) == -1
+
+    with pytest.raises(ValueError, match="must be 0 or 1"):
+        BCWStep.build(
+            source,
+            constant.index,
+            *constant.factors(sp.symbols("u v")),
+            constant.filtration_level(source),
+        )
+
+
+def test_a_factor_of_order_one_still_reports_zero() -> None:
+    """The negative control. Otherwise the check above refuses every step.
+
+    ``EA^0`` is what Proposition (3.1) admits for the part of its argument that
+    makes ``F'`` linear in each variable, and the steps that remove most reach
+    exactly that.
+    """
+    source = PolynomialMap((x, y), (x + y**4, y))
+    linear = Candidate(index=0, left=y**2, right=y**2 + y)
+
+    assert linear.filtration_level(source) == 0
+    assert Candidate(index=0, left=y**2, right=y**2).filtration_level(source) == 1
+
+
+def test_a_group_of_one_cofactor_is_not_offered() -> None:
+    """A wide candidate with one cofactor is a narrow split written twice.
+
+    On the audit's first reproducer the divisor ``x2**5`` divides exactly two
+    monomials of degree four or more, itself and ``x2**5 * x3**5``. Excluding
+    itself leaves one, so no wide candidate is offered there at all.
+
+    Dropping this changes no count on either source map, so nothing else pins
+    it. It is here because a duplicate candidate costs a build at every map and
+    says nothing.
+    """
+    source = PolynomialMap((x, y, z), (x + y**5 + y**5 * z**5, y, z))
+
+    assert grouped_splits(source) == ()
+
+    # The control: widen the component so that two monomials are strictly
+    # larger than the divisor, and the candidate appears.
+    wider = PolynomialMap((x, y, z), (x + y**5 * z**5 + y**5 * z**4, y, z))
+
+    assert grouped_splits(wider)
