@@ -245,3 +245,31 @@ MACFARLANE_POINTS = (
 )
 
 MACFARLANE_IMAGE = (0, 0, R(-1, 4), 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
+
+# A third preimage, and it is this project's and not his.
+#
+# His two points come from the repository above. This one comes from carrying
+# Alpoege's collision through the seven-step chain that reaches his map, so it
+# is external to the library and internal to the project, which
+# ``AGENTS.md`` asks to be kept apart.
+#
+# The transport also reproduces his two, coordinate for coordinate, which is
+# the check ``scripts/reconstruct_macfarlane13.py`` makes. His derivation
+# restricts Thompson's twenty-four-variable form, and what arrives there is
+# what Thompson carried: two points. Alpoege's map has three, and the chain
+# brings all three.
+MACFARLANE_THIRD_POINT = (
+    -1,
+    R(3, 2),
+    R(13, 2),
+    R(-9, 4),
+    3,
+    R(-3, 2),
+    R(-99, 4),
+    R(3, 2),
+    R(3, 4),
+    R(-45, 8),
+    R(13, 2),
+    R(1, 2),
+    R(-9, 4),
+)

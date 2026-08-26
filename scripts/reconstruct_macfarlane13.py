@@ -239,6 +239,14 @@ _BB = (
 
 MACFARLANE = tuple(sp.expand(X[i] + _RR[i] + _BB[i]) for i in range(13))
 
+ALPOEGE_COLLISION = (
+    (sp.Integer(0), sp.Integer(0), R(-1, 4)),
+    (sp.Integer(1), R(-3, 2), R(13, 2)),
+    (sp.Integer(-1), R(3, 2), R(13, 2)),
+)
+"""Alpoege's three preimages of one image, before the normalization."""
+
+
 MACFARLANE_POINTS = (
     (0, 0, R(-1, 4), 0, 0, 0, 0, 0, 0, 0, 0, 0, 0),
     (
@@ -257,6 +265,29 @@ MACFARLANE_POINTS = (
         R(-9, 4),
     ),
 )
+
+THIRD_POINT = (
+    -1,
+    R(3, 2),
+    R(13, 2),
+    R(-9, 4),
+    3,
+    R(-3, 2),
+    R(-99, 4),
+    R(3, 2),
+    R(3, 4),
+    R(-45, 8),
+    R(13, 2),
+    R(1, 2),
+    R(-9, 4),
+)
+"""The preimage his data does not carry, in his numbering.
+
+His derivation restricts Thompson's twenty-four-variable form, and what
+arrives there is what Thompson carried: two points. Alpoege's map has three,
+and a chain from it brings all three. This one is this project's; the two above
+are his.
+"""
 
 DIMENSION = 13
 DEGREE = 3
@@ -290,6 +321,20 @@ def determinant_at(
     )
 
     return sp.expand(jacobian.det())
+
+
+def transport(point: tuple[sp.Expr, ...]) -> tuple[sp.Expr, ...]:
+    """Carry one preimage through the chain, in the chain's own numbering.
+
+    Each step appends the negated factors it buys: two for a bought step, one
+    for a shared one. The normalization acts on the left and moves only the
+    image.
+    """
+    carried = list(point)
+    for step in STEPS:
+        carried += list(step.appended(dict(zip(X, carried, strict=False))))
+
+    return tuple(carried)
 
 
 def check(label: str, held: bool) -> bool:
@@ -331,6 +376,31 @@ def main() -> int:
             "the two preimages differ",
             tuple(sp.sympify(c) for c in MACFARLANE_POINTS[0])
             != tuple(sp.sympify(c) for c in MACFARLANE_POINTS[1]),
+        )
+    )
+
+    print("\nThe collision, carried through the chain")
+    carried = [in_macfarlanes_order(transport(point)) for point in ALPOEGE_COLLISION]
+    passed.append(check("it arrives with three preimages", len(set(carried)) == 3))
+    for index, wanted in enumerate(MACFARLANE_POINTS):
+        passed.append(
+            check(
+                f"the first two are his, point {index}",
+                carried[index] == tuple(sp.sympify(c) for c in wanted),
+            )
+        )
+    passed.append(
+        check(
+            "the third is the one his data does not carry",
+            carried[2] == tuple(sp.sympify(c) for c in THIRD_POINT),
+        )
+    )
+    substitution = dict(zip(X[:DIMENSION], carried[2], strict=True))
+    passed.append(
+        check(
+            "and it is a preimage of the same image",
+            tuple(sp.expand(c.xreplace(substitution)) for c in MACFARLANE)
+            == tuple(sp.sympify(c) for c in MACFARLANE_POINTS[0]),
         )
     )
 

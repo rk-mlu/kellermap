@@ -477,7 +477,20 @@ chain verifies and its endpoint is his map after reordering the generators.
 
 `scripts/reconstruct_macfarlane13.py` carries those seven steps and recomputes
 them in plain SymPy without the library, together with his map from the
-published coefficients. Twelve checks.
+published coefficients. Seventeen checks.
+
+The chain also extends his collision. His map is published with two preimages
+of one image; carrying Alpöge's three through the chain gives three, and the
+first two are his, coordinate for coordinate. The third is recorded in
+`tests/data.py` as `MACFARLANE_THIRD_POINT`, separately from his two, because
+it is this project's and they are not.
+
+The two derivations account for the difference. His restricts Thompson's
+twenty-four-variable form, and what arrives there is what Thompson carried, two
+points; Alpöge's map has three and the chain brings all three. The agreement on
+the first two is also the sharpest confirmation the chain could get: two
+independently computed points matching in thirteen coordinates would not
+survive a transcription error.
 
 **This page claimed more than that and was wrong.** It said the map lies inside
 the space the untargeted search describes and that only the order of the steps
