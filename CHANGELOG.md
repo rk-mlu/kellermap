@@ -4,7 +4,7 @@ Notable changes per release. The milestone plan and its reasoning live in
 `docs/roadmap.md`, the binding obligations of the verification surface in
 `docs/contracts.md`.
 
-## 0.5.0rc5
+## 0.5.0
 
 Searching without a target. The question changes from "does this chain reach
 that map" to "reduce this map to degree three", and the answer is a chain the
@@ -62,50 +62,49 @@ a gate holds it there.
 - `Candidate` carries a coefficient and reports the filtration level a step
   reaches, in both directions.
 
-### Fixed
+### Found in review
+
+None of these reached a release. Every one was introduced inside this
+milestone and found before it closed, by five external audits of the
+release candidates and by the maintainer. They are listed because a defect
+that was caught is evidence about the review and not an embarrassment, and
+because several of them were introduced by the fix for the one before.
 
 - A grouped candidate could take the monomial equal to its divisor, leaving a
   constant cofactor, so `H` reached `EA^-1` and the chain that came back did
   not verify. Found by an external audit. The filtration level reported `0`
   there, which is why it stayed silent.
 - `polynomials_over` treated an indeterminate of the coefficient domain as a
-  later coordinate, so a pool value over `ZZ[T]` raised `GeneratorsError` where
-  0.4 had answered. Found by an external audit.
+  later coordinate, so a pool value over `ZZ[T]` raised `GeneratorsError`
+  where 0.4 had answered. Found by an external audit.
 - `over` of the wrong type raised `VerificationError` where the error table
-  promises `TypeError`, and `SearchOutcome.domain` shared a mutable domain with
-  the caller. Both found by an external audit.
-
-### Fixed in rc2
-
-- `reduce_to_degree3` overran its budget: the check sat on entry to a frame and
-  not between siblings, so at `budget=1` the walk descended into all twenty-two
-  children of the root and reported one. All twenty-two are still built there,
-  because ordering builds every candidate before choosing; what was wrong was
-  descending into them. `examined` now says which of the two it counts, and it is
-  the maps the walk descended into.
+  promises `TypeError`, and `SearchOutcome.domain` shared a mutable domain
+  with the caller. Both found by an external audit.
+- `reduce_to_degree3` overran its budget: the check sat on entry to a frame
+  and not between siblings, so at `budget=1` the walk descended into all
+  twenty-two children of the root and reported one. All twenty-two are still
+  built there, because ordering builds every candidate before choosing; what
+  was wrong was descending into them. `examined` now says which of the two it
+  counts, and it is the maps the walk descended into.
 - `context` of the wrong type raised `AttributeError` from inside, and only
   when the source had degree above three. It raises `TypeError` at either
   degree.
-- `SearchOutcome.domain` and the other two handed the same object out on every
-  read, so a caller could reach into a frozen outcome. The accessor copies.
+- `SearchOutcome.domain` and the other two handed the same object out on
+  every read, so a caller could reach into a frozen outcome. The accessor
+  copies.
 - The Gao attribution carried a title assembled from the abstract rather than
   the paper's own, which is the part CC BY asks for first.
 - `docs/references.md` claimed that Macfarlane's map lies in the space the
   untargeted enumerator describes. Two of the seven steps do; the rest are
   outside it. `peel` searches a wider space, and the page says so now.
-
-All six found by an external audit of rc1.
-
-### Fixed in rc3
-
-- `scripts/reconstruct_macfarlane13.py` still claimed the map lies in the space
-  the untargeted enumerator describes. rc2 corrected that in `references.md`
-  and here and left the script, which is a correction made in two places out of
-  three.
-- `references.md` cited the positions of the two matching candidates. A second
-  audit reached different positions for the same steps, because no convention
-  for matching a step against a proposal is written down. The positions are
-  gone and which steps match stays.
+- `scripts/reconstruct_macfarlane13.py` still claimed the map lies in the
+  space the untargeted enumerator describes. rc2 corrected that in
+  `references.md` and here and left the script, which is a correction made in
+  two places out of three.
+- `references.md` cited the positions of the two matching candidates. A
+  second audit reached different positions for the same steps, because no
+  convention for matching a step against a proposal is written down. The
+  positions are gone and which steps match stays.
 - Four documentation leftovers: the docstring of `alpoege13` said the
   literature check was outstanding, a test comment said "no ranking",
   `architecture.md` opened its search section with "two directions", and the
@@ -116,11 +115,6 @@ All six found by an external audit of rc1.
   `domain` again, by `InitVar`, and the repr reports the ring by hand.
 - The hash-seed test compared the step count and the dimension, which two
   different chains can share. It compares a fingerprint of the steps.
-
-All five found by an external audit of rc2.
-
-### Fixed in rc4
-
 - The three outcome types ignored the coefficient ring in equality and
   hashing. Two results that agree on everything else and not on the ring are
   not the same result, which is the reason DOM-4 exists. Introduced in rc3 by
@@ -133,26 +127,18 @@ All five found by an external audit of rc2.
   convention for matching. There is one, it gives 15 and 6, and the figures
   were simply wrong; the evasion is replaced by the correction.
 - Two audit references named the wrong release candidate.
-- `MACFARLANE_THIRD_POINT` in `tests/data.py` was cited by `references.md` and
-  checked by nothing; the reconstruction script checked its own copy. A test
-  compares the cited value against the chain the library computes.
-
-All five found by an external audit of rc3.
-
-### Fixed in rc5
-
+- `MACFARLANE_THIRD_POINT` in `tests/data.py` was cited by `references.md`
+  and checked by nothing; the reconstruction script checked its own copy. A
+  test compares the cited value against the chain the library computes.
 - `dataclasses.replace` failed on all three outcome types: a hand-written
   constructor took `domain` while the field was `_domain`, so `fields()` and
   the signature disagreed. `domain` is a descriptor-typed field now, which is
   a field under that name and still copies the ring on read.
 - The equality test required different hashes for different results, which
-  asks more than Python promises. It requires inequality, and equal hashes for
-  equal results.
+  asks more than Python promises. It requires inequality, and equal hashes
+  for equal results.
 - One audit reference named the wrong release candidate, and one line in
   `references.md` was not wrapped.
-
-All three found by an external audit of rc4, which also supplied the
-descriptor.
 
 ### Known limits
 
