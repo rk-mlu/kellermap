@@ -1393,28 +1393,77 @@ smallest one reachable. No work package assumes otherwise.
 
 # Version 0.6
 
-## The Reduction Theorem
+The third stage of the Reduction Theorem, and the compression that follows it.
 
-Moved here from 0.4, where it stood beside a search and would have made that
-milestone impossible to audit as a whole.
+Every figure this project has is at the first stage, degree three. The
+published figures that are easiest to compare against are cubic homogeneous,
+which is the third, so nothing here can be set beside them. That is the gap
+0.6 closes.
 
-Implement
+The plan changed while it was being written. Compression was to be an open
+question, measured and then designed; arXiv:2608.12543v1 makes it a
+construction with a proof, and one that is short to implement. What was a
+research task is now an implementation task with a specification, and the
+ordering it forces is the one already chosen.
 
-- degree reduction,
-- elementary transformations,
-- stable extension,
-- homogenization and unipotent reduction,
-- complete reduction pipeline.
+**WP 1** implements the homogenization, BCW Chapter II, Section 4, third step.
+It roughly doubles the dimension. Obligations first, as always, and the first
+figure at that stage: `alpoege13` homogenized, against Thompson's 24 and
+Macfarlane's 20. Whether it lands above or below them is open, and either
+answer is a result. Nothing about it should be guessed in advance.
 
-This is Section 4 of the paper: the reduction of an arbitrary Keller map to a
-cubic homogeneous one with nilpotent Jacobian. 0.2 to 0.4 build and search
-chains for particular maps; this milestone reduces a map that is handed to it,
-which needs the general construction rather than a sequence someone chose.
+**WP 2** implements collision-hull compression. For `F = id + h` with `h`
+homogeneous of degree `d` and a collision `F(p) = F(q)`, iterate
 
-Goal:
+    W_0     = span{p, q}
+    W_(v+1) = W_v + span{ T(w_1, ..., w_d) : w_j in W_v }
 
-Produce fully verified reductions for examples from the literature without
-recomputing global invariants that follow from the certified local steps.
+with `T` the symmetric polarization, and restrict. The restriction is Keller
+again by Lemma 2 of that paper, and this project has a verification surface
+that can check that rather than assume it: determinant, degree, and the
+collision transported.
+
+The negative control writes itself. Applied to Thompson's twenty-four-variable
+map the sequence has to come out `2, 4, 11, 20, 20` and the subspace has to be
+Macfarlane's. Those numbers were recomputed here from the manuscript's data
+before this plan was written, so the package has a target it did not set
+itself.
+
+**WP 3** takes Thompson's map into the repository, which WP 2 needs for its
+control. The licence is the question to settle first: the map is archived in a
+repository of its own, and this project does not vendor data whose terms cannot
+be established. If they cannot, it goes to `tests/data.py` as the
+nineteen-dimensional map and `macfarlane13` did.
+
+**WP 4** is the symmetric lift, Theorem 3 part 3 of that paper: over `Q(i)`,
+
+    P_W(x, y) = i * sum_j y_j * hbar_j(x + i*y)
+
+homogeneous of degree `d + 1`, with `id - grad(P_W)` a noninjective Keller map
+and the second point at `rho = (I + J hbar(q)^T)^(-1) (p - q)`.
+
+This is the step recorded here for two milestones as architecturally absent,
+and the reason it was absent is that it needs `Q(i)`. The coefficient ring
+became something a caller states in 0.5 and `canonical` learned to decide
+algebraic numbers, so the two obstacles named at the time are gone.
+
+**WP 5** compares, as WP 13 of 0.5 did, and reports what a comparison
+establishes and what it does not. At that stage the numbers to beat are 24 and
+20 for the cubic homogeneous form and 40 for the quartic gradient form, and
+this project will have arrived by a different route. The literature is checked
+again before any number leaves the repository. The last time that check was
+made it found that thirteen had been reached a month earlier, which is what the
+rule is for.
+
+## What is not planned
+
+No claim about Zhao's Vanishing Conjecture beyond what the construction gives.
+The quartic gradient form is a counterexample to it when the input is, and that
+is a consequence and not a new result.
+
+No minimality, at any stage. The measurement in the 0.5 section under WP 12
+says why a statement about what does not exist is out of reach from this
+direction, and homogenization does not change that.
 
 ---
 

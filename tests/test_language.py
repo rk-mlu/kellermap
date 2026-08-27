@@ -122,6 +122,21 @@ SCANNED = (
 # The translation runs module by module. What stands here is the remainder.
 NOT_YET_TRANSLATED = frozenset({})
 
+PROPER_NAMES = (
+    "van den Essen",
+    "de Bondt",
+)
+"""Names that are not prose, and that the word list would read as German.
+
+``van den Essen`` carries ``den`` and ``Essen``, both ordinary German words,
+and no threshold distinguishes a Dutch surname from a German sentence. Striking
+either from the list would cost more than the name does.
+
+The list is deliberately short and holds names, never phrases. A name that
+needs to be here has to be a name: if a technical term ever wants an exemption,
+the term is the thing to rewrite.
+"""
+
 # Derived, not written. See the module docstring for how and for what it is
 # worth.
 GERMAN_WORDS = """
@@ -387,6 +402,14 @@ def _span(node: ast.AST) -> range:
     return range(start, end + 1)
 
 
+def without_names(line: str) -> str:
+    """Return the line with the proper names of ``PROPER_NAMES`` taken out."""
+    for name in PROPER_NAMES:
+        line = line.replace(name, " ")
+
+    return line
+
+
 def prose(path: Path) -> list[tuple[int, str]]:
     """Return the prose lines of ``path``, with their numbers.
 
@@ -438,8 +461,21 @@ def prose(path: Path) -> list[tuple[int, str]]:
 
 
 def german_lines(path: Path) -> list[tuple[int, str]]:
-    """Return the prose lines of ``path`` that read like German."""
-    return [(number, line.strip()) for number, line in prose(path) if suspicious(line)]
+    """Return the prose lines of ``path`` that read like German.
+
+    The names come out here and not in ``prose``, which has two returns: one
+    for Python and an earlier one that hands back a whole file. Patching the
+    later return left every ``.md`` file unexempted, and ``docs/references.md``
+    kept failing on a surname.
+
+    What is reported is the line as written. The removal serves the test and
+    not the reader, who needs to see the text that is actually there.
+    """
+    return [
+        (number, line.strip())
+        for number, line in prose(path)
+        if suspicious(without_names(line))
+    ]
 
 
 def scanned() -> list[Path]:
@@ -639,6 +675,33 @@ def test_the_module_that_holds_the_list_is_scanned_too() -> None:
     from 0.4.0rc9 until the end of work package 2.
     """
     assert Path(__file__) in scanned()
+
+
+def test_a_name_is_exempt_only_inside_the_name() -> None:
+    """Otherwise the exemption is a hole and not a correction.
+
+    ``den`` and ``Essen`` are ordinary German words and stay markers. What is
+    exempt is the string ``van den Essen``, which is a surname, and it is taken
+    out by exact match and not word by word.
+    """
+    assert not suspicious(without_names("the de Bondt-van den Essen gradient form"))
+    assert suspicious(without_names("Wir haben den Fehler in der Kette gefunden"))
+    assert suspicious(without_names("van den Essen hat den Satz dort bewiesen"))
+
+
+def test_the_exemption_reaches_files_that_are_not_python() -> None:
+    """Where the first patch for it did not.
+
+    ``prose`` has two returns, one for Python and an earlier one that hands
+    back a whole file. Removing the names at the later return left every
+    markdown file unexempted, and ``docs/references.md`` went on failing on a
+    surname. The removal happens in ``german_lines`` now, once, after both.
+    """
+    written = ROOT / "docs" / "references.md"
+
+    assert written.suffix != ".py"
+    assert prose(written)[0][1] == written.read_text(encoding="utf-8").splitlines()[0]
+    assert not german_lines(written)
 
 
 def test_the_word_list_is_not_prose() -> None:

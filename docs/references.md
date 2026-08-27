@@ -188,15 +188,121 @@ reductions and their dimension is what distinguishes them; this paper carries
 two maps in three variables, the cuspidal cubic of §3.4 and the quartic here,
 and the geometric degree is what tells them apart.
 
+---
+
+## Collision-hull compression, and the fortieth variable
+
+**Thomas Prellberg**, *Collision-Hull Compression for Homogeneous Keller Maps
+and a Forty-Variable Counterexample to Zhao's Vanishing Conjecture*,
+arXiv:2608.12543v1, 12 August 2026, School of Mathematical Sciences, Queen Mary
+University of London. The submission is licensed CC BY 4.0,
+<https://creativecommons.org/licenses/by/4.0/>, which covers the ancillary file
+`anc/check_quartic_40.py` as part of it.
+
+This is the most directly relevant reference this page carries after Alpöge's
+own, and it settles two questions that stood open here.
+
+### What it says
+
+Theorem 3 gives compression as a canonical construction rather than a device.
+For `F = id + h` Keller with `h` homogeneous of degree `d`, and a collision
+`F(p) = F(q)` with `p != q`, let `T` be the symmetric `d`-linear polarization
+of `h` and put
+
+    W_0     = span{p, q}
+    W_(v+1) = W_v + span{ T(w_1, ..., w_d) : w_j in W_v }.
+
+The stable value `W` is the smallest linear subspace containing both points and
+invariant under `h`. The restriction to it is again Keller, its Jacobian is
+nilpotent, and the collision survives.
+
+Theorem 1 and Proposition 6 apply that to Thompson's twenty-four-variable map.
+The sequence of dimensions is `2, 4, 11, 20, 20`, and the subspace it generates
+is exactly Macfarlane's twenty-dimensional invariant subspace. So the
+twenty-four to twenty compression recorded above is not a fortunate choice of
+four linear forms: it is what the collision itself generates.
+
+Part 3 of Theorem 3 is the symmetric lift. Over `K = k(i)`,
+
+    P_W(x, y) = i * sum_j y_j * hbar_j(x + i*y)
+
+is homogeneous of degree `d + 1` with nilpotent Hessian, and `id - grad(P_W)`
+is a noninjective Keller map, with the second point given explicitly by
+`rho = (I + J hbar(q)^T)^(-1) (p - q)`. For `d = 3` the result is a
+counterexample to the quartic case of Zhao's Vanishing Conjecture.
+
+The paper claims no global minimality. Corollary 7 states a route-specific one:
+forty is minimal among examples obtained by restricting Thompson's map to an
+invariant subspace containing the collision and then applying the lift
+unchanged.
+
+### What was recomputed here
+
+Recomputed by `scripts/reconstruct_prellberg40.py`, which make reconstruct runs,
+in plain SymPy and without this library:
+
+| | reported | recomputed |
+| --- | --- | --- |
+| `h` is cubic homogeneous | yes | agrees |
+| `F(p) = F(q) = p`, `p != q` | yes | agrees |
+| polarization dimensions | 2, 4, 11, 20, 20 | agrees |
+| `P` homogeneous of degree 4 | yes | agrees |
+| monomials of `P` | 350 | 350 |
+| `id - grad(P)` has the stated collision | yes | agrees |
+| Thompson's `H` is cubic homogeneous, four relations |	yes	| agrees |
+| `H` restricted along the embedding is `h` | yes | agrees |
+
+Not recomputed: the intertwining identity with Thompson's ambient map, the
+nilpotency index of `J h`, and the term count of `Delta(P^2)`. The ancillary
+file checks all of those, and this project has not yet held Thompson's map, so
+there was nothing here to check the embedding against.
+
+Not recomputed: the nilpotency index of `J h`, which costs matrix powers over a
+polynomial ring, and the term count of `Delta(P^2)`. The ancillary file checks
+both.
+
+### What it means for this project
+
+The compression is now a construction with a name, a proof and an algorithm,
+where it was an open design question. It is also implementable in a few lines:
+iterate the polarization on the span of the collision points until the
+dimension stops growing.
+
+It applies to homogeneous maps. Everything this project produces at degree
+three is not homogeneous — the maps carry quadratic terms as well — so the
+construction sits after the homogenization and not before it. That is the order
+`docs/roadmap.md` had already chosen for 0.6, and this is the reason for it
+rather than a preference.
+
+Part 3 also writes out the step that has been recorded here as architecturally
+absent: the symmetric lift over `Q(i)` is the de Bondt–van den Essen gradient
+form, with the image of the collision given explicitly. The chain this project
+follows — Jacobian Conjecture, BCW reduction, gradient form, Zhao's Vanishing
+Conjecture — is closed end to end in one paper.
+
 ### Third-party material
 
-The library is MIT. Two pieces of mathematics in it are not this project's and
-carry their own terms.
+The library is MIT. Several pieces of mathematics in it are not this project's
+and carry their own terms.
 
 `kellermap.examples.gao_quartic` and `gao_quartic_collision` are from Shuhong
 Gao, arXiv:2608.00222v1, licensed CC BY 4.0. Attribution, the licence link and
 a statement of changes are in the section above and in the docstring of the
 map.
+
+The ancillary file `anc/check_quartic_40.py` of arXiv:2608.12543v1 is
+licensed CC BY 4.0 with the rest of that submission. Nothing from it is
+copied into this repository; the figures above were recomputed from the
+formulas the manuscript displays.
+
+Thompson's twenty-four-variable map, its twenty-dimensional restriction, the
+collision and the vector `rho` are transcribed into
+`scripts/reconstruct_prellberg40.py` from the ancillary file
+`anc/check_quartic_40.py` of arXiv:2608.12543v1, which is licensed CC BY 4.0
+with the rest of that submission. Attribution, the licence link and a statement
+of changes are in the docstring of that script. The formulas are not altered;
+the checks around them are this project's, are a subset of the ancillary file's
+eleven, and add one it does not make.
 
 `tests/data.py` holds the published nineteen-dimensional map and
 `macfarlane13`. Neither source carries a licence file, so neither is in the
