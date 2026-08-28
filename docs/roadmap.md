@@ -1393,26 +1393,148 @@ smallest one reachable. No work package assumes otherwise.
 
 # Version 0.6
 
-The third stage of the Reduction Theorem, and the compression that follows it.
+The second and third stages of the Reduction Theorem, and the compression that
+follows them.
 
 Every figure this project has is at the first stage, degree three. The
 published figures that are easiest to compare against are cubic homogeneous,
 which is the third, so nothing here can be set beside them. That is the gap
 0.6 closes.
 
-The plan changed while it was being written. Compression was to be an open
-question, measured and then designed; arXiv:2608.12543v1 makes it a
-construction with a proof, and one that is short to implement. What was a
-research task is now an implementation task with a specification, and the
-ordering it forces is the one already chosen.
+The plan changed twice while it was being written. Compression was to be an
+open question, measured and then designed; arXiv:2608.12543v1 makes it a
+construction with a proof, and one that is short to implement. Then Section 4
+was read again, for the cut into work packages, and the reading moved the
+boundary between the first two of them. What stands below is the second
+version.
 
-**WP 1** implements the homogenization, BCW Chapter II, Section 4, third step.
-It roughly doubles the dimension. Obligations first, as always, and the first
-figure at that stage: `alpoege13` homogenized, against Thompson's 24 and
-Macfarlane's 20. Whether it lands above or below them is open, and either
-answer is a result. Nothing about it should be guessed in advance.
+## Which stage costs which dimensions
 
-**WP 2** implements collision-hull compression. For `F = id + h` with `h`
+The first version of this plan gave the homogenization one work package and
+said that it roughly doubles the dimension. Those are two statements about two
+different steps, and the source separates them.
+
+The second step, p. 306, is the one that doubles. Put
+
+    E(T) = X + T F_(2) + T^2 F_(3)
+    G(T) = (X + TY, Y)
+    H(T) = (X, Y - T F_(3))
+
+Then `G(T) o E(T)^[n] o H(T)` is `(X, Y) + N T` with `N = (F_(2) + Y, -F_(3))`,
+and Lemma (4.1) gives that `J(N)` is nilpotent. At `T = 1` the result is a map
+in `2n` variables. Dimension `n -> 2n`.
+
+The third step, p. 307, costs one variable. With
+`N(T) = N_(1) T^2 + N_(2) T + N_(3)` the map `L = (X + N(T), T)` is cubic
+homogeneous in `n + 1` variables and `J(L)` is unipotent. Dimension
+`n -> n + 1`.
+
+Together `2n + 1`. Long's two figures are that arithmetic: 39 at degree three
+and 79 after the homogeneous reduction, and `2 * 39 + 1 = 79`. The 0.5 section
+above and `docs/references.md` both say that the last stage roughly doubles the
+count. The total is right and the attribution is not. WP 7 corrects both
+places.
+
+## The input the second step needs
+
+BCW start Section 4 from `F in MA^1_n(k)`, and `alpoege13` is not in it: the
+linear part of its displacement has two non-zero entries, 7 and 6. They are
+nilpotent, so the map is Keller all the same, but a term that carries no `T`
+leaves the graded ring of Lemma (4.1) and the nilpotence argument does not
+reach it.
+
+The normalization is `LinearStep.normalize`, which this library has had since
+0.3. The dimension does not move, and the collision points do not move either,
+because `F(p) = F(q)` gives `A^(-1) F(p) = A^(-1) F(q)`. So the chain grows by
+one step and nothing else. What matters for WP 1 is that the precondition is an
+obligation the step checks and names, not an assumption about its input.
+
+The determinant has to be one and not merely a non-zero constant. `G(T)` and
+`H(T)` have determinant one, so `det J` of the composition is `det J(F)(TX)`,
+which is `det J(F)`; at `T = 0` the composition is the identity. A map with
+determinant `-2` therefore has no second step, and the linear normalization is
+where that is fixed.
+
+## The figure this milestone is for
+
+Measured before the packages were cut, in plain SymPy and without the library,
+so that the cut is made against a number rather than against an expectation.
+
+| | dimension | |
+| --- | --- | --- |
+| `alpoege13` | 13 | degree 3 |
+| linear normalization | 13 | `ord(F - X) >= 2` |
+| unipotent reduction | 26 | `J(N)` nilpotent |
+| homogenization | 27 | cubic homogeneous, 78 monomials |
+| collision-hull compression | 22 | sequence 3, 9, 20, 22, 22 |
+
+Checked: the degrees, the homogeneity, that all three of Alpoege's points
+survive every stage and keep one image, that the hull is invariant, that the
+determinant of the restriction is one at three random points of the hull, and
+that the Jacobian of its displacement is nilpotent there. Not checked: the
+determinant as a polynomial. That is what the library is for, and the
+measurement exists to be independent of it.
+
+So this route lands below Thompson's 24 and above Macfarlane's 20. Three
+things about the number.
+
+Taken two points at a time the sequence begins `2, 4, 11`, which are the first
+three of Thompson's `2, 4, 11, 20, 20`, and then stabilizes at 22 rather than
+at 20. That is an observation and not yet a statement about anything.
+
+Dimension is not the only figure. The displacement has 78 cubic monomials
+before the compression and 5370 after it, against Thompson's 54. The count
+depends on the basis the elimination happens to produce, so it is a figure to
+report and not one to compare, but a dense map is more expensive for everything
+downstream.
+
+The symmetric lift doubles again: 22 gives 44 quartic variables against
+Prellberg's 40. Arriving above a published figure is a result and the plan does
+not assume otherwise.
+
+The measurement is exploratory and stands here as a target. WP 1, WP 2 and
+WP 4 have to reproduce it under the verification surface. If they do not, the
+measurement was wrong and this section is corrected rather than the packages
+argued with.
+
+## The packages
+
+**WP 1** implements the unipotent reduction, Chapter II, Section 4, second
+step. Obligations first, as always.
+
+The shape `G o F^[n] o H` is the shape `BCWStep` already carries, so the stable
+extension and the elementary automorphisms are reused rather than rebuilt. Two
+things are new. The factors are computed from the map itself and not supplied
+or searched for, which makes this the first step type whose transformation is
+determined by its source. And the target leaves `MA^1`: its displacement has
+linear part `(Y, 0)`, so `filtration_level` has to say so rather than be
+assumed.
+
+The collision transports through `H(1)^(-1) = (X, Y + F_(3)(X))`: a point `p`
+of the source lifts to `(p, F_(3)(p))`. Two distinct points stay distinct,
+because they already differ in the first block.
+
+**WP 2** implements the homogenization, third step. One variable, cubic
+homogeneous, and the collision transports by appending `1`. The first figure at
+that stage is `alpoege13` homogenized, 27 against Thompson's 24 and
+Macfarlane's 20, so it lands above both. The reason to carry on is WP 4 and
+not this figure.
+
+Separate from WP 1 because they are two constructions. A failure in the
+homogenization must not be able to have its cause in the unipotent reduction.
+
+**WP 3** takes Thompson's map into the repository, which WP 4 needs for its
+control. This package is smaller than the first version of the plan made it.
+The licence question is settled: the submission is CC BY 4.0 and that covers
+the ancillary file, `docs/references.md` records it, and the values are already
+transcribed into `scripts/reconstruct_prellberg40.py`.
+
+What is left is where a map that two packages need should live. A script holds
+it now, `tests/data.py` holds the data whose terms could not be established,
+and neither is the right place for a control that `make check` runs. The
+package decides that and records the reason.
+
+**WP 4** implements collision-hull compression. For `F = id + h` with `h`
 homogeneous of degree `d` and a collision `F(p) = F(q)`, iterate
 
     W_0     = span{p, q}
@@ -1429,13 +1551,12 @@ Macfarlane's. Those numbers were recomputed here from the manuscript's data
 before this plan was written, so the package has a target it did not set
 itself.
 
-**WP 3** takes Thompson's map into the repository, which WP 2 needs for its
-control. The licence is the question to settle first: the map is archived in a
-repository of its own, and this project does not vendor data whose terms cannot
-be established. If they cannot, it goes to `tests/data.py` as the
-nineteen-dimensional map and `macfarlane13` did.
+A restriction is a new kind of step. Every step this library has is a
+composition, and this one is not; whether it is a `Step` at all, or a separate
+type with its own certificate, is the design question of the package and is
+settled in the obligations before anything is written.
 
-**WP 4** is the symmetric lift, Theorem 3 part 3 of that paper: over `Q(i)`,
+**WP 5** is the symmetric lift, Theorem 3 part 3 of that paper: over `Q(i)`,
 
     P_W(x, y) = i * sum_j y_j * hbar_j(x + i*y)
 
@@ -1447,13 +1568,40 @@ and the reason it was absent is that it needs `Q(i)`. The coefficient ring
 became something a caller states in 0.5 and `canonical` learned to decide
 algebraic numbers, so the two obstacles named at the time are gone.
 
-**WP 5** compares, as WP 13 of 0.5 did, and reports what a comparison
+**WP 6** compares, as WP 13 of 0.5 did, and reports what a comparison
 establishes and what it does not. At that stage the numbers to beat are 24 and
 20 for the cubic homogeneous form and 40 for the quartic gradient form, and
 this project will have arrived by a different route. The literature is checked
 again before any number leaves the repository. The last time that check was
 made it found that thirteen had been reached a month earlier, which is what the
 rule is for.
+
+**WP 7** removes the `[0.6]` markers from `contracts.md`, corrects the two
+places named above, brings the documentation up to date and prepares the
+release.
+
+### Why the order
+
+WP 1 and WP 2 come first because compression applies to homogeneous maps and
+nothing this project produces at degree three is homogeneous. WP 3 comes before
+WP 4 because it is what WP 4 checks itself against. WP 5 comes after WP 4
+because lifting the uncompressed map would double a dimension that is about to
+fall. WP 6 draws no comparison until the packages before it have fixed what is
+being compared.
+
+## An open question this milestone raises and does not answer
+
+The untargeted search minimizes the dimension at degree three. The number that
+gets compared is the one after the second stage, the third and the compression.
+That 13 minimizes the second is not shown and does not follow from the first.
+
+The first two stages are monotone in the dimension, `2n + 1`, and the
+compression is not: the hull depends on the collision points and on the map,
+and a chain ending at 15 could compress further than one ending at 13. Running
+`alpoege15` and `bcw17` through the same four stages is cheap and is the first
+measurement to make. Whether `reduce_to_degree3` should then be given a
+different objective is not decided here, is not a package of this milestone,
+and would be a milestone of its own.
 
 ## What is not planned
 
@@ -1463,7 +1611,9 @@ is a consequence and not a new result.
 
 No minimality, at any stage. The measurement in the 0.5 section under WP 12
 says why a statement about what does not exist is out of reach from this
-direction, and homogenization does not change that.
+direction, and neither the homogenization nor the compression changes that.
+The compression is minimal along one route by Corollary 7 of that paper, and
+that is a statement about the route and not about the number.
 
 ---
 
