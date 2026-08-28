@@ -89,9 +89,10 @@ throughout, tests included, with a gate that holds it there.
 
 ### Next, 0.6
 
-The third stage of the Reduction Theorem, homogenization. Every figure above is
-at the first stage, degree three, while most published figures are cubic
-homogeneous, so the two cannot yet be set beside each other.
+The second and third stages of the Reduction Theorem, and the compression that
+follows them. Every figure above is at the first stage, degree three, while
+most published figures are cubic homogeneous, so the two cannot yet be set
+beside each other.
 
 `docs/roadmap.md` carries the plan and the measurements behind it.
 `CHANGELOG.md` lists what each release changed, and the milestones before this

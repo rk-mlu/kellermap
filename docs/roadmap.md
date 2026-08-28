@@ -1269,10 +1269,14 @@ another group made to the nilpotence index.
 The figures are not at the same stage. BCW prove the Reduction Theorem in three
 steps and every number in this project's table is at the first of them, degree
 three. Thompson's 24 is cubic homogeneous, which is the third, and Long reports
-39 at the first stage and 79 after the third for the same reduction. The last
-stage roughly doubles the count, so a figure from after it does not sit beside
-one from before it. This project has not carried out the homogenization and
-therefore has no figure at that stage.
+39 at the first stage and 79 after the third for the same reduction. A figure
+from after the first stage does not sit beside one from before it. This project
+had carried out neither of the two later stages when the milestone closed and
+therefore had no figure at either.
+
+This paragraph said that the last stage roughly doubles the count. The doubling
+is the second stage and the third costs one variable; the 0.6 section below has
+the correction and the reason it matters for the cut into work packages.
 
 The first target is met and the second is stated narrowly. The published
 nineteen-variable reduction is reproduced with a machine-verifiable certificate.
@@ -1431,9 +1435,11 @@ homogeneous in `n + 1` variables and `J(L)` is unipotent. Dimension
 
 Together `2n + 1`. Long's two figures are that arithmetic: 39 at degree three
 and 79 after the homogeneous reduction, and `2 * 39 + 1 = 79`. The 0.5 section
-above and `docs/references.md` both say that the last stage roughly doubles the
-count. The total is right and the attribution is not. WP 7 corrects both
-places.
+above and `docs/references.md` both said that the last stage roughly doubles
+the count. The total was right and the attribution was not, and both are
+corrected. The entry under "Known limits" in the `0.5.0` section of
+`CHANGELOG.md` carries the same wording and is left standing, because it
+records what was true at that release.
 
 ## The input the second step needs
 
@@ -1576,9 +1582,8 @@ again before any number leaves the repository. The last time that check was
 made it found that thirteen had been reached a month earlier, which is what the
 rule is for.
 
-**WP 7** removes the `[0.6]` markers from `contracts.md`, corrects the two
-places named above, brings the documentation up to date and prepares the
-release.
+**WP 7** removes the `[0.6]` markers from `contracts.md`, brings the
+documentation up to date and prepares the release.
 
 ### Why the order
 

@@ -20,12 +20,24 @@ statement of intent that the implementation is measured against, not a
 description of the current code, and a review of an unfinished milestone should
 read it as such. Obligations without a marker are implemented.
 
-**Status as of `0.4.0`:** every obligation on this page is
+**Status as of `0.5.0`:** every obligation on this page is
 implemented, and the test suite covers every statement of the package. Where
 the implementation forced a change, this page was amended deliberately and the
 amendment is visible in the wording — the clearest cases are COL-4 and BCW-3,
 which moved from obligations of `verify()` to constructor invariants, and
 LIN-2, which was narrowed to what is actually checkable.
+
+This line said `0.4.0` until milestone 0.6 opened, at which point the page had
+carried the UNT and DOM obligations of 0.5 for a release without saying so. The
+markers were removed when 0.5 closed and the status above was not moved with
+them, which is the half of a two-part change that nothing checks.
+
+**Milestone `0.5`, closed.** The milestone added the untargeted enumerator and
+the search over it, UNT-1 to UNT-11, and the coefficient ring as something a
+caller states, DOM-1 to DOM-4. Its obligations carried the `[0.5]` marker while
+it ran and carry none now. The measurement the UNT obligations rest on stands
+beside them, under "The untargeted search", because it is the reason they read
+as they do.
 
 **Milestone `0.4`, closed.** The milestone added `TranslationStep`, which
 completes Chapter II, Proposition (1.1); two searches for a step sequence, one

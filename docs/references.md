@@ -497,9 +497,16 @@ That matters for reading any other number against them, because the published
 figures that are easiest to find are at the third. Long, arXiv:2607.18186,
 tracks the same reduction of the same map and reports 39 variables at degree
 three and 79 after the homogeneous reduction, which he describes as
-conservative rather than optimized. So the last stage roughly doubles the
-count, and a figure from after it is not comparable with a figure from before
-it.
+conservative rather than optimized. So a figure from after the first stage is
+not comparable with a figure from before it.
+
+Which stage costs what was stated imprecisely here until milestone 0.6 was cut,
+and the correction is worth the four lines. This page said that the last stage
+roughly doubles the count. The stage that doubles is the second, p. 306, where
+`G(T) o E(T)^[n] o H(T)` is a map in `2n` variables. The third, p. 307, costs
+one variable: `L = (X + N(T), T)`. Together `2n + 1`, and Long's two figures
+are that arithmetic exactly, since `2 * 39 + 1 = 79`. The total was right and
+the attribution was not.
 
 ### Thompson's twenty-four variables
 
@@ -517,11 +524,18 @@ written exact verifiers, and a nilpotence certificate.
 Two things about it belong here rather than in a comparison.
 
 It is cubic homogeneous, so it is at BCW's third stage and not the first. It is
-therefore comparable with Long's 79 and not with the 13 of `alpoege13`. This
-project has not carried out the homogenization at all, so it has no figure at
-that stage and cannot claim one. Whether a chain from `alpoege13` would
-homogenize to fewer than 24 is an open question here, and guessing at it would
-be exactly the kind of claim `AGENTS.md` forbids.
+therefore comparable with Long's 79 and not with the 13 of `alpoege13`.
+
+The library carries out neither of the two stages that lead there, so it has no
+certified figure at that stage and claims none. What exists is a measurement
+made while milestone 0.6 was being cut, in plain SymPy and outside the library:
+`alpoege13` normalized, made unipotent and homogenized is 27 variables, and
+compressed by Theorem 3 of arXiv:2608.12543v1 it is 22. Below 24 and above
+Macfarlane's 20. `docs/roadmap.md` states what that computation checks and what
+it does not, and the determinant is among the things it does not check as a
+polynomial. It is a target for the packages of 0.6 and not a figure this
+repository claims; until a certificate stands behind it, no comparison is drawn
+from it.
 
 The nilpotence index was corrected. Thompson reports `(JN)^17 = 0`; an
 independent verification, Zenodo record 21504303 of 23 July 2026, reports the
