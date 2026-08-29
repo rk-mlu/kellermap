@@ -1653,7 +1653,19 @@ will build the first dimension-lowering certificate this library has, and
 whoever designs it should know that a second one is waiting.
 
 **WP 3** implements the homogenization, third step. One variable, cubic
-homogeneous, and the collision transports by appending `1`. The first figure at
+homogeneous, and the collision transports by appending `1`. The obligations are
+HOM-1 to HOM-10, and the step is implemented against them. Two of the ten
+carried more than their wording suggested. HOM-3 rules out a source that is
+Keller but not nilpotent, which is a map that exists and which no other
+obligation would have caught. HOM-8, the slice, catches a source with a
+constant term, since the formula has three slots and a part of degree zero has
+none; `TranslationStep` is what removes one.
+
+The package began with a restructuring and not with the step. Both the second
+step and the third read a displacement by degree, and both ask whether a
+Jacobian is nilpotent by the same determinant, so `kellermap.bcw.grading` holds
+what they share. That is a separate change from the one that adds a step type,
+in the order the working agreement gives. The first figure at
 that stage is `alpoege13` homogenized, 27 against Thompson's 24 and
 Macfarlane's 20, so it lands above both. The reason to carry on is WP 5 and
 not this figure.

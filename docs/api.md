@@ -29,6 +29,7 @@ what they do.
   - [The translation](#the-translation)
 - [The BCW step](#the-bcw-step)
 - [The unipotent step](#the-unipotent-step)
+- [The homogenization](#the-homogenization)
 - [Finding candidates](#finding-candidates)
 - [Assembling a chain](#assembling-a-chain)
 - [Peeling a chain off a target](#peeling-a-chain-off-a-target)
@@ -1008,6 +1009,80 @@ displacement. `H` displaces `Y` by `-F_(3)`, so its inverse displaces it by
 That source is not a Keller map and `verify` would refuse it. `transport` does
 not: it checks the incoming collision against the source and the outgoing one
 against the target, and neither needs the step to apply.
+
+---
+
+## The homogenization
+
+The third step of the Reduction Theorem. It adds one variable and lifts each
+part of the displacement by the power of `T` its own degree is short of, so the
+result is cubic homogeneous:
+
+```python
+>>> from kellermap.bcw import HomogenizationStep
+>>> shear = over_field(
+...     PolynomialMap((x1, x2), (x1 + x2 + x2**2, x2))
+... )
+>>> homogenized = HomogenizationStep.build(shear)
+>>> homogenized.variable
+x3
+>>> homogenized.target.components
+(x1 + x2**2*x3 + x2*x3**2, x2, x3)
+>>> homogenized.verify() is None
+True
+
+```
+
+The linear part is lifted by `T**2` and the quadratic one by `T`. `parts`
+reports what the formula read, in the order `N_(1)`, `N_(2)`, `N_(3)`:
+
+```python
+>>> homogenized.parts
+((x2, 0), (x2**2, 0), (0, 0))
+
+```
+
+This step is not a composition, so there is no `EA` level to declare and
+`filtration_level` is `math.inf`. What relates the two maps is a slice: setting
+`T = 1` returns the source. The target is in `MA^2`, where the unipotent step
+before it leaves `MA^1` altogether:
+
+```python
+>>> homogenized.filtration_level
+inf
+>>> homogenized.target.filtration_degree()
+2
+
+```
+
+The source has to have nilpotent Jacobian, and being a Keller map is not
+enough. `(2*x1, x2/2)` has determinant one and a displacement whose Jacobian is
+`diag(1, -1/2)`:
+
+```python
+>>> HomogenizationStep.build(
+...     over_field(PolynomialMap((x1, x2), (2 * x1, x2 / 2)))
+... ).verify()
+Traceback (most recent call last):
+    ...
+kellermap.errors.VerificationError: [HOM-3] det(I + T J(N)) is -x3**2/2 + x3/2 + 1 and not one, so the displacement of the source does not have nilpotent Jacobian. The second step of Section 4 is what produces one; a Keller source is not enough, because the target's Jacobian is a scaled substitution of this one.
+
+```
+
+A collision moves to the slice `T = 1`. The appended coordinate is one and not
+zero, unlike every other step here: at `T = 0` only `N_(3)` survives, and that
+slice is a different map.
+
+```python
+>>> square = over_field(PolynomialMap((x1, x2), (x1**2 + x2**3, x2)))
+>>> pair = Collision(((1, 2), (-1, 2)), (9, 2))
+>>> moved = HomogenizationStep.build(square).transport(pair)
+>>> moved.points
+((1, 2, 1), (-1, 2, 1))
+>>> moved.image
+(9, 2, 1)
+
+```
 
 ---
 

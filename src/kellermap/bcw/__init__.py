@@ -5,6 +5,7 @@ the group ``EA_n(k)``, collisions, and chains of certified identities -- lives
 at the top level of the package.
 """
 
+from .homogenization import HomogenizationStep
 from .step import BCWStep, Carried, Factor, Fresh
 from .unipotent import UnipotentStep
 
@@ -13,5 +14,6 @@ __all__ = [
     "Carried",
     "Factor",
     "Fresh",
+    "HomogenizationStep",
     "UnipotentStep",
 ]

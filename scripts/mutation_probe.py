@@ -41,7 +41,8 @@ They ask today's question of today's code. Every one of them should report
 ``CAUGHT``; a miss means a control has been lost since ``0.4.0rc13``, and
 ``tests/test_scripts.py`` checks that every fragment still matches the code it
 aims at. The set grew to eighteen with ``UnipotentStep``, whose three source
-obligations are the first here that a constructed step cannot make true.
+obligations are the first here that a constructed step cannot make true, and to
+twenty-four with the homogenization.
 
 They do **not** reproduce the ten misses of the first run, and until
 ``0.4.0rc14`` this file and ``CHANGELOG.md`` said they did. Two reasons. The
@@ -233,6 +234,48 @@ PROBES: tuple[Probe, ...] = (
         "UNI-11",
         "UnipotentStep.transport verifies its output",
         "src/kellermap/bcw/unipotent.py",
+        "        moved.verify(self._target)\n\n        return moved",
+        "        return moved",
+    ),
+    Probe(
+        "HOM-1",
+        "the identity of the homogenization is compared",
+        "src/kellermap/bcw/homogenization.py",
+        "        if self._composite() != self._target:",
+        "        if False:",
+    ),
+    Probe(
+        "HOM-2",
+        "the source of the homogenization has degree at most three",
+        "src/kellermap/bcw/homogenization.py",
+        "        if degree > 3:",
+        "        if False:",
+    ),
+    Probe(
+        "HOM-3",
+        "the source of the homogenization has nilpotent Jacobian",
+        "src/kellermap/bcw/homogenization.py",
+        "        determinant = scaled_displacement(self._source).determinant()",
+        "        determinant = sp.Integer(1)",
+    ),
+    Probe(
+        "HOM-8",
+        "the slice at T = 1 is compared with the source",
+        "src/kellermap/bcw/homogenization.py",
+        "        if sliced != wanted:",
+        "        if False:",
+    ),
+    Probe(
+        "HOM-9",
+        "HomogenizationStep.transport verifies its input",
+        "src/kellermap/bcw/homogenization.py",
+        "        collision.verify(self._source)",
+        "        pass",
+    ),
+    Probe(
+        "HOM-9",
+        "HomogenizationStep.transport verifies its output",
+        "src/kellermap/bcw/homogenization.py",
         "        moved.verify(self._target)\n\n        return moved",
         "        return moved",
     ),

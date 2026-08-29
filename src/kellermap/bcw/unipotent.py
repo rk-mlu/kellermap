@@ -51,27 +51,10 @@ from ..errors import VerificationError
 from ..polynomial_map import PolynomialMap
 from ..reduction import Provenance
 from ..variables import FixedVariableFactory, VariableFactory, reserved_names
+from .grading import homogeneous_part, scaled_displacement
 
 FILTRATION_LEVEL = 0
 """The ``EA`` level the step establishes. See UNI-7."""
-
-
-def homogeneous_part(polynomial: PolyElement, degree: int) -> PolyElement:
-    """Return the part of ``polynomial`` homogeneous of ``degree``.
-
-    Total degree in the generators of the ring, so a parameter of the
-    coefficient domain does not count towards it. That is the reading the whole
-    package uses: ``T x`` over ``k[T]`` is linear in ``x``, and ``PolynomialMap.degree``
-    says one.
-    """
-    ring = polynomial.ring
-    terms = [
-        (monomial, coefficient)
-        for monomial, coefficient in polynomial.iterterms()
-        if sum(monomial) == degree
-    ]
-
-    return ring.from_terms(terms) if terms else ring.zero
 
 
 @dataclass(frozen=True, eq=False)
@@ -438,7 +421,7 @@ class UnipotentStep:
         ``alpoege13`` normalized it costs 0.72 seconds; the matrix power did
         not finish in twenty-five minutes.
         """
-        determinant = self._scaled_displacement().determinant()
+        determinant = scaled_displacement(self._target).determinant()
 
         # Not reachable without the pragma: UNI-1 runs first and sets the
         # target to G o F^[n] o H, whose displacement Lemma (4.1) makes
@@ -449,28 +432,6 @@ class UnipotentStep:
                 f"det(I + T J(N)) is {determinant} and not one, so the "
                 "displacement of the target is not nilpotent.",
             )
-
-    def _scaled_displacement(self) -> PolynomialMap:
-        """Return ``(X + T (target - X), T)``, one coordinate wider than the target.
-
-        The fresh coordinate is named by the same policy as everything else, so
-        it cannot collide with a coordinate or with a parameter of the
-        coefficient domain.
-        """
-        widened = self._target.extend(1)
-        ring = widened.ring
-        parameter = ring.gens[-1]
-
-        displacement = widened.displacement().to_polynomials()
-
-        return PolynomialMap.from_ring(
-            ring,
-            tuple(
-                generator + parameter * component
-                for generator, component in zip(ring.gens, displacement, strict=True)
-            )[:-1]
-            + (parameter,),
-        )
 
     def _verify_determinant(self) -> None:
         """UNI-10.
