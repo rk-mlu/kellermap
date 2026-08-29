@@ -1455,11 +1455,15 @@ because `F(p) = F(q)` gives `A^(-1) F(p) = A^(-1) F(q)`. So the chain grows by
 one step and nothing else. What matters for WP 1 is that the precondition is an
 obligation the step checks and names, not an assumption about its input.
 
-The determinant has to be one and not merely a non-zero constant. `G(T)` and
-`H(T)` have determinant one, so `det J` of the composition is `det J(F)(TX)`,
-which is `det J(F)`; at `T = 0` the composition is the identity. A map with
-determinant `-2` therefore has no second step, and the linear normalization is
-where that is fixed.
+The determinant has to be one and not merely a non-zero constant, and writing
+UNI-4 showed that this is not a second precondition. A map in `MA^1` has
+Jacobian `I + J(N)` with every entry of `J(N)` free of a constant term, so its
+determinant is a polynomial with constant term one; if that determinant is a
+constant, it is one. `MA^1` already forces it. What the obligation excludes is
+a source whose determinant is not constant at all, which is a map with no
+Reduction Theorem to be part of. Alpoege's map has determinant `-2` and a
+linear part of determinant `-2`, so it fails the `MA^1` clause rather than a
+separate one, and the linear normalization repairs both at once.
 
 ## The figure this milestone is for
 
@@ -1519,6 +1523,17 @@ assumed.
 The collision transports through `H(1)^(-1) = (X, Y + F_(3)(X))`: a point `p`
 of the source lifts to `(p, F_(3)(p))`. Two distinct points stay distinct,
 because they already differ in the first block.
+
+The obligations are UNI-1 to UNI-12 and are written. Two of them were decided
+by a measurement rather than by argument. UNI-9 requires the nilpotence of the
+target's displacement, which is the property the step exists for, and it is
+checked as `det(X + T * (target - X)) == 1` over `k[T]` rather than as a matrix
+power: the determinant costs 2.06 seconds on the 26-variable target of
+`alpoege13` normalized, against 0.65 seconds for the plain determinant of the
+same map under UNI-10, while `J**26` did not finish in twenty-five minutes.
+`det(I + T A) = 1` says that the characteristic polynomial of `A` is
+`lambda^m`, and Cayley-Hamilton over a commutative ring gives `A^m = 0`, so the
+cheap route proves the same thing.
 
 **WP 2** implements the homogenization, third step. One variable, cubic
 homogeneous, and the collision transports by appending `1`. The first figure at

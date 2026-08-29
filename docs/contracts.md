@@ -32,6 +32,12 @@ carried the UNT and DOM obligations of 0.5 for a release without saying so. The
 markers were removed when 0.5 closed and the status above was not moved with
 them, which is the half of a two-part change that nothing checks.
 
+**Milestone `0.6`, open.** The milestone adds the second and third steps of the
+Reduction Theorem and the compression that follows them. Its obligations carry
+the `[0.6]` marker and are not implemented; `UNI-1` to `UNI-12` are the first of
+them. A review of the milestone should read them as intent that the
+implementation is measured against, in the sense of the paragraph above.
+
 **Milestone `0.5`, closed.** The milestone added the untargeted enumerator and
 the search over it, UNT-1 to UNT-11, and the coefficient ring as something a
 caller states, DOM-1 to DOM-4. Its obligations carried the `[0.5]` marker while
@@ -123,6 +129,7 @@ the implementation is required to guarantee.
 - [BCWStep](#bcwstep)
 - [LinearStep](#linearstep)
 - [TranslationStep](#translationstep)
+- [UnipotentStep](#unipotentstep)
 - [Reduction](#reduction)
 - [Search](#search)
 - [Peeling](#peeling)
@@ -947,6 +954,222 @@ TRA-3 and TRA-4 follow from TRA-1 in the same way and can only fail if the
 library is wrong about its own arithmetic. TRA-2 is a constructor invariant and
 is not reachable by `verify()` at all. TRA-5 is a property of the type rather
 than a check.
+
+---
+
+## UnipotentStep
+
+The second step of the Reduction Theorem, BCW Chapter II, Section 4, p. 306.
+It doubles the dimension and makes the Jacobian of the displacement nilpotent.
+
+```python
+@dataclass(frozen=True)
+class UnipotentStep:
+    source: PolynomialMap
+    target: PolynomialMap
+    variables: tuple[sp.Symbol, ...]
+    provenance: Provenance
+
+    @classmethod
+    def build(cls, source, factory=None) -> UnipotentStep: ...
+
+    @property
+    def G(self) -> ElementaryAutomorphism: ...
+
+    @property
+    def H(self) -> ElementaryAutomorphism: ...
+```
+
+It lives in `kellermap.bcw`, beside `BCWStep` and by the argument this page
+already makes for that one. Proposition (3.1) is the paper's and so is this
+construction; what lives at the top level is what the paper does not have, such
+as a chain of certified identities.
+
+Write `n` for `source.dimension`, `Y` for `variables`, and `F_(2)`, `F_(3)` for
+the homogeneous parts of `source.displacement()` of degrees two and three. The
+target is
+
+    target = (X + F_(2) + Y,  Y - F_(3))
+
+and what is exhibited is the factorization it comes from, at `T = 1`:
+
+    G:  one factor per i,   X_i  |-->  X_i + Y_i
+    H:  one factor per i,   Y_i  |-->  Y_i - F_(3),i
+
+`G` and `H` are derived from `source` and `variables` and are never supplied
+separately, as in `BCWStep`: storing both a factorization and the automorphisms
+built from it would let the two disagree.
+
+As for `BCWStep`, `LinearStep` and `TranslationStep`, `provenance` is recorded
+rather than given: the public constructor always sets `SUPPLIED`, and `build()`
+is the only route to `CONSTRUCTED`.
+
+### There is nothing here to search for
+
+Every step type before this one has a choice in it. `BCWStep` chooses a
+component and two factors, `LinearStep` a matrix, `TranslationStep` a shift.
+This step has no argument beyond the names of the fresh variables: given a
+source, the transformation is determined.
+
+That is why `build()` is the ordinary route rather than the convenient one, and
+why no enumerator, no ranking and no measure belongs to this type. It also
+means that what can fail on supplied data is unusual for this page, and the
+section at the end says so.
+
+**UNI-1 — The identity. [0.6]** `target == G ∘ source^[n] ∘ H`, checked as
+a polynomial identity in one shared `PolyRing`, not by comparing printed
+expressions.
+
+The composition is BCW's `G(T) ∘ E(T)^[n] ∘ H(T)` at `T = 1`. The parameter
+does not appear in the certificate. It carries the grading that Lemma (4.1)
+needs, and the lemma is what makes the target's displacement nilpotent; the
+identity this obligation checks holds without it.
+
+**UNI-2 — The source lies in `MA^1`. [0.6]** `source.is_in_MA(1)`, that is
+`ord(source - X) >= 2`.
+
+This is the precondition of Section 4 and the one a caller is most likely to
+miss, because a map can be Keller without it. `alpoege13` is: the linear part
+of its displacement has the two non-zero entries `7` and `6`. They are
+nilpotent, so the map is Keller, and Section 4 still does not apply to it. A
+displacement term of order one carries no power of `T`, `E'(T)` is then not
+`X + N T`, and Lemma (4.1) reaches nothing.
+
+The step does not normalize its source. `LinearStep.normalize` does that, the
+dimension does not move, and the collision points do not move either. A step
+that quietly normalized would hide a step from the chain, and with it the
+transformation a reader has to undo to get back to the map they started from.
+
+**UNI-3 — The source has degree at most three. [0.6]**
+`source.degree() <= 3`.
+
+`E(T) = X + T F_(2) + T^2 F_(3)` has no slot for a homogeneous part of degree
+four, and `H` removes `F_(3)` alone. The first stage of the Reduction Theorem
+is what supplies a source of degree three, and this obligation is where the
+stages meet.
+
+**UNI-4 — The source is Keller. [0.6]** `source.determinant() == 1`.
+
+Under UNI-2 this is Kellerness itself and not a second requirement. A map in
+`MA^1` has Jacobian `I + J(N)` with every entry of `J(N)` free of a constant
+term, so its determinant is a polynomial with constant term one; a determinant
+that is a non-zero constant is therefore one. What the obligation excludes is a
+source whose determinant is not constant at all, which UNI-2 does not exclude
+and which has no Reduction Theorem to be part of.
+
+Where the determinant becomes one is the linear normalization. Alpoege's map
+has determinant `-2` and a linear part of determinant `-2`; it is not in
+`MA^1`, UNI-2 refuses it, and `LinearStep.normalize` returns a map for which
+both obligations hold.
+
+**UNI-5 — Dimension and generators. [0.6]** `target.dimension == 2 * n`; the
+generators of `target` are those of `source` followed by `variables`, in order;
+`len(variables) == n`; and each fresh variable satisfies RC-4 against
+`source.ring`.
+
+Freshness and the count are constructor invariants and raise `ValueError`, as
+the corresponding half of BCW-2 does. A certificate names the variables it
+used, and a supplied target is checked against those rather than against names
+invented while verifying.
+
+**UNI-6 — Invertibility is exhibited, not asserted. [0.6]** `G` and `H` are
+checked to be products of elementary factors whose polynomials do not involve
+their own variable, and `G.inverse() ∘ G` and `H.inverse() ∘ H` are checked to
+be the identity map. As BCW-5.
+
+Each factor of `G` displaces `X_i` by `Y_i`, which is free of `X_i`; each
+factor of `H` displaces `Y_i` by `-F_(3),i`, which is a polynomial in the
+source's variables alone and therefore free of every `Y`. Within each block the
+factors commute, so the order they are listed in does not matter, and `H^-1` is
+the componentwise negation, which is what `transport()` uses.
+
+**UNI-7 — The step establishes `EA^0` and no more. [0.6]**
+`filtration_level == 0`, `G.is_in_EA(0)` holds and `G.is_in_EA(1)` does not.
+
+The level is not an argument here. `G` displaces `X_i` by `Y_i`, of order one,
+so it lies in `EA^0` and in no higher stage, and the construction admits no
+other factorization to declare. `H` lies in `EA^2` and constrains nothing.
+
+**UNI-8 — The target leaves `MA^1`. [0.6]**
+`target.filtration_degree() == 0`.
+
+The displacement is `(F_(2) + Y, -F_(3))` and its second block has order one.
+This is a consequence of UNI-1 and is stated as an obligation because a caller
+has to know it: a `BCWStep` declaring `EA^1` after this step is making a claim
+about a map that is not in `MA^1`, and a second `UnipotentStep` on this target
+is refused by UNI-2. What comes next is the homogenization, which is what
+milestone 0.6 builds next.
+
+**UNI-9 — The displacement of the target is nilpotent. [0.6]**
+`J(target - X)` is nilpotent, checked as `det(X + T * (target - X)) == 1`
+over `k[T]`.
+
+The check is one determinant and not a matrix power. `det(I + T A) = 1` says
+that every coefficient of the characteristic polynomial of `A` below the
+leading one vanishes, and Cayley-Hamilton over a commutative ring then gives
+`A^m = 0`. Measured on `alpoege13` normalized, which is `n = 13` and a target
+in 26 variables: 2.06 seconds for the determinant over `QQ[T]`, against 0.65
+seconds for the plain determinant of the target under UNI-10. The matrix power
+`J**26` did not finish in twenty-five minutes, which is why the obligation is
+worded around the determinant rather than around the definition.
+
+This is redundant in principle. It follows from UNI-1 by Lemma (4.1), so it
+cannot fail where UNI-1 holds, and a review should weigh it as a self-check in
+the shape of BCW-7. It is checked all the same, for two reasons. It is the
+property the step exists to establish, and a reader who finds the word
+"unipotent" in the name of a type should find it checked somewhere. And it
+reaches the determinant through the parameterized domain of DOM-1, which is a
+different code path from the one UNI-10 uses, so the two together cross-check
+the library's own arithmetic.
+
+If a later measurement makes this the dominant cost of a chain, it moves behind
+an argument and this page says so. It is not moved on a guess.
+
+**UNI-10 — The determinant is unchanged. [0.6]** `target.determinant() ==
+source.determinant()`. Redundant in principle, since every element of `EA_n(k)`
+has determinant one, and retained as a cheap self-check in the shape of BCW-7.
+
+**UNI-11 — Transport. [0.6]** With `source(a) = source(b) = c`, and the fresh
+coordinates filled so that the two points share the fill,
+
+```
+a  |-->  (a, F_(3)(a)),        c  |-->  (c, 0)
+```
+
+which is `H^-1` applied to the padded point and `G` applied to the padded
+image. The fill is fixed at zero, as in BCW-8, and here it is not free of
+consequence for the image: a fill `y` shared by both points sends `c` to
+`(c + y, y)`, which is a true statement and a longer one.
+
+The second block of the point is `F_(3)(a)` and not `-F_(3)(a)`. `H` displaces
+`Y` by `-F_(3)`, so `H^-1` displaces it by `+F_(3)`; the sign is opposite to
+BCW-8's `(a, -P(a), -Q(a))` for exactly that reason, and the two are easy to
+confuse.
+
+Distinctness is preserved without an argument about the second block: two
+distinct points of the source already differ in the first block, so their
+images under `H^-1` differ there too. STEP-4 therefore holds for any number of
+points, and the three points of Alpoege's collision stay three.
+
+**UNI-12 — Provenance is recorded, and not settable. [0.6]** As BCW-9, with
+the same reading: an integrity marker against mislabelling by accident, not a
+security boundary.
+
+### Which of these can fail on supplied data
+
+UNI-1 for a supplied target, and UNI-2, UNI-3 and UNI-4 always.
+
+The last three are the unusual entry on this page. Everywhere else, a
+`CONSTRUCTED` step compares the implementation against itself and its
+obligations become self-checks. These three constrain the *source*, which is
+supplied on both routes, so `build()` cannot make them true and does not try.
+A `CONSTRUCTED` `UnipotentStep` is therefore evidence about its source in a way
+that a `CONSTRUCTED` `BCWStep` is not evidence about anything.
+
+UNI-5 in its freshness and counting half is a constructor invariant and is not
+reachable by `verify()`. UNI-6, UNI-9 and UNI-10 follow from UNI-1 and are
+retained as self-checks that localize an error to the step that made it.
+UNI-7 and UNI-8 are properties of the type rather than checks on data.
 
 ---
 
@@ -2158,6 +2381,8 @@ identifier also appears in `str(...)`, but a caller is expected to branch on
 | a factory returning a miscounted or colliding name | `ValueError` |
 | a shift entry outside the coefficient domain | `ValueError` |
 | a shift whose length is not `source.dimension` | `ValueError` |
+| a source outside `MA^1`, of degree above three, or not Keller | `VerificationError` |
+| `variables` whose length is not `source.dimension` | `ValueError` |
 | `reordered()` given anything but a permutation of the variables | `ValueError` |
 | a structural case the search does not handle | `NotImplementedError` |
 | an argument over a ring other than `over` | `VerificationError` |
@@ -2196,6 +2421,12 @@ for a certificate, which is what this entry says and what has not changed.
 
 **No minimality.** Nothing claims a reduction is the shortest, or the
 lowest-dimensional, or that dimension 17 cannot be improved.
+
+**No smallest unipotent lift.** `UnipotentStep` doubles the dimension, which is
+what Section 4 does. Nothing claims that a map in `MA^1` of degree three has no
+lift to a nilpotent Jacobian in fewer than `2n` variables, and no obligation
+assumes it. The compression of milestone 0.6 works the other way round, on the
+homogeneous map at the end, and says nothing about this step either.
 
 **No search.** *Withdrawn in 0.4.* Until then the package only verified a
 factorization that was presented to it. It now assembles one as well, under the
