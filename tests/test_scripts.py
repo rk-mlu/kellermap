@@ -122,7 +122,7 @@ def source_hashes() -> dict[str, str]:
 def test_a_whole_sweep_leaves_the_repository_untouched(probe: ModuleType) -> None:
     """The regression for the finding.
 
-    A whole sweep over all twelve probes, with a stub in place of the test
+    A whole sweep over every probe, with a stub in place of the test
     suite: what it checks is the copying and the restoring and not the running.
     The same hash over every Python file of the repository before and after.
 
@@ -141,7 +141,7 @@ def test_every_fragment_still_matches_the_code_it_aims_at(probe: ModuleType) -> 
     """A probe whose fragment has gone checks nothing any more.
 
     ``apply`` stops the run in that case, and because the sweep above applies
-    every one of the twelve probes, it is at the same time the freshness check
+    every one of the probes, it is at the same time the freshness check
     of the whole set. This test says it once more on its own, so that a failure
     is readable.
     """

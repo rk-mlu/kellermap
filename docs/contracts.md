@@ -33,10 +33,19 @@ markers were removed when 0.5 closed and the status above was not moved with
 them, which is the half of a two-part change that nothing checks.
 
 **Milestone `0.6`, open.** The milestone adds the second and third steps of the
-Reduction Theorem and the compression that follows them. Its obligations carry
-the `[0.6]` marker and are not implemented; `UNI-1` to `UNI-12` are the first of
-them. A review of the milestone should read them as intent that the
-implementation is measured against, in the sense of the paragraph above.
+Reduction Theorem and the compression that follows them. `UNI-1` to `UNI-12`
+are the first of its obligations and are implemented; the rest of the milestone
+is not.
+
+The marker stays on them all the same. It says that the milestone has not
+closed, not that the code is missing, and `AGENTS.md` puts its removal at the
+close and not at the implementation. The paragraph above says "while
+unimplemented", which is the looser of the two readings and is why this is
+written down here.
+
+One of them was amended while it was implemented: UNI-9 now takes its
+determinant in one more coordinate rather than over `k[T]`. The amendment is
+visible in its wording, with the measurement that prompted it.
 
 **Milestone `0.5`, closed.** The milestone added the untargeted enumerator and
 the search over it, UNT-1 to UNT-11, and the coefficient ring as something a
@@ -1101,26 +1110,41 @@ is refused by UNI-2. What comes next is the homogenization, which is what
 milestone 0.6 builds next.
 
 **UNI-9 — The displacement of the target is nilpotent. [0.6]**
-`J(target - X)` is nilpotent, checked as `det(X + T * (target - X)) == 1`
-over `k[T]`.
+`J(target - X)` is nilpotent, checked as the determinant of
 
-The check is one determinant and not a matrix power. `det(I + T A) = 1` says
-that every coefficient of the characteristic polynomial of `A` below the
-leading one vanishes, and Cayley-Hamilton over a commutative ring then gives
-`A^m = 0`. Measured on `alpoege13` normalized, which is `n = 13` and a target
-in 26 variables: 2.06 seconds for the determinant over `QQ[T]`, against 0.65
-seconds for the plain determinant of the target under UNI-10. The matrix power
-`J**26` did not finish in twenty-five minutes, which is why the obligation is
-worded around the determinant rather than around the definition.
+    (X + T * (target - X),  T)
+
+in one coordinate more than the target, which has to be one.
+
+The check is one determinant and not a matrix power. The Jacobian of that map
+is block triangular, with `I + T J(N)` above and a one in the corner, so its
+determinant is `det(I + T J(N))`. That being one says that every coefficient of
+the characteristic polynomial of `J(N)` below the leading one vanishes, and
+Cayley-Hamilton over a commutative ring then gives `J(N)^m = 0`. The matrix
+power is not an option: `J**26` on the 26-variable target of `alpoege13`
+normalized did not finish in twenty-five minutes, where this determinant takes
+0.72 seconds, against 0.65 for the plain determinant of the target under
+UNI-10.
+
+The wording is an amendment, made when the step was implemented. It read `over
+k[T]`, with `T` a parameter of the coefficient domain. That check is correct
+and it is the slower of the two, 2.06 seconds against 0.72. It also needs a
+fresh *parameter*, and nothing in this repository allocates one: RC-1 to RC-7
+name fresh *generators*, and the factory protocol is about generators
+throughout. The second reason is the stronger of the two.
 
 This is redundant in principle. It follows from UNI-1 by Lemma (4.1), so it
 cannot fail where UNI-1 holds, and a review should weigh it as a self-check in
-the shape of BCW-7. It is checked all the same, for two reasons. It is the
-property the step exists to establish, and a reader who finds the word
-"unipotent" in the name of a type should find it checked somewhere. And it
-reaches the determinant through the parameterized domain of DOM-1, which is a
-different code path from the one UNI-10 uses, so the two together cross-check
-the library's own arithmetic.
+the shape of BCW-7. It is checked all the same, because it is the property the
+step exists to establish, and a reader who finds the word "unipotent" in the
+name of a type should find it checked somewhere.
+
+It is not UNI-10 run twice. The map whose determinant is taken here is not the
+target but a one-variable widening of it, and the two calls exercise the
+determinant strategies on different shapes. That widening is also nearly the
+map the homogenization builds, which regrades the displacement instead of
+scaling it uniformly; the two steps are expected to share the helper that
+builds it.
 
 If a later measurement makes this the dominant cost of a chain, it moves behind
 an argument and this page says so. It is not moved on a guess.

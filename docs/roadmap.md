@@ -1524,16 +1524,25 @@ The collision transports through `H(1)^(-1) = (X, Y + F_(3)(X))`: a point `p`
 of the source lifts to `(p, F_(3)(p))`. Two distinct points stay distinct,
 because they already differ in the first block.
 
-The obligations are UNI-1 to UNI-12 and are written. Two of them were decided
-by a measurement rather than by argument. UNI-9 requires the nilpotence of the
-target's displacement, which is the property the step exists for, and it is
-checked as `det(X + T * (target - X)) == 1` over `k[T]` rather than as a matrix
-power: the determinant costs 2.06 seconds on the 26-variable target of
-`alpoege13` normalized, against 0.65 seconds for the plain determinant of the
-same map under UNI-10, while `J**26` did not finish in twenty-five minutes.
+The obligations are UNI-1 to UNI-12, and the step is implemented against them.
+Two were decided by a measurement rather than by argument. UNI-9 requires the
+nilpotence of the target's displacement, which is the property the step exists
+for, and it is checked as the determinant of `(X + T * (target - X), T)`, one
+coordinate wider than the target, rather than as a matrix power: that
+determinant costs 0.72 seconds on the 26-variable target of `alpoege13`
+normalized, against 0.65 seconds for the plain determinant of the same map
+under UNI-10, while `J**26` did not finish in twenty-five minutes.
 `det(I + T A) = 1` says that the characteristic polynomial of `A` is
 `lambda^m`, and Cayley-Hamilton over a commutative ring gives `A^m = 0`, so the
 cheap route proves the same thing.
+
+The obligation first put the parameter in the coefficient domain, over `k[T]`.
+That is correct and costs 2.06 seconds, and it also needs a fresh *parameter*,
+which nothing in this repository allocates: RC-1 to RC-7 name generators. The
+obligation was amended when the step was implemented and its wording says so.
+
+The whole step, source checks included, verifies in 1.39 seconds at that
+dimension, and building it takes 0.08.
 
 **WP 2** implements the homogenization, third step. One variable, cubic
 homogeneous, and the collision transports by appending `1`. The first figure at

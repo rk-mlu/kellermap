@@ -39,13 +39,14 @@ What these probes do and do not reproduce
 
 They ask today's question of today's code. Every one of them should report
 ``CAUGHT``; a miss means a control has been lost since ``0.4.0rc13``, and
-``tests/test_scripts.py`` checks that the twelve fragments still match the code
-they aim at.
+``tests/test_scripts.py`` checks that every fragment still matches the code it
+aims at. The set grew to eighteen with ``UnipotentStep``, whose three source
+obligations are the first here that a constructed step cannot make true.
 
 They do **not** reproduce the ten misses of the first run, and until
 ``0.4.0rc14`` this file and ``CHANGELOG.md`` said they did. Two reasons. The
-misses were fixed in ``0.4.0rc13``, so the same probes against the current tree
-report twelve caught, which is what fixing them means. And the set that
+misses were fixed in ``0.4.0rc13``, so those twelve probes against the current
+tree report caught, which is what fixing them means. And the set that
 produced the ten was not written down: the clause that turned out to be
 redundant rather than uncontrolled -- the fold's verification of its result
 against its own ``target`` -- has no probe here, and cannot usefully have one,
@@ -192,6 +193,48 @@ PROBES: tuple[Probe, ...] = (
         "src/kellermap/collision.py",
         "        return hash((frozenset(self._points), self._image))",
         "        return hash((tuple(self._points), self._image))",
+    ),
+    Probe(
+        "UNI-1",
+        "the identity of the unipotent step is compared",
+        "src/kellermap/bcw/unipotent.py",
+        "        if composite != self._target:",
+        "        if False:",
+    ),
+    Probe(
+        "UNI-2",
+        "the source of the unipotent step lies in MA^1",
+        "src/kellermap/bcw/unipotent.py",
+        "        if order < 2:",
+        "        if False:",
+    ),
+    Probe(
+        "UNI-3",
+        "the source of the unipotent step has degree at most three",
+        "src/kellermap/bcw/unipotent.py",
+        "        if degree > 3:",
+        "        if False:",
+    ),
+    Probe(
+        "UNI-4",
+        "the source of the unipotent step is Keller",
+        "src/kellermap/bcw/unipotent.py",
+        "        if not agree(determinant, sp.Integer(1)):",
+        "        if False:",
+    ),
+    Probe(
+        "UNI-11",
+        "UnipotentStep.transport verifies its input",
+        "src/kellermap/bcw/unipotent.py",
+        "        collision.verify(self._source)",
+        "        pass",
+    ),
+    Probe(
+        "UNI-11",
+        "UnipotentStep.transport verifies its output",
+        "src/kellermap/bcw/unipotent.py",
+        "        moved.verify(self._target)\n\n        return moved",
+        "        return moved",
     ),
 )
 

@@ -28,6 +28,7 @@ what they do.
 - [Steps and reductions](#steps-and-reductions)
   - [The translation](#the-translation)
 - [The BCW step](#the-bcw-step)
+- [The unipotent step](#the-unipotent-step)
 - [Finding candidates](#finding-candidates)
 - [Assembling a chain](#assembling-a-chain)
 - [Peeling a chain off a target](#peeling-a-chain-off-a-target)
@@ -921,6 +922,92 @@ True
 ```
 
 The first coordinate moved from `1` to `1 - 4 * 9`.
+
+---
+
+## The unipotent step
+
+The second step of the Reduction Theorem, Section 4. It doubles the dimension
+and makes the Jacobian of the displacement nilpotent. Given `F = X + F_(2) +
+F_(3)`, the target is `(X + F_(2) + Y, Y - F_(3))`:
+
+```python
+>>> from kellermap.bcw import UnipotentStep
+>>> cubic = over_field(
+...     PolynomialMap((x1, x2, x3), (x1 + x2**2 * x3, x2, x3))
+... )
+>>> lift = UnipotentStep.build(cubic)
+>>> lift.variables
+(x4, x5, x6)
+>>> lift.target.components
+(x1 + x4, x2 + x5, x3 + x6, -x2**2*x3 + x4, x5, x6)
+>>> lift.verify() is None
+True
+
+```
+
+There is nothing to choose here. Every other step type takes a component, a
+matrix or a factorization; given a source, this one is determined up to the
+names of the fresh generators, and `build` is the ordinary route rather than
+the convenient one.
+
+`G` and `H` are derived from the source, one factor per component each:
+
+```python
+>>> [factor.polynomial for factor in lift.G.factors]
+[x4, x5, x6]
+>>> [factor.polynomial for factor in lift.H.factors]
+[-x2**2*x3, 0, 0]
+
+```
+
+Three obligations constrain the *source*, so `build` cannot make them true and
+a constructed step still fails to verify. The map has to lie in `MA^1`, which
+is where `LinearStep.normalize` comes in:
+
+```python
+>>> linear = over_field(PolynomialMap((x1, x2), (x1 + x2, x2)))
+>>> linear.is_in_MA(1)
+False
+>>> UnipotentStep.build(linear).verify()
+Traceback (most recent call last):
+    ...
+kellermap.errors.VerificationError: [UNI-2] The source is not in MA^1: its displacement has order 1. Section 4 starts from a map whose displacement has order at least two; LinearStep.normalize produces one.
+
+```
+
+The target leaves `MA^1` itself: its displacement has the linear part `(Y, 0)`.
+A step that follows may not assume otherwise, and the step declines to be
+applied twice:
+
+```python
+>>> lift.target.is_in_MA(1)
+False
+>>> lift.filtration_level
+0
+
+```
+
+A collision is carried by lifting each point with the cubic part of the
+displacement. `H` displaces `Y` by `-F_(3)`, so its inverse displaces it by
+`+F_(3)`, and the sign is opposite to the BCW step's:
+
+```python
+>>> square = over_field(
+...     PolynomialMap((x1, x2, x3), (x1**2 + x2**3, x2, x3))
+... )
+>>> pair = Collision(((1, 2, 3), (-1, 2, 3)), (9, 2, 3))
+>>> moved = UnipotentStep.build(square).transport(pair)
+>>> moved.points
+((1, 2, 3, 8, 0, 0), (-1, 2, 3, 8, 0, 0))
+>>> moved.image
+(9, 2, 3, 0, 0, 0)
+
+```
+
+That source is not a Keller map and `verify` would refuse it. `transport` does
+not: it checks the incoming collision against the source and the outgoing one
+against the target, and neither needs the step to apply.
 
 ---
 

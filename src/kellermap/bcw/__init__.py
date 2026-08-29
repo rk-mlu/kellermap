@@ -6,10 +6,12 @@ at the top level of the package.
 """
 
 from .step import BCWStep, Carried, Factor, Fresh
+from .unipotent import UnipotentStep
 
 __all__ = [
     "BCWStep",
     "Carried",
     "Factor",
     "Fresh",
+    "UnipotentStep",
 ]
