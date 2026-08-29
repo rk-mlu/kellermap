@@ -6,7 +6,10 @@ non-zero constant. Without this test the name of the module would be a claim
 that nobody follows up.
 """
 
+import importlib.util
 import inspect
+import sys
+from pathlib import Path
 
 import pytest
 import sympy as sp
@@ -383,6 +386,32 @@ def test_its_collision_continues_alpoeges_as_well() -> None:
     assert {point[:3] for point in carried.points} == set(
         examples.alpoege_collision().points
     )
+
+
+def test_the_script_and_the_example_denote_one_map() -> None:
+    """The independent rendering against the one the driver produced.
+
+    ``scripts/reconstruct_alpoege12.py`` replays the ten steps in plain SymPy
+    without this library. The script checks the dimension, the degree, the
+    determinant and the carried points against values written into it; nothing
+    in it compares the components with ``examples.alpoege12``, and the two
+    could drift apart in a coordinate that none of those figures sees.
+
+    The same gap is open for ``reconstruct_alpoege13.py`` and is not closed
+    here.
+    """
+    root = Path(__file__).resolve().parent.parent
+    path = root / "scripts" / "reconstruct_alpoege12.py"
+    spec = importlib.util.spec_from_file_location("reconstruct_alpoege12", path)
+    assert spec is not None and spec.loader is not None
+    module = importlib.util.module_from_spec(spec)
+    sys.modules[spec.name] = module
+    spec.loader.exec_module(module)
+
+    rebuilt = tuple(sp.expand(c) for c in module.reduce_alpoege())
+    example = tuple(sp.expand(c) for c in examples.alpoege12().components)
+
+    assert rebuilt == example
 
 
 def test_no_coordinate_of_it_is_a_triangular_extension() -> None:

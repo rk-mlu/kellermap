@@ -52,6 +52,7 @@ reconstruct:
 	uv run python scripts/reconstruct_alpoege15.py
 	uv run python scripts/reconstruct_alpoege19.py
 	uv run python scripts/reconstruct_alpoege13.py
+	uv run python scripts/reconstruct_alpoege12.py
 	uv run python scripts/reconstruct_macfarlane13.py
 	uv run python scripts/reconstruct_prellberg40.py
 

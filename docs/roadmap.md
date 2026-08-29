@@ -1596,12 +1596,25 @@ found under a hard dimension bound of twelve by a beam search that examined
 404117 states in about two hours. A negative result from such a run says
 nothing; this one is not negative.
 
-*What the package leaves for its own second half.*
-`scripts/reconstruct_alpoege12.py`, an independent replay of the ten steps in
-plain SymPy, with `AGENTS.md` and the `Makefile` naming it. Every other
-reference reduction has one, `tests/test_documentation.py` holds the gate list
-and the tree against each other, and a map without a reconstruction is a map
-this project verified only with the code that produced it.
+*The second half of the package, now done.*
+`scripts/reconstruct_alpoege12.py` replays the ten steps in plain SymPy,
+seventeen checks in 0.7 seconds, and `AGENTS.md` and the `Makefile` name it.
+Every other reference reduction has one, and a map without a reconstruction is
+a map this project verified only with the code that produced it.
+
+Writing it turned up a shape the thirteen-dimensional chain does not have. Two
+of the ten steps take *both* factors from coordinates that earlier steps
+bought, so they introduce no coordinate at all; one of those squares a single
+coordinate against itself. Buying neither factor is the far end of the
+extension that buying one already is, and the script names it where it is used.
+
+It also turned up a gap in what a reconstruction checks. The scripts check the
+dimension, the degree, the determinant and the carried points against values
+written into them, and nothing in them compares the components with the example
+in `kellermap.examples`. Two renderings could drift apart in a coordinate that
+none of those figures sees. `tests/test_examples.py` now closes that for
+`alpoege12` by loading the script and comparing. The same gap is open for the
+other five reconstructions and is not closed here.
 
 *What the package does not do.* It does not retarget the search. The driver
 found twelve under a bound of twelve; whether the same enumerator reaches
