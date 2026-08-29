@@ -554,6 +554,124 @@ def gao_quartic_collision() -> Collision:
     )
 
 
+def alpoege12() -> PolynomialMap:
+    """Return the twelve-dimensional cubic reduction of Alpoege's map.
+
+    Degree three, determinant one, and it carries Alpoege's collision. One
+    dimension below ``alpoege13``, in ten steps where that takes seven, and
+    already in ``MA^1``: the linear part of its displacement is zero, so
+    Section 4 applies to it without a normalization first.
+
+    Found by an external search driver against version 0.5 of this library,
+    outside the repository and using only the public API. The driver ran for
+    about two hours with a beam of two thousand states per dimension and a hard
+    dimension bound of twelve. It examined 404117 states, of which 396559 were
+    distinct, and pruned 345074 by the beam and 79202 by the bound. A negative
+    result from such a run says nothing, and this one is not negative.
+
+    Twelve is not the smallest published dimension at degree three. Eleven was
+    reached in July 2026, by a different construction, and
+    ``docs/references.md`` says what that is and what it means for this map.
+    No minimality and no priority is claimed here.
+    """
+    x = sp.symbols("x1:13")
+
+    return PolynomialMap(
+        x,
+        (
+            -3 * x[0] ** 2 * x[1] / 2
+            + x[0] ** 2 * x[8] / 2
+            + x[0] * x[11] * x[2] / 2
+            + x[0]
+            + x[11] * x[8] / 2,
+            -3 * x[0] * x[9] * x[2]
+            + 12 * x[0] * x[1] ** 2
+            - 9 * x[0] * x[1] * x[3]
+            - 3 * x[0] * x[1] * x[4]
+            - x[0] * x[1] * x[6]
+            - 6 * x[0] * x[2] * x[5]
+            + 3 * x[0] * x[2]
+            - 3 * x[9] * x[8]
+            + 9 * x[1] * x[5] ** 2
+            + x[1]
+            - 9 * x[3] * x[5]
+            - 3 * x[4] * x[5]
+            - 3 * x[5] ** 2 * x[8]
+            - x[5] * x[6],
+            -x[0] * x[10] * x[2]
+            + 3 * x[0] * x[1] * x[2]
+            - x[0] * x[1] * x[7]
+            - x[10] * x[8]
+            - 7 * x[1] ** 2 * x[5]
+            + 4 * x[1] ** 2
+            + 6 * x[1] * x[3] * x[5]
+            + x[1] * x[4] * x[5]
+            + 3 * x[1] * x[5] * x[8]
+            + x[2]
+            - 3 * x[3] ** 2
+            - x[3] * x[4]
+            - x[3] * x[5] * x[8]
+            - x[5] * x[7],
+            x[0] * x[1] ** 2 + x[3],
+            -x[0] * x[1] * x[8] - x[0] * x[2] * x[5] + x[4] - x[5] * x[8],
+            x[0] * x[1] + x[5],
+            -3 * x[0] * x[2] * x[5] + 6 * x[0] * x[2] - 9 * x[1] * x[5] + x[6],
+            3 * x[0] * x[1] * x[2]
+            - x[0] * x[2] * x[3]
+            + 7 * x[1] ** 2
+            - 6 * x[1] * x[3]
+            - x[1] * x[4]
+            + x[7],
+            x[0] * x[2] + x[8],
+            x[9] + x[5] ** 2,
+            x[10] - 3 * x[1] * x[5] + x[3] * x[5],
+            x[0] ** 2 + x[11],
+        ),
+    )
+
+
+def alpoege12_collision() -> Collision:
+    """Return the three points ``alpoege12`` sends to one image.
+
+    Alpoege's three points, carried through the ten steps. The image is
+    computed from them rather than written down, as for ``alpoege13``.
+    """
+    return Collision.at(
+        alpoege12(),
+        (
+            (0, 0, R(-1, 4), 0, 0, 0, 0, 0, 0, 0, 0, 0),
+            (
+                1,
+                R(-3, 2),
+                R(13, 2),
+                R(-9, 4),
+                R(39, 4),
+                R(3, 2),
+                -30,
+                R(9, 2),
+                R(-13, 2),
+                R(-9, 4),
+                R(-27, 8),
+                -1,
+            ),
+            (
+                -1,
+                R(3, 2),
+                R(13, 2),
+                R(9, 4),
+                R(-39, 4),
+                R(3, 2),
+                30,
+                R(9, 2),
+                R(13, 2),
+                R(-9, 4),
+                R(27, 8),
+                -1,
+            ),
+        ),
+    )
+
+
 def alpoege13() -> PolynomialMap:
     """Return the thirteen-dimensional cubic reduction of Alpoege's map.
 

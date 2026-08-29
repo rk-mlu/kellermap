@@ -34,16 +34,18 @@ them, which is the half of a two-part change that nothing checks.
 
 **Milestone `0.6`, open.** The milestone adds the second and third steps of the
 Reduction Theorem and the compression that follows them. `UNI-1` to `UNI-12`
-are the first of its obligations and are implemented; the rest of the milestone
-is not.
+are the first of its obligations; the rest of the milestone is not written yet.
 
-The marker stays on them all the same. It says that the milestone has not
-closed, not that the code is missing, and `AGENTS.md` puts its removal at the
-close and not at the implementation. The paragraph above says "while
-unimplemented", which is the looser of the two readings and is why this is
-written down here.
+The marker says that an obligation is not in a released version. That is what
+`pip install kellermap` gives a reader, so for anyone outside this repository
+"marked" and "not implemented" are the same statement, and the paragraph above
+is right as it stands. `AGENTS.md` puts the removal at the close of the
+milestone for the same reason. Where the two readings come apart is inside the
+repository, between the implementation of an obligation and the release that
+carries it, and a reader of the development tree should take the marker to mean
+the released state and not the tree.
 
-One of them was amended while it was implemented: UNI-9 now takes its
+One obligation was amended while it was implemented: UNI-9 now takes its
 determinant in one more coordinate rather than over `k[T]`. The amendment is
 visible in its wording, with the measurement that prompted it.
 

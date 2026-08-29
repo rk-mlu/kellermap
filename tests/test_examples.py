@@ -37,13 +37,13 @@ COLLISIONS = [name for name in ALL if name not in NAMES]
 
 
 def test_the_module_holds_what_it_says_it_holds() -> None:
-    """Thirteen small maps that recur, three reductions, and the two sources.
+    """Thirteen small maps that recur, four reductions, and the two sources.
 
-    And five collisions, which are not maps and are therefore not covered by
+    And six collisions, which are not maps and are therefore not covered by
     the criteria below.
     """
-    assert len(NAMES) == 17
-    assert len(COLLISIONS) == 5
+    assert len(NAMES) == 18
+    assert len(COLLISIONS) == 6
 
 
 @pytest.mark.parametrize("name", NAMES)
@@ -164,6 +164,7 @@ def test_not_every_example_has_determinant_one() -> None:
         ("alpoege15", "alpoege15_collision"),
         ("gao_quartic", "gao_quartic_collision"),
         ("alpoege13", "alpoege13_collision"),
+        ("alpoege12", "alpoege12_collision"),
     ],
 )
 def test_each_collision_belongs_to_its_map(map_name: str, collision_name: str) -> None:
@@ -349,6 +350,69 @@ def test_the_quartic_collision_survives_a_chain() -> None:
 # --------------------------------------------------------------------------
 # The chain a search found
 # --------------------------------------------------------------------------
+
+
+# --------------------------------------------------------------------------
+# The chain an external driver found
+# --------------------------------------------------------------------------
+
+
+def test_the_twelve_dimensional_map_is_cubic_and_Keller() -> None:  # noqa: N802
+    """Degree three, determinant one, one dimension below alpoege13."""
+    twelve = examples.alpoege12()
+
+    assert (twelve.dimension, twelve.degree()) == (12, 3)
+    assert twelve.determinant() == 1
+    assert examples.alpoege13().dimension == 13
+
+
+def test_the_twelve_dimensional_map_is_already_in_MA_one() -> None:  # noqa: N802
+    """Unlike alpoege13, which needs LinearStep.normalize before UNI-2.
+
+    The linear part of alpoege13's displacement has the two non-zero entries
+    7 and 6. This one has none, so Section 4 applies to it directly.
+    """
+    assert examples.alpoege12().is_in_MA(1)
+    assert not examples.alpoege13().is_in_MA(1)
+
+
+def test_its_collision_continues_alpoeges_as_well() -> None:
+    """The first three coordinates are Alpoege's own three points."""
+    carried = examples.alpoege12_collision()
+
+    assert {point[:3] for point in carried.points} == set(
+        examples.alpoege_collision().points
+    )
+
+
+def test_no_coordinate_of_it_is_a_triangular_extension() -> None:
+    """The move that takes the published construction from twelve to eleven.
+
+    A coordinate whose component is ``x_j`` plus something free of ``x_j``, and
+    which occurs in no other component, can be deleted without changing the
+    determinant or the collision. ``docs/references.md`` records where that
+    move comes from. No coordinate here admits it: the search buys a
+    coordinate only to use it, so every one of them occurs somewhere else.
+
+    A narrow check and a negative result. It says nothing about the pair form
+    of the same move, which is checked in the same place and also finds
+    nothing.
+    """
+    twelve = examples.alpoege12()
+    components = twelve.components
+
+    deletable = [
+        variable
+        for index, variable in enumerate(twelve.variables)
+        if not sp.expand(components[index] - variable).has(variable)
+        and not any(
+            component.has(variable)
+            for position, component in enumerate(components)
+            if position != index
+        )
+    ]
+
+    assert deletable == []
 
 
 def test_the_thirteen_dimensional_map_is_what_the_search_finds() -> None:

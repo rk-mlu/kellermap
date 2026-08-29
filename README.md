@@ -78,9 +78,11 @@ steps into dimension 13, and from Gao's in twenty-nine into thirty-nine. Both
 chains verify and both carry the collision. The chains computed by hand take
 eight steps into fifteen and eight into seventeen.
 
-What that is worth and what it is not is in `docs/references.md`. Thirteen
-variables at degree three were reached a month earlier by another route, no
-priority is claimed, and no minimality either.
+What that is worth and what it is not is in `docs/references.md`. Smaller
+dimensions at degree three are published — thirteen a month earlier by one
+route, eleven two days after Alpöge's announcement by another — so no priority
+is claimed, and no minimality either. `examples.alpoege12`, which an external
+search driver found, is one below the chain above and still above the eleven.
 
 The coefficient ring became something a caller states rather than something
 inferred, `canonical` learned to decide equality of algebraic numbers so a

@@ -1492,6 +1492,23 @@ Taken two points at a time the sequence begins `2, 4, 11`, which are the first
 three of Thompson's `2, 4, 11, 20, 20`, and then stabilizes at 22 rather than
 at 20. That is an observation and not yet a statement about anything.
 
+The same measurement was made again on `alpoege12`, which WP 2 adds, and it is
+the one the packages should be held to:
+
+| | dimension | |
+| --- | --- | --- |
+| `alpoege12` | 12 | degree 3, already in `MA^1` |
+| unipotent reduction | 24 | `J(N)` nilpotent |
+| homogenization | 25 | cubic homogeneous, 65 monomials |
+| collision-hull compression | 20 | sequence 3, 9, 19, 20, 20 |
+
+One variable at the start is four at the end. Taken two points at a time the
+sequence is `2, 4, 11, 20, 20`, which is Thompson's exactly, where `alpoege13`
+gave `2, 4, 11, 22, 22`. Whether the two twenty-dimensional maps are the same
+map is a different question and this project has not asked it; equal hull
+dimensions are not an isomorphism. The symmetric lift would give 40 against
+Prellberg's 40.
+
 Dimension is not the only figure. The displacement has 78 cubic monomials
 before the compression and 5370 after it, against Thompson's 54. The count
 depends on the basis the elimination happens to produce, so it is a figure to
@@ -1499,11 +1516,12 @@ report and not one to compare, but a dense map is more expensive for everything
 downstream.
 
 The symmetric lift doubles again: 22 gives 44 quartic variables against
-Prellberg's 40. Arriving above a published figure is a result and the plan does
-not assume otherwise.
+Prellberg's 40, and 20 gives 40. Arriving above a published figure is a result
+and the plan does not assume otherwise; arriving at one exactly is not a claim
+either.
 
-The measurement is exploratory and stands here as a target. WP 1, WP 2 and
-WP 4 have to reproduce it under the verification surface. If they do not, the
+The measurement is exploratory and stands here as a target. WP 1, WP 3 and
+WP 5 have to reproduce it under the verification surface. If they do not, the
 measurement was wrong and this section is corrected rather than the packages
 argued with.
 
@@ -1544,16 +1562,93 @@ obligation was amended when the step was implemented and its wording says so.
 The whole step, source checks included, verifies in 1.39 seconds at that
 dimension, and building it takes 0.08.
 
-**WP 2** implements the homogenization, third step. One variable, cubic
+**WP 2** takes `alpoege12` into the repository. It is the twelve-dimensional
+cubic reduction of Alpoege's map that an external search driver found on 28
+August 2026, and it is one dimension below `alpoege13`.
+
+The package is not in the plan because a smaller number is worth having. It is
+in the plan because the number changes what every package after it is measured
+on, and because the check it carries changed what this milestone may claim.
+
+*The literature first.* The check that `AGENTS.md` requires before a number
+leaves the repository found that eleven variables at degree three were reached
+on 20 July 2026, two days after Alpoege's announcement, in a GitHub gist, and
+that the same map is printed in Section 6 of arXiv:2608.05392v1. So twelve is
+not a record, thirteen was not one either when it was found, and
+`docs/references.md` now says both. The section there also says why the earlier
+check missed it: it searched for the number thirteen and for the phrase "cubic
+homogeneous", and a gist titled for eleven variables was outside both. A check
+made for a number one has just reached will not find a smaller one.
+
+That is the finding of this package and it is recorded before anything else in
+it, because everything else in it reads differently afterwards.
+
+*What goes into the tree.* `examples.alpoege12` and
+`examples.alpoege12_collision`, with the tests every example carries. The
+driver and its result file are external to the library and internal to the
+project, which is the distinction `AGENTS.md` draws: the agreement of the two
+is a check that can fail, and it is not evidence about anybody else's
+mathematics. `docs/references.md` records the provenance in those terms.
+
+The map is already in `MA^1`, which `alpoege13` is not, so WP 1 applies to it
+without a normalization first. Its chain is ten steps against seven, and it was
+found under a hard dimension bound of twelve by a beam search that examined
+404117 states in about two hours. A negative result from such a run says
+nothing; this one is not negative.
+
+*What the package leaves for its own second half.*
+`scripts/reconstruct_alpoege12.py`, an independent replay of the ten steps in
+plain SymPy, with `AGENTS.md` and the `Makefile` naming it. Every other
+reference reduction has one, `tests/test_documentation.py` holds the gate list
+and the tree against each other, and a map without a reconstruction is a map
+this project verified only with the code that produced it.
+
+*What the package does not do.* It does not retarget the search. The driver
+found twelve under a bound of twelve; whether the same enumerator reaches
+eleven is not known, and the open question at the end of this section is where
+that belongs.
+
+### The move that takes eleven out of twelve
+
+Worth its own heading because it is a design question and not a number. The
+published eleven-variable construction passes through a twelve-variable map of
+its own, and reaches eleven by a move this library has no form for.
+
+Two coordinates `f` and `g` occur in the other components only through `f + g`.
+After the determinant-one change `f = t`, `g = s - t` on the source and
+`(Y_s, Y_t) = (Phi_f + Phi_g, Phi_f)` on the target, `t` survives only in its
+own component, as `t + A(rest)`. A coordinate of that shape can be deleted. The
+determinant does not change, because the deleted component contributes a one on
+the diagonal and nothing off it, and the collision survives whole, because two
+points that collide cannot differ in `t` alone.
+
+Every step type in this library raises the dimension or leaves it alone. This
+one lowers it, and it is not a `BCWStep` with different arguments; it is a
+different kind of certificate, in the shape the compression of WP 5 also has.
+Two candidates for one shape is a reason to design them together and a reason
+not to design either in a hurry.
+
+`alpoege12` does not admit the move in either cheap form. No coordinate is
+deletable on its own, because the untargeted search buys a coordinate in order
+to use it and each occurs in some other component; and no pair of coordinates
+occurs elsewhere only through its sum. `tests/test_examples.py` holds the first
+check and `docs/references.md` records both. They are narrow: a linear change
+that manufactures such a pair out of something else is ruled out by neither.
+
+Nothing here is a package of milestone 0.6. It is written down because WP 5
+will build the first dimension-lowering certificate this library has, and
+whoever designs it should know that a second one is waiting.
+
+**WP 3** implements the homogenization, third step. One variable, cubic
 homogeneous, and the collision transports by appending `1`. The first figure at
 that stage is `alpoege13` homogenized, 27 against Thompson's 24 and
-Macfarlane's 20, so it lands above both. The reason to carry on is WP 4 and
+Macfarlane's 20, so it lands above both. The reason to carry on is WP 5 and
 not this figure.
 
 Separate from WP 1 because they are two constructions. A failure in the
 homogenization must not be able to have its cause in the unipotent reduction.
 
-**WP 3** takes Thompson's map into the repository, which WP 4 needs for its
+**WP 4** takes Thompson's map into the repository, which WP 5 needs for its
 control. This package is smaller than the first version of the plan made it.
 The licence question is settled: the submission is CC BY 4.0 and that covers
 the ancillary file, `docs/references.md` records it, and the values are already
@@ -1564,7 +1659,7 @@ it now, `tests/data.py` holds the data whose terms could not be established,
 and neither is the right place for a control that `make check` runs. The
 package decides that and records the reason.
 
-**WP 4** implements collision-hull compression. For `F = id + h` with `h`
+**WP 5** implements collision-hull compression. For `F = id + h` with `h`
 homogeneous of degree `d` and a collision `F(p) = F(q)`, iterate
 
     W_0     = span{p, q}
@@ -1586,7 +1681,7 @@ composition, and this one is not; whether it is a `Step` at all, or a separate
 type with its own certificate, is the design question of the package and is
 settled in the obligations before anything is written.
 
-**WP 5** is the symmetric lift, Theorem 3 part 3 of that paper: over `Q(i)`,
+**WP 6** is the symmetric lift, Theorem 3 part 3 of that paper: over `Q(i)`,
 
     P_W(x, y) = i * sum_j y_j * hbar_j(x + i*y)
 
@@ -1598,37 +1693,44 @@ and the reason it was absent is that it needs `Q(i)`. The coefficient ring
 became something a caller states in 0.5 and `canonical` learned to decide
 algebraic numbers, so the two obstacles named at the time are gone.
 
-**WP 6** compares, as WP 13 of 0.5 did, and reports what a comparison
+**WP 7** compares, as WP 13 of 0.5 did, and reports what a comparison
 establishes and what it does not. At that stage the numbers to beat are 24 and
 20 for the cubic homogeneous form and 40 for the quartic gradient form, and
 this project will have arrived by a different route. The literature is checked
-again before any number leaves the repository. The last time that check was
-made it found that thirteen had been reached a month earlier, which is what the
-rule is for.
+again before any number leaves the repository. The last two times that check
+was made it found a smaller published dimension than this project had: thirteen
+a month earlier, and then eleven, two days after the announcement. That is what
+the rule is for, and WP 2 records what the second finding says about how the
+check has to be made.
 
-**WP 7** removes the `[0.6]` markers from `contracts.md`, brings the
+**WP 8** removes the `[0.6]` markers from `contracts.md`, brings the
 documentation up to date and prepares the release.
 
 ### Why the order
 
-WP 1 and WP 2 come first because compression applies to homogeneous maps and
-nothing this project produces at degree three is homogeneous. WP 3 comes before
-WP 4 because it is what WP 4 checks itself against. WP 5 comes after WP 4
-because lifting the uncompressed map would double a dimension that is about to
-fall. WP 6 draws no comparison until the packages before it have fixed what is
-being compared.
+WP 2 comes second because every package after it should be measured on the
+smallest map this project has, and because the literature check it carries
+changes what WP 7 may say. WP 1 and WP 3 come before WP 5 because compression
+applies to homogeneous maps and nothing this project produces at degree three
+is homogeneous. WP 4 comes before WP 5 because it is what WP 5 checks itself
+against. WP 6 comes after WP 5 because lifting the uncompressed map would
+double a dimension that is about to fall. WP 7 draws no comparison until the
+packages before it have fixed what is being compared.
 
 ## An open question this milestone raises and does not answer
 
 The untargeted search minimizes the dimension at degree three. The number that
 gets compared is the one after the second stage, the third and the compression.
-That 13 minimizes the second is not shown and does not follow from the first.
+That the smallest map at degree three minimizes the second is not shown and
+does not follow from the first.
 
 The first two stages are monotone in the dimension, `2n + 1`, and the
 compression is not: the hull depends on the collision points and on the map,
-and a chain ending at 15 could compress further than one ending at 13. Running
-`alpoege15` and `bcw17` through the same four stages is cheap and is the first
-measurement to make. Whether `reduce_to_degree3` should then be given a
+and a chain ending at 15 could compress further than one ending at 12. The two
+measurements above are one point of evidence each way and no more: 12 gave 20
+where 13 gave 22, which is monotone, on two maps. Running `alpoege15` and
+`bcw17` through the same four stages is cheap and is the next measurement to
+make. Whether `reduce_to_degree3` should then be given a
 different objective is not decided here, is not a package of this milestone,
 and would be a milestone of its own.
 
