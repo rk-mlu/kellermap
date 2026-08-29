@@ -554,6 +554,133 @@ def gao_quartic_collision() -> Collision:
     )
 
 
+def thompson24() -> PolynomialMap:
+    """Return Thompson's twenty-four-variable cubic homogeneous Keller map.
+
+    Degree three, homogeneous, determinant one, and a two-point collision whose
+    image is the first of the two points. The published normal form at BCW's
+    third stage, and the input the compression of milestone 0.6 is checked
+    against: applied to this map with this collision, the hull has to run
+    2, 4, 11, 20, 20.
+
+    Third-party material. Transcribed from the ancillary file
+    ``anc/check_quartic_40.py`` of arXiv:2608.12543v1, licensed CC BY 4.0,
+    https://creativecommons.org/licenses/by/4.0/, which prints it as ``H`` and
+    cites Zenodo 21466221 for it. Changes: the displacement is written as a map
+    here, ``id + H``, and the generators are renamed. The formulas are not
+    altered. ``docs/references.md`` records the rest.
+
+    The twenty-dimensional restriction that file also prints is *not* here. It
+    is the answer the compression has to arrive at, and an answer stored beside
+    the code that computes it is not a control;
+    ``scripts/reconstruct_prellberg40.py`` keeps it, and the same subspace was
+    found independently by Macfarlane, whose own values stay in
+    ``tests/data.py`` because that repository carries no licence.
+    """
+    x = sp.symbols("x1:25")
+
+    return PolynomialMap(
+        x,
+        (
+            x[0]
+            - x[13] * x[14] * x[23]
+            - x[20] * x[23] ** 2
+            - 3 * x[22] * x[23] ** 2 / 2,
+            3 * x[0] * x[23] * x[2]
+            - x[9] * x[10] * x[23]
+            + 3 * x[17] * x[23] ** 2
+            + x[1]
+            - x[23] * x[5] * x[6],
+            -x[11] * x[12] * x[23]
+            + x[18] * x[23] ** 2
+            + 4 * x[1] ** 2 * x[23]
+            + 3 * x[21] * x[23] ** 2
+            - x[23] * x[3] * x[4]
+            - x[23] * x[7] * x[8]
+            + x[2],
+            -x[15] * x[16] * x[23] - x[19] * x[23] ** 2 + x[3],
+            3 * x[1] ** 2 * x[23] + x[21] * x[23] ** 2 + x[4],
+            x[22] * x[23] ** 2 + x[5],
+            9 * x[1] ** 2 * x[23] + 3 * x[21] * x[23] ** 2 + x[6],
+            x[22] * x[23] ** 2 + x[7],
+            3 * x[1] * x[23] * x[2] - x[1] * x[23] * x[4] + x[8],
+            x[0] * x[1] * x[23] + x[9],
+            6 * x[0] * x[23] * x[2]
+            - x[0] * x[23] * x[6]
+            + x[10]
+            - 3 * x[23] * x[2] * x[5],
+            x[0] * x[1] * x[23] + x[11],
+            -x[0] * x[23] * x[8] + x[12] + 7 * x[1] ** 2 * x[23] - x[23] * x[2] * x[3],
+            x[0] * x[23] * x[2] + x[13],
+            -(x[0] ** 2) * x[23] / 2 + x[14],
+            x[15] + x[1] ** 2 * x[23],
+            x[0] ** 2 * x[23] + x[16],
+            2 * x[0] * x[9] * x[2]
+            - x[0] * x[9] * x[6] / 3
+            + x[0] * x[10] * x[1] / 3
+            - 4 * x[0] * x[1] ** 2
+            - x[9] * x[2] * x[5]
+            + x[17]
+            + 3 * x[1] ** 2 * x[5],
+            -x[0] * x[11] * x[8]
+            + x[0] * x[12] * x[1]
+            + 7 * x[11] * x[1] ** 2
+            - x[11] * x[2] * x[3]
+            + x[18]
+            + 3 * x[1] ** 2 * x[3]
+            + 3 * x[1] * x[2] * x[7]
+            - x[1] * x[4] * x[7],
+            -(x[0] ** 2) * x[15] - x[16] * x[1] ** 2 + x[19],
+            x[0] ** 2 * x[13] / 2 - x[0] * x[14] * x[2] + x[20],
+            -x[0] * x[1] * x[2] + x[21],
+            -(x[0] ** 2) * x[1] + x[22],
+            x[23],
+        ),
+    )
+
+
+def thompson24_collision() -> Collision:
+    """Return the two points ``thompson24`` sends to one image.
+
+    From the same file, where they are given in the twenty coordinates of the
+    restriction and mapped up by the embedding. The image is computed from the
+    points rather than written down, as for ``alpoege13``, and it is the first
+    of them.
+    """
+    return Collision.at(
+        thompson24(),
+        (
+            (0, 0, R(-1, 4)) + (0,) * 20 + (1,),
+            (
+                1,
+                R(-3, 2),
+                R(13, 2),
+                R(-9, 4),
+                3,
+                R(3, 2),
+                9,
+                R(3, 2),
+                R(99, 4),
+                R(3, 2),
+                R(-3, 4),
+                R(3, 2),
+                R(-45, 8),
+                R(-13, 2),
+                R(1, 2),
+                R(-9, 4),
+                -1,
+                R(-15, 8),
+                R(567, 16),
+                R(-9, 2),
+                R(13, 2),
+                R(-39, 4),
+                R(-3, 2),
+                1,
+            ),
+        ),
+    )
+
+
 def alpoege12() -> PolynomialMap:
     """Return the twelve-dimensional cubic reduction of Alpoege's map.
 

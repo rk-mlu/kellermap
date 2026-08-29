@@ -290,19 +290,34 @@ Gao, arXiv:2608.00222v1, licensed CC BY 4.0. Attribution, the licence link and
 a statement of changes are in the section above and in the docstring of the
 map.
 
-The ancillary file `anc/check_quartic_40.py` of arXiv:2608.12543v1 is
-licensed CC BY 4.0 with the rest of that submission. Nothing from it is
-copied into this repository; the figures above were recomputed from the
-formulas the manuscript displays.
-
 Thompson's twenty-four-variable map, its twenty-dimensional restriction, the
-collision and the vector `rho` are transcribed into
-`scripts/reconstruct_prellberg40.py` from the ancillary file
+collision and the vector `rho` are transcribed from the ancillary file
 `anc/check_quartic_40.py` of arXiv:2608.12543v1, which is licensed CC BY 4.0
 with the rest of that submission. Attribution, the licence link and a statement
-of changes are in the docstring of that script. The formulas are not altered;
-the checks around them are this project's, are a subset of the ancillary file's
-eleven, and add one it does not make.
+of changes are in the docstring of every place that holds them. The formulas
+are not altered; the checks around them are this project's, are a subset of the
+ancillary file's eleven, and add one it does not make.
+
+This paragraph said until milestone 0.6 that nothing from that file is copied
+into the repository and that the figures were recomputed from the manuscript.
+The paragraph after it said the opposite, and the second was the true one: the
+transcription into `scripts/reconstruct_prellberg40.py` was made when that
+script was written and the sentence above it was not withdrawn. Two statements
+about one fact will disagree eventually, and these did.
+
+Two places hold Thompson's map. `scripts/reconstruct_prellberg40.py` has the
+displacement in the source's own shape, and `kellermap.examples.thompson24` has
+it as a map, which is what a caller of this library needs. Work package 4 of
+milestone 0.6 put it there, and `tests/test_examples.py` compares the two so
+that a transcription cannot drift from a transcription.
+
+The twenty-dimensional restriction the same file prints is deliberately in only
+one of them. It is the answer the compression of work package 5 has to arrive
+at, and an answer stored beside the code that computes it is not a control: a
+change to the compression could then be repaired by editing the expected value.
+It stays in the script, which does not import this library. The same subspace
+was found independently by Macfarlane; those values are a different source with
+no licence and stay in `tests/data.py`.
 
 `tests/data.py` holds the published nineteen-dimensional map and
 `macfarlane13`. Neither source carries a licence file, so neither is in the

@@ -40,13 +40,13 @@ COLLISIONS = [name for name in ALL if name not in NAMES]
 
 
 def test_the_module_holds_what_it_says_it_holds() -> None:
-    """Thirteen small maps that recur, four reductions, and the two sources.
+    """Thirteen small maps that recur, four reductions, and the three sources.
 
-    And six collisions, which are not maps and are therefore not covered by
+    And seven collisions, which are not maps and are therefore not covered by
     the criteria below.
     """
-    assert len(NAMES) == 18
-    assert len(COLLISIONS) == 6
+    assert len(NAMES) == 19
+    assert len(COLLISIONS) == 7
 
 
 @pytest.mark.parametrize("name", NAMES)
@@ -160,22 +160,30 @@ def test_not_every_example_has_determinant_one() -> None:
 
 
 @pytest.mark.parametrize(
-    ("map_name", "collision_name"),
+    ("map_name", "collision_name", "points"),
     [
-        ("alpoege", "alpoege_collision"),
-        ("bcw17", "bcw17_collision"),
-        ("alpoege15", "alpoege15_collision"),
-        ("gao_quartic", "gao_quartic_collision"),
-        ("alpoege13", "alpoege13_collision"),
-        ("alpoege12", "alpoege12_collision"),
+        ("alpoege", "alpoege_collision", 3),
+        ("bcw17", "bcw17_collision", 3),
+        ("alpoege15", "alpoege15_collision", 3),
+        ("gao_quartic", "gao_quartic_collision", 3),
+        ("alpoege13", "alpoege13_collision", 3),
+        ("alpoege12", "alpoege12_collision", 3),
+        ("thompson24", "thompson24_collision", 2),
     ],
 )
-def test_each_collision_belongs_to_its_map(map_name: str, collision_name: str) -> None:
-    """Otherwise the pairing would be a similarity of names only."""
+def test_each_collision_belongs_to_its_map(
+    map_name: str, collision_name: str, points: int
+) -> None:
+    """Otherwise the pairing would be a similarity of names only.
+
+    The count is stated per row rather than once for all. It was three
+    everywhere while every collision descended from Alpoege's, and Thompson's
+    map has two.
+    """
     collision = getattr(examples, collision_name)()
 
     assert collision.verify(getattr(examples, map_name)()) is None
-    assert len(collision.points) == 3
+    assert len(collision.points) == points
 
 
 def test_the_reference_reductions_are_cubic_and_normalized() -> None:
@@ -353,6 +361,79 @@ def test_the_quartic_collision_survives_a_chain() -> None:
 # --------------------------------------------------------------------------
 # The chain a search found
 # --------------------------------------------------------------------------
+
+
+# --------------------------------------------------------------------------
+# The map the compression is checked against
+# --------------------------------------------------------------------------
+
+
+def test_thompsons_map_is_cubic_homogeneous_and_Keller() -> None:  # noqa: N802
+    """Twenty-four variables at BCW's third stage, not the first.
+
+    Every figure this project produced before milestone 0.6 is at degree three,
+    which is the first stage. This one is homogeneous, so it lies in ``MA^2``
+    and is comparable with the output of the homogenization and not with
+    ``alpoege12``.
+    """
+    thompson = examples.thompson24()
+
+    assert (thompson.dimension, thompson.degree()) == (24, 3)
+    assert thompson.determinant() == 1
+    assert thompson.filtration_degree() == 2
+
+    degrees = {
+        sum(monomial)
+        for component in thompson.displacement().to_polynomials()
+        if component
+        for monomial in component.itermonoms()
+    }
+
+    assert degrees == {3}
+
+
+def test_its_collision_is_a_fixed_point_and_another_point() -> None:
+    """The image is the first of the two points, as for ``alpoege13``."""
+    collision = examples.thompson24_collision()
+
+    assert len(collision.points) == 2
+    assert collision.image == collision.points[0]
+
+
+def test_the_example_and_the_reconstruction_denote_one_map() -> None:
+    """The library idiom against the transcription the script holds.
+
+    ``scripts/reconstruct_prellberg40.py`` transcribes Thompson's map from
+    Prellberg's ancillary file as the displacement ``H``. This module writes it
+    as a map. Two transcriptions of one source can drift apart in a
+    coefficient, and nothing else compares them.
+
+    The script also holds the twenty-dimensional restriction, which is
+    deliberately *not* in this module: it is what the compression has to
+    arrive at.
+    """
+    root = Path(__file__).resolve().parent.parent
+    path = root / "scripts" / "reconstruct_prellberg40.py"
+    spec = importlib.util.spec_from_file_location("reconstruct_prellberg40", path)
+    assert spec is not None and spec.loader is not None
+    module = importlib.util.module_from_spec(spec)
+    sys.modules[spec.name] = module
+    spec.loader.exec_module(module)
+
+    thompson = examples.thompson24()
+    rewritten = tuple(
+        sp.expand(
+            displacement.xreplace(dict(zip(module.u, thompson.variables, strict=True)))
+        )
+        + variable
+        for displacement, variable in zip(module.H, thompson.variables, strict=True)
+    )
+
+    assert rewritten == thompson.components
+
+    lifted = {tuple(module.embed(point)) for point in (module.P20, module.Q20)}
+
+    assert lifted == set(examples.thompson24_collision().points)
 
 
 # --------------------------------------------------------------------------

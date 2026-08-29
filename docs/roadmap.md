@@ -1679,10 +1679,26 @@ The licence question is settled: the submission is CC BY 4.0 and that covers
 the ancillary file, `docs/references.md` records it, and the values are already
 transcribed into `scripts/reconstruct_prellberg40.py`.
 
-What is left is where a map that two packages need should live. A script holds
-it now, `tests/data.py` holds the data whose terms could not be established,
-and neither is the right place for a control that `make check` runs. The
-package decides that and records the reason.
+What was left was where a map that two packages need should live, and the
+answer splits the file rather than moving it.
+
+`kellermap.examples.thompson24` and `thompson24_collision` hold the input:
+twenty-four variables, cubic homogeneous, determinant one, a two-point
+collision whose image is the first of the two points. It meets both criteria WP
+8 of 0.5 set for an example, being a Keller map written out in more than one
+place, and a caller of this library needs it as a map rather than as a
+displacement.
+
+The twenty-dimensional restriction stays in the script and only there. It is
+the answer the compression has to arrive at, and an answer stored beside the
+code that computes it is not a control: a change to the compression could then
+be repaired by editing the expected value. The script does not import this
+library, so what WP 5 is measured against sits outside it. The embedding stays
+with it for the same reason.
+
+Two transcriptions of one source can drift apart in a coefficient, so
+`tests/test_examples.py` compares the map and the collision against the
+script's, in the shape WP 2 used for `alpoege12`.
 
 **WP 5** implements collision-hull compression. For `F = id + h` with `h`
 homogeneous of degree `d` and a collision `F(p) = F(q)`, iterate
