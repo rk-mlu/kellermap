@@ -1719,6 +1719,19 @@ check has to be made.
 **WP 8** removes the `[0.6]` markers from `contracts.md`, brings the
 documentation up to date and prepares the release.
 
+It also closes the gap WP 2 found and closed for one map only. A
+`reconstruct_*` script checks the figures written into it and does not compare
+its components with the example in `kellermap.examples`, so two renderings of
+one chain can drift apart in a coordinate that no figure sees.
+`tests/test_examples.py` closes it for `alpoege12`; the other five scripts are
+this package's, and the first thing it does is measure what loading five more
+scripts costs the fast suite. If that is too much, the comparison goes behind a
+slow marker rather than being dropped, and this page says which.
+
+The shape is the one WP 12 of 0.5 had. Two faults of that milestone were found
+by an audit rather than by a test, and the package that closed the milestone
+carried the test group neither of the packages before it would have produced.
+
 ### Why the order
 
 WP 2 comes second because every package after it should be measured on the

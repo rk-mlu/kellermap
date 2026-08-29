@@ -34,7 +34,8 @@ them, which is the half of a two-part change that nothing checks.
 
 **Milestone `0.6`, open.** The milestone adds the second and third steps of the
 Reduction Theorem and the compression that follows them. `UNI-1` to `UNI-12`
-are the first of its obligations; the rest of the milestone is not written yet.
+are its first obligations and HOM-1 to HOM-10 its second; the rest of the
+milestone is not written yet.
 
 The marker says that an obligation is not in a released version. That is what
 `pip install kellermap` gives a reader, so for anyone outside this repository
@@ -141,6 +142,7 @@ the implementation is required to guarantee.
 - [LinearStep](#linearstep)
 - [TranslationStep](#translationstep)
 - [UnipotentStep](#unipotentstep)
+- [HomogenizationStep](#homogenizationstep)
 - [Reduction](#reduction)
 - [Search](#search)
 - [Peeling](#peeling)
@@ -1196,6 +1198,173 @@ UNI-5 in its freshness and counting half is a constructor invariant and is not
 reachable by `verify()`. UNI-6, UNI-9 and UNI-10 follow from UNI-1 and are
 retained as self-checks that localize an error to the step that made it.
 UNI-7 and UNI-8 are properties of the type rather than checks on data.
+
+---
+
+## HomogenizationStep
+
+The third step of the Reduction Theorem, BCW Chapter II, Section 4, p. 307. It
+adds one variable and makes the displacement cubic homogeneous.
+
+```python
+@dataclass(frozen=True)
+class HomogenizationStep:
+    source: PolynomialMap
+    target: PolynomialMap
+    variable: sp.Symbol
+    provenance: Provenance
+
+    @classmethod
+    def build(cls, source, factory=None) -> HomogenizationStep: ...
+```
+
+It lives in `kellermap.bcw`, beside `BCWStep` and `UnipotentStep`.
+
+Write `n` for `source.dimension`, `T` for `variable`, and `N_(1)`, `N_(2)`,
+`N_(3)` for the homogeneous parts of `source.displacement()`. The target is
+
+    target = (X + N_(1) T^2 + N_(2) T + N_(3),  T)
+
+Each part is lifted to degree three by the power of `T` its own degree is short
+of, which is what makes the displacement homogeneous. Nothing is composed and
+nothing is factored.
+
+### This step is not a composition
+
+Every step type before this one has the shape `A o F^[m] o B` with `A` and `B`
+automorphisms, and the certificate is the factorization: "invertible" is a
+claim, and a list of generators with their inverses is something a reader can
+check. This step has no factorization, because there is nothing to factor. The
+target is not conjugate to the source, no automorphism relates the two, and
+they do not have the same dimension.
+
+What relates them is a slice. Setting `T = 1` in the first `n` components
+returns the source, since `N(1) = N_(1) + N_(2) + N_(3)`. That is the whole of
+the relation, and three things follow from it.
+
+What is exhibited is the formula and the homogeneous parts the formula reads.
+A reader checks the target by recomputing it, not by undoing it.
+
+Transport goes forward and only forward. A collision of the source gives one of
+the target, at `T = 1`. The converse is not claimed and is not true in general:
+a collision of the target at some other value of `T` need not come from
+anywhere, because the slice at `T = t` is a map that scaling relates to the
+source only at `t = 1`. Every step type before this one carries the collision
+both ways, because an automorphism is invertible. This one does not, and
+nothing on this page needs it to: RED-5 reads a verified transport as a proof
+that the *target* is not injective, which is the forward direction, and that is
+the direction the milestone wants. What a chain containing this step no longer
+supports is the reverse reading, from a collision of the far end back to one of
+the near end.
+
+There is no `EA` level to declare. `filtration_level` is `math.inf`, as for
+`LinearStep` and `TranslationStep`, and for a different reason than either: a
+composition step whose factors are not elementary makes no `EA` claim, and this
+step is not a composition at all.
+
+**HOM-1 — The identity. [0.6]** `target == (X + N_(1) T^2 + N_(2) T + N_(3),
+T)`, checked as a polynomial identity in one shared `PolyRing`.
+
+The homogeneous parts are taken by total degree in the generators of the ring,
+so a parameter of the coefficient domain does not count towards them. That is
+the reading DOM-2 fixes and the one `PolynomialMap.degree` uses. Reading a
+parameter as a variable would put `T x y` in the wrong slot and lift it by the
+wrong power.
+
+**HOM-2 — The source has degree at most three. [0.6]** `source.degree() <= 3`.
+
+The regrading has three slots and a part of degree four has no power of `T` to
+be lifted by. This is where the first stage of the Reduction Theorem and the
+third meet, as UNI-3 is where the first and the second do.
+
+**HOM-3 — The Jacobian of the source's displacement is nilpotent. [0.6]**
+Checked as under UNI-9: the determinant of `(X + S * (source - X), S)`, in one
+coordinate more than the source, has to be one.
+
+This is the obligation that says the second step comes before the third, and
+unlike UNI-9 it is not redundant. It can fail on supplied data, and when it
+fails the target is not a Keller map. The reason is worth stating, because
+"the source is Keller" would be the natural guess and is not enough:
+
+    J_X N(T) = T^2 * J(N)(X/T)
+
+so the Jacobian of the target's displacement is a scaled substitution of the
+source's. Nilpotence survives that and invertibility alone does not. A source
+with `det J = 1` whose `J(N)` is not nilpotent homogenizes to a map whose
+determinant is not constant.
+
+Measured on the 24-variable target of `alpoege12` lifted by `UnipotentStep`:
+0.07 seconds.
+
+**HOM-4 — Dimension and generators. [0.6]** `target.dimension == n + 1`; the
+generators of `target` are those of `source` followed by `variable`; and
+`variable` satisfies RC-4 against `source.ring`.
+
+Freshness is a constructor invariant and raises `ValueError`, as in UNI-5.
+
+**HOM-5 — The target is cubic homogeneous. [0.6]** Every non-zero component of
+`target.displacement()` is homogeneous of degree three, and the component of
+`T` is exactly `T`.
+
+This follows from HOM-1 and is checked because it is what the step exists to
+establish, in the shape of UNI-9. It is cheap: the check reads the monomials
+and computes nothing.
+
+**HOM-6 — The target lies in `MA^2`. [0.6]** `target.filtration_degree() == 2`.
+
+Every part of the displacement has order three, so the target is in `MA^2` and
+therefore in `MA^1`. Stated because the second step left `MA^1` — UNI-8 — and a
+caller needs to know that the third comes back past it. A `BCWStep` declaring
+`EA^1` after this step is making a claim about a map that supports it.
+
+**HOM-7 — The determinant is one. [0.6]** `target.determinant() == 1`.
+
+Follows from HOM-1 and HOM-3, and retained as a cheap self-check in the shape
+of BCW-7. Measured on the 25-variable target: 0.05 seconds. The source's own
+determinant needs no obligation of its own: HOM-3 at `S = 1` is
+`det(I + J(N)) = 1`, which is Kellerness.
+
+**HOM-8 — The slice at `T = 1` returns the source. [0.6]** Substituting
+`T = 1` in the first `n` components of the target gives the components of the
+source.
+
+Follows from HOM-1, and checked because it is the reason HOM-9 works rather
+than an arithmetic detail. It is weaker than HOM-1 and is not a substitute for
+it: at `T = 1` all three slots contribute alike, so a target that lifted
+`N_(1)` by `T` and `N_(2)` by `T^2` would pass this check and fail HOM-1. The
+page says so rather than leaving a reader to assume the two are the same
+statement.
+
+**HOM-9 — Transport. [0.6]** With `source(a) = source(b) = c`,
+
+```
+a  |-->  (a, 1),        c  |-->  (c, 1)
+```
+
+The appended coordinate is one, and not zero as in BCW-8, UNI-11 and every
+other transport on this page. A zero would give `target(a, 0) = (a, 0)`, which
+is a fixed point of the target and no collision at all.
+
+Distinctness needs no argument: the points differ before the coordinate is
+appended and the appended value is the same for all of them.
+
+**HOM-10 — Provenance is recorded, and not settable. [0.6]** As BCW-9.
+
+### Which of these can fail on supplied data
+
+HOM-1 for a supplied target, and HOM-2 and HOM-3 always.
+
+HOM-3 is the one to weigh most heavily. It is the only obligation on this page
+that can fail on a source a *previous step of this library produced*: a chain
+that homogenizes without lifting first will reach it, and the failure is a
+statement about the order of the chain rather than about either step. UNI-2
+plays the same part one step earlier, and the two together are what keep the
+three stages of Section 4 in their order.
+
+HOM-4 in its freshness half is a constructor invariant and is not reachable by
+`verify()`. HOM-5 to HOM-8 follow from HOM-1 and are retained as self-checks
+that localize an error to the step that made it. There is no invertibility
+obligation here, because there is nothing exhibited to be invertible.
 
 ---
 
