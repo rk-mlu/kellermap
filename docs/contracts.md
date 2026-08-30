@@ -1523,7 +1523,7 @@ The returned sequence is *descriptive*. It is not stored on the step and it is
 not part of any certificate: a supplied basis has no sequence, and storing one
 beside a basis would be storing the same fact twice with two ways to disagree.
 What the sequence is for is the control, where `2, 4, 11, 20, 20` on
-`examples.thompson24` is a number this project did not set itself.
+`examples.thompson24_homogeneous` is a number this project did not set itself.
 
 **CHC-9 — Transport. [0.6]** Each point and the image are expressed in the
 basis: the coordinates of a point `v` are the unique `c` with `B^T c = v`.

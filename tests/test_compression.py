@@ -1,7 +1,7 @@
 """Collision-hull compression as a certificate.
 
 The control is the whole point of this file, and it is not a control this
-project set itself: applied to ``examples.thompson24`` the hull has to run
+project set itself: applied to ``examples.thompson24_homogeneous`` the hull has to run
 ``2, 4, 11, 20, 20``, and the restriction has to be the map
 ``scripts/reconstruct_prellberg40.py`` transcribes from the published ancillary
 file. Both are checked, the second component by component.
@@ -73,7 +73,8 @@ def published() -> object:
 def compressed() -> CompressionStep:
     """Return Thompson's map compressed along its collision."""
     return CompressionStep.build(
-        over_field(examples.thompson24()), examples.thompson24_collision()
+        over_field(examples.thompson24_homogeneous()),
+        examples.thompson24_homogeneous_collision(),
     )
 
 
@@ -154,7 +155,8 @@ def test_the_hull_of_thompsons_map_runs_two_four_eleven_twenty(
 ) -> None:
     """The sequence the paper states, and a number this project did not set."""
     _, dimensions = collision_hull(
-        over_field(examples.thompson24()), examples.thompson24_collision()
+        over_field(examples.thompson24_homogeneous()),
+        examples.thompson24_homogeneous_collision(),
     )
 
     assert dimensions == (2, 4, 11, 20, 20)
@@ -227,7 +229,7 @@ def test_verification_is_idempotent(compressed: CompressionStep) -> None:
 
 def test_the_collision_survives_the_compression(compressed: CompressionStep) -> None:
     """CHC-9 on the collision the step was built from."""
-    moved = compressed.transport(examples.thompson24_collision())
+    moved = compressed.transport(examples.thompson24_homogeneous_collision())
 
     assert len(moved.points) == 2
     assert moved.dimension == 20
@@ -268,7 +270,7 @@ def test_a_basis_whose_span_is_not_invariant_fails_the_identity(
 
     with pytest.raises(VerificationError, match=r"\[CHC-1\]") as failure:
         CompressionStep(
-            over_field(examples.thompson24()),
+            over_field(examples.thompson24_homogeneous()),
             compressed.target,
             axes,
             compressed.target.variables,
@@ -288,7 +290,7 @@ def test_a_target_that_is_not_the_restriction_fails_the_identity(
 
     with pytest.raises(VerificationError, match=r"\[CHC-1\]"):
         CompressionStep(
-            over_field(examples.thompson24()),
+            over_field(examples.thompson24_homogeneous()),
             wrong,
             compressed.basis,
             compressed.target.variables,
@@ -416,7 +418,7 @@ def test_transport_preserves_the_number_of_points(
     compressed: CompressionStep,
 ) -> None:
     """STEP-4. Distinct points of the subspace have distinct coordinates."""
-    moved = compressed.transport(examples.thompson24_collision())
+    moved = compressed.transport(examples.thompson24_homogeneous_collision())
 
     assert len(set(moved.points)) == 2
 

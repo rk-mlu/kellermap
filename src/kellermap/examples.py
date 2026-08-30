@@ -554,7 +554,129 @@ def gao_quartic_collision() -> Collision:
     )
 
 
-def thompson24() -> PolynomialMap:
+def spacerat11() -> PolynomialMap:
+    """Return the published eleven-variable cubic reduction of Alpoege's map.
+
+    Degree three, determinant -2, and it carries Alpoege's collision. The
+    smallest dimension at degree three this project knows of, one below
+    ``alpoege12``.
+
+    Not normalized: the linear part of its displacement is not zero and the
+    determinant is not one, so ``UNI-2`` refuses it and ``LinearStep.normalize``
+    comes first, as for ``alpoege13``. That is not a defect of the
+    transcription. The map stands in Alpoege's own coordinates, which is also
+    where a chain reaches it.
+
+    Third-party. Transcribed from Section 6 of arXiv:2608.05392v1, licensed
+    CC BY 4.0, https://creativecommons.org/licenses/by/4.0/, where it is
+    printed as ``Phi``. That paper cites a GitHub gist by Spacerat, dated the
+    day of Alpoege's announcement, as the source of the calculation, and the
+    gist carries no licence, so every value here comes from the paper. Changes:
+    the generators are renamed and the components reordered to the order the
+    generators induce. The formulas are not altered.
+
+    The name follows the convention this module uses for third-party maps,
+    author and dimension, and the author is the name the literature attributes
+    it to. ``docs/references.md`` says what is known about that attribution and
+    what is not.
+
+    This map is reachable from ``alpoege()`` by six ``BCWStep``s, which
+    ``scripts/reconstruct_spacerat11.py`` replays. It is in this module all the
+    same: the chain was found by ``peel``, which is given the target, so
+    deriving the map needs the map.
+    """
+    x = sp.symbols("x1:12")
+
+    return PolynomialMap(
+        x,
+        (
+            3 * x[0] * x[1] * x[2]
+            + x[0] * x[1] * x[8]
+            - 3 * x[1] ** 2 * x[3]
+            + 7 * x[1] ** 2 * x[6]
+            + 4 * x[1] ** 2
+            - x[2] * x[3] * x[6]
+            - 2 * x[2] * x[3]
+            + x[2] * x[6] ** 2
+            + x[2]
+            - x[3] * x[5]
+            - x[5] * x[6] ** 2
+            - x[6] * x[8],
+            12 * x[0] * x[1] ** 2
+            + x[0] * x[1] * x[7]
+            + 3 * x[0] * x[2]
+            - 3 * x[0] * x[5] * x[6]
+            - 3 * x[1] ** 2 * x[4]
+            + x[1]
+            - x[2] * x[4] * x[6]
+            - 2 * x[2] * x[4]
+            - x[4] * x[5]
+            - x[6] * x[7],
+            x[0] ** 2 * x[10]
+            - 3 * x[0] ** 2 * x[1]
+            - x[0] * x[9] * x[2]
+            + 2 * x[0]
+            - x[9] * x[10],
+            2 * x[0] * x[1] * x[6] + x[3] - x[6] ** 2,
+            3 * x[0] ** 2 * x[1] + x[4],
+            x[0] * x[1] * x[2] + 3 * x[1] ** 2 + 2 * x[2] + x[5],
+            -x[0] * x[1] + x[6],
+            3 * x[0] * x[5] + x[2] * x[4] + x[7],
+            -x[0] * x[1] * x[2]
+            + x[0] * x[1] * x[5]
+            - 7 * x[1] ** 2
+            + x[2] * x[3]
+            - x[2] * x[6]
+            + x[5] * x[6]
+            + x[8],
+            -(x[0] ** 2) + x[9],
+            x[0] * x[2] + x[10],
+        ),
+    )
+
+
+def spacerat11_collision() -> Collision:
+    """Return the three points ``spacerat11`` sends to one image.
+
+    Printed in Section 6 of the same paper, in the same coordinates, and the
+    first three of each are Alpoege's own three points. The image is computed
+    from them rather than written down, as for ``alpoege13``.
+    """
+    return Collision.at(
+        spacerat11(),
+        (
+            (0, 0, R(-1, 4), 0, 0, R(1, 2), 0, 0, 0, 0, 0),
+            (
+                1,
+                R(-3, 2),
+                R(13, 2),
+                R(-9, 4),
+                R(9, 2),
+                -10,
+                R(-3, 2),
+                R(3, 4),
+                R(-153, 8),
+                1,
+                R(-13, 2),
+            ),
+            (
+                -1,
+                R(3, 2),
+                R(13, 2),
+                R(-9, 4),
+                R(-9, 2),
+                -10,
+                R(-3, 2),
+                R(-3, 4),
+                R(-153, 8),
+                1,
+                R(13, 2),
+            ),
+        ),
+    )
+
+
+def thompson24_homogeneous() -> PolynomialMap:
     """Return Thompson's twenty-four-variable cubic homogeneous Keller map.
 
     Degree three, homogeneous, determinant one, and a two-point collision whose
@@ -569,6 +691,12 @@ def thompson24() -> PolynomialMap:
     cites Zenodo 21466221 for it. Changes: the displacement is written as a map
     here, ``id + H``, and the generators are renamed. The formulas are not
     altered. ``docs/references.md`` records the rest.
+
+    The name carries the stage and not only the dimension. Every other figure
+    in this module is at degree three, which is BCW's first stage; this one is
+    cubic homogeneous, which is the third, and ``alpoege19`` already occupies
+    the number nineteen at the first. A bare dimension would read as the same
+    kind of thing.
 
     The twenty-dimensional restriction that file also prints is *not* here. It
     is the answer the compression has to arrive at, and an answer stored beside
@@ -639,8 +767,8 @@ def thompson24() -> PolynomialMap:
     )
 
 
-def thompson24_collision() -> Collision:
-    """Return the two points ``thompson24`` sends to one image.
+def thompson24_homogeneous_collision() -> Collision:
+    """Return the two points ``thompson24_homogeneous`` sends to one image.
 
     From the same file, where they are given in the twenty coordinates of the
     restriction and mapped up by the embedding. The image is computed from the
@@ -648,7 +776,7 @@ def thompson24_collision() -> Collision:
     of them.
     """
     return Collision.at(
-        thompson24(),
+        thompson24_homogeneous(),
         (
             (0, 0, R(-1, 4)) + (0,) * 20 + (1,),
             (

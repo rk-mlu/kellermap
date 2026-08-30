@@ -21,6 +21,7 @@ from kellermap import (
     enumerate_candidates,
     examples,
     over_field,
+    peel,
 )
 from kellermap.bcw import BCWStep
 
@@ -40,13 +41,13 @@ COLLISIONS = [name for name in ALL if name not in NAMES]
 
 
 def test_the_module_holds_what_it_says_it_holds() -> None:
-    """Thirteen small maps that recur, four reductions, and the three sources.
+    """Thirteen small maps that recur, four reductions, and the four sources.
 
-    And seven collisions, which are not maps and are therefore not covered by
+    And eight collisions, which are not maps and are therefore not covered by
     the criteria below.
     """
-    assert len(NAMES) == 19
-    assert len(COLLISIONS) == 7
+    assert len(NAMES) == 20
+    assert len(COLLISIONS) == 8
 
 
 @pytest.mark.parametrize("name", NAMES)
@@ -168,7 +169,8 @@ def test_not_every_example_has_determinant_one() -> None:
         ("gao_quartic", "gao_quartic_collision", 3),
         ("alpoege13", "alpoege13_collision", 3),
         ("alpoege12", "alpoege12_collision", 3),
-        ("thompson24", "thompson24_collision", 2),
+        ("thompson24_homogeneous", "thompson24_homogeneous_collision", 2),
+        ("spacerat11", "spacerat11_collision", 3),
     ],
 )
 def test_each_collision_belongs_to_its_map(
@@ -376,7 +378,7 @@ def test_thompsons_map_is_cubic_homogeneous_and_Keller() -> None:  # noqa: N802
     and is comparable with the output of the homogenization and not with
     ``alpoege12``.
     """
-    thompson = examples.thompson24()
+    thompson = examples.thompson24_homogeneous()
 
     assert (thompson.dimension, thompson.degree()) == (24, 3)
     assert thompson.determinant() == 1
@@ -394,7 +396,7 @@ def test_thompsons_map_is_cubic_homogeneous_and_Keller() -> None:  # noqa: N802
 
 def test_its_collision_is_a_fixed_point_and_another_point() -> None:
     """The image is the first of the two points, as for ``alpoege13``."""
-    collision = examples.thompson24_collision()
+    collision = examples.thompson24_homogeneous_collision()
 
     assert len(collision.points) == 2
     assert collision.image == collision.points[0]
@@ -420,7 +422,7 @@ def test_the_example_and_the_reconstruction_denote_one_map() -> None:
     sys.modules[spec.name] = module
     spec.loader.exec_module(module)
 
-    thompson = examples.thompson24()
+    thompson = examples.thompson24_homogeneous()
     rewritten = tuple(
         sp.expand(
             displacement.xreplace(dict(zip(module.u, thompson.variables, strict=True)))
@@ -433,7 +435,66 @@ def test_the_example_and_the_reconstruction_denote_one_map() -> None:
 
     lifted = {tuple(module.embed(point)) for point in (module.P20, module.Q20)}
 
-    assert lifted == set(examples.thompson24_collision().points)
+    assert lifted == set(examples.thompson24_homogeneous_collision().points)
+
+
+# --------------------------------------------------------------------------
+# The published eleven-variable map
+# --------------------------------------------------------------------------
+
+
+def test_the_eleven_dimensional_map_is_cubic_and_Keller() -> None:  # noqa: N802
+    """Degree three, determinant -2, one below alpoege12."""
+    eleven = examples.spacerat11()
+
+    assert (eleven.dimension, eleven.degree()) == (11, 3)
+    assert eleven.determinant() == -2
+
+
+def test_it_is_not_normalized() -> None:
+    """UNI-2 refuses it, and LinearStep.normalize is what repairs it.
+
+    Like ``alpoege13`` and unlike ``alpoege12``. It stands in Alpoege's own
+    coordinates, which is where a chain reaches it: a ``BCWStep`` preserves the
+    determinant, so no chain runs from the normalized map, whose determinant is
+    one, to this one.
+
+    The normalization divides by two, which ``ZZ`` cannot do, so it goes
+    through ``over_field`` as every other normalization in this project does.
+    """
+    eleven = examples.spacerat11()
+
+    assert not eleven.is_in_MA(1)
+    assert LinearStep.normalize(over_field(eleven)).target.determinant() == 1
+
+
+def test_the_eleven_dimensional_collision_continues_alpoeges() -> None:
+    """The first three coordinates are Alpoege's own three points."""
+    carried = examples.spacerat11_collision()
+
+    assert {point[:3] for point in carried.points} == set(
+        examples.alpoege_collision().points
+    )
+
+
+@pytest.mark.slow
+def test_a_chain_of_six_steps_reaches_it_from_alpoeges_map() -> None:
+    """It is not a source this library cannot reach.
+
+    ``peel`` is given the target, so this does not say the map was found here;
+    it says the map lies in the space of ``BCWStep`` chains from
+    ``examples.alpoege()``. The endpoint is the map after reordering the
+    generators, because the chain names its fresh ones in its own order.
+    """
+    outcome = peel(over_field(examples.alpoege()), over_field(examples.spacerat11()))
+
+    assert outcome.reduction is not None
+    assert len(outcome.reduction.steps) == 6
+    assert outcome.reduction.verify() is None
+
+    reached = outcome.reduction.target.reordered(examples.spacerat11().variables)
+
+    assert reached == over_field(examples.spacerat11())
 
 
 # --------------------------------------------------------------------------

@@ -313,7 +313,7 @@ script was written and the sentence above it was not withdrawn. Two statements
 about one fact will disagree eventually, and these did.
 
 Two places hold Thompson's map. `scripts/reconstruct_prellberg40.py` has the
-displacement in the source's own shape, and `kellermap.examples.thompson24` has
+displacement in the source's own shape, and `kellermap.examples.thompson24_homogeneous` has
 it as a map, which is what a caller of this library needs. Work package 4 of
 milestone 0.6 put it there, and `tests/test_examples.py` compares the two so
 that a transcription cannot drift from a transcription.

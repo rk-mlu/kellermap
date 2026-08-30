@@ -1098,8 +1098,8 @@ through:
 
 ```python
 >>> from kellermap import CompressionStep, collision_hull
->>> thompson = over_field(examples.thompson24())
->>> pair = examples.thompson24_collision()
+>>> thompson = over_field(examples.thompson24_homogeneous())
+>>> pair = examples.thompson24_homogeneous_collision()
 >>> basis, dimensions = collision_hull(thompson, pair)
 >>> dimensions
 (2, 4, 11, 20, 20)

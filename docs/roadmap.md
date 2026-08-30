@@ -1682,7 +1682,7 @@ transcribed into `scripts/reconstruct_prellberg40.py`.
 What was left was where a map that two packages need should live, and the
 answer splits the file rather than moving it.
 
-`kellermap.examples.thompson24` and `thompson24_collision` hold the input:
+`kellermap.examples.thompson24_homogeneous` and `thompson24_homogeneous_collision` hold the input:
 twenty-four variables, cubic homogeneous, determinant one, a two-point
 collision whose image is the first of the two points. It meets both criteria WP
 8 of 0.5 set for an example, being a Keller map written out in more than one
