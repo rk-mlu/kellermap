@@ -477,6 +477,34 @@ def test_the_eleven_dimensional_collision_continues_alpoeges() -> None:
     )
 
 
+def test_the_eleven_dimensional_script_and_example_agree() -> None:
+    """The independent replay against the transcription in this module.
+
+    ``scripts/reconstruct_spacerat11.py`` recomputes the six steps in plain
+    SymPy and holds its own copy of the published components. Two
+    transcriptions of one source can differ in a coefficient, and the script
+    compares its chain against its copy rather than against this one.
+    """
+    root = Path(__file__).resolve().parent.parent
+    path = root / "scripts" / "reconstruct_spacerat11.py"
+    spec = importlib.util.spec_from_file_location("reconstruct_spacerat11", path)
+    assert spec is not None and spec.loader is not None
+    module = importlib.util.module_from_spec(spec)
+    sys.modules[spec.name] = module
+    spec.loader.exec_module(module)
+
+    eleven = examples.spacerat11()
+    published = tuple(sp.expand(c) for c in module.PUBLISHED)
+
+    assert published == tuple(sp.expand(c) for c in eleven.components)
+
+    printed = {tuple(sp.sympify(v) for v in p) for p in module.PUBLISHED_POINTS}
+
+    assert printed == {
+        tuple(sp.sympify(v) for v in p) for p in examples.spacerat11_collision().points
+    }
+
+
 @pytest.mark.slow
 def test_a_chain_of_six_steps_reaches_it_from_alpoeges_map() -> None:
     """It is not a source this library cannot reach.

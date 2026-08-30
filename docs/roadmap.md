@@ -582,7 +582,7 @@ packages behind moved down by one and nothing about their content changed.
 - **WP 5** came out of the measurement WP 6 was to make. The enumerator the
   plan implied was unaffordable, and the obligations narrowing it belong on the
   page before the code exists.
-- **WP 8** goes before the backward search because it reshapes how fixed data
+- **WP 9** goes before the backward search because it reshapes how fixed data
   is reached, and the backward search is what would otherwise reach it the old
   way and be rewritten.
 - **WP 9** came out of WP 7, whose forward search exhausts its space without a
@@ -675,7 +675,7 @@ The reading recorded above — that all seventeen steps of the published chain
 acted on components 0, 1 or 2 — moves to WP 7, where a search either uses it or
 does not.
 
-**WP 7** is the forward search, under SEA-1 to SEA-14. It is given a pool of
+**WP 8** is the forward search, under SEA-1 to SEA-14. It is given a pool of
 values read off the target's carriers, because nothing in the source says what
 a fresh coordinate may carry. It recovers a chain to `alpoege15` in 62 maps,
 and only once the pool is handed the value coordinate 10 was introduced with:
@@ -684,7 +684,7 @@ the chain is inexpressible rather than unfound. That failure looks exactly like
 an empty space, which is why WP 9 exists.
 
 
-**WP 8** sorts the fixed data by where it came from, which is a question of
+**WP 9** sorts the fixed data by where it came from, which is a question of
 licence and of what an audit can see rather than of convenience.
 `kellermap.examples` takes the maps the project may distribute; `tests/data.py`
 takes the nineteen-dimensional one, whose licence could not be established, and
@@ -1021,10 +1021,10 @@ A second source is more useful than a second example: agreement with it is
 evidence about mathematics external to this project, and not about this
 library's own arithmetic.
 
-**WP 7** adds the Gao map. Its licence is established, CC BY 4.0, so unlike the
+**WP 8** adds the Gao map. Its licence is established, CC BY 4.0, so unlike the
 nineteen-dimensional map it can be distributed with the library.
 
-**WP 8** states what an untargeted enumerator may claim, before it exists, and
+**WP 9** states what an untargeted enumerator may claim, before it exists, and
 makes the measurement that decides it. It answers two questions. How large is
 the space for maps of the sizes this project already handles? Are the step
 shapes that SEA-14 excludes needed to reach degree three? The obligations of
@@ -1763,7 +1763,57 @@ displacement, `J(h)(lambda x) = lambda^(d-1) J(h)(x)` turns a constant
 determinant into `det(I + s J(h)) = 1` for every `s`, so nilpotence follows.
 The homogenization's source is not homogeneous and cannot borrow the argument.
 
-**WP 6** is the symmetric lift, Theorem 3 part 3 of that paper: over `Q(i)`,
+**WP 6** takes `spacerat11` into the repository, and the pipeline through it
+is the reason the package exists rather than the map.
+
+Eleven variables at degree three, published on the day of Alpoege's
+announcement and printed as `Phi` in Section 6 of arXiv:2608.05392v1. Run
+through WP 1, WP 3 and WP 5 it gives 22, 23 and then **19** cubic homogeneous
+variables, which is below the smallest cubic homogeneous figure this project
+knows of. That number is why the map is here and not merely cited.
+
+*What the pipeline gives, on the three maps this project can start from.*
+
+| at degree three | unipotent | homogeneous | compressed |
+| ---: | ---: | ---: | ---: |
+| `alpoege13`, 13 | 26 | 27 | 22 |
+| `alpoege12`, 12 | 24 | 25 | 20 |
+| `spacerat11`, 11 | 22 | 23 | 19 |
+
+Monotone on three points, which is evidence and not a law. It also makes the
+open question at the end of this section look less urgent: minimizing the
+dimension at degree three does appear to be a proxy for the number that gets
+compared.
+
+*The nineteen has to carry its stage wherever it appears.* `alpoege19` is
+nineteen variables at degree *three* and has been in this repository since 0.4.
+The two are different objects from different routes, and a bare nineteen names
+neither.
+
+*The map is not a source this library cannot reach.* `peel` finds six
+`BCWStep`s from `examples.alpoege()` to it, examining seven maps in about a
+third of a second, and the endpoint is the published map after reordering the
+generators. The chain runs from Alpoege's map and not from its normalization,
+which is forced: a step preserves the determinant, this map has `-2` and the
+normalized source has one.
+
+It is in `examples` all the same. `peel` is given its target, so deriving the
+map needs the map, and the six steps say where it lies rather than how it was
+found. `scripts/reconstruct_spacerat11.py` replays them in plain SymPy,
+twenty-four checks, and compares the result against its own copy of Section 6.
+
+*And it lies outside what the forward search offers.* Of the six steps, none
+matches any candidate `untargeted_candidates` produces at the map before it.
+The comparison is the one an external audit made for `macfarlane13`, where two
+of seven matched, and it was validated first on the ten steps of the
+`alpoege12` chain, which come from the enumerator by construction and match ten
+of ten at the positions the driver's result file records. Without that control
+a broken comparison and a real gap look alike.
+
+That is a statement about the search and not about the map, and what to do
+about it is not this milestone's business.
+
+**WP 7** is the symmetric lift, Theorem 3 part 3 of that paper: over `Q(i)`,
 
     P_W(x, y) = i * sum_j y_j * hbar_j(x + i*y)
 
@@ -1775,7 +1825,7 @@ and the reason it was absent is that it needs `Q(i)`. The coefficient ring
 became something a caller states in 0.5 and `canonical` learned to decide
 algebraic numbers, so the two obstacles named at the time are gone.
 
-**WP 7** compares, as WP 13 of 0.5 did, and reports what a comparison
+**WP 8** compares, as WP 13 of 0.5 did, and reports what a comparison
 establishes and what it does not. At that stage the numbers to beat are 24 and
 20 for the cubic homogeneous form and 40 for the quartic gradient form, and
 this project will have arrived by a different route. The literature is checked
@@ -1785,7 +1835,7 @@ a month earlier, and then eleven, on the day of the announcement. That is what
 the rule is for, and WP 2 records what the second finding says about how the
 check has to be made.
 
-**WP 8** removes the `[0.6]` markers from `contracts.md`, brings the
+**WP 9** removes the `[0.6]` markers from `contracts.md`, brings the
 documentation up to date and prepares the release.
 
 It also closes the gap WP 2 found and closed for one map only. A
@@ -1797,6 +1847,21 @@ this package's, and the first thing it does is measure what loading five more
 scripts costs the fast suite. If that is too much, the comparison goes behind a
 slow marker rather than being dropped, and this page says which.
 
+It also reads every docstring in the tree once, against the question whether
+it is still true. Three claims in the header of `kellermap.examples` were
+false when WP 6 looked at it, two of them since 0.5: a sentence about
+provenance that the maps' own docstrings contradicted, a count measured in WP 8
+of 0.5 and left in the present tense, and a list of coefficient domains that
+omitted one. None of them is reachable by a test, all three were found by
+reading, and the module had grown four times since the header was written.
+
+That is a known shape rather than an accident. A docstring is written when a
+thing is made and is not revisited when the thing around it changes, and
+`tests/test_documentation.py` checks that citations exist and that ranges are
+current, not that a sentence is still true. The reading is the instrument, and
+the package that closes a milestone is when the tree is small enough to have
+stopped moving.
+
 The shape is the one WP 12 of 0.5 had. Two faults of that milestone were found
 by an audit rather than by a test, and the package that closed the milestone
 carried the test group neither of the packages before it would have produced.
@@ -1805,12 +1870,14 @@ carried the test group neither of the packages before it would have produced.
 
 WP 2 comes second because every package after it should be measured on the
 smallest map this project has, and because the literature check it carries
-changes what WP 7 may say. WP 1 and WP 3 come before WP 5 because compression
+changes what WP 8 may say. WP 1 and WP 3 come before WP 5 because compression
 applies to homogeneous maps and nothing this project produces at degree three
 is homogeneous. WP 4 comes before WP 5 because it is what WP 5 checks itself
-against. WP 6 comes after WP 5 because lifting the uncompressed map would
-double a dimension that is about to fall. WP 7 draws no comparison until the
-packages before it have fixed what is being compared.
+against. WP 6 comes after WP 5 and not with WP 2, although both add a map,
+because the reason to add this one is a number the pipeline produces and the
+pipeline has to exist first. WP 7 comes after WP 6 because lifting from
+nineteen and lifting from twenty are different answers. WP 8 draws no
+comparison until the packages before it have fixed what is being compared.
 
 ## An open question this milestone raises and does not answer
 
@@ -1821,11 +1888,13 @@ does not follow from the first.
 
 The first two stages are monotone in the dimension, `2n + 1`, and the
 compression is not: the hull depends on the collision points and on the map,
-and a chain ending at 15 could compress further than one ending at 12. The two
-measurements above are one point of evidence each way and no more: 12 gave 20
-where 13 gave 22, which is monotone, on two maps. Running `alpoege15` and
-`bcw17` through the same four stages is cheap and is the next measurement to
-make. Whether `reduce_to_degree3` should then be given a
+and a chain ending at 15 could compress further than one ending at 12. The
+three measurements above are three points and no more: 13 gave 22, 12 gave 20
+and 11 gave 19, which is monotone on everything tried. That is weak evidence
+that the dimension at degree three is a proxy for the number at the end, and it
+is the reason this question is recorded here rather than acted on. Running
+`alpoege15` and `bcw17` through the same four stages is cheap and is the next
+measurement to make. Whether `reduce_to_degree3` should then be given a
 different objective is not decided here, is not a package of this milestone,
 and would be a milestone of its own.
 

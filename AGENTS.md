@@ -121,13 +121,14 @@ python scripts/reconstruct_alpoege15.py
 python scripts/reconstruct_alpoege19.py
 python scripts/reconstruct_alpoege13.py
 python scripts/reconstruct_alpoege12.py
+python scripts/reconstruct_spacerat11.py
 python scripts/reconstruct_macfarlane13.py
 python scripts/reconstruct_prellberg40.py
 python scripts/untargeted_space.py
 ```
 
 `make check` runs the first five, `make check-full` adds the slow markers,
-`make reconstruct` runs the seven reconstructions and `make measure` the
+`make reconstruct` runs the eight reconstructions and `make measure` the
 figures behind the untargeted family. Before a tag, `make release` adds
 `lock-check`, `coverage`, `build-test`, `dist-check` and `test-minimum`.
 

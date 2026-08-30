@@ -2,27 +2,48 @@
 
 Two criteria decide what is here, and both are counted rather than judged. A
 map belongs in this module if it is written out in more than one place, and if
-it is a Keller map -- its Jacobian determinant is a non-zero constant. The tree
-holds 119 distinct ``PolynomialMap`` constructions, 25 of them repeated, and
-the determinant sorts those 25 into the ones below and six that are not Keller
-maps at all.
+it is a Keller map -- its Jacobian determinant is a non-zero constant. Work
+package 8 of milestone 0.5 counted the tree against both, and
+``docs/roadmap.md`` records what it found then, which is fewer maps than stand
+here now. The figures are not repeated here: a
+count in a docstring that nothing recomputes goes stale without saying so, and
+this one had.
 
-The six stay where they are used. They are written the way they are *because*
-they are not Keller maps: they exercise degree growth, non-injectivity and a
-non-constant determinant, and a module named ``examples`` beside a library
-about Keller maps would say otherwise about them.
+The maps that are repeated and are *not* Keller maps stay where they are used.
+They are written the way they are *because* they are not Keller maps: they
+exercise degree growth, non-injectivity and a non-constant determinant, and a
+module named ``examples`` beside a library about Keller maps would say
+otherwise about them.
 
-Provenance. Everything here except ``alpoege`` was written for this project's
-own tests and documentation. ``alpoege`` is somebody else's mathematics; see
-``docs/references.md`` for the source and for what the agreement of a chain
-with it does and does not establish. Distributing a map does not change who
-computed it, so ``Provenance.SUPPLIED``, BCW-9 and SEA-5 mean here exactly what
-they mean anywhere else.
+Provenance, and this module has four kinds of it.
+
+``alpoege`` and ``gao_quartic`` are the two published counterexamples this
+project starts from. ``thompson24_homogeneous`` and ``spacerat11`` are
+published reductions of the first one, taken from the papers that print them.
+All four are somebody else's mathematics, each docstring names the source and
+its licence, and ``docs/references.md`` says what the agreement of a chain with
+one of them does and does not establish.
+
+``alpoege13`` and ``alpoege12`` are reductions this project found, of the
+published map. Everything else was written for this project's own tests and
+documentation.
+
+Distributing a map does not change who computed it, so
+``Provenance.SUPPLIED``, BCW-9 and SEA-5 mean here exactly what they mean
+anywhere else. Where a source could not be distributed, it is not here:
+``tests/data.py`` holds the data whose terms could not be established, and the
+source archive excludes it.
 
 Functions rather than constants, so that importing ``kellermap`` does not build
 maps nobody asked for. Each returns the map over the domain its coefficients
-imply -- mostly ``ZZ``, and ``ZZ[T]`` where a parameter appears. Use
+imply: ``ZZ`` for most of them, ``QQ`` where a reduction carries rational
+coefficients, and ``ZZ[T]`` for the two that take a parameter. Use
 ``over_field`` where a field is needed.
+
+A name carries the dimension, and the stage where that is not degree three.
+``alpoege19`` is degree three in nineteen variables and the compression of
+milestone 0.6 reaches a cubic homogeneous map in nineteen from another route,
+so a bare dimension would name two different kinds of thing.
 
 The symbols are fixed and part of what each function is. That is deliberate:
 the repetitions this module removes were repetitions of one spelling, symbol

@@ -668,6 +668,69 @@ find a smaller one.
 `alpoege12` is not a record either, and the work package that adds it says so
 before it says anything else.
 
+### A chain of six steps reaches it, and it is not an untargeted chain
+
+Asked because the number matters and answered by running the backward search at
+it, as for `macfarlane13`. `peel` reaches the map from `examples.alpoege()` in
+six steps, examining seven maps in about a third of a second. The chain
+verifies and its endpoint is the published map after reordering the generators,
+component for component.
+
+It runs from Alpoege's map and not from its normalization, and that is forced
+rather than chosen. A `BCWStep` preserves the Jacobian determinant; this map
+has `-2`, the normalized source has one, and REV-11 rules the pairing out
+before any search. Against the normalized pair the peel is exhausted after
+ninety-eight maps.
+
+`scripts/reconstruct_spacerat11.py` recomputes the six steps in plain SymPy
+without the library, together with the published map and its three points, and
+checks the chain against them. Twenty-four checks. One of the six steps names
+one bought coordinate in both factor slots, so it subtracts a square; that is
+the extension of Proposition (3.1) this project marks wherever it uses it.
+
+**None of the six steps is one the untargeted enumerator offers.** Each
+transition was compared against everything `untargeted_candidates` produces at
+the map before it, building each candidate with the names the step actually
+uses:
+
+| step | matches a candidate |
+| ---: | :--- |
+| 1 to 6 | no |
+
+Zero of six, where `macfarlane13` gave two of seven. The comparison was
+validated before it was believed, on the ten steps of the `alpoege12` chain,
+which came out of the enumerator by construction: ten of ten match, at exactly
+the candidate positions the driver's result file records. Without that control,
+a broken comparison and a real gap are the same output.
+
+So the correct statement is again the narrow one. A six-step chain reaches this
+map from Alpoege's, and that chain is not one the untargeted enumerator can
+produce. Whether the map is reachable by some other untargeted chain is open
+and was not tested.
+
+### What the pipeline of milestone 0.6 makes of it
+
+Nineteen cubic homogeneous variables, by the three stages this milestone
+built: 11, then 22 after the unipotent reduction, 23 after the homogenization,
+19 after collision-hull compression. Every step is verified by the library and
+the three points arrive.
+
+That is one below the smallest cubic homogeneous figure this page records,
+Macfarlane's 20, which is also what Prellberg's hull makes of Thompson's 24.
+The literature was checked again before this paragraph was written and nothing
+smaller was found.
+
+What it is not is new mathematics. It composes two published constructions,
+the eleven-variable reduction and the two stages of Section 4 with Theorem 3 of
+arXiv:2608.12543v1. What this project contributed is the composition and the
+certificates. No minimality is claimed, here or anywhere.
+
+The number needs its stage attached wherever it is used. `alpoege19` is
+nineteen variables at degree *three* and has been in this repository since 0.4;
+Terence Tao's comment thread carries the same figure for the same kind of
+object. Two nineteens from two routes at two stages, and a bare nineteen names
+neither.
+
 ### What the eleven-variable construction does that this library cannot
 
 Worth separating from the count, because it is the part that bears on the
