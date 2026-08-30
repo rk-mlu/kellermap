@@ -259,14 +259,16 @@ in plain SymPy and without this library:
 | Thompson's `H` is cubic homogeneous, four relations |	yes	| agrees |
 | `H` restricted along the embedding is `h` | yes | agrees |
 
-Not recomputed: the intertwining identity with Thompson's ambient map, the
-nilpotency index of `J h`, and the term count of `Delta(P^2)`. The ancillary
-file checks all of those, and this project has not yet held Thompson's map, so
-there was nothing here to check the embedding against.
-
 Not recomputed: the nilpotency index of `J h`, which costs matrix powers over a
 polynomial ring, and the term count of `Delta(P^2)`. The ancillary file checks
 both.
+
+Two paragraphs stood here saying that, and the first also said that this
+project had not yet held Thompson's map, so the intertwining identity could not
+be checked. That was true when it was written and stopped being true in work
+package 4, which put the map in `kellermap.examples`. The stale one is gone.
+The identity is still not recomputed, and now for a reason rather than for want
+of the data.
 
 ### What it means for this project
 
