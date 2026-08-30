@@ -110,6 +110,7 @@ UNWEIGHTED_G = re.compile(
 # that time.
 FAMILIES = {
     "BCW",
+    "CHC",
     "COL",
     "DOM",
     "HOM",

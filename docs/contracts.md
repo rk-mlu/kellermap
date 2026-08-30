@@ -34,8 +34,8 @@ them, which is the half of a two-part change that nothing checks.
 
 **Milestone `0.6`, open.** The milestone adds the second and third steps of the
 Reduction Theorem and the compression that follows them. `UNI-1` to `UNI-12`
-are its first obligations and HOM-1 to HOM-10 its second; the rest of the
-milestone is not written yet.
+are its first obligations, HOM-1 to HOM-10 its second and CHC-1 to CHC-10 its
+third; the rest of the milestone is not written yet.
 
 The marker says that an obligation is not in a released version. That is what
 `pip install kellermap` gives a reader, so for anyone outside this repository
@@ -143,6 +143,7 @@ the implementation is required to guarantee.
 - [TranslationStep](#translationstep)
 - [UnipotentStep](#unipotentstep)
 - [HomogenizationStep](#homogenizationstep)
+- [CompressionStep](#compressionstep)
 - [Reduction](#reduction)
 - [Search](#search)
 - [Peeling](#peeling)
@@ -1368,6 +1369,208 @@ obligation here, because there is nothing exhibited to be invertible.
 
 ---
 
+## CompressionStep
+
+Collision-hull compression, Theorem 3 of arXiv:2608.12543v1. It restricts a
+homogeneous Keller map to the smallest invariant subspace containing a
+collision, and it is the first step in this library that *lowers* the
+dimension.
+
+```python
+def collision_hull(source, collision) -> tuple[Basis, tuple[int, ...]]: ...
+
+
+@dataclass(frozen=True)
+class CompressionStep:
+    source: PolynomialMap
+    target: PolynomialMap
+    basis: tuple[tuple[sp.Expr, ...], ...]
+    variables: tuple[sp.Symbol, ...]
+    provenance: Provenance
+
+    @classmethod
+    def build(cls, source, collision, factory=None) -> CompressionStep: ...
+```
+
+It lives at the top level, in `kellermap.compression`, and not in
+`kellermap.bcw`. The subpackage holds what Bass, Connell and Wright wrote;
+this is somebody else's paper, fourteen years later than the last thing in
+there, and putting it beside `BCWStep` would say it is theirs.
+
+Write `n` for `source.dimension`, `d` for the degree of the source's
+displacement `h`, `B` for `basis` as an `m x n` matrix of rows, and `m` for
+`len(basis)`.
+
+### Three things that are new here
+
+**The target shares no generator with the source.** Every other step extends:
+its target carries the source's variables followed by fresh ones, and RC-4 is
+about the fresh half. Here the target lives in `m` coordinates of a subspace,
+its generators are all fresh, and none of the source's appears in it. RC-4
+still applies, and it now covers every generator of the target rather than the
+added ones.
+
+**`build` takes a collision.** The transformation is not determined by the
+source alone: a different collision generates a different hull. `UnipotentStep`
+and `HomogenizationStep` need only their source, `BCWStep` needs a choice, and
+this one needs the very thing the other steps merely carry. A step therefore
+records which subspace it restricted to, and `transport` will refuse a
+collision that does not lie in it.
+
+**Transport can refuse a genuine collision.** Everywhere else, any collision of
+the source transports. Here a collision whose points leave `W` has no image in
+the target's coordinates at all, and CHC-9 says so rather than producing
+something.
+
+Transport does run both ways, unlike the homogenization's. Distinct
+coordinates give distinct points of `W`, and the restriction commutes with the
+inclusion, so a collision of the target is a collision of the source. The page
+states this because HOM makes the opposite statement two sections above and the
+difference is easy to miss.
+
+**CHC-1 — The identity. [0.6]** For the displacements `h` of the source and
+`hbar` of the target,
+
+    B^T hbar(c) == h(B^T c)
+
+as a polynomial identity in the target's ring, in every component.
+
+This is the whole of the correctness. It says that `W` is invariant under `h`,
+because the left side lies in `W` for every `c`, and that the target is the
+restriction written in the recorded basis. Invariance therefore needs no
+obligation of its own.
+
+**CHC-2 — The basis is a basis. [0.6]** `basis` is a tuple of `m` vectors, each
+of `n` coordinates over the source's coefficient domain, and they are linearly
+independent.
+
+A constructor invariant, raising `ValueError`. A dependent list describes no
+subspace of dimension `m` and no step, and a wrong length describes nothing at
+all. Independence is a rank computation over the domain and is not deferred to
+`verify()`, in the shape of BCW-2.
+
+**CHC-3 — The source's displacement is homogeneous of degree at least two.
+[0.6]** Every non-zero component of `source.displacement()` is homogeneous of
+one degree `d`, and `d >= 2`.
+
+Can fail on supplied data, and it is where the third stage of the Reduction
+Theorem and this construction meet: `HomogenizationStep` is what produces a
+source that satisfies it, as `UnipotentStep` is what produces one for HOM-3.
+
+The polarization is what needs it. A form of one degree has a symmetric
+`d`-linear polarization and a sum of forms of several degrees does not, so the
+iteration of CHC-8 has nothing to iterate. The lower bound is not a further
+restriction: a Keller map whose displacement is homogeneous of degree one is
+`I + N` with `N` a constant nilpotent matrix, which is injective, so no
+collision exists to compress.
+
+**CHC-4 — The source is Keller. [0.6]** `source.determinant() == 1`.
+
+Nilpotence of `J(h)` is what Lemma 2 needs, and here it does not need an
+obligation, which is the one place this section is shorter than the
+homogenization's. Under CHC-3, `J(h)(lambda x) = lambda^(d-1) J(h)(x)`, so
+`det(I + lambda^(d-1) J(h)(x)) = 1` for every `lambda`, and over an infinite
+field that is `det(I + s J(h)(x)) = 1` as a polynomial in `s`. The
+characteristic polynomial of `J(h)` is then `lambda^n` and Cayley-Hamilton
+gives `J(h)^n = 0`.
+
+HOM-3 has to check the same property because its source is *not* homogeneous
+and the implication is unavailable there. Here one determinant does the work of
+two, and the page records the argument rather than the coincidence.
+
+**CHC-5 — Dimension and generators. [0.6]** `target.dimension == m`;
+`variables` are the generators of the target, in order; each of them satisfies
+RC-4 against `source.ring`; and `m <= n`.
+
+The freshness half is a constructor invariant. A target generator named like a
+source generator would mean two different things by one name in one chain,
+which is worse here than elsewhere precisely because the two rings have nothing
+else in common.
+
+**CHC-6 — The target inherits the shape. [0.6]** The target's displacement is
+homogeneous of the same degree `d`, and `target.determinant() == 1`.
+
+Both follow from CHC-1, CHC-3 and CHC-4, and both are retained as cheap
+self-checks in the shape of BCW-7. The determinant is the one that localizes an
+error: a restriction to a subspace that is invariant but wrongly transcribed
+will usually still be homogeneous.
+
+**CHC-7 — No `EA` claim. [0.6]** `filtration_level` is `math.inf`, as for
+`HomogenizationStep` and for the same reason: there is no composition with
+elementary automorphisms here, so there is no stage of the filtration to
+declare.
+
+**CHC-8 — The hull. [0.6]** `collision_hull(source, collision)` returns a basis
+and the sequence of dimensions that reached it. With `T` the symmetric
+polarization of `h`,
+
+    d! T(w_1, ..., w_d) = sum over non-empty S in {1..d} of
+                          (-1)^(d - |S|) h( sum of w_j for j in S )
+
+and
+
+    W_0     = span of the points of the collision
+    W_(v+1) = W_v + span{ T(w_1, ..., w_d) : w_j a basis vector of W_v }
+
+The iteration stops when the dimension does not grow, which happens after at
+most `n` rounds. Taking the `w_j` from a basis rather than from all of `W_v` is
+the same span, because `T` is `d`-linear.
+
+The division by `d!` needs the coefficient domain to have characteristic zero,
+which DOM-1 already fixes for this library.
+
+The returned sequence is *descriptive*. It is not stored on the step and it is
+not part of any certificate: a supplied basis has no sequence, and storing one
+beside a basis would be storing the same fact twice with two ways to disagree.
+What the sequence is for is the control, where `2, 4, 11, 20, 20` on
+`examples.thompson24` is a number this project did not set itself.
+
+**CHC-9 — Transport. [0.6]** Each point and the image are expressed in the
+basis: the coordinates of a point `v` are the unique `c` with `B^T c = v`.
+
+If any point or the image is not in the span, `transport` raises and cites this
+obligation. It is the only transport on this page that can refuse a collision
+that genuinely holds for the source, and the refusal is the honest answer: the
+target is a map on `W`, and a point outside `W` has no coordinates there.
+
+Distinctness is preserved because `B` has rank `m`, so distinct points of `W`
+have distinct coordinates. STEP-4 therefore holds, and it holds in the other
+direction too.
+
+**CHC-10 — Provenance is recorded, and not settable. [0.6]** As BCW-9. The
+public constructor takes a basis and records `SUPPLIED`; `build` computes the
+hull and records `CONSTRUCTED`.
+
+### Which of these can fail on supplied data
+
+CHC-1 for a supplied target, CHC-3 and CHC-4 always, and CHC-9 for a collision
+the step was not built from.
+
+CHC-2 and the freshness half of CHC-5 are constructor invariants and are not
+reachable by `verify()`. CHC-6 follows from CHC-1 with CHC-3 and CHC-4, and is
+retained as a self-check.
+
+The interesting entry is CHC-1 on a *supplied* basis, because it is doing two
+jobs at once. A basis that spans a subspace which is not invariant makes the
+identity unsatisfiable by any target, so the failure is reported against the
+target while the fault is in the basis. The exception says both.
+
+### Deliberate non-obligations of this type
+
+**No minimality.** The certificate does not check that `W` is the smallest
+invariant subspace containing the points, and does not need to: any invariant
+subspace containing them gives a restriction that is Keller and keeps the
+collision. Minimality is a property of `collision_hull`, which is a
+construction rather than an obligation, and Corollary 7 of that paper claims
+only a route-specific minimality for the number forty.
+
+**No claim that compression helps.** Nothing requires `m < n`. A collision
+whose hull is the whole space compresses to itself, which is a correct step and
+a useless one. Whether a step is a good step is a question for the search, as
+BCW-1 already says for the degree.
+
+---
+
 ## Reduction
 
 A chain of steps, and the induction over them.
@@ -2578,6 +2781,9 @@ identifier also appears in `str(...)`, but a caller is expected to branch on
 | a shift whose length is not `source.dimension` | `ValueError` |
 | a source outside `MA^1`, of degree above three, or not Keller | `VerificationError` |
 | `variables` whose length is not `source.dimension` | `ValueError` |
+| a source whose displacement is not homogeneous, or of degree below two | `VerificationError` |
+| a basis whose vectors are dependent, or not of the source's dimension | `ValueError` |
+| a collision whose points leave the compressed subspace | `VerificationError` |
 | `reordered()` given anything but a permutation of the variables | `ValueError` |
 | a structural case the search does not handle | `NotImplementedError` |
 | an argument over a ring other than `over` | `VerificationError` |

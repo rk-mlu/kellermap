@@ -1717,10 +1717,26 @@ Macfarlane's. Those numbers were recomputed here from the manuscript's data
 before this plan was written, so the package has a target it did not set
 itself.
 
-A restriction is a new kind of step. Every step this library has is a
-composition, and this one is not; whether it is a `Step` at all, or a separate
-type with its own certificate, is the design question of the package and is
-settled in the obligations before anything is written.
+A restriction is a new kind of step, and the obligations settle what kind. It
+is a `Step`: nothing in STEP-1 to STEP-5 asks a target to extend its source, so
+a `Reduction` can hold the whole chain from twelve variables to twenty. CHC-1
+to CHC-10 state it, and three things in them are new to this page.
+
+The target shares no generator with the source, where every other step extends
+one. `build` takes a collision as well as a source, because a different
+collision generates a different hull; no other step needs the thing the others
+merely carry. And `transport` can refuse a collision that genuinely holds for
+the source, when its points leave the subspace, which no other transport can.
+
+The type lives at the top level and not in `kellermap.bcw`. That subpackage
+holds what Bass, Connell and Wright wrote.
+
+One obligation came out shorter than the homogenization's counterpart, and the
+reason is worth having on the page. CHC-4 asks only that the source is Keller,
+where HOM-3 has to check nilpotence separately: under a homogeneous
+displacement, `J(h)(lambda x) = lambda^(d-1) J(h)(x)` turns a constant
+determinant into `det(I + s J(h)) = 1` for every `s`, so nilpotence follows.
+The homogenization's source is not homogeneous and cannot borrow the argument.
 
 **WP 6** is the symmetric lift, Theorem 3 part 3 of that paper: over `Q(i)`,
 
