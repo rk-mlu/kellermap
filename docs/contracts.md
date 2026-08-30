@@ -34,8 +34,8 @@ them, which is the half of a two-part change that nothing checks.
 
 **Milestone `0.6`, open.** The milestone adds the second and third steps of the
 Reduction Theorem and the compression that follows them. `UNI-1` to `UNI-12`
-are its first obligations, HOM-1 to HOM-10 its second and CHC-1 to CHC-10 its
-third; the rest of the milestone is not written yet.
+are its first obligations, then HOM-1 to HOM-10, CHC-1 to CHC-10 and SYM-1 to
+SYM-12; the rest of the milestone is not written yet.
 
 The marker says that an obligation is not in a released version. That is what
 `pip install kellermap` gives a reader, so for anyone outside this repository
@@ -144,6 +144,7 @@ the implementation is required to guarantee.
 - [UnipotentStep](#unipotentstep)
 - [HomogenizationStep](#homogenizationstep)
 - [CompressionStep](#compressionstep)
+- [SymmetricLiftStep](#symmetricliftstep)
 - [Reduction](#reduction)
 - [Search](#search)
 - [Peeling](#peeling)
@@ -1571,6 +1572,200 @@ BCW-1 already says for the degree.
 
 ---
 
+## SymmetricLiftStep
+
+The symmetric lift, part 3 of Theorem 3 of arXiv:2608.12543v1. It turns a
+homogeneous Keller map into the gradient form of a quartic, over `k(i)`.
+
+```python
+@dataclass(frozen=True)
+class SymmetricLiftStep:
+    source: PolynomialMap
+    target: PolynomialMap
+    variables: tuple[sp.Symbol, ...]
+    provenance: Provenance
+
+    @classmethod
+    def build(cls, source, factory=None) -> SymmetricLiftStep: ...
+
+    @property
+    def form(self) -> sp.Expr: ...
+```
+
+It lives in `kellermap.lift`, beside `kellermap.compression` and not in it. The
+two are the same paper and not the same construction, and a module named for
+what it does is what this package has everywhere else.
+
+Write `m` for `source.dimension`, `h` for its displacement, `d` for the degree
+of `h`, and `X` and `Y` for the first and last `m` of `variables`. Then
+
+    P = i * sum over j of  Y_j * h_j(X + i Y)
+    target = (X, Y) - grad(P)
+
+`P` is homogeneous of degree `d + 1` and the target is again homogeneous of
+degree `d`, in twice as many variables.
+
+### Why a gradient form is the point
+
+Everything before this in milestone 0.6 produces a Keller map. This produces a
+Keller map that is the gradient of an exhibited form, which is a strictly
+stronger thing to have. It is what the de Bondt-van den Essen reduction asks
+for, and at `d = 3` the quartic `P` is a counterexample to the quartic case of
+Zhao's Vanishing Conjecture whenever the source is a counterexample to the
+Jacobian conjecture.
+
+That is a consequence and not a new result, and it is why SYM-2 is stated as an
+obligation rather than left in prose. A claim that some potential exists is not
+checkable; `P` on the page is.
+
+### Three things that are new here
+
+**The coefficient domain grows.** The lift adjoins `i`, so a source over `QQ`
+gives a target over `QQ(i)`. Every other step in this library keeps the domain,
+and `guards.settled` even uses equality of domains as an invariant no `BCWStep`
+can cross. This one crosses it deliberately, and SYM-5 says so; a source whose
+domain already contains `i` gains nothing.
+
+**Transport takes a pair, and it is asymmetric in it.** The lift sends `p` to
+`(p, 0)` and `q` to `(q + rho, i rho)`. Which of the two points is which
+changes both lifted points, so the step does not choose: SYM-9 refuses a
+collision that does not have exactly two, and the caller narrows a wider one.
+Everything this milestone builds carries three points, so that narrowing is a
+real step a caller has to take and not a formality.
+
+**The determinant is not checked.** It is the first obligation on this page
+that is left out on cost rather than kept as a cheap self-check. SYM-7 says
+what was measured and what the affordable substitute is worth.
+
+**SYM-1 — The identity. [0.6]** `target == (X, Y) - grad(P)` with `P` as
+displayed, checked as a polynomial identity in one shared `PolyRing`.
+
+**SYM-2 — The target is a gradient map. [0.6]** `target == id - grad(P)` for
+the `P` that SYM-1 exhibits, and `form` returns it.
+
+The same equation as SYM-1, and the page states it twice on purpose: SYM-1 is
+"the target is what the formula gives" and SYM-2 is "the target has a
+potential, and here it is". A reader checking the first is checking arithmetic;
+a reader checking the second is checking the property this milestone was for.
+
+**SYM-3 — The source's displacement is homogeneous of degree at least two.
+[0.6]** As CHC-3, and needed for the same reason at one remove: `P` is
+homogeneous of degree `d + 1` only if `h` is homogeneous of degree `d`. A
+source that fails this lifts to a form with no degree at all.
+
+Can fail on supplied data, and it is where the compression and this step meet:
+`CompressionStep` is what produces a source that satisfies it, and so is
+`HomogenizationStep`.
+
+**SYM-4 — The source is Keller. [0.6]** `source.determinant() == 1`.
+
+Nilpotence of `J(h)` needs no obligation here, by the argument CHC-4 gives:
+under SYM-3 a constant determinant is `det(I + s J(h)) = 1` for every `s`, and
+Cayley-Hamilton finishes it. The two obligations are the same statement about
+the same shape of source, and the page says so rather than repeating the
+derivation.
+
+**SYM-5 — Dimension, generators and domain. [0.6]**
+`target.dimension == 2 * m`; the `2m` generators are those of `variables`, in
+order, and each satisfies RC-4 against `source.ring`; and the coefficient
+domain of the target is the source's with `i` adjoined.
+
+The generators are all fresh, as in CHC-5 and for the same reason: the target
+is a map on a different space and shares no coordinate with its source.
+
+The domain clause is the new one. It is checked and not assumed, because a
+target supplied over `QQ` for a source over `QQ` would satisfy every other
+obligation here up to the point where a coefficient of `P` fails to be
+representable, and the failure would then be reported as an arithmetic one.
+
+**SYM-6 — The degrees. [0.6]** `form` is homogeneous of degree `d + 1`, and
+every non-zero component of `target.displacement()` is homogeneous of degree
+`d`.
+
+Implied by SYM-1 with SYM-3, and checked because both are cheap: the check
+reads monomials and computes nothing.
+
+**SYM-7 — The determinant is one, and it is not recomputed. [0.6]**
+`det J(target) = 1` follows from SYM-1, SYM-3 and SYM-4 by part 3 of Theorem 3,
+which gives that the Hessian of `P` is nilpotent. `verify()` does not compute
+it.
+
+This is a departure from UNI-10, HOM-7 and CHC-6, which all keep the
+determinant as a cheap self-check, and it is a departure on a measurement
+rather than on a preference. At dimension six a lift's determinant costs under
+a hundredth of a second. On the forty-variable lift of Thompson's compressed
+twenty it did not finish in the time this project has been able to give it, and
+`docs/roadmap.md` under work package 7 records what was tried.
+
+What is affordable there is the determinant at a point: 25 seconds, and one,
+at each of two random rational points of the space. That is the check the
+`reconstruct_*` scripts make and it is worth exactly what they say it is worth
+-- a value other than one falsifies the claim, and agreement at finitely many
+points does not prove it.
+
+So the obligation is not checked, a test computes the determinant at dimension
+six as an independent cross-check in the sense `AGENTS.md` gives that phrase,
+and a caller who wants more at forty has the sample-point route and the
+knowledge that the polynomial one is out of reach.
+
+**SYM-8 — Transport, and the vector it goes through. [0.6]** With
+`source(p) = source(q)` and `p != q`,
+
+```
+rho = (I + J h(q)^T)^-1 (p - q)
+p  |-->  (p, 0)
+q  |-->  (q + rho, i rho)
+```
+
+`rho` is computed and not stored, since the source and the pair determine it,
+and the equation `(I + J h(q)^T) rho = p - q` is checked rather than the
+inverse trusted. That is the same shape as UNI-6: an exhibited object with its
+defining equation checked beats an asserted one.
+
+**SYM-9 — A collision of more than two points is refused. [0.6]**
+`transport` raises and cites this obligation.
+
+The lift carries a pair. Which pair, and which of the two is `p`, changes both
+lifted points, so a step that picked would be making a mathematical choice
+silently. Every collision this milestone produces has three points, so this is
+reached in practice and not in principle.
+
+**SYM-10 — The two lifted points are distinct. [0.6]** The argument is on the
+second block and not the first: `p != q` gives `p - q != 0`, hence
+`rho != 0`, hence `i rho != 0`, which is the second block of one point against
+the zero of the other. STEP-4 therefore holds without an argument about the
+first block, where `p` and `q + rho` might in principle agree.
+
+**SYM-11 — No `EA` claim. [0.6]** `filtration_level` is `math.inf`, as for
+`HomogenizationStep` and `CompressionStep`.
+
+**SYM-12 — Provenance is recorded, and not settable. [0.6]** As BCW-9.
+
+### Which of these can fail on supplied data
+
+SYM-1 and SYM-2 for a supplied target, SYM-3 and SYM-4 always, SYM-5's domain
+clause for a supplied target, and SYM-9 for a supplied collision.
+
+SYM-8's equation cannot fail where the arithmetic is right, and is a self-check
+of it. SYM-6 follows from SYM-1 and is retained because it is free. SYM-7 is
+not checked at all, which is a third category this page has not needed before,
+and the section above says what was measured before it was put there.
+
+### Deliberate non-obligations of this type
+
+**No minimality.** Corollary 7 of that paper states a route-specific one: forty
+is minimal among examples obtained by restricting Thompson's map to an
+invariant subspace containing the collision and then applying this lift
+unchanged. That is a statement about one route, it is the paper's and not this
+project's, and nothing here claims it for any other route.
+
+**No claim about Zhao's Vanishing Conjecture beyond the construction.** The
+quartic form is a counterexample to it when the source is one. That is a
+consequence of published theorems, and this library produces the object rather
+than the theorem.
+
+---
+
 ## Reduction
 
 A chain of steps, and the induction over them.
@@ -2784,6 +2979,7 @@ identifier also appears in `str(...)`, but a caller is expected to branch on
 | a source whose displacement is not homogeneous, or of degree below two | `VerificationError` |
 | a basis whose vectors are dependent, or not of the source's dimension | `ValueError` |
 | a collision whose points leave the compressed subspace | `VerificationError` |
+| a collision of more than two points, at the symmetric lift | `VerificationError` |
 | `reordered()` given anything but a permutation of the variables | `ValueError` |
 | a structural case the search does not handle | `NotImplementedError` |
 | an argument over a ring other than `over` | `VerificationError` |

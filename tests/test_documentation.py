@@ -120,6 +120,7 @@ FAMILIES = {
     "REV",
     "SEA",
     "STEP",
+    "SYM",
     "TRA",
     "UNI",
     "UNT",

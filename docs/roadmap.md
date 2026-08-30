@@ -1813,7 +1813,8 @@ a broken comparison and a real gap look alike.
 That is a statement about the search and not about the map, and what to do
 about it is not this milestone's business.
 
-**WP 7** is the symmetric lift, Theorem 3 part 3 of that paper: over `Q(i)`,
+**WP 7** is the symmetric lift, SYM-1 to SYM-12. Theorem 3 part 3 of that
+paper: over `Q(i)`,
 
     P_W(x, y) = i * sum_j y_j * hbar_j(x + i*y)
 
@@ -1824,6 +1825,40 @@ This is the step recorded here for two milestones as architecturally absent,
 and the reason it was absent is that it needs `Q(i)`. The coefficient ring
 became something a caller states in 0.5 and `canonical` learned to decide
 algebraic numbers, so the two obstacles named at the time are gone.
+
+The obligations are written and the step is not. Three things in them are new
+to the contract page, and each was measured before it was worded.
+
+*The coefficient domain grows.* A source over `QQ` gives a target over `QQ(i)`,
+where every other step keeps the domain and `guards.settled` uses equality of
+domains as an invariant no BCW chain crosses. Measured on the compressed
+twenty: the lift lands in `QQ_I`.
+
+*Transport takes a pair and is asymmetric in it.* `p` goes to `(p, 0)` and `q`
+to `(q + rho, i rho)`, so which point is which changes both. Every collision
+this milestone produces has three points, so a caller has to narrow one, and
+SYM-9 refuses rather than choosing.
+
+*The determinant is not checked, and that is a first.* The figures:
+
+| | |
+| --- | --- |
+| `P`, on the compressed twenty | 350 monomials, 0.2 s |
+| the lifted map | 40 variables, degree 3, 1316 monomials, 1.6 s |
+| `rho` | 0.2 s |
+| the determinant at dimension six | one, under 0.01 s |
+| the determinant at a random point of the forty | one, 25 s, twice |
+| the determinant as a polynomial at forty | did not finish |
+
+The last row is the one that decided SYM-7. Two runs were given about fifteen
+and about twelve minutes and neither returned; both were cut off by the
+environment rather than by a decision, so the row says what happened and no
+number stands in it. A bounded run belongs to the maintainer, and the figure
+goes into this table when it exists.
+
+That is why the obligation is worded around what the affordable route gives.
+Twenty-five seconds and a value of one at a random point is the check the
+`reconstruct_*` scripts make, and it falsifies without proving.
 
 **WP 8** compares, as WP 13 of 0.5 did, and reports what a comparison
 establishes and what it does not. At that stage the numbers to beat are 24 and
