@@ -1717,6 +1717,31 @@ Macfarlane's. Those numbers were recomputed here from the manuscript's data
 before this plan was written, so the package has a target it did not set
 itself.
 
+It came out stronger than that. The restriction is the published map `h`
+component for component, and the basis is the published embedding row for row.
+The reason is not a coincidence and is worth stating: a reduced row echelon
+form is unique, and the embedding printed in the ancillary file is in one, so
+agreement of the subspaces forces agreement of the bases. What is checked is
+therefore the subspace, and no choice of basis could have repaired a wrong one.
+
+Two measurements changed the implementation.
+
+`PolyElement.evaluate` on a list of generators substitutes one at a time and
+builds a polynomial at every step. The hull evaluates the displacement tens of
+thousands of times, and through `evaluate` it did not finish on Thompson's map
+in ten minutes. Reading the terms once and multiplying in the coefficient
+domain brings it to 3.6 seconds.
+
+The basis is kept in *reduced* row echelon form and not merely triangular. Both
+span the same subspace; the unreduced one gives a restriction with 21988
+monomials and the reduced one 49, which is what the published map has.
+Verification falls from not finishing to 0.05 seconds with it. A basis is a
+choice, and this is the choice that makes every figure downstream tractable.
+
+The whole chain on `alpoege12` is then 12, 24, 25, 20, every step verified,
+with the three points carried through. The number the milestone was cut for is
+no longer exploratory.
+
 A restriction is a new kind of step, and the obligations settle what kind. It
 is a `Step`: nothing in STEP-1 to STEP-5 asks a target to extend its source, so
 a `Reduction` can hold the whole chain from twelve variables to twenty. CHC-1

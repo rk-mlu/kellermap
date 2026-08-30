@@ -42,7 +42,7 @@ They ask today's question of today's code. Every one of them should report
 ``tests/test_scripts.py`` checks that every fragment still matches the code it
 aims at. The set grew to eighteen with ``UnipotentStep``, whose three source
 obligations are the first here that a constructed step cannot make true, and to
-twenty-four with the homogenization.
+twenty-four with the homogenization and twenty-nine with the compression.
 
 They do **not** reproduce the ten misses of the first run, and until
 ``0.4.0rc14`` this file and ``CHANGELOG.md`` said they did. Two reasons. The
@@ -276,6 +276,41 @@ PROBES: tuple[Probe, ...] = (
         "HOM-9",
         "HomogenizationStep.transport verifies its output",
         "src/kellermap/bcw/homogenization.py",
+        "        moved.verify(self._target)\n\n        return moved",
+        "        return moved",
+    ),
+    Probe(
+        "CHC-1",
+        "the restriction is compared in every coordinate of the source",
+        "src/kellermap/compression.py",
+        "            if combined != substituted[position]:",
+        "            if False:",
+    ),
+    Probe(
+        "CHC-3",
+        "the displacement of the source is homogeneous",
+        "src/kellermap/compression.py",
+        "    if len(degrees) != 1:",
+        "    if False:",
+    ),
+    Probe(
+        "CHC-4",
+        "the source of the compression is Keller",
+        "src/kellermap/compression.py",
+        "        if not agree(determinant, sp.Integer(1)):",
+        "        if False:",
+    ),
+    Probe(
+        "CHC-9",
+        "a collision leaving the subspace is refused",
+        "src/kellermap/compression.py",
+        "        if not echelon.spans(_to_domain(vector, domain)):",
+        "        if False:",
+    ),
+    Probe(
+        "CHC-9",
+        "CompressionStep.transport verifies its output",
+        "src/kellermap/compression.py",
         "        moved.verify(self._target)\n\n        return moved",
         "        return moved",
     ),

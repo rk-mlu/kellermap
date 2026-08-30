@@ -1,4 +1,5 @@
 from .collision import Collision
+from .compression import CompressionStep, collision_hull
 from .context import ReductionContext
 from .elementary import ElementaryAutomorphism, ElementaryFactor
 from .errors import VerificationError
@@ -48,6 +49,7 @@ __all__ = [
     "DEFAULT_VARIABLE_FACTORY",
     "Candidate",
     "Collision",
+    "CompressionStep",
     "Dilation",
     "ElementaryAutomorphism",
     "ElementaryFactor",
@@ -71,6 +73,7 @@ __all__ = [
     "VariableFactory",
     "VerificationError",
     "anchors",
+    "collision_hull",
     "conjugate",
     "diagonal_matching",
     "enumerate_candidates",

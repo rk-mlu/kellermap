@@ -30,6 +30,7 @@ what they do.
 - [The BCW step](#the-bcw-step)
 - [The unipotent step](#the-unipotent-step)
 - [The homogenization](#the-homogenization)
+- [Collision-hull compression](#collision-hull-compression)
 - [Finding candidates](#finding-candidates)
 - [Assembling a chain](#assembling-a-chain)
 - [Peeling a chain off a target](#peeling-a-chain-off-a-target)
@@ -44,7 +45,7 @@ what they do.
 ```python
 >>> import kellermap
 >>> kellermap.__all__
-['DEFAULT_VARIABLE_FACTORY', 'Candidate', 'Collision', 'Dilation', 'ElementaryAutomorphism', 'ElementaryFactor', 'FixedVariableFactory', 'IndexedVariableFactory', 'LinearAutomorphism', 'LinearFactor', 'LinearStep', 'PeelOutcome', 'PolynomialMap', 'Provenance', 'Reduction', 'ReductionOutcome', 'ReductionContext', 'SearchOutcome', 'Step', 'TranslationStep', 'Transposition', 'Transvection', 'Undo', 'VariableFactory', 'VerificationError', 'anchors', 'conjugate', 'diagonal_matching', 'enumerate_candidates', 'lowers_the_weight', 'field_ring', 'over_field', 'peel', 'reduce_to_degree3', 'remaining_weight', 'reserved_names', 'search', 'untargeted_candidates']
+['DEFAULT_VARIABLE_FACTORY', 'Candidate', 'Collision', 'CompressionStep', 'Dilation', 'ElementaryAutomorphism', 'ElementaryFactor', 'FixedVariableFactory', 'IndexedVariableFactory', 'LinearAutomorphism', 'LinearFactor', 'LinearStep', 'PeelOutcome', 'PolynomialMap', 'Provenance', 'Reduction', 'ReductionOutcome', 'ReductionContext', 'SearchOutcome', 'Step', 'TranslationStep', 'Transposition', 'Transvection', 'Undo', 'VariableFactory', 'VerificationError', 'anchors', 'collision_hull', 'conjugate', 'diagonal_matching', 'enumerate_candidates', 'lowers_the_weight', 'field_ring', 'over_field', 'peel', 'reduce_to_degree3', 'remaining_weight', 'reserved_names', 'search', 'untargeted_candidates']
 
 ```
 
@@ -1083,6 +1084,68 @@ slice is a different map.
 (9, 2, 1)
 
 ```
+
+---
+
+## Collision-hull compression
+
+The smallest subspace containing a collision and invariant under a homogeneous
+displacement, and the restriction to it. This is the one step that *lowers* the
+dimension, and the one whose target shares no generator with its source.
+
+`collision_hull` runs the iteration and reports the dimensions it passed
+through:
+
+```python
+>>> from kellermap import CompressionStep, collision_hull
+>>> thompson = over_field(examples.thompson24())
+>>> pair = examples.thompson24_collision()
+>>> basis, dimensions = collision_hull(thompson, pair)
+>>> dimensions
+(2, 4, 11, 20, 20)
+>>> len(basis)
+20
+
+```
+
+Those are the figures Theorem 1 of arXiv:2608.12543v1 states for this map. The
+basis comes back in reduced row echelon form, which is not a formality: an
+unreduced basis spans the same subspace and gives a much denser restriction.
+
+`build` needs the collision as well as the source, since a different collision
+generates a different hull. It is the only step type that does:
+
+```python
+>>> step = CompressionStep.build(thompson, pair)
+>>> step.source.dimension, step.target.dimension
+(24, 20)
+>>> step.verify() is None
+True
+>>> step.filtration_level
+inf
+
+```
+
+A collision is carried by expressing its points in the basis. A collision whose
+points leave the subspace is refused rather than answered, which no other
+transport in this library does:
+
+```python
+>>> moved = step.transport(pair)
+>>> moved.dimension
+20
+>>> fold = over_field(PolynomialMap((x1, x2, x3), (x1 + x1**2, x2, x3)))
+>>> on_the_axis = Collision(((0, 0, 0), (-1, 0, 0)), (0, 0, 0))
+>>> line = CompressionStep.build(fold, on_the_axis)
+>>> line.transport(Collision(((0, 1, 0), (-1, 1, 0)), (0, 1, 0)))
+Traceback (most recent call last):
+    ...
+kellermap.errors.VerificationError: [CHC-9] The point 0 of the collision is not in the subspace the step restricts to, so it has no coordinates there. A step compresses along the collision it was built from.
+
+```
+
+That last source is not a Keller map, so `verify` would refuse it; `transport`
+does not need CHC-4.
 
 ---
 
