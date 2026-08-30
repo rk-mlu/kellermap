@@ -1393,9 +1393,9 @@ class CompressionStep:
 ```
 
 It lives at the top level, in `kellermap.compression`, and not in
-`kellermap.bcw`. The subpackage holds what Bass, Connell and Wright wrote;
-this is somebody else's paper, fourteen years later than the last thing in
-there, and putting it beside `BCWStep` would say it is theirs.
+`kellermap.bcw`. That subpackage holds one paper, Bass, Connell and Wright of
+1982, and nothing else; this is somebody else's, of 2026, and putting it beside
+`BCWStep` would say it is theirs.
 
 Write `n` for `source.dimension`, `d` for the degree of the source's
 displacement `h`, `B` for `basis` as an `m x n` matrix of rows, and `m` for

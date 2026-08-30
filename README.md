@@ -80,7 +80,7 @@ eight steps into fifteen and eight into seventeen.
 
 What that is worth and what it is not is in `docs/references.md`. Smaller
 dimensions at degree three are published — thirteen a month earlier by one
-route, eleven two days after Alpöge's announcement by another — so no priority
+route, eleven on the day of Alpöge's announcement by another — so no priority
 is claimed, and no minimality either. `examples.alpoege12`, which an external
 search driver found, is one below the chain above and still above the eleven.
 

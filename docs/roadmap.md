@@ -1572,7 +1572,7 @@ on, and because the check it carries changed what this milestone may claim.
 
 *The literature first.* The check that `AGENTS.md` requires before a number
 leaves the repository found that eleven variables at degree three were reached
-on 20 July 2026, two days after Alpoege's announcement, in a GitHub gist, and
+on 20 July 2026, the day of Alpoege's announcement, in a GitHub gist, and
 that the same map is printed in Section 6 of arXiv:2608.05392v1. So twelve is
 not a record, thirteen was not one either when it was found, and
 `docs/references.md` now says both. The section there also says why the earlier
@@ -1756,7 +1756,7 @@ establishes and what it does not. At that stage the numbers to beat are 24 and
 this project will have arrived by a different route. The literature is checked
 again before any number leaves the repository. The last two times that check
 was made it found a smaller published dimension than this project had: thirteen
-a month earlier, and then eleven, two days after the announcement. That is what
+a month earlier, and then eleven, on the day of the announcement. That is what
 the rule is for, and WP 2 records what the second finding says about how the
 check has to be made.
 
