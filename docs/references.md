@@ -1,7 +1,13 @@
 # References
 
-Sources this project builds on, and where the fixed data in the test suite
-comes from.
+Sources this project builds on, and what the figures in them mean beside this
+project's own.
+
+Two pages were split out of this one in work package 9 of milestone 0.6, when
+it had grown to four subjects at once. `docs/provenance.md` says where each
+fixed map came from, under what licence, and what an agreement with it is
+evidence for. `docs/errata.md` says what this project reported wrongly and
+corrected. This page states the position as it now stands.
 
 Status note: the counterexample below has been checked publicly by many people
 and reconstructed geometrically, but as of this writing it has not completed
@@ -31,13 +37,6 @@ numbers from it:
 | Proposition (3.1), p. 305 | degree reduction to 3 by stabilization and two elementary automorphisms |
 | Chapter II, §4, p. 306 | proof of the Reduction Theorem; homogenization over `k[T]` |
 
-One row said p. 304 for the filtration as well as for `EA_n(k)` and the stable
-extension. An audit of `0.4.0rc9` read the scan and found the filtration on
-p. 303: p. 304 begins with the decomposition of `GA_n(k)` and then defines the
-elementary automorphisms. `MA_n(k)` itself is p. 302. The three are separate
-rows now, since one row for three pages is how they were confused. This is the
-second time a citation in this table has had to be corrected against the
-source, after Proposition (1.1) and Section 4 were swapped in 0.2.
 
 ---
 
@@ -334,12 +333,6 @@ Not recomputed: the nilpotency index of `J h`, which costs matrix powers over a
 polynomial ring, and the term count of `Delta(P^2)`. The ancillary file checks
 both.
 
-Two paragraphs stood here saying that, and the first also said that this
-project had not yet held Thompson's map, so the intertwining identity could not
-be checked. That was true when it was written and stopped being true in work
-package 4, which put the map in `kellermap.examples`. The stale one is gone.
-The identity is still not recomputed, and now for a reason rather than for want
-of the data.
 
 ### What it means for this project
 
@@ -360,51 +353,7 @@ form, with the image of the collision given explicitly. The chain this project
 follows — Jacobian Conjecture, BCW reduction, gradient form, Zhao's Vanishing
 Conjecture — is closed end to end in one paper.
 
-### Third-party material
-
-The library is MIT. Several pieces of mathematics in it are not this project's
-and carry their own terms.
-
-`kellermap.examples.gao_quartic` and `gao_quartic_collision` are from Shuhong
-Gao, arXiv:2608.00222v1, licensed CC BY 4.0. Attribution, the licence link and
-a statement of changes are in the section above and in the docstring of the
-map.
-
-Thompson's twenty-four-variable map, its twenty-dimensional restriction, the
-collision and the vector `rho` are transcribed from the ancillary file
-`anc/check_quartic_40.py` of arXiv:2608.12543v1, which is licensed CC BY 4.0
-with the rest of that submission. Attribution, the licence link and a statement
-of changes are in the docstring of every place that holds them. The formulas
-are not altered; the checks around them are this project's, are a subset of the
-ancillary file's eleven, and add one it does not make.
-
-This paragraph said until milestone 0.6 that nothing from that file is copied
-into the repository and that the figures were recomputed from the manuscript.
-The paragraph after it said the opposite, and the second was the true one: the
-transcription into `scripts/reconstruct_prellberg40.py` was made when that
-script was written and the sentence above it was not withdrawn. Two statements
-about one fact will disagree eventually, and these did.
-
-Two places hold Thompson's map. `scripts/reconstruct_prellberg40.py` has the
-displacement in the source's own shape, and `kellermap.examples.thompson24_homogeneous` has
-it as a map, which is what a caller of this library needs. Work package 4 of
-milestone 0.6 put it there, and `tests/test_examples.py` compares the two so
-that a transcription cannot drift from a transcription.
-
-The twenty-dimensional restriction the same file prints is deliberately in only
-one of them. It is the answer the compression of work package 5 has to arrive
-at, and an answer stored beside the code that computes it is not a control: a
-change to the compression could then be repaired by editing the expected value.
-It stays in the script, which does not import this library. The same subspace
-was found independently by Macfarlane; those values are a different source with
-no licence and stay in `tests/data.py`.
-
-`tests/data.py` holds the published nineteen-dimensional map and
-`macfarlane13`. Neither source carries a licence file, so neither is in the
-distribution: `pyproject.toml` ships `scripts/` and `src/`, and the values stay
-in the test tree. What is checked against them is recorded here.
-
-Nothing else in the repository is somebody else's.
+---
 
 ## alpoege13, the first chain a search found
 
@@ -596,18 +545,12 @@ three and 79 after the homogeneous reduction, which he describes as
 conservative rather than optimized. So a figure from after the first stage is
 not comparable with a figure from before it.
 
-Which stage costs what was stated imprecisely here until milestone 0.6 was cut,
-and the correction is worth the four lines. This page said that the last stage
-roughly doubles the count. The stage that doubles is the second, p. 306, where
+Which stage costs what: the second, p. 306, is the one that doubles, where
 `G(T) o E(T)^[n] o H(T)` is a map in `2n` variables. The third, p. 307, costs
-one variable: `L = (X + N(T), T)`. Together `2n + 1`, and Long's two figures
-are that arithmetic exactly, since `2 * 39 + 1 = 79`. The total was right and
-the attribution was not.
+one variable, `L = (X + N(T), T)`. Together `2n + 1`, and Long's two figures
+are that arithmetic exactly, since `2 * 39 + 1 = 79`.
 
 ### Thompson's twenty-four variables
-
-Named as a benchmark in `docs/roadmap.md` since milestone 0.5 was planned, and
-until now recorded nowhere on this page. The gap is corrected here.
 
 W. Thompson, posted to the Secret Blogging Seminar on 20 July 2026 and archived
 at https://github.com/wtho704/explicit-cubic-homogeneous-jacobian-counterexample.
@@ -699,9 +642,6 @@ Jacobian determinant −2, and three rational points in one fibre. Its header
 states that the construction, the simplification and the verification code in
 it were generated by ChatGPT.
 
-The heading said "two days after the announcement" until it was checked against
-the entry at the top of this page, which dates the announcement 20 July 2026,
-the same day. Neither date moved; the subtraction was never done.
 
 The two records can be put in an order, and this page does not put any weight
 on it. The gist header gives 06:58 UTC. The announcement displays 4:19 on 20
@@ -971,24 +911,15 @@ whether the check can fail. Here the other side is this project's own second
 implementation, so the agreement says that two implementations of the same
 formulas compute the same thing.
 
-That sentence used to continue: for the seventeen-dimensional map the other
-side is someone else's mathematics. **It was wrong, and is withdrawn in 0.4.**
-The components of the seventeen-dimensional map are the maintainer's own hand
-computation, checked against `scripts/reconstruct_bcw17.py`. They are external
-to the *library* — the point BCW-9 and RED-7 are about — and not external to
-the *project*. `AGENTS.md` asks for exactly that distinction and the sentence
-collapsed it.
+For the seventeen-dimensional map it is the same: those components are the
+maintainer's own hand computation, external to the *library* and not to the
+*project*. `docs/provenance.md` sorts every fixed map by which of the two it
+is, and `docs/errata.md` records that this page once said otherwise.
 
-What follows from the correction is worth stating plainly, because it changes
-what this repository could claim before 0.4. Two things in it are somebody
-else's mathematics: Alpöge's three-dimensional map, which every chain starts
-from, and the nineteen-dimensional map. Everything else is the project's own,
-including both endpoints that the `bcw17` and `alpoege15` chains are held
-against. So until the search reaches the nineteen-dimensional map, the only
-external datum a chain is compared against is its *source*, and the endpoint
-comparison — the one the last step's BCW-1 performs — is against data this
-project produced by hand. That is a real check and it can fail; it is not
-agreement with a third party, and this page said it was.
+So at that stage the only external datum a chain is compared against is its
+*source*. The endpoint comparison, the one the last step's BCW-1 performs, is
+against data this project produced by hand: a real check that can fail, and not
+agreement with a third party.
 
 No claim of minimality attaches to it, following the practice of the sources
 above — the author of the 24-variable map states plainly that he claims neither
@@ -1044,12 +975,6 @@ factorization, so the factorization cannot be read off the way BCW17's can.
 Reconstructing it was the work of 0.4, and "The chain to the
 nineteen-dimensional map" below records how it was done and by whom.
 
-This paragraph used to add that the `w`-numbering is not the order of
-introduction, on the evidence that the component of `w2` reads `w9` and `w13`.
-That is withdrawn in 0.4: the component of `w2` is the residue of a later step
-and not an introduced value, so it says nothing about when `w2` arrived. With
-the introduced value in its place, every dependency points to a smaller index.
-`tests/data.py` holds the values and `tests/test_alpoege19.py` records both.
 
 The note arrives independently at the Schur-complement route this library uses
 for the determinant. On this map the difference is not a nicety: the carrier
@@ -1057,93 +982,3 @@ block reduces the 19×19 determinant to a 3×3 one in a fraction of a second,
 while `sp.Matrix(F.jacobian()).det()` did not finish in a quarter of an hour.
 
 ---
-
-## Provenance of the fixed test data
-
-`examples.bcw17()` returns a 17-dimensional map whose components this
-library did not produce. Since version 0.2 the suite derives it: a `Reduction`
-of eight steps from Alpöge's map — the linear normalization of Chapter II,
-Proposition (1.1), then seven
-applications of Proposition (3.1) — verified step by step, carrying the
-three-point collision from `k^3` to `k^17`.
-
-What in that is evidence, and what is a self-check:
-
-- The intermediate maps in dimensions 5 to 15 are published nowhere. They
-  therefore *cannot* be supplied, and their steps are `CONSTRUCTED`: BCW-1
-  compares the implementation against itself there. By RED-7 the whole chain
-  carries the weaker provenance.
-- The external fact is the endpoint. The last step is given the fixed
-  components as its target, so its BCW-1 compares an externally computed map
-  against `G ∘ F^[2] ∘ H` and can fail — a test perturbs one component to show
-  that it does. The transported collision is likewise held against the fixed
-  one, and the fresh variable names come from a `ReductionContext` rather than
-  from the table, so a different naming would fail the last step too.
-- The factorization is not searched for. It was read off the fixed components,
-  whose entries 4 to 17 have the form `X_j + P`; those `P` are the factors.
-  Searching is 0.4.
-
-`scripts/reconstruct_bcw17.py` carries the same chain in plain SymPy, without
-this library. The duplication is deliberate: two independent implementations of
-formula (1) agreeing on all seventeen components and all three collision points
-says more than one implementation checked against itself.
-
-Recomputed independently of the chain, as cross-checks rather than as part of
-the certificate: degree 3, determinant 1, the unipotent carrier block, and the
-three images.
-
-### The chain to the nineteen-dimensional map
-
-Reconstructed by an external audit of this project in August 2026, and verified
-here before it was written down. What that verification consisted of, and what
-it is worth:
-
-- `scripts/reconstruct_alpoege19.py` applies the step formula in plain SymPy,
-  without this library, and checks the seventeen step identities, the
-  dimensions, the degrees, the nineteen components and the fifty-seven
-  coordinates of the three transported points.
-- `tests/test_alpoege19.py` builds the same chain with `BCWStep`, verifies it
-  under BCW-1 to BCW-12, and compares the endpoint with the published map and
-  the transported collision with the published points.
-- A negative control changes one coefficient. The chain still builds and still
-  verifies; it arrives somewhere else. That is what makes the endpoint the
-  evidence rather than `verify()`.
-
-The audit is a source and not an authority, the same way the published map is.
-Nothing here rests on its having been right; what it did was hand this project
-a chain to check, and the checking is recorded above.
-
-The chain needs three things that Chapter II, Proposition (3.1) does not have,
-and all three are marked as extensions in `contracts.md`: a factor taken from a
-coordinate an earlier step introduced (BCW-10, in the library since 0.3), a
-coefficient on the removed product (BCW-11), and a step whose two slots name one
-fresh coordinate (BCW-12). The coefficients cannot be moved into a change of
-coordinates: the diagonal that would absorb them needs `1/7` at step seven where
-the earlier steps force `1/9`, and `1` at step nine where they force `1/2`.
-
-The search finds a chain too, and this paragraph said the opposite until an
-external audit of `0.4.0rc1` showed why. `scripts/search_alpoege19.py` built its
-source with `over_field`, over `QQ`, while the published map is over `ZZ`;
-`PolynomialMap` counts the coefficient domain as part of its identity and every
-step preserves it, so the search could not have arrived however long it ran.
-Over `ZZ` the peel reaches the published map in **eighteen examined maps**.
-
-What it finds is not the audited chain but another of seventeen steps, with the
-coordinates introduced in a different order. Both are chains and neither is
-*the* chain, which is what "No optimality of the sequence" has said since the
-first milestone.
-
-So two things may be claimed and one may not. The factorization is certified
-here, and it is also reachable by this library's own search. That the search
-would have found it without the audit is *not* claimed: the audit came first,
-and the ordering of events is a fact about this project rather than about the
-mathematics.
-
-The order the coordinates were introduced in is
-
-    w1, w2, w4, w5, w8, w7, w9, w13, w16, w15, w14, w6, w12, w3, w11, w10,
-
-which is not the numbering of the published map. That numbering is a valid
-topological order of the final carrier values and not a chronology; this page
-said otherwise until the chain settled it, and the paragraph that did is left
-standing in `roadmap.md`, withdrawn rather than deleted.
