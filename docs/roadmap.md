@@ -1921,13 +1921,51 @@ this package's, and the first thing it does is measure what loading five more
 scripts costs the fast suite. If that is too much, the comparison goes behind a
 slow marker rather than being dropped, and this page says which.
 
-It also reads every docstring in the tree once, against the question whether
-it is still true. Three claims in the header of `kellermap.examples` were
-false when WP 6 looked at it, two of them since 0.5: a sentence about
-provenance that the maps' own docstrings contradicted, a count measured in WP 8
-of 0.5 and left in the present tense, and a list of coefficient domains that
-omitted one. None of them is reachable by a test, all three were found by
-reading, and the module had grown four times since the header was written.
+*The pages first, and as a restructuring of its own.* `docs/references.md` has
+grown to 1149 lines and 32 sections, and it now mixes four things: the
+bibliography, the provenance and licences of third-party data, the comparisons
+of figures, and the record of what this project reported wrongly and corrected.
+The package splits the last two off.
+
+`docs/errata.md` takes the corrections: the fourteen years that were
+forty-four, the two days that were the same day, the sentence saying nothing
+was copied from an ancillary file while the next paragraph said it was, the
+claim that this project had no figure at a stage it had since reached, the
+status line of `contracts.md` that said `0.4.0` through a release, and the
+duplicated paragraph that WP 4 had made false. About a dozen paragraphs, which
+is a tenth of the page.
+
+`docs/provenance.md` takes what an audit reads: where each fixed map came from,
+under what licence, what was changed, and what may be distributed.
+
+What does *not* move is the reason a present sentence is worded as it is, even
+where that reason came out of a correction. The eight hours behind SYM-7, the
+timezone caveat on the announcement's timestamp, and "peel divides a
+displacement and the enumerator splits a leading monomial" all stay. A page of
+rules without their reasons invites the next reader to question the rule
+instead of finding the reason.
+
+Two things move with the split and belong in the same commit.
+`tests/test_documentation.py` anchors on headings of `references.md`, including
+the one the pipeline figures are tied to, and `AGENTS.md` points at that page
+for the provenance of fixed test data.
+
+*Then every docstring in the tree, read once against the question whether it is
+still true.* Three claims in the header of `kellermap.examples` were false when
+WP 6 looked at it, two of them since 0.5: a sentence about provenance that the
+maps' own docstrings contradicted, a count measured in WP 8 of 0.5 and left in
+the present tense, and a list of coefficient domains that omitted one. None of
+them is reachable by a test, all three were found by reading, and the module
+had grown four times since the header was written.
+
+`docs/architecture.md` is the other half of that reading and the larger half.
+It is 955 lines, it was not touched in this milestone, and it demonstrably
+describes the architecture before it: its package diagram lists neither
+`compression.py` nor `lift.py` and gives `bcw/` as "BCWStep", and it names none
+of the four step types this milestone added. Three of its standing statements
+are what 0.6 broke -- that a step is a composition, that a step does not lower
+the dimension, and that a step keeps the coefficient domain -- and each is
+still true of some steps and no longer of all.
 
 That is a known shape rather than an accident. A docstring is written when a
 thing is made and is not revisited when the thing around it changes, and
@@ -2017,6 +2055,67 @@ obligation be checked rather than argued.
 
 Whether the cost is the dimension, the domain or the density is not known.
 Those are three measurements and the first thing to do.
+
+## What the chains that peel finds say about the search
+
+Milestone 0.6 twice compared a chain `peel` found against what
+`untargeted_candidates` offers, and twice the answer was mostly no: two of
+seven steps matched for `macfarlane13`, none of six for `spacerat11`. The
+second number is the interesting one, because it is not explained by the shape
+of the factors.
+
+Sorted by shape, the six steps of the `spacerat11` chain are:
+
+| step | terms in the two factors | carried |
+| ---: | --- | --- |
+| 1 | 1, 3 | no |
+| 2 | 1, 1 | no |
+| 3 | 3, 1 | left |
+| 4 | 1, 2 | left |
+| 5 | 1, 1 | no |
+| 6 | 1, 6 | left |
+
+Three of them use only monomials and carried coordinates, which is exactly what
+the enumerator deals in, and none of the three is offered. So there are two
+independent gaps and the shape accounts for one of them.
+
+The first is known: `peel` divides a displacement and can produce a factor with
+several terms, and the enumerator splits a leading monomial and cannot. Steps
+1, 4 and 6 are that, with 3, 2 and 6 terms.
+
+The second is a hypothesis and this milestone did not test it: the enumerator
+is anchored to the *leading* monomial of a component, and the products of steps
+2, 3 and 5 may sit elsewhere in theirs. That would make the anchor and not the
+shape the reason.
+
+The measurement is small and specific. For each of the thirteen steps in the
+two chains, record which of the two reasons applies, or a third if neither
+does. Only then is it clear whether widening what the enumerator offers is
+worth anything, and which widening.
+
+## What the search should minimize
+
+The untargeted search minimizes the dimension at degree three. Milestone 0.6
+made the number that gets compared computable, and it is the one after four
+more stages.
+
+There is nothing new to build for this. The homogenization and the compression
+are determined by the map and the collision, so a search "for a small
+homogeneous form" would walk exactly the space `reduce_to_degree3` already
+walks and only score it differently. It is a new objective and not a new
+reducer, which is the smaller change of the two.
+
+One further freedom was checked and is empty. The hull is generated by the
+collision points, all three of them were always used, and a pair might generate
+less. It does not: on all three maps and all three pairs the compressed
+dimension is unchanged, 19, 20 and 22. Whatever spread there is comes from the
+chain and not from the choice of points.
+
+What makes the retargeting affordable is that the whole pipeline costs between
+two and seven seconds per endpoint. That is far too slow per node -- the driver
+that found `alpoege12` examined 404117 states -- and cheap per *endpoint*. So
+the shape is a beam on the present weight, which becomes a prefilter, and the
+real objective evaluated on the best few endpoints it survives with.
 
 ---
 
