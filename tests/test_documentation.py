@@ -508,6 +508,32 @@ def test_the_untargeted_figures_appear_on_the_contract_page() -> None:
     assert not missing, f"the page does not state {missing}"
 
 
+def test_the_pipeline_figures_appear_on_the_references_page() -> None:
+    """The same tie as for the untargeted figures, on the other measurement.
+
+    ``scripts/measure_pipeline.py`` fails when the page states a figure it does
+    not measure. This fails when the page stops stating one it does, which the
+    script cannot see.
+    """
+    path = ROOT / "scripts" / "measure_pipeline.py"
+    spec = importlib.util.spec_from_file_location("pipeline_probe", path)
+    assert spec is not None and spec.loader is not None
+    module = importlib.util.module_from_spec(spec)
+    sys.modules[spec.name] = module
+    spec.loader.exec_module(module)
+
+    references = (ROOT / "docs" / "references.md").read_text(encoding="utf-8")
+    section = references[references.index("## What the pipeline reaches") :]
+    section = section[: section.index("\n---")]
+    missing = [
+        figure
+        for figure in module.FIGURES
+        if not re.search(rf"(?<![\w-]){figure}\b", section)
+    ]
+
+    assert not missing, f"the page does not state {missing}"
+
+
 def test_the_order_table_agrees_with_the_measurement_script() -> None:
     """The table of UNT-10, row by row rather than number by number.
 

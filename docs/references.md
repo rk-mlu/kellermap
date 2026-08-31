@@ -197,6 +197,77 @@ and the geometric degree is what tells them apart.
 
 ---
 
+## What the pipeline reaches
+
+Milestone 0.6 built the second and third stages of the Reduction Theorem, the
+collision-hull compression and the symmetric lift. Running all four on every
+degree-three map this project holds gives the table below.
+`scripts/measure_pipeline.py` recomputes it, checks every step through the
+library's verification surface, and fails if a figure here changes without the
+script changing with it.
+
+| from | unipotent | cubic homogeneous | compressed | gradient form |
+| --- | ---: | ---: | ---: | ---: |
+| `spacerat11`, 11 | 22 | 23, 60 monomials | 19, 56 | 38, `P` of 386 |
+| `alpoege12`, 12 | 24 | 25, 60 monomials | 20, 55 | 40, `P` of 398 |
+| `alpoege13`, 13 | 26 | 27, 73 monomials | 22, 68 | 44, `P` of 506 |
+
+Every step is verified: the identity of each certificate, the determinant where
+it is affordable, the homogeneity, and the collision carried through. The
+exception is the determinant of the gradient form, which SYM-7 states as a
+consequence and does not compute, for the reason measured under work package 7
+of `docs/roadmap.md`.
+
+### Against the published figures
+
+At the cubic homogeneous stage the published figures are Thompson's 24 and the
+20 that Macfarlane found and that Prellberg's hull reproduces. This project
+reaches 19.
+
+At the quartic gradient form there are two published figures. Prellberg's is
+40, from Thompson's 24 by compressing first. The other is 48, from Thompson's
+24 by the de Bondt-van den Essen construction applied directly, recorded in
+
+**Santibáñez Leal, F.** *The consequence cascade of the Jacobian
+counterexample, with an explicit dimension-48 witness against the Hessian
+conjecture.* Zenodo, 23 July 2026. <https://zenodo.org/records/21504303>
+
+which reports a quartic potential in 48 variables with 382 monomials over
+`Q(i)` and a two-point collision, and which corrects the nilpotency index of
+Thompson's map from 17 to 18. Nothing here rests on that index; this page has
+never asserted it and the Prellberg reconstruction does not recompute it.
+
+This project reaches 38. The literature was searched again before this section
+was written and nothing smaller was found at either stage.
+
+### What that does and does not establish
+
+It establishes that composing published constructions gives smaller explicit
+witnesses than either of them alone, and that each composition step carries a
+machine-checkable certificate. Nineteen is below twenty, and thirty-eight is
+below forty and below forty-eight.
+
+It establishes nothing about minimality. The number depends on the map the
+pipeline starts from, and `spacerat11` is the smallest degree-three map this
+project knows of rather than the smallest that exists. `docs/roadmap.md`
+records the open question of whether the dimension at degree three is even the
+right thing to minimize; three data points say it is monotone and three data
+points are not a theorem.
+
+It establishes no new mathematics. The eleven-variable map is Spacerat's, the
+two stages are Bass, Connell and Wright's, the compression and the lift are
+Prellberg's. What this project contributed is the composition, the
+certificates, and the observation that nobody had put these five pieces in a
+row.
+
+The density goes the other way and the table says so. Prellberg's `P` at 40
+variables has 350 monomials; this project's at 38 has 386, and at 40 -- the
+same dimension by a different route -- 398. Smaller in dimension is not smaller
+in every sense, and which of the two matters depends on what a reader wants the
+witness for.
+
+---
+
 ## Collision-hull compression, and the fortieth variable
 
 **Thomas Prellberg**, *Collision-Hull Compression for Homogeneous Keller Maps

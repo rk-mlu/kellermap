@@ -59,6 +59,7 @@ reconstruct:
 
 measure:
 	uv run python scripts/untargeted_space.py
+	uv run python scripts/measure_pipeline.py
 
 # --------------------------------------------------------------------------
 # Collected targets

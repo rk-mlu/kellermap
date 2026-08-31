@@ -1876,7 +1876,31 @@ of the three collision points reach the end; the third is dropped at the lift,
 where SYM-9 requires a pair and the caller chooses which.
 
 **WP 8** compares, as WP 13 of 0.5 did, and reports what a comparison
-establishes and what it does not. At that stage the numbers to beat are 24 and
+establishes and what it does not. It is done, and the literature check that
+opens it turned up a figure this project did not have.
+
+The comparison is a table in `docs/references.md` under "What the pipeline
+reaches", and `scripts/measure_pipeline.py` produces it: all three
+degree-three maps through all four stages, every step verified, joined to
+`make measure`. The two tie together in both directions, as the untargeted
+figures already do -- the script fails when the page states a figure it does
+not measure, and `tests/test_documentation.py` fails when the page stops
+stating one it does.
+
+The literature check found a second published quartic figure. Prellberg's 40
+comes from Thompson's 24 by compressing first; a Zenodo record of 23 July 2026
+reports 48 from the same 24 by applying de Bondt-van den Essen directly, with
+382 monomials over `Q(i)`. So the published pair is 40 and 48, and this
+project's 38 is below both. Nothing smaller was found at either stage.
+
+The same record corrects the nilpotency index of Thompson's map from 17 to 18.
+Nothing here rests on it: the reconstruction does not recompute that index and
+`docs/references.md` has never asserted it.
+
+The density goes the other way, and the section says so rather than leaving it
+out. Prellberg's `P` at 40 variables has 350 monomials; this project's at 38
+has 386, and at 40 by the other route 398. Smaller in dimension is not smaller
+in every sense. At that stage the numbers to beat are 24 and
 20 for the cubic homogeneous form and 40 for the quartic gradient form, and
 this project will have arrived by a different route. The literature is checked
 again before any number leaves the repository. The last two times that check

@@ -91,10 +91,18 @@ throughout, tests included, with a gate that holds it there.
 
 ### Next, 0.6
 
-The second and third stages of the Reduction Theorem, and the compression that
-follows them. Every figure above is at the first stage, degree three, while
-most published figures are cubic homogeneous, so the two cannot yet be set
-beside each other.
+The second and third stages of the Reduction Theorem, the compression that
+follows them, and the symmetric lift. Every figure above is at the first stage,
+degree three, and the pipeline carries them to the two stages the literature
+compares: cubic homogeneous, and the quartic gradient form of Zhao's Vanishing
+Conjecture.
+
+From `examples.spacerat11` the chain is 11, 22, 23, 19, 38, every step
+verified. Nineteen is below the smallest published cubic homogeneous figure and
+thirty-eight below the smallest published quartic one. What that does and does
+not establish is in `docs/references.md`: it composes published constructions,
+it claims no minimality, and the forms it produces are denser than the
+published ones.
 
 `docs/roadmap.md` carries the plan and the measurements behind it.
 `CHANGELOG.md` lists what each release changed, and the milestones before this
