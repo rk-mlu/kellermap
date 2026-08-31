@@ -175,6 +175,20 @@ The commit message says what was run. Where a gate was left to the maintainer,
 it is named as such rather than omitted, so that a green list is a list of
 things somebody actually ran.
 
+**An exploratory computation that runs longer than ten minutes is the
+maintainer's.** Not because the assistant's machine is slower -- the two are
+within a fifth of each other on the same determinant -- but because the
+assistant's is cut off by a tool-usage limit rather than by a decision, and a
+run that ends that way produces no figure at all. Milestone 0.6 has the case:
+two runs of about fifteen and about twelve minutes were reaped by the
+environment and could not be reported as anything, and the maintainer then
+stopped the same computation after eight hours, which is what SYM-7 rests on.
+
+The assistant writes the measurement as a script that takes a budget, prints
+the cheap figures first so that a run which never reaches the expensive one
+still reports something, and prints either the time or the budget it exceeded.
+It goes into the delivery beside the change that needs it.
+
 - **Coverage is 100 per cent and enforced.** A branch that cannot be reached,
   because an obligation checked earlier rules it out, gets
   `# pragma: no cover` with the reason written beside it. Never write a test
