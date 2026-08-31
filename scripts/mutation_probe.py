@@ -42,7 +42,8 @@ They ask today's question of today's code. Every one of them should report
 ``tests/test_scripts.py`` checks that every fragment still matches the code it
 aims at. The set grew to eighteen with ``UnipotentStep``, whose three source
 obligations are the first here that a constructed step cannot make true, and to
-twenty-four with the homogenization and twenty-nine with the compression.
+twenty-four with the homogenization twenty-nine with the
+compression and thirty-four with the symmetric lift.
 
 They do **not** reproduce the ten misses of the first run, and until
 ``0.4.0rc14`` this file and ``CHANGELOG.md`` said they did. Two reasons. The
@@ -313,6 +314,41 @@ PROBES: tuple[Probe, ...] = (
         "src/kellermap/compression.py",
         "        moved.verify(self._target)\n\n        return moved",
         "        return moved",
+    ),
+    Probe(
+        "SYM-1",
+        "the identity of the symmetric lift is compared",
+        "src/kellermap/lift.py",
+        "        if self._composite() != self._target:",
+        "        if False:",
+    ),
+    Probe(
+        "SYM-3",
+        "the displacement of the source is homogeneous",
+        "src/kellermap/lift.py",
+        "    if len(degrees) != 1:",
+        "    if False:",
+    ),
+    Probe(
+        "SYM-4",
+        "the source of the lift is Keller",
+        "src/kellermap/lift.py",
+        "        if determinant != 1:",
+        "        if False:",
+    ),
+    Probe(
+        "SYM-5",
+        "the coefficient domain of the target is compared",
+        "src/kellermap/lift.py",
+        "        if self._target.ring.domain != wanted:",
+        "        if False:",
+    ),
+    Probe(
+        "SYM-9",
+        "a collision of more than two points is refused",
+        "src/kellermap/lift.py",
+        "        if len(collision.points) != 2:",
+        "        if False:",
     ),
 )
 

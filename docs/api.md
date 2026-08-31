@@ -31,6 +31,7 @@ what they do.
 - [The unipotent step](#the-unipotent-step)
 - [The homogenization](#the-homogenization)
 - [Collision-hull compression](#collision-hull-compression)
+- [The symmetric lift](#the-symmetric-lift)
 - [Finding candidates](#finding-candidates)
 - [Assembling a chain](#assembling-a-chain)
 - [Peeling a chain off a target](#peeling-a-chain-off-a-target)
@@ -45,7 +46,7 @@ what they do.
 ```python
 >>> import kellermap
 >>> kellermap.__all__
-['DEFAULT_VARIABLE_FACTORY', 'Candidate', 'Collision', 'CompressionStep', 'Dilation', 'ElementaryAutomorphism', 'ElementaryFactor', 'FixedVariableFactory', 'IndexedVariableFactory', 'LinearAutomorphism', 'LinearFactor', 'LinearStep', 'PeelOutcome', 'PolynomialMap', 'Provenance', 'Reduction', 'ReductionOutcome', 'ReductionContext', 'SearchOutcome', 'Step', 'TranslationStep', 'Transposition', 'Transvection', 'Undo', 'VariableFactory', 'VerificationError', 'anchors', 'collision_hull', 'conjugate', 'diagonal_matching', 'enumerate_candidates', 'lowers_the_weight', 'field_ring', 'over_field', 'peel', 'reduce_to_degree3', 'remaining_weight', 'reserved_names', 'search', 'untargeted_candidates']
+['DEFAULT_VARIABLE_FACTORY', 'Candidate', 'Collision', 'CompressionStep', 'Dilation', 'ElementaryAutomorphism', 'ElementaryFactor', 'FixedVariableFactory', 'IndexedVariableFactory', 'LinearAutomorphism', 'LinearFactor', 'LinearStep', 'PeelOutcome', 'PolynomialMap', 'Provenance', 'Reduction', 'ReductionOutcome', 'ReductionContext', 'SearchOutcome', 'Step', 'SymmetricLiftStep', 'TranslationStep', 'Transposition', 'Transvection', 'Undo', 'VariableFactory', 'VerificationError', 'anchors', 'collision_hull', 'conjugate', 'diagonal_matching', 'enumerate_candidates', 'lowers_the_weight', 'field_ring', 'over_field', 'peel', 'reduce_to_degree3', 'remaining_weight', 'reserved_names', 'search', 'untargeted_candidates']
 
 ```
 
@@ -1146,6 +1147,77 @@ kellermap.errors.VerificationError: [CHC-9] The point 0 of the collision is not 
 
 That last source is not a Keller map, so `verify` would refuse it; `transport`
 does not need CHC-4.
+
+---
+
+## The symmetric lift
+
+The gradient form of a homogeneous Keller map, over `k(i)`. It doubles the
+dimension and exhibits a form `P` of one degree more, whose gradient the target
+is:
+
+```python
+>>> from kellermap import SymmetricLiftStep
+>>> cubic = over_field(
+...     PolynomialMap((x1, x2, x3), (x1 + x2**3, x2, x3))
+... )
+>>> step = SymmetricLiftStep.build(cubic)
+>>> step.source.dimension, step.target.dimension
+(3, 6)
+>>> step.form
+I*x5**3*x7 - 3*x5**2*x7*x8 - 3*I*x5*x7*x8**2 + x7*x8**3
+>>> step.verify() is None
+True
+
+```
+
+`P` is quartic where the displacement is cubic, and the target is again cubic.
+The coefficient domain gains `i`, which no other step in this library does:
+
+```python
+>>> step.source.ring.domain, step.target.ring.domain
+(QQ, QQ_I)
+>>> step.filtration_level
+inf
+
+```
+
+That the target is `id - grad(P)` is what makes it a gradient map, and it is
+checked rather than claimed:
+
+```python
+>>> import sympy as sp
+>>> gradient = tuple(
+...     sp.expand(v - sp.diff(step.form, v)) for v in step.variables
+... )
+>>> gradient == tuple(sp.expand(c) for c in step.target.components)
+True
+
+```
+
+A collision is lifted as a pair, and the two points are treated differently:
+the first goes to `(p, 0)` and the second to `(q + rho, i rho)`. A collision of
+more than two points is refused, because which pair is lifted changes the
+answer:
+
+```python
+>>> fold = over_field(PolynomialMap((x1,), (x1 + x1**2,)))
+>>> pair = Collision(((0,), (-1,)), (0,))
+>>> SymmetricLiftStep.build(fold).transport(pair).points
+((0, 0), (-2, -I))
+>>> three = over_field(PolynomialMap((x1, x2), (x1 + x1**2, x2 + x2**2)))
+>>> SymmetricLiftStep.build(three).transport(
+...     Collision(((0, 0), (-1, 0), (0, -1)), (0, 0))
+... )
+Traceback (most recent call last):
+    ...
+kellermap.errors.VerificationError: [SYM-9] The lift carries a pair and this collision has 3 points. Which two, and which of them is the first, changes both lifted points, so the step does not choose; narrow the collision before lifting it.
+
+```
+
+`verify` does not compute the determinant of the target. It follows from the
+identity and the source, and at the dimensions this construction reaches it is
+not affordable; SYM-7 carries the measurement.
 
 ---
 

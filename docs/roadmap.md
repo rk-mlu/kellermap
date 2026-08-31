@@ -1826,8 +1826,9 @@ and the reason it was absent is that it needs `Q(i)`. The coefficient ring
 became something a caller states in 0.5 and `canonical` learned to decide
 algebraic numbers, so the two obstacles named at the time are gone.
 
-The obligations are written and the step is not. Three things in them are new
-to the contract page, and each was measured before it was worded.
+The obligations are written and the step is implemented against them. Three
+things in them are new to the contract page, and each was measured before it
+was worded.
 
 *The coefficient domain grows.* A source over `QQ` gives a target over `QQ(i)`,
 where every other step keeps the domain and `guards.settled` uses equality of
@@ -1864,6 +1865,15 @@ the eight hours are not an artefact of a slow one.
 That is why the obligation is worded around what the affordable route gives.
 Twenty-five seconds and a value of one at a random point is the check the
 `reconstruct_*` scripts make, and it falsifies without proving.
+
+Implemented, the step is cheap everywhere the determinant is not: on the
+compressed twenty it builds in 0.1 seconds, verifies in 0.3, transports in 0.5,
+and its form has the 350 monomials Theorem 3 reports. That figure is the
+control, and it is the same ancillary file the compression is checked against.
+
+The chain from `spacerat11` runs 11, 22, 23, 19, 38, every step verified. Two
+of the three collision points reach the end; the third is dropped at the lift,
+where SYM-9 requires a pair and the caller chooses which.
 
 **WP 8** compares, as WP 13 of 0.5 did, and reports what a comparison
 establishes and what it does not. At that stage the numbers to beat are 24 and

@@ -3,6 +3,7 @@ from .compression import CompressionStep, collision_hull
 from .context import ReductionContext
 from .elementary import ElementaryAutomorphism, ElementaryFactor
 from .errors import VerificationError
+from .lift import SymmetricLiftStep
 from .linear import (
     Dilation,
     LinearAutomorphism,
@@ -66,6 +67,7 @@ __all__ = [
     "ReductionContext",
     "SearchOutcome",
     "Step",
+    "SymmetricLiftStep",
     "TranslationStep",
     "Transposition",
     "Transvection",
