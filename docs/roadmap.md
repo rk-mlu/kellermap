@@ -1848,13 +1848,18 @@ SYM-9 refuses rather than choosing.
 | `rho` | 0.2 s |
 | the determinant at dimension six | one, under 0.01 s |
 | the determinant at a random point of the forty | one, 25 s, twice |
-| the determinant as a polynomial at forty | did not finish |
+| the determinant as a polynomial at forty | not in eight hours |
 
-The last row is the one that decided SYM-7. Two runs were given about fifteen
-and about twelve minutes and neither returned; both were cut off by the
-environment rather than by a decision, so the row says what happened and no
-number stands in it. A bounded run belongs to the maintainer, and the figure
-goes into this table when it exists.
+The last row is the one that decided SYM-7, and it took two machines to state
+it. Two runs here were given about fifteen and about twelve minutes and neither
+returned, and both were cut off by the environment rather than by a decision,
+so neither was a figure. The maintainer then ran
+`exploration/measure_lift_determinant.py` and stopped it after eight hours
+without a result. That is the row.
+
+The same run puts the sample-point determinant at 21.7 and 22.3 seconds against
+25.0 and 25.6 here, so the two machines are within a fifth of each other and
+the eight hours are not an artefact of a slow one.
 
 That is why the obligation is worded around what the affordable route gives.
 Twenty-five seconds and a value of one at a random point is the check the
@@ -1966,6 +1971,18 @@ Evaluate optional acceleration through python-flint or Singular only if the
 PolyRing benchmarks demonstrate that pure SymPy cannot reach the target
 problem sizes. Any accelerator must preserve the PolyRing-level mathematical
 semantics and certificate format.
+
+Milestone 0.6 left one bottleneck measured rather than guessed at, which is
+what this milestone asks for. The Jacobian determinant of the symmetric lift of
+Thompson's compressed twenty -- 40 variables, cubic homogeneous, over
+`QQ(i)` -- did not finish in eight hours, where the same determinant at a
+random rational point takes 22 seconds and the same size over `QQ` is
+seconds. SYM-7 is worded
+around that, and a determinant strategy that closes the gap would let the
+obligation be checked rather than argued.
+
+Whether the cost is the dimension, the domain or the density is not known.
+Those are three measurements and the first thing to do.
 
 ---
 

@@ -1694,8 +1694,8 @@ This is a departure from UNI-10, HOM-7 and CHC-6, which all keep the
 determinant as a cheap self-check, and it is a departure on a measurement
 rather than on a preference. At dimension six a lift's determinant costs under
 a hundredth of a second. On the forty-variable lift of Thompson's compressed
-twenty it did not finish in the time this project has been able to give it, and
-`docs/roadmap.md` under work package 7 records what was tried.
+twenty it did not finish in eight hours. `docs/roadmap.md` under work package 7
+records the runs and the two machines they were made on.
 
 What is affordable there is the determinant at a point: 25 seconds, and one,
 at each of two random rational points of the space. That is the check the
