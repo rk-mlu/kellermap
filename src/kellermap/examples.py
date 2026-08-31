@@ -21,8 +21,8 @@ Provenance, and this module has four kinds of it.
 project starts from. ``thompson24_homogeneous`` and ``spacerat11`` are
 published reductions of the first one, taken from the papers that print them.
 All four are somebody else's mathematics, each docstring names the source and
-its licence, and ``docs/references.md`` says what the agreement of a chain with
-one of them does and does not establish.
+its licence, and ``docs/provenance.md`` sorts them and says what the agreement
+of a chain with one of them does and does not establish.
 
 ``alpoege13`` and ``alpoege12`` are reductions this project found, of the
 published map. Everything else was written for this project's own tests and

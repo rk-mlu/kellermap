@@ -2121,14 +2121,68 @@ real objective evaluated on the best few endpoints it survives with.
 
 # Version 0.8
 
-## Complete verification and benchmark framework
+This section was a list of six engineering items until milestone 0.6 closed.
+Two of them are done, two belong to 0.7, and the list left out the one thing
+0.6 made possible. It is rewritten here rather than ticked off, and what it
+said is in `docs/errata.md`.
 
-- large-scale regression tests,
-- reproducible benchmark runner,
-- machine-readable benchmark results,
-- performance comparisons across releases,
-- verified reduction certificates for large examples,
-- independent certificate replay.
+## The last link of the chain
+
+`docs/references.md` states the chain this project follows: Jacobian
+Conjecture, BCW reduction, gradient form, Zhao's Vanishing Conjecture.
+Milestone 0.6 built everything up to the gradient form. The last link is not in
+this repository at all, and nothing in the roadmap asked for it.
+
+For a quartic `P` with nilpotent Hessian, the Vanishing Conjecture says that
+`Delta^m(P^m) = 0` for all large `m`. A counterexample is a `P` where it is
+not, and this project now produces such a `P` in 38 variables without ever
+looking at the Laplacian.
+
+The work is to compute `Delta^m(P^m)` for the smallest `m` that decides it, and
+to say what the computation shows and at what cost. The ancillary file of
+arXiv:2608.12543v1 checks the term count of `Delta(P^2)` for the
+forty-variable form and this project has never recomputed it, which is the
+obvious first target and a figure that already exists to be checked against.
+
+Two things to settle before any of it. Whether the check belongs in the library
+or in a script -- it is one polynomial identity about one object and not a step
+of a chain, so a `reconstruct_`-style script is the likelier home. And what
+happens at 38 variables where a determinant already needed eight hours: `P^2`
+has on the order of a hundred thousand terms before the Laplacian touches it,
+so a run belongs to the maintainer under the rule in `AGENTS.md` and the first
+job is a budgeted measurement, not an implementation.
+
+## A benchmark runner
+
+What the old list asked for that is still missing, and now with a reason.
+
+Two measurement scripts exist, `untargeted_space.py` and `measure_pipeline.py`,
+both tied to a page in both directions. Neither produces machine-readable
+output and neither compares across releases, so a regression in cost is
+invisible until somebody notices a gate taking longer. The timing tables in
+`AGENTS.md` are maintained by hand and were last measured at the end of 0.5,
+against a suite that has since grown by a quarter.
+
+The runner is worth building only after 0.7 has profiled the pipeline, because
+until then there is no agreed list of what to measure.
+
+## What the old list had that is done
+
+Independent certificate replay: eight `reconstruct_*` scripts, none of which
+imports the library, and after WP 9 of 0.6 each compared against the example it
+denotes.
+
+Verified reduction certificates for large examples: `measure_pipeline.py`
+verifies every step of three chains up to 44 variables, and the suite carries
+the 38-variable gradient form behind a slow marker.
+
+Large-scale regression tests are the suite, which is at 1760 tests and 100 per
+cent coverage; what is missing there is the *cost* side, which is the runner
+above.
+
+Performance comparisons across releases and a reproducible benchmark runner
+overlap with milestone 0.7, which profiles and optimizes. They stay here rather
+than moving, because 0.7 asks what is slow and 0.8 asks whether it got slower.
 
 ---
 
