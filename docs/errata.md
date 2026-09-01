@@ -73,15 +73,26 @@ itself is p. 302.
 one row for three pages is how they were confused. It is the second time a
 citation in that table had to be corrected against the source.
 
-## CC BY 4.0 was said to ask for attribution alone
+## Gao's licence was said to be undeterminable, and then to ask too little
 
-**Said:** that the licence asks for attribution and nothing more.
+Two errors about one map, one after the other.
+
+**Said, first:** that the licence of arXiv:2608.00222v1 could not be
+established.
+
+**True:** the arXiv listing states CC BY 4.0. The sentence was written from a
+habit formed on the nineteen-dimensional map, whose licence genuinely cannot be
+established, and not from looking at the listing.
+
+**Said, then:** that CC BY 4.0 asks for attribution and nothing more.
 
 **True:** it asks for three things — attribution, a link to the licence, and an
 indication of whether changes were made.
 
-**Found** by an external audit, against the licence deed. All three are given
-for every third-party map in `docs/provenance.md` and in the docstrings.
+**Found:** both by an external audit, the first against the listing and the
+second against the licence deed. All three are now given for every third-party
+map, in `docs/provenance.md` and in the docstrings, and `docs/references.md`
+states the terms without the history.
 
 ## The status line of `contracts.md` stood at `0.4.0` through a release
 

@@ -161,19 +161,10 @@ Gallagher's family, reference [12] of the same paper, contains an instance of
 geometric degree four as well; the author states that the map above was
 obtained independently.
 
-Licensed CC BY 4.0, as the arXiv listing states. This page said the licence
-could not be established until an audit checked the listing and found it; the
-sentence was written from a habit formed on the nineteen-dimensional map, whose
-licence genuinely could not be established, and not from looking.
-
-The map is in the repository since work package 7 of 0.5, as
-`kellermap.examples.gao_quartic`, with its collision beside it.
-
-CC BY 4.0 asks for three things and not one. This page said it asks for
-attribution and nothing more, which an external audit corrected against the
-[licence deed](https://creativecommons.org/licenses/by/4.0/): attribution,
-a link to the licence, and an indication of whether changes were made. All
-three are given here and in the docstring of the map.
+Licensed CC BY 4.0, as the arXiv listing states. The map is in the repository
+since work package 7 of 0.5, as `kellermap.examples.gao_quartic`, with its
+collision beside it. The licence asks for three things, and all three are given
+here and in the docstring of the map.
 
 - **Attribution.** Shuhong Gao, *Counterexamples to the Jacobian conjecture in
   dimensions greater than two*, arXiv:2608.00222v1, Section 3.5.
@@ -193,6 +184,49 @@ The name says geometric degree and not dimension. `bcw17` and `alpoege15` are
 reductions and their dimension is what distinguishes them; this paper carries
 two maps in three variables, the cuspidal cubic of §3.4 and the quartic here,
 and the geometric degree is what tells them apart.
+
+---
+
+## Whose conjecture, and whose chair
+
+Where the name comes from, which is not where the conjecture comes from. This
+sits after the counterexample rather than at the end of the page because it
+belongs to the same subject: what was refuted, by whom it was posed, and why
+that is a longer story than the attribution suggests.
+
+**Rodríguez Díaz, L. O.** *On the Origin of the Jacobian Conjecture.* Comptes
+Rendus Mathématique **364** (2026), 363–370.
+<https://doi.org/10.5802/crmath.831>
+
+The conjecture is conventionally attributed to Keller (*Ganze Cremona
+Transformationen*, Monatshefte für Mathematik und Physik **47** (1939),
+299–306). This study traces the statement to Ludwig Kraus in 1884 and finds a
+gap in his attempted proof — so "87-year-old problem" understates it.
+
+**Keller, Eduard Ott-Heinrich** (1906–1990). Doctorate under Max Dehn in
+Frankfurt, 1929; habilitation on Cremona transformations under Georg Hamel at
+the TH Berlin, 1933 — the thread that leads to the 1939 paper. Professor in
+Dresden from 1947, then holder of the second chair of mathematics at the
+Martin-Luther-Universität Halle-Wittenberg from 1951, succeeding Heinrich W. E.
+Jung, until his emeritation in 1971; he continued to lecture there into the
+1980s and died in Halle.
+
+- MacTutor: <https://mathshistory.st-andrews.ac.uk/Biographies/Keller/>
+- Catalogus Professorum Halensis:
+  <https://www.catalogus-professorum-halensis.de/keller-ott-heinrich.html>
+- Chair succession at Halle:
+  <https://disk.mathematik.uni-halle.de/history/allgemein/prof_hal_wb_45_69.html>
+
+Sources differ on the year of the Halle appointment, and they differ within
+Halle. The university archive's Catalogus Professorum states that Keller was
+appointed on 1 November 1951, citing his personnel file, and that he held a
+second appointment from 1 September 1969 until his emeritation in 1971.
+MacTutor also gives 1951. The chair succession page of the mathematics
+institute lists 1952–1971, as do the German Wikipedia and the anniversary
+article in *Beiträge zur Algebra und Geometrie*.
+
+The text above follows the archive, since it gives a precise date and names the
+file it rests on. Nothing in this project depends on the year.
 
 ---
 
@@ -396,62 +430,30 @@ read it after the check had been made.
 The rule that produced it is measured on this map alone. The same rule did not
 finish on Gao's in twenty-five minutes.
 
-## Historical note
-
-**Rodríguez Díaz, L. O.** *On the Origin of the Jacobian Conjecture.* Comptes
-Rendus Mathématique **364** (2026), 363–370.
-<https://doi.org/10.5802/crmath.831>
-
-The conjecture is conventionally attributed to Keller (*Ganze Cremona
-Transformationen*, Monatshefte für Mathematik und Physik **47** (1939),
-299–306). This study traces the statement to Ludwig Kraus in 1884 and finds a
-gap in his attempted proof — so "87-year-old problem" understates it.
-
-**Keller, Eduard Ott-Heinrich** (1906–1990). Doctorate under Max Dehn in
-Frankfurt, 1929; habilitation on Cremona transformations under Georg Hamel at
-the TH Berlin, 1933 — the thread that leads to the 1939 paper. Professor in
-Dresden from 1947, then holder of the second chair of mathematics at the
-Martin-Luther-Universität Halle-Wittenberg from 1951, succeeding Heinrich W. E.
-Jung, until his emeritation in 1971; he continued to lecture there into the
-1980s and died in Halle.
-
-- MacTutor: <https://mathshistory.st-andrews.ac.uk/Biographies/Keller/>
-- Catalogus Professorum Halensis:
-  <https://www.catalogus-professorum-halensis.de/keller-ott-heinrich.html>
-- Chair succession at Halle:
-  <https://disk.mathematik.uni-halle.de/history/allgemein/prof_hal_wb_45_69.html>
-
-Sources differ on the year of the Halle appointment, and they differ within
-Halle. The university archive's Catalogus Professorum states that Keller was
-appointed on 1 November 1951, citing his personnel file, and that he held a
-second appointment from 1 September 1969 until his emeritation in 1971.
-MacTutor also gives 1951. The chair succession page of the mathematics
-institute lists 1952–1971, as do the German Wikipedia and the anniversary
-article in *Beiträge zur Algebra und Geometrie*.
-
-The text above follows the archive, since it gives a precise date and names the
-file it rests on. Nothing in this project depends on the year.
-
----
-
 ## Related cubic Keller-map benchmarks
 
-Useful as comparison and as benchmark targets for milestone 0.5. Note that
-these are *different* reductions, not alternative descriptions of
-`examples.bcw17()`.
+Useful as comparison and as benchmark targets. Note that these are *different*
+reductions, not alternative descriptions of `examples.bcw17()`.
 
 | Source | Dimension | Shape | Determinant | In the suite |
 | --- | --- | --- | --- | --- |
 | this project, `examples.alpoege15()` (derived) | 15 | degree 3 | 1 | yes |
 | this project, `examples.bcw17()` (derived) | 17 | degree 3 | 1 | yes |
 | <https://rhicksrad.github.io/jacobian-degree3/> | 19 | degree 3 | −2 | yes* |
-| <https://github.com/wtho704/explicit-cubic-homogeneous-jacobian-counterexample> | 24 | cubic homogeneous | 1 | no |
-| <https://gist.github.com/Spacerat/08b4a43f6b6ca57178efabc220170ce8> | 11 | degree 3 | −2 | no |
+| <https://github.com/wtho704/explicit-cubic-homogeneous-jacobian-counterexample> | 24 | cubic homogeneous | 1 | yes |
+| <https://gist.github.com/Spacerat/08b4a43f6b6ca57178efabc220170ce8> | 11 | degree 3 | −2 | yes |
 
 \* The nineteen-dimensional map is in the suite from a checkout and not from
 the source archive, which excludes `tests/data.py`: it is somebody else's
 mathematics and its licence could not be established. Without the file the
 tests that need it skip themselves and say why.
+
+Two of the rows changed in milestone 0.6. Thompson's map came in with work
+package 4 as `examples.thompson24_homogeneous`, because the compression is
+checked against it; Spacerat's came in with work package 6 as
+`examples.spacerat11`, because the pipeline through it reaches nineteen. Both
+are transcribed from the licensed presentation and not from the link in the
+table, which `docs/provenance.md` records.
 
 The two rows belonging to this project are both marked *derived*, and both mean
 the same thing by it: the suite builds each of them from Alpöge's map and
