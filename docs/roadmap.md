@@ -1966,6 +1966,12 @@ the present tense, and a list of coefficient domains that omitted one. None of
 them is reachable by a test, all three were found by reading, and the module
 had grown four times since the header was written.
 
+`README.md` is a third. Its feature list stops at the three step types of 0.5
+and its "This milestone" section is 0.5's, while the section after it reports
+what 0.6 finished. Two of those are release work and one is not: the list of
+what the library does has been behind since the first package of this
+milestone.
+
 `docs/architecture.md` is the other half of that reading and the larger half.
 It is 955 lines, it was not touched in this milestone, and it demonstrably
 describes the architecture before it: its package diagram lists neither

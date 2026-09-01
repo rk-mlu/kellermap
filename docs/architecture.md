@@ -2,8 +2,11 @@
 
 ## Overview
 
-The goal of **kellermap** is to construct and verify Bass–Connell–Wright (BCW)
-reductions of polynomial maps with constant Jacobian determinant.
+The goal of **kellermap** is to construct and verify reductions of polynomial
+maps with constant Jacobian determinant: the three stages of Bass, Connell and
+Wright, and since milestone 0.6 the two constructions of Theorem 3 of
+arXiv:2608.12543v1 that carry a cubic homogeneous map to the gradient form of a
+quartic.
 
 The central design principle is that every reduction step produces a
 **machine-verifiable certificate**.
@@ -73,22 +76,38 @@ kellermap/
 │                         untargeted_candidates, ordered_steps,
 │                         remaining_weight, ReductionOutcome
 ├── guards.py             what the three walks check before they begin
+├── compression.py        CompressionStep, collision_hull
+├── lift.py               SymmetricLiftStep
 ├── examples.py           the Keller maps written out more than once
 ├── errors.py             VerificationError
-└── bcw/                  BCWStep
+└── bcw/                  BCWStep, UnipotentStep, HomogenizationStep,
+                          and the grading helpers the last two share
 ```
 
-The top level holds what any work on Keller maps needs: the maps themselves,
-the group `EA_n(k)` acting on them, the group `GL_n(k)` beside it, collisions,
-chains of certified identities, and the naming of fresh generators. None of it
-is specific to one reduction method.
+The subpackage holds one paper: Bass, Connell and Wright of 1982.
+`BCWStep` is Proposition (3.1); `UnipotentStep` and `HomogenizationStep` are
+the second and third steps of Section 4, and `grading.py` holds what those two
+share, which is reading a displacement by degree and asking whether a Jacobian
+is nilpotent through one determinant.
 
-Only `BCWStep` is. A chain of certified identities is not a notion of the 1982
-paper, and a second reduction method would reuse `Reduction`, `Collision` and
-`ReductionContext` unchanged — which is exactly the misnomer the subpackage
-exists to avoid. `LinearStep` composes an element of `GL_n(k)` on the left;
-that Chapter II, Proposition (1.1) of the paper does so does not make the
-operation theirs.
+Everything else is at the top level, and the rule there is *not* that nothing
+is specific to a reduction method. It was until milestone 0.6.
+`compression.py` and `lift.py` are Theorem 3 of arXiv:2608.12543v1, which is as
+specific as `BCWStep` is and belongs to somebody else again. They are at the
+top level because `bcw/` names one paper, and putting a second author's
+construction inside it would say it was theirs — the same misnomer the
+subpackage was created to avoid, in the other direction.
+
+So the layout says two things and not one. `bcw/` is an attribution. The top
+level is everything that is not that attribution, which includes both what any
+work on Keller maps needs — the maps, `EA_n(k)`, `GL_n(k)`, collisions, chains,
+the naming of fresh generators — and constructions from other papers.
+
+A chain of certified identities is not a notion of the 1982 paper, and a second
+reduction method reuses `Reduction`, `Collision` and `ReductionContext`
+unchanged; milestone 0.6 did exactly that twice. `LinearStep` composes an
+element of `GL_n(k)` on the left; that Chapter II, Proposition (1.1) does so
+does not make the operation theirs.
 
 Keeping the subpackage one level down also removes an ambiguity the code
 carried while the package itself was called `bcw`: `BCW` now always means the
@@ -131,13 +150,23 @@ PolynomialMap  ←──uses──  VariableFactory  ←──holds──  Reduc
         └── LinearFactor ──► LinearAutomorphism ──┐       │
                                                   │       │
                                             LinearStep  BCWStep
+                                            TranslationStep
                                                   │       │
                                                   └───┬───┘
                                                       │
                                                    Step (protocol)
                                                       │
-                                                  Reduction  ←──carries──  Collision
+                            ┌─────────────────────┼
+                      UnipotentStep       HomogenizationStep
+                      CompressionStep     SymmetricLiftStep
+                                                      │
+                              Reduction  ←──carries──  Collision
 ```
+
+The four types on the lower branch satisfy the protocol and are built from
+nothing on the upper one. Three of them are not compositions of automorphisms
+at all, which is why the diagram forks: `LinearStep` and `BCWStep` are made of
+the factors above them, and the others are made of a formula.
 
 `VariableFactory` stands beside this hierarchy rather than in it. It is a
 naming policy, not a mathematical object, and every level that extends a map
@@ -555,11 +584,13 @@ than a base class — a step is anything that can say what it starts from, what
 it reaches, how it got there, and how to carry a collision across, and nothing
 has to inherit to qualify.
 
-Two kinds exist. `LinearStep` composes an element of `GL_n(k)` on the left.
-`BCWStep` is one application of Proposition (3.1): with `H = (…, X_u + P,
-X_v + Q)` and `G = (…, X_i - coefficient * X_u X_v, …)`, where the classical
-case of the paper is `coefficient = 1` and BCW-11 admits any non-zero constant
-of the coefficient domain,
+Six kinds exist, and until milestone 0.6 they were all of one shape. The three
+that were there first compose automorphisms. `LinearStep` composes an element
+of `GL_n(k)` on the left, `TranslationStep` a shift, and `BCWStep` is one
+application of Proposition (3.1): with `H = (…, X_u + P, X_v + Q)` and
+`G = (…, X_i - coefficient * X_u X_v, …)`, where the classical case of the
+paper is `coefficient = 1` and BCW-11 admits any non-zero constant of the
+coefficient domain,
 
     F' = G ∘ F^[m] ∘ H.
 
@@ -567,6 +598,38 @@ of the coefficient domain,
 formula, and are never stored beside them. Storing both a factorization and
 the automorphisms built from it would allow the two to disagree, and the
 identity check would then compare one of them against the other.
+
+`UnipotentStep` is of that shape too: it is Section 4's second step, `G(1) ∘
+F^[n] ∘ H(1)`, and what is new about it is that the two factors are computed
+from the source rather than chosen, so nothing about it is searched for.
+
+The other three broke three assumptions this page used to make, one each, and
+each is a property some steps have and no longer all.
+
+`HomogenizationStep` is not a composition. There is nothing to factor: the
+target is `(X + N_(1)T² + N_(2)T + N_(3), T)`, which is not conjugate to the
+source and does not have its dimension. What relates the two is a slice at
+`T = 1`, so what is exhibited is the formula, and `transport` runs forward
+only. Every other step carries a collision both ways because an automorphism is
+invertible.
+
+`CompressionStep` lowers the dimension, restricting to the subspace a collision
+generates. Its target shares no generator with its source, so RC-4 covers all
+of them rather than an added half; `build` needs a collision as well as a
+source, since a different collision generates a different subspace; and
+`transport` may refuse a collision that genuinely holds for the source, when
+its points leave that subspace.
+
+`SymmetricLiftStep` changes the coefficient domain, adjoining `i`. Every other
+step keeps it, and `guards.settled` uses equality of domains as an invariant no
+chain of `BCWStep` crosses. Its target is also the gradient of a form it
+exhibits, which is a stronger object than a Keller map and is the point of
+having it.
+
+None of that changes what a `Step` is. The protocol asks what a step starts
+from, what it reaches, how it got there and how to carry a collision, and
+nothing in STEP-1 to STEP-5 asks a target to extend its source or to keep its
+domain. Six types satisfy it and a `Reduction` holds them in one chain.
 
 ### Factor slots
 
@@ -655,8 +718,8 @@ constrains.
 Nothing requires a step to make progress. Two steps of the reference reduction
 leave the degree at seven, because they remove top-degree terms from a
 component that is not the deepest one. A certificate certifies correctness;
-whether a step makes progress is a question for the search in 0.4 and the
-heuristics of 0.5.
+whether a step makes progress is a question for the search, and
+`untargeted.py` is where it is answered.
 
 Transport is what the structure exists for. Each step carries a collision from
 its source to its target and verifies it on both sides. A chain that completes
@@ -753,8 +816,8 @@ denote the same generator.
 `VariableFactory` covers naming and nothing else. `ReductionContext` keeps
 names reproducible across a complete reduction sequence, and is deliberately
 thin: it names generators, extends rings and maps, and knows nothing about
-steps. Which step to take is 0.4, and a context that knew would be the wrong
-object to ask.
+steps. Which step to take is the search's question, and a context that knew
+would be the wrong object to ask.
 
 The context does not trust the factory. Both properties a factory promises are
 cheap to check, and both are checked on every call — purity by asking twice and comparing,
@@ -883,9 +946,13 @@ surface a reader meets first, not the edge cases.
 Known examples from the literature are preserved to guarantee that future
 optimizations never change mathematical correctness.
 
-Four regression examples are kept. The small one checks Alpöge's degree-seven
-map in dimension three by asserting both its constant Jacobian determinant and
-an explicit collision.
+Nine regression examples are kept, and they fall into three groups: what a
+chain starts from, what a chain of `BCWStep` reaches, and what the four stages
+of milestone 0.6 reach beyond that.
+
+The small one checks Alpöge's degree-seven map in dimension three by asserting
+both its constant Jacobian determinant and an explicit collision. Gao's quartic
+in three variables is the second source and is checked the same way.
 
 The second is a cubic Keller map in dimension 17 carrying the same collision.
 Since 0.2 it is *derived*: the suite verifies a chain of eight steps from the
@@ -912,10 +979,23 @@ carry coefficients, and one of them puts a single fresh coordinate in both
 slots -- BCW-10, BCW-11 and BCW-12, all three extensions beyond the paper.
 `references.md` records who reconstructed what and in which order.
 
-Searching for a factorization rather than verifying a presented one is 0.4
-throughout.
+Since 0.5 there are three more at degree three, and they are of a different
+kind: `alpoege13` and `alpoege12` are chains a *search* found rather than
+chains a person wrote, and `spacerat11` is a published map that `peel` reaches
+in six steps. What each of them is evidence for differs and
+`docs/provenance.md` says so map by map.
 
-See `references.md` for sources and for what the fixed data rests on.
+Milestone 0.6 adds `thompson24_homogeneous`, which is at BCW's third stage and
+not the first, and the six figures `scripts/measure_pipeline.py` derives
+without storing: three cubic homogeneous maps and three quartic gradient forms.
+Those are regression examples in the same sense as the rest, since every step
+of every one of them is verified on the way, but the suite holds no copy of the
+result to compare against. What it compares against is Prellberg's published
+twenty-dimensional map, component for component, and the sequence
+`2, 4, 11, 20, 20`.
+
+See `docs/references.md` for the sources and `docs/provenance.md` for what the
+fixed data rests on.
 
 A separate cubic Keller map in 19 variables is described at
 `https://rhicksrad.github.io/jacobian-degree3/`. It arises from a different

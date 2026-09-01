@@ -30,10 +30,7 @@ The implementation is intended as both
 
 Unlike a simple symbolic manipulation package, every reduction step is
 represented explicitly as a mathematical object and carries its own
-machine-checkable certificate. Since 0.2 that is no longer a promise: the
-seventeen-dimensional cubic counterexample in the test suite is *derived* from
-Alpöge's map by a chain of eight verified steps, which carries the collision
-along with it. Since 0.3 the same holds for a fifteen-dimensional one.
+machine-checkable certificate.
 
 ---
 
