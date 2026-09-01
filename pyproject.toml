@@ -1,6 +1,6 @@
 [project]
 name = "kellermap"
-version = "0.6.0rc1"
+version = "0.6.0rc2"
 description = "Polynomial Keller maps and certified transformations of them, working towards the Bass–Connell–Wright degree reduction."
 readme = "README.md"
 requires-python = ">=3.10"
@@ -63,6 +63,11 @@ markers = [
 
 [tool.ruff]
 line-length = 88
+# The virtual environments the release gates build, and the archive one of them
+# unpacks. ruff skips ignored paths only inside a git repository, and these
+# gates run in unpacked archives too, where linting somebody else's
+# ``activate_this.py`` is neither useful nor this project's business.
+extend-exclude = ["build_env", "min_env", "sdist_env", "sdist_tree"]
 # Set to the lower bound from requires-python and not to the newest version.
 # Otherwise the UP rules prescribe idioms that do not run on 3.10, and ruff
 # would report this only once somebody adopted them.

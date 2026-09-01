@@ -1747,8 +1747,8 @@ is a `Step`: nothing in STEP-1 to STEP-5 asks a target to extend its source, so
 a `Reduction` can hold the whole chain from twelve variables to twenty. CHC-1
 to CHC-10 state it, and three things in them are new to this page.
 
-The target shares no generator with the source, where every other step extends
-one. `build` takes a collision as well as a source, because a different
+The target shares no generator with the source, where every step before it
+extends one. `build` takes a collision as well as a source, because a different
 collision generates a different hull; no other step needs the thing the others
 merely carry. And `transport` can refuse a collision that genuinely holds for
 the source, when its points leave the subspace, which no other transport can.

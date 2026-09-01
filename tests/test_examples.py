@@ -683,6 +683,18 @@ def test_the_third_point_in_the_fixed_data_is_the_one_the_chain_carries() -> Non
     one unnoticed. An audit of ``0.5.0rc3`` pointed that out.
     """
     from kellermap import Collision, LinearStep, over_field, peel
+
+    # Skipped and not failed when the file is absent, which is what an
+    # installed source archive looks like: tests/data.py is excluded from it
+    # because the map is somebody else's and its licence could not be
+    # established. tests/test_alpoege19.py has said so at module level since
+    # 0.5; this test imported unconditionally and an audit of 0.6.0rc1 found it
+    # by running the suite the archive ships.
+    pytest.importorskip(
+        "tests.data",
+        reason="tests/data.py is excluded from the source archive",
+    )
+
     from tests.data import (
         MACFARLANE_COMPONENTS,
         MACFARLANE_THIRD_POINT,

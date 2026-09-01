@@ -1405,9 +1405,10 @@ displacement `h`, `B` for `basis` as an `m x n` matrix of rows, and `m` for
 
 ### Three things that are new here
 
-**The target shares no generator with the source.** Every other step extends:
-its target carries the source's variables followed by fresh ones, and RC-4 is
-about the fresh half. Here the target lives in `m` coordinates of a subspace,
+**The target shares no generator with the source.** Every step written before
+this one extends: its target carries the source's variables followed by fresh
+ones, and RC-4 is about the fresh half. The symmetric lift, written after it,
+does not extend either. Here the target lives in `m` coordinates of a subspace,
 its generators are all fresh, and none of the source's appears in it. RC-4
 still applies, and it now covers every generator of the target rather than the
 added ones.
@@ -1444,7 +1445,16 @@ obligation of its own.
 
 **CHC-2 — The basis is a basis.** `basis` is a tuple of `m` vectors, each
 of `n` coordinates over the source's coefficient domain, and they are linearly
-independent.
+independent. The domain has to be a field of characteristic zero, as under
+CHC-8 and for the same reason: the elimination that decides independence
+divides by a pivot.
+
+The entries are stored through the domain and not as they arrived. Over a
+fraction field `(T^2 - 1)/(T - 1)` and `T + 1` are one element and two
+expressions, and storing the expression gave two steps that verify alike,
+describe one restriction and compare unequal, which STEP-5 forbids. A value the
+domain cannot represent raises `ValueError` and not whatever the domain
+raises.
 
 A constructor invariant, raising `ValueError`. A dependent list describes no
 subspace of dimension `m` and no step, and a wrong length describes nothing at
@@ -1519,7 +1529,11 @@ most `n` rounds. Taking the `w_j` from a basis rather than from all of `W_v` is
 the same span, because `T` is `d`-linear.
 
 The division by `d!` needs the coefficient domain to have characteristic zero,
-which DOM-1 already fixes for this library.
+and the elimination needs it to be a field. This paragraph said DOM-1 fixes
+that; DOM-1 says only that the domain is a stated argument, so nothing fixed
+it and nothing checked it. Both are preconditions of this obligation now, and
+`collision_hull` raises against it. Theorem 3 of that paper works over a field
+of characteristic zero throughout.
 
 The returned sequence is *descriptive*. It is not stored on the step and it is
 not part of any certificate: a supplied basis has no sequence, and storing one
@@ -1717,6 +1731,13 @@ rho = (I + J h(q)^T)^-1 (p - q)
 p  |-->  (p, 0)
 q  |-->  (q + rho, i rho)
 ```
+
+Which of the two points is `p` the step decides and the caller does not. COL-6
+makes a collision a statement about a *set*, so a step that took the order its
+tuple happened to carry would send two equal collisions to two unequal results,
+and both would verify. `0.6.0rc1` did that until an audit found it. Any
+function of the set would serve; what the implementation uses is a total order
+on the printed coordinates, which is a choice and not a discovery.
 
 `rho` is computed and not stored, since the source and the pair determine it,
 and the equation `(I + J h(q)^T) rho = p - q` is checked rather than the

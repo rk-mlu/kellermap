@@ -949,10 +949,11 @@ True
 
 ```
 
-There is nothing to choose here. Every other step type takes a component, a
-matrix or a factorization; given a source, this one is determined up to the
-names of the fresh generators, and `build` is the ordinary route rather than
-the convenient one.
+There is nothing to choose here. `BCWStep` takes a component and two factors,
+`LinearStep` a matrix, `TranslationStep` a shift, `CompressionStep` a
+collision; given a source, this one is determined up to the names of the fresh
+generators, and `build` is the ordinary route rather than the convenient one.
+The homogenization and the symmetric lift are determined too.
 
 `G` and `H` are derived from the source, one factor per component each:
 
@@ -1072,8 +1073,8 @@ kellermap.errors.VerificationError: [HOM-3] det(I + T J(N)) is -x3**2/2 + x3/2 +
 ```
 
 A collision moves to the slice `T = 1`. The appended coordinate is one and not
-zero, unlike every other step here: at `T = 0` only `N_(3)` survives, and that
-slice is a different map.
+zero, unlike the two steps that append one at all: at `T = 0` only `N_(3)`
+survives, and that slice is a different map.
 
 ```python
 >>> square = over_field(PolynomialMap((x1, x2), (x1**2 + x2**3, x2)))
@@ -1196,15 +1197,16 @@ True
 ```
 
 A collision is lifted as a pair, and the two points are treated differently:
-the first goes to `(p, 0)` and the second to `(q + rho, i rho)`. A collision of
-more than two points is refused, because which pair is lifted changes the
-answer:
+one goes to `(p, 0)` and the other to `(q + rho, i rho)`. Which is which the
+step decides, since a `Collision` compares its points as a set and would
+otherwise transport to two different answers. A collision of more than two
+points is refused, because which pair is lifted changes the result:
 
 ```python
 >>> fold = over_field(PolynomialMap((x1,), (x1 + x1**2,)))
 >>> pair = Collision(((0,), (-1,)), (0,))
 >>> SymmetricLiftStep.build(fold).transport(pair).points
-((0, 0), (-2, -I))
+((-1, 0), (-1, -I))
 >>> three = over_field(PolynomialMap((x1, x2), (x1 + x1**2, x2 + x2**2)))
 >>> SymmetricLiftStep.build(three).transport(
 ...     Collision(((0, 0), (-1, 0), (0, -1)), (0, 0))

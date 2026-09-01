@@ -4,12 +4,19 @@ Notable changes per release. The milestone plan and its reasoning live in
 `docs/roadmap.md`, the binding obligations of the verification surface in
 `docs/contracts.md`.
 
-## 0.6.0rc1
+## 0.6.0rc2
 
-The rest of the Reduction Theorem, and the two constructions that carry its
-result to the form the literature compares. Everything before this milestone
-stopped at degree three, which is BCW's first stage, while the published
-figures are cubic homogeneous, which is the third.
+The second and third stages of the Reduction Theorem, and the two constructions
+that carry the result to the form the literature compares. Everything before
+this milestone stopped at degree three, which is BCW's first stage, while the
+published figures are cubic homogeneous, which is the third.
+
+Two stages and not the whole theorem. Theorem 2.1(b) asks for a normal form
+that is also linear in each original variable and quadratic only in `T`; this
+milestone does not produce that refinement, and `(x + y^3, y)` homogenizes to a
+verified five-dimensional target that still carries a `y^3`. The reduction the
+usual corollary needs -- cubic homogeneous with nilpotent Jacobian -- is
+unaffected, and `docs/references.md` says which is which.
 
 The pipeline, from the smallest degree-three map this project holds, with every
 step verified and the collision carried to the far end:
@@ -73,6 +80,35 @@ entries, three of them from this milestone.
   pattern `reconstruct_alpoege19.py` has had since 0.5.
 - A sentence in `docs/references.md` wrapped so that a number began a line, and
   Markdown read it as an ordered list. A test now covers the class.
+
+### Fixed after the audit of `0.6.0rc1`
+
+- `SymmetricLiftStep.transport` treated the two points of a collision
+  asymmetrically, where COL-6 makes a collision a statement about a set. Two
+  equal collisions transported to two unequal results and both verified. The
+  step orients the pair itself now.
+- `collision_hull` and `CompressionStep` did field arithmetic over any
+  coefficient domain. Both require a field of characteristic zero now, which is
+  the setting of the paper, and a value the domain cannot represent raises the
+  `ValueError` CHC-2 promises rather than the domain's own error. CHC-8 cited
+  DOM-1 for characteristic zero, which DOM-1 does not say.
+- `CompressionStep` stored basis entries as they arrived, so two spellings of
+  one element gave two steps that verify alike and compare unequal. They go
+  through the domain now.
+- `SymmetricLiftStep.build` failed over an algebraic number field, because
+  adjoining `i` there gives a field whose elements `convert` cannot unify with
+  the source's. Coefficients go through SymPy now.
+- The source archive shipped a suite that failed: one test imported
+  `tests/data.py`, which the archive excludes on purpose. It skips now, and
+  `make sdist-test` unpacks the archive, installs it and runs the suite the
+  archive ships. `build-test` never saw this, because it runs the tests of the
+  working tree. The fault predates this milestone.
+- `README.md` and this file called the milestone "the rest of the Reduction
+  Theorem". Theorem 2.1(b) asks in addition for a form linear in each original
+  variable, which is not implemented; both say "the second and third stages"
+  now. Three documents counted six step types where there are seven, and
+  `docs/provenance.md` did not list `examples.spacerat11` among the third-party
+  maps, though its docstring carries the attribution.
 
 ### Known limits
 

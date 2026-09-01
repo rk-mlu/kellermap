@@ -36,7 +36,7 @@ machine-checkable certificate.
 
 ## Project Status
 
-Current version: **0.6.0rc1**
+Current version: **0.6.0rc2**
 
 ### What the library does
 
@@ -49,10 +49,12 @@ Current version: **0.6.0rc1**
   factorization it was given and checks it, and a failure names the obligation
   it broke. `LinearStep` and `TranslationStep` are the two factors of the
   linear normalization.
-- **The rest of the Reduction Theorem.** `UnipotentStep` is Section 4's second
-  step, which doubles the dimension and makes the Jacobian of the displacement
-  nilpotent; `HomogenizationStep` is the third, which adds one variable and
-  makes the displacement cubic homogeneous.
+- **The second and third stages of the Reduction Theorem.** `UnipotentStep` is
+  Section 4's second step, which doubles the dimension and makes the Jacobian
+  of the displacement nilpotent; `HomogenizationStep` is the third, which adds
+  one variable and makes the displacement cubic homogeneous. Not the whole of
+  Theorem 2.1: the normal form there is also linear in each original variable,
+  and that refinement is not implemented.
 - **Compression and the gradient form.** `CompressionStep` restricts a
   homogeneous map to the subspace its collision generates, which is the one
   step that *lowers* the dimension; `SymmetricLiftStep` turns the result into
@@ -62,7 +64,7 @@ Current version: **0.6.0rc1**
   `ReductionContext` checks that a naming policy stays consistent along one.
 - **Collisions.** `Collision` is the evidence that a map is not injective, and
   it is transported across every step, so a reduction of a counterexample is
-  still a counterexample. Two of the six step types may refuse a collision
+  still a counterexample. Two of the seven step types may refuse a collision
   rather than carry it, and say why.
 - **Three searches.** `search` walks from a source towards a target and is told
   what a fresh coordinate may carry; `peel` walks back from a target and is
@@ -76,11 +78,11 @@ Current version: **0.6.0rc1**
 
 ### This milestone, 0.6
 
-The rest of the Reduction Theorem, and the two constructions that carry its
-result to the form the literature compares. Everything before this milestone
-stopped at degree three, which is BCW's first stage; the published figures are
-cubic homogeneous, which is the third, so the two could not be set beside each
-other.
+The second and third stages of the Reduction Theorem, and the two constructions
+that carry the result to the form the literature compares. Everything before
+this milestone stopped at degree three, which is BCW's first stage; the
+published figures are cubic homogeneous, which is the third, so the two could
+not be set beside each other.
 
 The whole pipeline, from the smallest degree-three map this project holds:
 

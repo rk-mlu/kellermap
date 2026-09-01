@@ -251,3 +251,69 @@ script names it — a correction made in two places out of three. The rule about
 not distributing unlicensed data was applied to one map, written into the
 packaging comment, written into the provenance page, and not applied to the
 second map that needed it.
+
+## Seven findings of the audit of `0.6.0rc1`
+
+An external audit ran the release chain, the mutation probe, sixty BCW
+pipelines, forty lifts and eighty compressions, and found nothing wrong with
+the BCW formulas. It found seven other things, and they fall into two groups.
+
+**Three were faults in the code.**
+
+`SymmetricLiftStep.transport` treated its two points asymmetrically, and
+`Collision` compares its points as a *set* under COL-6. So two equal
+collisions, with equal hashes, transported to two unequal ones — and both
+results verified, which is the worst shape such a fault can have. The step
+orients the pair itself now. Reproduced on the thirty-eight-variable pipeline
+and not only on a small example.
+
+`collision_hull` and `CompressionStep` did field arithmetic over any domain.
+The elimination divides by a pivot and the polarization by `d!`. Over `ZZ` that
+produced Python floats and judged independent vectors dependent; over `ZZ[T]`
+it raised whatever the domain raised; a basis value outside the domain escaped
+as `CoercionFailed` where CHC-2 promises `ValueError`. Both now require a field
+of characteristic zero, which is the setting Theorem 3 of arXiv:2608.12543v1
+works in. CHC-8 also cited DOM-1 for characteristic zero, which DOM-1 does not
+say.
+
+`SymmetricLiftStep.build` failed over an algebraic number field. Adjoining `i`
+to `QQ<sqrt(2)>` gives `QQ<sqrt(2) + I>`, whose elements are algebraic numbers
+over another minimal polynomial, and converting a coefficient with `convert`
+tries to unify the two representations. Going through the expression they agree
+on works. Nothing else in the suite had a source over such a field.
+
+**Two were faults in what a value means.**
+
+`CompressionStep` stored its basis entries as they arrived, so over a fraction
+field `(T^2 - 1)/(T - 1)` and `T + 1` gave two steps that verify alike,
+describe one restriction and compare unequal. STEP-5 asks for comparison by
+mathematical content. The entries go through the coefficient domain now.
+
+The source archive shipped a test suite that failed. `tests/data.py` is
+excluded from the archive on purpose, and one test imported it unconditionally
+where its neighbours use `pytest.importorskip`. `make release` did not see it,
+because `build-test` installs the wheel and then runs the tests of the *working
+tree*. A new gate, `make sdist-test`, unpacks the archive, installs it and runs
+the suite the archive ships. The fault predates this milestone.
+
+**Two were claims stated too widely.**
+
+`README.md` and `CHANGELOG.md` called milestone 0.6 "the rest of the Reduction
+Theorem". Theorem 2.1(b) asks in addition for a normal form linear in each
+original variable, which Proposition (3.1) delivers in a second half this
+library does not implement. The pages say "the second and third stages" now and
+name the refinement they leave out.
+
+`docs/provenance.md` ended by saying nothing else in the repository is somebody
+else's, and did not list `examples.spacerat11`. Its own docstring carries the
+attribution, the licence link and the statement of changes, so this was an
+inventory gap and not a licence fault. Three documents also counted six step
+types where there are seven, and several sentences of the form "every other
+step" had been made false by the two step types added after them.
+
+**What the audit says about the controls.** The mutation probe caught 34 of 34
+and the coverage is 100 per cent, and neither contradicts the findings: the
+domains, the interaction between `transport` and equality, and the installed
+archive all lie outside what those controls examine. Two of the three code
+faults are about a *value* rather than a *branch*, and a branch-based control
+cannot see them.

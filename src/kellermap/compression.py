@@ -33,6 +33,7 @@ from typing import Any
 
 import sympy as sp
 from sympy.polys.domains import Domain
+from sympy.polys.polyerrors import CoercionFailed
 from sympy.polys.rings import PolyElement, PolyRing
 
 from .canonical import agree
@@ -137,9 +138,59 @@ class _Echelon:
         return all(value == self._domain.zero for value in self.reduce(vector))
 
 
+def _field(source: PolynomialMap, obligation: str) -> Domain:
+    """Return the coefficient domain, or raise if it is not one this works over.
+
+    CHC-2 and CHC-8 both need a field of characteristic zero. The elimination
+    divides by a pivot, and the polarization divides by ``d!``.
+
+    Over ``ZZ`` the division silently produces Python floats, and two
+    independent vectors of large enough integers are then judged dependent.
+    Over ``ZZ[T]`` it raises whatever the domain raises. Neither is an answer,
+    and neither was refused until an audit of ``0.6.0rc1`` said so.
+
+    The requirement is the paper's: Theorem 3 of arXiv:2608.12543v1 works over
+    a field of characteristic zero throughout.
+    """
+    domain = source.ring.domain
+
+    if not domain.is_Field:
+        raise VerificationError(
+            obligation,
+            f"The coefficient domain is {domain}, which is not a field. The "
+            "hull divides by a pivot and by d!, so it needs one; over_field() "
+            "moves a map to the field of fractions of its domain.",
+        )
+
+    if domain.characteristic() != 0:
+        raise VerificationError(
+            obligation,
+            f"The coefficient domain is {domain}, of characteristic "
+            f"{domain.characteristic()}. The polarization divides by d!, which "
+            "needs characteristic zero.",
+        )
+
+    return domain
+
+
 def _to_domain(vector: Vector, domain: Domain) -> tuple[Element, ...]:
-    """Return the coordinates of ``vector`` as elements of ``domain``."""
-    return tuple(domain.from_sympy(sp.sympify(value)) for value in vector)
+    """Return the coordinates of ``vector`` as elements of ``domain``.
+
+    A value the domain cannot represent is a statement about the caller's data
+    and is reported as one. Letting ``CoercionFailed`` escape would break the
+    promise the error table makes for this type.
+    """
+    converted = []
+    for value in vector:
+        try:
+            converted.append(domain.from_sympy(sp.sympify(value)))
+        except (CoercionFailed, ValueError) as failure:
+            raise ValueError(
+                f"The coordinate {value} does not lie in {domain}, the "
+                f"coefficient domain of the source: {failure}"
+            ) from failure
+
+    return tuple(converted)
 
 
 def _degree(source: PolynomialMap) -> int:
@@ -264,8 +315,7 @@ def collision_hull(
     """
     collision.verify(source)
 
-    ring = source.ring
-    domain = ring.domain
+    domain = _field(source, "CHC-8")
     degree = _degree(source)
     displacement = source.displacement().to_polynomials()
 
@@ -367,14 +417,23 @@ class CompressionStep:
                 f"{source.dimension}."
             )
 
-        domain = source.ring.domain
+        domain = _field(source, "CHC-2")
         echelon = _Echelon(domain)
+        canonical = []
         for row in rows:
-            if not echelon.offer(_to_domain(row, domain)):
+            entries = _to_domain(row, domain)
+            if not echelon.offer(entries):
                 raise ValueError(
                     "The basis vectors are linearly dependent, so they do not "
                     f"span a subspace of dimension {len(rows)}."
                 )
+            # Stored through the domain and not as they arrived. Over a
+            # fraction field ``(T^2 - 1)/(T - 1)`` and ``T + 1`` are one
+            # element and two expressions; storing the expression would give
+            # two steps that describe one restriction, verify alike and
+            # compare unequal, which is what STEP-5 forbids.
+            canonical.append(tuple(domain.to_sympy(value) for value in entries))
+        rows = tuple(canonical)
 
         # Fresh against the reserved names and not only the coordinates, as
         # everywhere else. Here it covers every generator of the target: the

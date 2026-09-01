@@ -236,13 +236,23 @@ class SymmetricLiftStep:
             for position in range(dimension)
         )
 
+        # Through SymPy and not through ``convert``. The target's domain is the
+        # source's with i adjoined, and for an algebraic number field that is a
+        # third field again: QQ<sqrt(2)> becomes QQ<sqrt(2) + I>, whose
+        # elements are ANPs over another minimal polynomial. ``convert`` tries
+        # to unify the two representations and fails; ``to_sympy`` and
+        # ``from_sympy`` go through the expression the two agree on. An audit
+        # of 0.6.0rc1 found this.
+        source_domain = self._source.ring.domain
+
         total = ring.zero
         for position, component in enumerate(
             self._source.displacement().to_polynomials()
         ):
             substituted = ring.zero
             for monomial, coefficient in component.iterterms():
-                term = ring.ground_new(ring.domain.convert(coefficient))
+                ground = ring.domain.from_sympy(source_domain.to_sympy(coefficient))
+                term = ring.ground_new(ground)
                 for index, exponent in enumerate(monomial):
                     for _ in range(exponent):
                         term = term * shifted[index]
@@ -373,9 +383,10 @@ class SymmetricLiftStep:
     def transport(self, collision: Collision) -> Collision:
         """Lift a pair of colliding points into the target. SYM-8 to SYM-10.
 
-        The first point goes to ``(p, 0)`` and the second to
-        ``(q + rho, i rho)``, so the two are treated differently and the order
-        of the pair is part of the answer.
+        One point goes to ``(p, 0)`` and the other to ``(q + rho, i rho)``, so
+        the two are treated differently. Which is which is decided here and not
+        by the caller, because a ``Collision`` compares its points as a set:
+        see ``_oriented``.
         """
         collision.verify(self._source)
 
@@ -388,7 +399,7 @@ class SymmetricLiftStep:
                 "not choose; narrow the collision before lifting it.",
             )
 
-        first, second = collision.points
+        first, second = self._oriented(collision.points)
         rho = self._rho(first, second)
         zero = (sp.Integer(0),) * self._source.dimension
 
@@ -403,6 +414,32 @@ class SymmetricLiftStep:
         moved.verify(self._target)
 
         return moved
+
+    @staticmethod
+    def _oriented(
+        points: tuple[tuple[sp.Expr, ...], ...],
+    ) -> tuple[tuple[sp.Expr, ...], tuple[sp.Expr, ...]]:
+        """Return the pair in the order this step uses, whatever order it came in.
+
+        The lift is asymmetric: ``p`` goes to ``(p, 0)`` and ``q`` to
+        ``(q + rho, i rho)``. A ``Collision`` is not asymmetric -- COL-6 makes
+        equality a question about a *set* of points -- so taking the order the
+        tuple happens to carry would let two equal collisions transport to two
+        unequal ones. RC1 did that, and both results verified, which is the
+        worst shape for such a fault.
+
+        Sorting by the printed form is a choice and not a discovery. What
+        matters is that it is a function of the set: any total order that
+        equal collisions agree on would do, and this one needs nothing of the
+        coefficient domain but that its elements can be printed.
+        """
+
+        def printed(point: tuple[sp.Expr, ...]) -> list[str]:
+            return [str(value) for value in point]
+
+        first, second = sorted(points, key=printed)
+
+        return first, second
 
     def _rho(
         self, first: tuple[sp.Expr, ...], second: tuple[sp.Expr, ...]

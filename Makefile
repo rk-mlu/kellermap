@@ -1,5 +1,6 @@
 .PHONY: all format lint typecheck test test-slow test-all coverage docs \
-        reconstruct measure check check-full build-test test-minimum lock-check \
+        reconstruct measure check check-full build-test sdist-test test-minimum \
+        lock-check \
         dist-check release clean
 
 all: check
@@ -88,7 +89,7 @@ check-full: lint typecheck test-all
 # .venv314 broke `uv build`.
 build-test:
 	@echo "--> Removing old builds..."
-	rm -rf dist build_env min_env
+	rm -rf dist build_env min_env sdist_env sdist_tree
 	@echo "--> Building wheel and sdist..."
 	uv build
 	@echo "--> Creating a fresh venv (build_env)..."
@@ -102,6 +103,28 @@ build-test:
 	@echo "--> Running the test suite against the installed package..."
 	build_env/bin/python -m pytest -q
 	@echo "Success: wheel built, installed and checked."
+
+# The suite the source archive ships, run from the unpacked archive against
+# the installed package. build-test installs the wheel and then runs the tests
+# of the working tree, so what the archive contains was never executed as a
+# whole: an audit of 0.6.0rc1 found a test that imports tests/data.py, which
+# the archive deliberately excludes, and it failed for everyone who ran the
+# suite the way this target does.
+sdist-test:
+	@echo "--> Removing old builds..."
+	rm -rf dist sdist_env sdist_tree
+	@echo "--> Building the source archive..."
+	uv build --sdist
+	@echo "--> Unpacking it..."
+	mkdir sdist_tree
+	tar -xzf dist/*.tar.gz -C sdist_tree --strip-components=1
+	@echo "--> Creating a fresh venv (sdist_env)..."
+	uv venv --python 3.10 sdist_env
+	@echo "--> Installing the unpacked archive and pytest..."
+	VIRTUAL_ENV=sdist_env uv pip install ./sdist_tree pytest
+	@echo "--> Running the suite the archive ships, from the archive..."
+	cd sdist_tree && ../sdist_env/bin/python -m pytest -q
+	@echo "Success: the shipped suite passes against the shipped package."
 
 # Resolution to the smallest permitted versions rather than to the newest.
 # Without this target the lower bound in pyproject.toml stays an assertion:
@@ -144,7 +167,8 @@ lock-check:
 	uv lock --check
 
 # All release gates before a tag.
-release: lock-check check-full coverage reconstruct measure build-test dist-check test-minimum
+release: lock-check check-full coverage reconstruct measure build-test sdist-test \
+        dist-check test-minimum
 
 # --------------------------------------------------------------------------
 
@@ -156,4 +180,4 @@ clean:
 	rm -rf .ruff_cache
 	rm -rf htmlcov
 	rm -f .coverage
-	rm -rf dist build_env min_env
+	rm -rf dist build_env min_env sdist_env sdist_tree

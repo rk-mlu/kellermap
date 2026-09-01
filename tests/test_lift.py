@@ -102,6 +102,38 @@ def test_a_domain_that_already_has_i_is_unchanged() -> None:
     assert SymmetricLiftStep.build(source).target.ring.domain == sp.ZZ_I
 
 
+def test_a_source_over_an_algebraic_number_field_lifts() -> None:
+    """SYM-5 over a domain that is not ``QQ``, which an audit of ``0.6.0rc1`` found.
+
+    ``QQ<sqrt(2)>`` with ``i`` adjoined is ``QQ<sqrt(2) + I>``, a third field
+    whose elements are algebraic numbers over another minimal polynomial.
+    Converting a coefficient between the two with ``convert`` tries to unify
+    the representations and raises; going through the expression they agree on
+    works. Nothing else in the suite has a source over an algebraic field, so
+    nothing else would have found it.
+    """
+    field = sp.QQ.algebraic_field(sp.sqrt(2))
+    ring = sp.ring("y1,y2,y3", field)[0]
+    first, second, third = ring.gens
+    source = PolynomialMap.from_ring(
+        ring,
+        (first + field.from_sympy(sp.sqrt(2)) * second**3, second, third),
+    )
+
+    step = SymmetricLiftStep.build(source)
+
+    assert step.verify() is None
+    assert step.target.determinant() == 1
+
+    # Two ``AlgebraicField`` objects for one field need not compare equal, so
+    # what is checked is that the field contains what it has to contain.
+    domain = step.target.ring.domain
+
+    assert domain.is_Field
+    assert domain.from_sympy(sp.I) == domain.from_sympy(sp.I)
+    assert sp.simplify(domain.to_sympy(domain.from_sympy(sp.sqrt(2)))) == sp.sqrt(2)
+
+
 def test_build_records_the_target_as_constructed(lifted: SymmetricLiftStep) -> None:
     assert lifted.provenance is Provenance.CONSTRUCTED
 
@@ -289,16 +321,38 @@ def test_a_target_over_the_wrong_domain_fails(lifted: SymmetricLiftStep) -> None
 
 
 def test_transport_lifts_the_pair_asymmetrically() -> None:
-    """SYM-8. ``p`` goes to ``(p, 0)`` and ``q`` to ``(q + rho, i rho)``.
+    """SYM-8. One point goes to ``(p, 0)`` and the other to ``(q + rho, i rho)``.
 
-    On this source ``h = x1^2``, so at ``q = -1`` the matrix is ``1 - 2 = -1``
-    and ``rho = -1``. The second point is therefore ``(-2, -i)``, and its
-    imaginary block is what the collision of the target lives on.
+    The step orients the pair itself, so ``q`` here is ``0`` and ``p`` is
+    ``-1``: on this source ``h = x1^2``, the matrix at ``q = 0`` is ``1``, and
+    ``rho = p - q = -1``. The second point is therefore ``(-1, -i)``.
+
+    The image moves with the orientation, which is not a defect: a different
+    pair of preimages of one map has a different image, and both are
+    collisions of the target.
     """
     moved = SymmetricLiftStep.build(FOLD).transport(FOLD_COLLISION)
 
-    assert moved.points == ((0, 0), (-2, -sp.I))
-    assert moved.image == (0, 0)
+    assert moved.points == ((-1, 0), (-1, -sp.I))
+    assert moved.image == (-1, -sp.I)
+    assert moved.verify(SymmetricLiftStep.build(FOLD).target) is None
+
+
+def test_the_orientation_does_not_depend_on_the_order_of_the_points() -> None:
+    """SYM-8 against COL-6, which is what an audit of ``0.6.0rc1`` found.
+
+    A ``Collision`` compares its points as a set, and the lift treats them
+    differently. Taking the order the tuple happens to carry made two equal
+    collisions transport to two unequal ones, and both results verified, which
+    is the worst shape such a fault can have.
+    """
+    step = SymmetricLiftStep.build(FOLD)
+    forwards = Collision(((0,), (-1,)), (0,))
+    backwards = Collision(((-1,), (0,)), (0,))
+
+    assert forwards == backwards
+    assert hash(forwards) == hash(backwards)
+    assert step.transport(forwards) == step.transport(backwards)
 
 
 def test_the_lifted_points_differ_in_the_second_block() -> None:

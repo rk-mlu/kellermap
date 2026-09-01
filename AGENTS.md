@@ -130,8 +130,15 @@ python scripts/measure_pipeline.py
 
 `make check` runs the first five, `make check-full` adds the slow markers,
 `make reconstruct` runs the eight reconstructions, and `make measure` the
-figures behind the untargeted family and behind the pipeline of 0.6. Before a tag, `make release` adds
-`lock-check`, `coverage`, `build-test`, `dist-check` and `test-minimum`.
+figures behind the untargeted family and behind the pipeline of 0.6. Before a
+tag, `make release` adds `lock-check`, `coverage`, `build-test`, `sdist-test`,
+`dist-check` and `test-minimum`.
+
+`build-test` and `sdist-test` are two gates and not one. The first installs the
+wheel and runs the tests of the working tree; the second unpacks the source
+archive, installs it, and runs the suite the archive ships from the archive.
+Only the second sees what a user who runs the shipped tests sees, and an audit
+of `0.6.0rc1` found a test there that had been failing since 0.5.
 
 This list is not the authority. The Makefile is, and two tests in
 `tests/test_documentation.py` hold the two against each other: every command

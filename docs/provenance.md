@@ -59,7 +59,22 @@ value could sit and not about one place: until work package 9 of 0.6,
 `scripts/reconstruct_macfarlane13.py` carried its own transcription and the
 archive shipped it. `docs/errata.md` records it.
 
-Nothing else in the repository is somebody else's.
+`kellermap.examples.spacerat11` and `spacerat11_collision` are the
+eleven-variable map of Section 6 of arXiv:2608.05392v1, licensed CC BY 4.0.
+Attribution, the licence link and a statement of changes are in the docstring
+of the map. That paper credits a GitHub gist for the calculation; the gist
+carries no licence, so every value here comes from the paper.
+
+It is reachable from `examples.alpoege()` by six `BCWStep`s, which
+`scripts/reconstruct_spacerat11.py` replays without the library. That does not
+make it this project's: `peel` is given its target, so deriving the map needs
+the map. It is somebody else's, and the reconstruction is a check and not a
+claim of authorship.
+
+Nothing else in the repository is somebody else's. This list was one entry
+short until an audit of `0.6.0rc1`: `spacerat11` arrived in work package 6 with
+its attribution in its docstring, and this page was not extended with it, which
+is an inventory gap and not a licence fault.
 
 ---
 

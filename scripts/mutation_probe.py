@@ -43,7 +43,8 @@ They ask today's question of today's code. Every one of them should report
 aims at. The set grew to eighteen with ``UnipotentStep``, whose three source
 obligations are the first here that a constructed step cannot make true, and to
 twenty-four with the homogenization twenty-nine with the
-compression and thirty-four with the symmetric lift.
+compression, thirty-four with the symmetric lift and thirty-seven with the
+findings of the audit of ``0.6.0rc1``.
 
 They do **not** reproduce the ten misses of the first run, and until
 ``0.4.0rc14`` this file and ``CHANGELOG.md`` said they did. Two reasons. The
@@ -349,6 +350,27 @@ PROBES: tuple[Probe, ...] = (
         "src/kellermap/lift.py",
         "        if len(collision.points) != 2:",
         "        if False:",
+    ),
+    Probe(
+        "SYM-8",
+        "the pair is oriented from the set and not from the tuple",
+        "src/kellermap/lift.py",
+        "        first, second = sorted(points, key=printed)",
+        "        first, second = points",
+    ),
+    Probe(
+        "CHC-2",
+        "the coefficient domain of the compression is a field",
+        "src/kellermap/compression.py",
+        "    if not domain.is_Field:",
+        "    if False:",
+    ),
+    Probe(
+        "CHC-8",
+        "the coefficient domain has characteristic zero",
+        "src/kellermap/compression.py",
+        "    if domain.characteristic() != 0:",
+        "    if False:",
     ),
 )
 

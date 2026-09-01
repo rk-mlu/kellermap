@@ -12,6 +12,8 @@ build/
 .venv*/
 build_env/
 min_env/
+sdist_env/
+sdist_tree/
 wheels/
 
 # Tool caches and reports

@@ -584,10 +584,10 @@ than a base class — a step is anything that can say what it starts from, what
 it reaches, how it got there, and how to carry a collision across, and nothing
 has to inherit to qualify.
 
-Six kinds exist, and until milestone 0.6 they were all of one shape. The three
-that were there first compose automorphisms. `LinearStep` composes an element
-of `GL_n(k)` on the left, `TranslationStep` a shift, and `BCWStep` is one
-application of Proposition (3.1): with `H = (…, X_u + P, X_v + Q)` and
+Seven kinds exist, and until milestone 0.6 they were all of one shape. The
+three that were there first compose automorphisms. `LinearStep` composes an
+element of `GL_n(k)` on the left, `TranslationStep` a shift, and `BCWStep` is
+one application of Proposition (3.1): with `H = (…, X_u + P, X_v + Q)` and
 `G = (…, X_i - coefficient * X_u X_v, …)`, where the classical case of the
 paper is `coefficient = 1` and BCW-11 admits any non-zero constant of the
 coefficient domain,
@@ -610,8 +610,8 @@ each is a property some steps have and no longer all.
 target is `(X + N_(1)T² + N_(2)T + N_(3), T)`, which is not conjugate to the
 source and does not have its dimension. What relates the two is a slice at
 `T = 1`, so what is exhibited is the formula, and `transport` runs forward
-only. Every other step carries a collision both ways because an automorphism is
-invertible.
+only. The three steps written before it carry a collision both ways, because an
+automorphism is invertible; the symmetric lift after it does not either.
 
 `CompressionStep` lowers the dimension, restricting to the subspace a collision
 generates. Its target shares no generator with its source, so RC-4 covers all
@@ -629,7 +629,7 @@ having it.
 None of that changes what a `Step` is. The protocol asks what a step starts
 from, what it reaches, how it got there and how to carry a collision, and
 nothing in STEP-1 to STEP-5 asks a target to extend its source or to keep its
-domain. Six types satisfy it and a `Reduction` holds them in one chain.
+domain. Seven types satisfy it and a `Reduction` holds them in one chain.
 
 ### Factor slots
 

@@ -241,6 +241,79 @@ def test_the_collision_survives_the_compression(compressed: CompressionStep) -> 
 # --------------------------------------------------------------------------
 
 
+def test_a_source_over_a_ring_that_is_not_a_field_is_refused() -> None:
+    """CHC-8 and CHC-2, the control an audit of ``0.6.0rc1`` asked for.
+
+    The elimination divides by a pivot and the polarization by ``d!``. Over
+    ``ZZ`` that division silently produced Python floats, and two independent
+    vectors of large enough integers were then judged dependent. Nothing
+    refused it, and the paper works over a field of characteristic zero
+    throughout.
+    """
+    source = PolynomialMap((x1, x2, x3), (x1 + x1**2, x2, x3))
+
+    assert source.ring.domain == sp.ZZ
+
+    with pytest.raises(VerificationError, match=r"\[CHC-8\]") as failure:
+        collision_hull(source, Collision(((0, 0, 0), (-1, 0, 0)), (0, 0, 0)))
+
+    assert "not a field" in failure.value.message
+    assert "over_field()" in failure.value.message
+
+    with pytest.raises(VerificationError, match=r"\[CHC-2\]"):
+        CompressionStep(source, source, ((1, 0, 0),), (w1,))
+
+
+def test_a_source_of_positive_characteristic_is_refused() -> None:
+    """CHC-8 again, on the half of it that is about ``d!`` and not about a field.
+
+    ``PolynomialMap`` infers its domain from the coefficients, so a finite
+    field does not arrive through the public constructor; the ring is built
+    here and the map read from it. That is the only way to reach this branch,
+    and it is worth reaching: a field of characteristic 2 or 3 passes the first
+    half of the check and divides by a factorial that is zero.
+    """
+    ring = sp.ring("x1,x2", sp.GF(7))[0]
+    first, second = ring.gens
+    source = PolynomialMap.from_ring(ring, (first + first**2, second))
+
+    assert source.ring.domain.is_Field
+
+    with pytest.raises(VerificationError, match=r"\[CHC-8\]") as failure:
+        collision_hull(source, Collision(((0, 0), (-1, 0)), (0, 0)))
+
+    assert "characteristic" in failure.value.message
+
+
+def test_a_basis_entry_outside_the_domain_is_a_ValueError() -> None:  # noqa: N802
+    """CHC-2 promises one, and the domain raises its own kind.
+
+    Letting ``CoercionFailed`` escape would break the promise the error table
+    makes for this type, which is the shape an audit found here.
+    """
+    with pytest.raises(ValueError, match="does not lie in"):
+        CompressionStep(FOLD, FOLD, ((sp.sqrt(2), 0, 0),), (w1,))
+
+
+def test_two_spellings_of_one_basis_give_one_step() -> None:
+    """STEP-5, and the entries are canonicalized on the way in.
+
+    Over a fraction field ``(T^2 - 1)/(T - 1)`` and ``T + 1`` are one element
+    and two expressions. Storing the expression gave two steps that describe
+    one restriction, verify alike and compare unequal.
+    """
+    parameter = sp.Symbol("T")
+    source = over_field(PolynomialMap((x1, x2), (x1 + parameter * x1**2, x2)))
+    one = CompressionStep(
+        source, source, (((parameter**2 - 1) / (parameter - 1), 0),), (w1,)
+    )
+    other = CompressionStep(source, source, ((parameter + 1, 0),), (w1,))
+
+    assert one == other
+    assert hash(one) == hash(other)
+    assert one.basis == ((parameter + 1, 0),)
+
+
 def test_a_source_that_is_not_Keller_is_refused() -> None:  # noqa: N802
     """CHC-4, the negative control.
 

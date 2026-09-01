@@ -376,7 +376,7 @@ in plain SymPy and without this library:
 | `P` homogeneous of degree 4 | yes | agrees |
 | monomials of `P` | 350 | 350 |
 | `id - grad(P)` has the stated collision | yes | agrees |
-| Thompson's `H` is cubic homogeneous, four relations |	yes	| agrees |
+| Thompson's `H` is cubic homogeneous, four relations | yes | agrees |
 | `H` restricted along the embedding is `h` | yes | agrees |
 
 Not recomputed: the nilpotency index of `J h`, which costs matrix powers over a
@@ -606,6 +606,19 @@ Which stage costs what: the second, p. 306, is the one that doubles, where
 `G(T) o E(T)^[n] o H(T)` is a map in `2n` variables. The third, p. 307, costs
 one variable, `L = (X + N(T), T)`. Together `2n + 1`, and Long's two figures
 are that arithmetic exactly, since `2 * 39 + 1 = 79`.
+
+What this project builds is those two stages and not the whole of Theorem 2.1.
+Part (b) of that theorem asks for a normal form that is in addition linear in
+each of the original variables and quadratic only in `T`, which Proposition
+(3.1) delivers in a second half this library does not implement. The map a
+chain reaches here is cubic homogeneous with nilpotent Jacobian and need not be
+multi-affine: `(x + y^3, y)` homogenizes to a verified five-dimensional target
+that still carries a `y^3`.
+
+Nothing on this page rests on the refinement. The corollary the literature uses
+-- and every figure compared below -- needs the cubic homogeneous form and not
+the multi-affine one. An audit of `0.6.0rc1` found the claim stated too widely
+in `README.md` and `CHANGELOG.md`, and `docs/errata.md` records it.
 
 ### Thompson's twenty-four variables
 
