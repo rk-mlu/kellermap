@@ -36,7 +36,7 @@ machine-checkable certificate.
 
 ## Project Status
 
-Current version: **0.5.0**
+Current version: **0.6.0rc1**
 
 ### What the library does
 
@@ -49,57 +49,66 @@ Current version: **0.5.0**
   factorization it was given and checks it, and a failure names the obligation
   it broke. `LinearStep` and `TranslationStep` are the two factors of the
   linear normalization.
+- **The rest of the Reduction Theorem.** `UnipotentStep` is Section 4's second
+  step, which doubles the dimension and makes the Jacobian of the displacement
+  nilpotent; `HomogenizationStep` is the third, which adds one variable and
+  makes the displacement cubic homogeneous.
+- **Compression and the gradient form.** `CompressionStep` restricts a
+  homogeneous map to the subspace its collision generates, which is the one
+  step that *lowers* the dimension; `SymmetricLiftStep` turns the result into
+  the gradient of a quartic over `k(i)`, which is the object Zhao's Vanishing
+  Conjecture is about.
 - **Chains.** `Reduction` joins steps and checks the adjacency;
   `ReductionContext` checks that a naming policy stays consistent along one.
 - **Collisions.** `Collision` is the evidence that a map is not injective, and
   it is transported across every step, so a reduction of a counterexample is
-  still a counterexample.
+  still a counterexample. Two of the six step types may refuse a collision
+  rather than carry it, and say why.
 - **Three searches.** `search` walks from a source towards a target and is told
   what a fresh coordinate may carry; `peel` walks back from a target and is
   told nothing else; `reduce_to_degree3` is given a source alone and reduces it
   to degree three.
-- **Example maps** that recur, including two source maps this project did not
-  write and the reductions it derived from them.
+- **Example maps** that recur, including four maps this project did not write
+  and the reductions it derived from them.
 - **Obligations, not conventions.** Every promise the verification surface
   makes is written in `docs/contracts.md` under a stable identifier, and the
   exception that fails cites it.
 
-### This milestone, 0.5
+### This milestone, 0.6
 
-Searching without a target. The question changes from "does this chain reach
-that map" to "reduce this map to degree three", and the answer is a chain the
-library found rather than one it was given.
+The rest of the Reduction Theorem, and the two constructions that carry its
+result to the form the literature compares. Everything before this milestone
+stopped at degree three, which is BCW's first stage; the published figures are
+cubic homogeneous, which is the third, so the two could not be set beside each
+other.
 
-`reduce_to_degree3` reaches degree three from Alpöge's normalized map in seven
-steps into dimension 13, and from Gao's in twenty-nine into thirty-nine. Both
-chains verify and both carry the collision. The chains computed by hand take
-eight steps into fifteen and eight into seventeen.
+The whole pipeline, from the smallest degree-three map this project holds:
 
-What that is worth and what it is not is in `docs/references.md`. Smaller
-dimensions at degree three are published — thirteen a month earlier by one
-route, eleven on the day of Alpöge's announcement by another — so no priority
-is claimed, and no minimality either. `examples.alpoege12`, which an external
-search driver found, is one below the chain above and still above the eleven.
+| | | |
+| --- | ---: | --- |
+| `examples.spacerat11` | 11 | degree three |
+| `UnipotentStep` | 22 | Jacobian of the displacement nilpotent |
+| `HomogenizationStep` | 23 | cubic homogeneous |
+| `CompressionStep` | 19 | restricted to the collision hull |
+| `SymmetricLiftStep` | 38 | the gradient of a quartic over `Q(i)` |
 
-The coefficient ring became something a caller states rather than something
-inferred, `canonical` learned to decide equality of algebraic numbers so a
-collision may live over a quadratic extension, and the repository is English
-throughout, tests included, with a gate that holds it there.
+Every step verifies and the collision arrives at the far end.
+`scripts/measure_pipeline.py` recomputes the table, and does the same for the
+two larger maps.
 
-### Next, 0.6
-
-The second and third stages of the Reduction Theorem, the compression that
-follows them, and the symmetric lift. Every figure above is at the first stage,
-degree three, and the pipeline carries them to the two stages the literature
-compares: cubic homogeneous, and the quartic gradient form of Zhao's Vanishing
-Conjecture.
-
-From `examples.spacerat11` the chain is 11, 22, 23, 19, 38, every step
-verified. Those are the smallest figures published at either stage, and they
-were published elsewhere first, by a different route and a month earlier. What
-that does and does not establish is in `docs/references.md`: it composes
+Those are the smallest figures published at either stage, and they were
+published elsewhere first, by a different route and a month earlier. What that
+does and does not establish is in `docs/references.md`: the pipeline composes
 published constructions, it claims no minimality and no priority, and the forms
-it produces are denser than the published ones.
+it produces are denser than the published ones. `docs/errata.md` records that
+this project claimed otherwise for a week.
+
+### Next, 0.7
+
+Performance, and two questions this milestone raised without answering: why the
+chains `peel` finds are not chains the untargeted search offers, and whether
+the dimension at degree three is the right thing for a search to minimize now
+that the number after four more stages can be computed.
 
 `docs/roadmap.md` carries the plan and the measurements behind it.
 `CHANGELOG.md` lists what each release changed, and the milestones before this

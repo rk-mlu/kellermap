@@ -4,6 +4,89 @@ Notable changes per release. The milestone plan and its reasoning live in
 `docs/roadmap.md`, the binding obligations of the verification surface in
 `docs/contracts.md`.
 
+## 0.6.0rc1
+
+The rest of the Reduction Theorem, and the two constructions that carry its
+result to the form the literature compares. Everything before this milestone
+stopped at degree three, which is BCW's first stage, while the published
+figures are cubic homogeneous, which is the third.
+
+The pipeline, from the smallest degree-three map this project holds, with every
+step verified and the collision carried to the far end:
+`examples.spacerat11` at 11 variables, 22 after the unipotent reduction, 23
+cubic homogeneous, 19 after collision-hull compression, and 38 for the gradient
+form of a quartic over `Q(i)`. `scripts/measure_pipeline.py` recomputes that
+and the same for the two larger maps.
+
+What that is worth and what it is not is in `docs/references.md`. Nineteen and
+thirty-eight are the smallest figures published at either stage and they were
+published elsewhere first, on 30 July 2026, by a different route. No priority
+is claimed and no minimality. The forms this project produces are denser than
+the published ones: 386 monomials against 350 at the quartic stage.
+
+Three pages were split out of `docs/references.md`, which had grown to four
+subjects at once. `docs/provenance.md` holds what an audit reads and
+`docs/errata.md` what this project reported wrongly and corrected — twelve
+entries, three of them from this milestone.
+
+### Added
+
+- `kellermap.bcw.UnipotentStep` — Section 4's second step, which doubles the
+  dimension and makes the Jacobian of the displacement nilpotent. Obligations
+  UNI-1 to UNI-12.
+- `kellermap.bcw.HomogenizationStep` — the third step, which adds one variable
+  and makes the displacement cubic homogeneous. The first step type that is not
+  a composition, and whose transport runs forward only. Obligations HOM-1 to
+  HOM-10.
+- `kellermap.CompressionStep` and `collision_hull` — Theorem 3 of
+  arXiv:2608.12543v1. The one step that lowers the dimension, restricting to
+  the subspace a collision generates. Obligations CHC-1 to CHC-10.
+- `kellermap.SymmetricLiftStep` — part 3 of the same theorem: the gradient of a
+  quartic over `k(i)`, which is the object Zhao's Vanishing Conjecture is
+  about. The first step that changes the coefficient domain. Obligations SYM-1
+  to SYM-12.
+- `examples.thompson24_homogeneous` and `examples.spacerat11`, with their
+  collisions — two published maps this project did not write, transcribed from
+  the licensed presentations. `docs/provenance.md` records the terms.
+- `scripts/reconstruct_spacerat11.py` and `scripts/measure_pipeline.py`, joined
+  to `make reconstruct` and `make measure`.
+- `docs/provenance.md` and `docs/errata.md`.
+
+### Changed
+
+- `examples.thompson24` is `examples.thompson24_homogeneous`. A map that is not
+  at degree three carries its stage in its name, since `alpoege19` is nineteen
+  variables at degree three and the compression reaches a cubic homogeneous map
+  in nineteen by another route.
+- `kellermap.bcw.grading` holds what the second and third steps share, which is
+  reading a displacement by degree and asking whether a Jacobian is nilpotent
+  through one determinant.
+- `docs/references.md` states the position and no longer tells the story of how
+  it was corrected; `docs/errata.md` does that.
+
+### Fixed
+
+- `scripts/reconstruct_macfarlane13.py` carried a transcription of Macfarlane's
+  map, and the source archive ships `scripts/`. His repository carries no
+  licence, so the archive was distributing mathematics whose terms could not be
+  established. The script reads it from `tests/data.py` now, which is the
+  pattern `reconstruct_alpoege19.py` has had since 0.5.
+- A sentence in `docs/references.md` wrapped so that a number began a line, and
+  Markdown read it as an ordered list. A test now covers the class.
+
+### Known limits
+
+- SYM-7 is stated and not checked. The determinant of the gradient form follows
+  from the identity and the source; computing it on the forty-variable lift did
+  not finish in eight hours, where the same determinant at a random point takes
+  22 seconds. `docs/roadmap.md` carries the measurement and milestone 0.7 the
+  bottleneck.
+- The chains `peel` finds are mostly not chains the untargeted search offers:
+  none of six for `spacerat11`, two of seven for `macfarlane13`. Why is a
+  measurement for 0.7.
+- Nothing here computes `Delta^m(P^m)`, so the last link of the chain this
+  project follows is not in the repository. It is milestone 0.8.
+
 ## 0.5.0
 
 Searching without a target. The question changes from "does this chain reach

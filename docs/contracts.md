@@ -20,34 +20,35 @@ statement of intent that the implementation is measured against, not a
 description of the current code, and a review of an unfinished milestone should
 read it as such. Obligations without a marker are implemented.
 
-**Status as of `0.5.0`:** every obligation on this page is
-implemented, and the test suite covers every statement of the package. Where
+**Status:** every obligation on this page is implemented and the test suite
+covers every statement of the package, with one exception that says so where it
+stands: SYM-7 is a consequence this library states and does not compute. Where
 the implementation forced a change, this page was amended deliberately and the
 amendment is visible in the wording — the clearest cases are COL-4 and BCW-3,
-which moved from obligations of `verify()` to constructor invariants, and
-LIN-2, which was narrowed to what is actually checkable.
+which moved from obligations of `verify()` to constructor invariants, LIN-2,
+which was narrowed to what is actually checkable, and UNI-9, which changed the
+route by which it takes a determinant.
 
-This line said `0.4.0` until milestone 0.6 opened, at which point the page had
-carried the UNT and DOM obligations of 0.5 for a release without saying so. The
-markers were removed when 0.5 closed and the status above was not moved with
-them, which is the half of a two-part change that nothing checks.
+This paragraph used to carry a version number. It said `0.4.0` through the
+whole of milestone 0.5 and was noticed only when 0.6 opened, which is what a
+number maintained in one place and checked in none does. What it says now holds
+whenever it is read, and the milestone paragraphs below carry the history.
+`docs/errata.md` records the stale one.
 
-**Milestone `0.6`, open.** The milestone adds the second and third steps of the
-Reduction Theorem and the compression that follows them. `UNI-1` to `UNI-12`
-are its first obligations, then HOM-1 to HOM-10, CHC-1 to CHC-10 and SYM-1 to
-SYM-12; the rest of the milestone is not written yet.
+**Milestone `0.6`, closed.** The milestone added the second and third steps of
+the Reduction Theorem, UNI-1 to UNI-12 and HOM-1 to HOM-10; collision-hull
+compression, CHC-1 to CHC-10; and the symmetric lift, SYM-1 to SYM-12. Their
+`[0.6]` markers are gone with the close.
 
-The marker says that an obligation is not in a released version. That is what
-`pip install kellermap` gives a reader, so for anyone outside this repository
-"marked" and "not implemented" are the same statement, and the paragraph above
-is right as it stands. `AGENTS.md` puts the removal at the close of the
-milestone for the same reason. Where the two readings come apart is inside the
-repository, between the implementation of an obligation and the release that
-carries it, and a reader of the development tree should take the marker to mean
-the released state and not the tree.
+Two of the forty-four are unlike anything this page carried before, and a
+review should weigh them as such. SYM-7 is the only obligation this library
+states and does not check: the determinant of the gradient form follows from
+the identity and the source, and computing it did not finish in eight hours.
+CHC-9 and SYM-9 are the first transports that may refuse a collision which
+genuinely holds for their source, which is an answer and not a failure.
 
-One obligation was amended while it was implemented: UNI-9 now takes its
-determinant in one more coordinate rather than over `k[T]`. The amendment is
+One obligation was amended while it was implemented. UNI-9 takes its
+determinant in one more coordinate rather than over `k[T]`; the amendment is
 visible in its wording, with the measurement that prompted it.
 
 **Milestone `0.5`, closed.** The milestone added the untargeted enumerator and
@@ -1031,7 +1032,7 @@ why no enumerator, no ranking and no measure belongs to this type. It also
 means that what can fail on supplied data is unusual for this page, and the
 section at the end says so.
 
-**UNI-1 — The identity. [0.6]** `target == G ∘ source^[n] ∘ H`, checked as
+**UNI-1 — The identity.** `target == G ∘ source^[n] ∘ H`, checked as
 a polynomial identity in one shared `PolyRing`, not by comparing printed
 expressions.
 
@@ -1040,7 +1041,7 @@ does not appear in the certificate. It carries the grading that Lemma (4.1)
 needs, and the lemma is what makes the target's displacement nilpotent; the
 identity this obligation checks holds without it.
 
-**UNI-2 — The source lies in `MA^1`. [0.6]** `source.is_in_MA(1)`, that is
+**UNI-2 — The source lies in `MA^1`.** `source.is_in_MA(1)`, that is
 `ord(source - X) >= 2`.
 
 This is the precondition of Section 4 and the one a caller is most likely to
@@ -1055,7 +1056,7 @@ dimension does not move, and the collision points do not move either. A step
 that quietly normalized would hide a step from the chain, and with it the
 transformation a reader has to undo to get back to the map they started from.
 
-**UNI-3 — The source has degree at most three. [0.6]**
+**UNI-3 — The source has degree at most three.**
 `source.degree() <= 3`.
 
 `E(T) = X + T F_(2) + T^2 F_(3)` has no slot for a homogeneous part of degree
@@ -1063,7 +1064,7 @@ four, and `H` removes `F_(3)` alone. The first stage of the Reduction Theorem
 is what supplies a source of degree three, and this obligation is where the
 stages meet.
 
-**UNI-4 — The source is Keller. [0.6]** `source.determinant() == 1`.
+**UNI-4 — The source is Keller.** `source.determinant() == 1`.
 
 Under UNI-2 this is Kellerness itself and not a second requirement. A map in
 `MA^1` has Jacobian `I + J(N)` with every entry of `J(N)` free of a constant
@@ -1077,7 +1078,7 @@ has determinant `-2` and a linear part of determinant `-2`; it is not in
 `MA^1`, UNI-2 refuses it, and `LinearStep.normalize` returns a map for which
 both obligations hold.
 
-**UNI-5 — Dimension and generators. [0.6]** `target.dimension == 2 * n`; the
+**UNI-5 — Dimension and generators.** `target.dimension == 2 * n`; the
 generators of `target` are those of `source` followed by `variables`, in order;
 `len(variables) == n`; and each fresh variable satisfies RC-4 against
 `source.ring`.
@@ -1087,7 +1088,7 @@ the corresponding half of BCW-2 does. A certificate names the variables it
 used, and a supplied target is checked against those rather than against names
 invented while verifying.
 
-**UNI-6 — Invertibility is exhibited, not asserted. [0.6]** `G` and `H` are
+**UNI-6 — Invertibility is exhibited, not asserted.** `G` and `H` are
 checked to be products of elementary factors whose polynomials do not involve
 their own variable, and `G.inverse() ∘ G` and `H.inverse() ∘ H` are checked to
 be the identity map. As BCW-5.
@@ -1098,14 +1099,14 @@ source's variables alone and therefore free of every `Y`. Within each block the
 factors commute, so the order they are listed in does not matter, and `H^-1` is
 the componentwise negation, which is what `transport()` uses.
 
-**UNI-7 — The step establishes `EA^0` and no more. [0.6]**
+**UNI-7 — The step establishes `EA^0` and no more.**
 `filtration_level == 0`, `G.is_in_EA(0)` holds and `G.is_in_EA(1)` does not.
 
 The level is not an argument here. `G` displaces `X_i` by `Y_i`, of order one,
 so it lies in `EA^0` and in no higher stage, and the construction admits no
 other factorization to declare. `H` lies in `EA^2` and constrains nothing.
 
-**UNI-8 — The target leaves `MA^1`. [0.6]**
+**UNI-8 — The target leaves `MA^1`.**
 `target.filtration_degree() == 0`.
 
 The displacement is `(F_(2) + Y, -F_(3))` and its second block has order one.
@@ -1115,7 +1116,7 @@ about a map that is not in `MA^1`, and a second `UnipotentStep` on this target
 is refused by UNI-2. What comes next is the homogenization, which is what
 milestone 0.6 builds next.
 
-**UNI-9 — The displacement of the target is nilpotent. [0.6]**
+**UNI-9 — The displacement of the target is nilpotent.**
 `J(target - X)` is nilpotent, checked as the determinant of
 
     (X + T * (target - X),  T)
@@ -1155,11 +1156,11 @@ builds it.
 If a later measurement makes this the dominant cost of a chain, it moves behind
 an argument and this page says so. It is not moved on a guess.
 
-**UNI-10 — The determinant is unchanged. [0.6]** `target.determinant() ==
+**UNI-10 — The determinant is unchanged.** `target.determinant() ==
 source.determinant()`. Redundant in principle, since every element of `EA_n(k)`
 has determinant one, and retained as a cheap self-check in the shape of BCW-7.
 
-**UNI-11 — Transport. [0.6]** With `source(a) = source(b) = c`, and the fresh
+**UNI-11 — Transport.** With `source(a) = source(b) = c`, and the fresh
 coordinates filled so that the two points share the fill,
 
 ```
@@ -1181,7 +1182,7 @@ distinct points of the source already differ in the first block, so their
 images under `H^-1` differ there too. STEP-4 therefore holds for any number of
 points, and the three points of Alpoege's collision stay three.
 
-**UNI-12 — Provenance is recorded, and not settable. [0.6]** As BCW-9, with
+**UNI-12 — Provenance is recorded, and not settable.** As BCW-9, with
 the same reading: an integrity marker against mislabelling by accident, not a
 security boundary.
 
@@ -1264,7 +1265,7 @@ There is no `EA` level to declare. `filtration_level` is `math.inf`, as for
 composition step whose factors are not elementary makes no `EA` claim, and this
 step is not a composition at all.
 
-**HOM-1 — The identity. [0.6]** `target == (X + N_(1) T^2 + N_(2) T + N_(3),
+**HOM-1 — The identity.** `target == (X + N_(1) T^2 + N_(2) T + N_(3),
 T)`, checked as a polynomial identity in one shared `PolyRing`.
 
 The homogeneous parts are taken by total degree in the generators of the ring,
@@ -1273,13 +1274,13 @@ the reading DOM-2 fixes and the one `PolynomialMap.degree` uses. Reading a
 parameter as a variable would put `T x y` in the wrong slot and lift it by the
 wrong power.
 
-**HOM-2 — The source has degree at most three. [0.6]** `source.degree() <= 3`.
+**HOM-2 — The source has degree at most three.** `source.degree() <= 3`.
 
 The regrading has three slots and a part of degree four has no power of `T` to
 be lifted by. This is where the first stage of the Reduction Theorem and the
 third meet, as UNI-3 is where the first and the second do.
 
-**HOM-3 — The Jacobian of the source's displacement is nilpotent. [0.6]**
+**HOM-3 — The Jacobian of the source's displacement is nilpotent.**
 Checked as under UNI-9: the determinant of `(X + S * (source - X), S)`, in one
 coordinate more than the source, has to be one.
 
@@ -1298,13 +1299,13 @@ determinant is not constant.
 Measured on the 24-variable target of `alpoege12` lifted by `UnipotentStep`:
 0.07 seconds.
 
-**HOM-4 — Dimension and generators. [0.6]** `target.dimension == n + 1`; the
+**HOM-4 — Dimension and generators.** `target.dimension == n + 1`; the
 generators of `target` are those of `source` followed by `variable`; and
 `variable` satisfies RC-4 against `source.ring`.
 
 Freshness is a constructor invariant and raises `ValueError`, as in UNI-5.
 
-**HOM-5 — The target is cubic homogeneous. [0.6]** Every non-zero component of
+**HOM-5 — The target is cubic homogeneous.** Every non-zero component of
 `target.displacement()` is homogeneous of degree three, and the component of
 `T` is exactly `T`.
 
@@ -1312,21 +1313,21 @@ This follows from HOM-1 and is checked because it is what the step exists to
 establish, in the shape of UNI-9. It is cheap: the check reads the monomials
 and computes nothing.
 
-**HOM-6 — The target lies in `MA^2`. [0.6]** `target.filtration_degree() == 2`.
+**HOM-6 — The target lies in `MA^2`.** `target.filtration_degree() == 2`.
 
 Every part of the displacement has order three, so the target is in `MA^2` and
 therefore in `MA^1`. Stated because the second step left `MA^1` — UNI-8 — and a
 caller needs to know that the third comes back past it. A `BCWStep` declaring
 `EA^1` after this step is making a claim about a map that supports it.
 
-**HOM-7 — The determinant is one. [0.6]** `target.determinant() == 1`.
+**HOM-7 — The determinant is one.** `target.determinant() == 1`.
 
 Follows from HOM-1 and HOM-3, and retained as a cheap self-check in the shape
 of BCW-7. Measured on the 25-variable target: 0.05 seconds. The source's own
 determinant needs no obligation of its own: HOM-3 at `S = 1` is
 `det(I + J(N)) = 1`, which is Kellerness.
 
-**HOM-8 — The slice at `T = 1` returns the source. [0.6]** Substituting
+**HOM-8 — The slice at `T = 1` returns the source.** Substituting
 `T = 1` in the first `n` components of the target gives the components of the
 source.
 
@@ -1337,7 +1338,7 @@ it: at `T = 1` all three slots contribute alike, so a target that lifted
 page says so rather than leaving a reader to assume the two are the same
 statement.
 
-**HOM-9 — Transport. [0.6]** With `source(a) = source(b) = c`,
+**HOM-9 — Transport.** With `source(a) = source(b) = c`,
 
 ```
 a  |-->  (a, 1),        c  |-->  (c, 1)
@@ -1350,7 +1351,7 @@ is a fixed point of the target and no collision at all.
 Distinctness needs no argument: the points differ before the coordinate is
 appended and the appended value is the same for all of them.
 
-**HOM-10 — Provenance is recorded, and not settable. [0.6]** As BCW-9.
+**HOM-10 — Provenance is recorded, and not settable.** As BCW-9.
 
 ### Which of these can fail on supplied data
 
@@ -1429,7 +1430,7 @@ inclusion, so a collision of the target is a collision of the source. The page
 states this because HOM makes the opposite statement two sections above and the
 difference is easy to miss.
 
-**CHC-1 — The identity. [0.6]** For the displacements `h` of the source and
+**CHC-1 — The identity.** For the displacements `h` of the source and
 `hbar` of the target,
 
     B^T hbar(c) == h(B^T c)
@@ -1441,7 +1442,7 @@ because the left side lies in `W` for every `c`, and that the target is the
 restriction written in the recorded basis. Invariance therefore needs no
 obligation of its own.
 
-**CHC-2 — The basis is a basis. [0.6]** `basis` is a tuple of `m` vectors, each
+**CHC-2 — The basis is a basis.** `basis` is a tuple of `m` vectors, each
 of `n` coordinates over the source's coefficient domain, and they are linearly
 independent.
 
@@ -1450,8 +1451,8 @@ subspace of dimension `m` and no step, and a wrong length describes nothing at
 all. Independence is a rank computation over the domain and is not deferred to
 `verify()`, in the shape of BCW-2.
 
-**CHC-3 — The source's displacement is homogeneous of degree at least two.
-[0.6]** Every non-zero component of `source.displacement()` is homogeneous of
+**CHC-3 — The source's displacement is homogeneous of degree at least
+two.** Every non-zero component of `source.displacement()` is homogeneous of
 one degree `d`, and `d >= 2`.
 
 Can fail on supplied data, and it is where the third stage of the Reduction
@@ -1465,7 +1466,7 @@ restriction: a Keller map whose displacement is homogeneous of degree one is
 `I + N` with `N` a constant nilpotent matrix, which is injective, so no
 collision exists to compress.
 
-**CHC-4 — The source is Keller. [0.6]** `source.determinant() == 1`.
+**CHC-4 — The source is Keller.** `source.determinant() == 1`.
 
 Nilpotence of `J(h)` is what Lemma 2 needs, and here it does not need an
 obligation, which is the one place this section is shorter than the
@@ -1479,7 +1480,7 @@ HOM-3 has to check the same property because its source is *not* homogeneous
 and the implication is unavailable there. Here one determinant does the work of
 two, and the page records the argument rather than the coincidence.
 
-**CHC-5 — Dimension and generators. [0.6]** `target.dimension == m`;
+**CHC-5 — Dimension and generators.** `target.dimension == m`;
 `variables` are the generators of the target, in order; each of them satisfies
 RC-4 against `source.ring`; and `m <= n`.
 
@@ -1488,7 +1489,7 @@ source generator would mean two different things by one name in one chain,
 which is worse here than elsewhere precisely because the two rings have nothing
 else in common.
 
-**CHC-6 — The target inherits the shape. [0.6]** The target's displacement is
+**CHC-6 — The target inherits the shape.** The target's displacement is
 homogeneous of the same degree `d`, and `target.determinant() == 1`.
 
 Both follow from CHC-1, CHC-3 and CHC-4, and both are retained as cheap
@@ -1496,12 +1497,12 @@ self-checks in the shape of BCW-7. The determinant is the one that localizes an
 error: a restriction to a subspace that is invariant but wrongly transcribed
 will usually still be homogeneous.
 
-**CHC-7 — No `EA` claim. [0.6]** `filtration_level` is `math.inf`, as for
+**CHC-7 — No `EA` claim.** `filtration_level` is `math.inf`, as for
 `HomogenizationStep` and for the same reason: there is no composition with
 elementary automorphisms here, so there is no stage of the filtration to
 declare.
 
-**CHC-8 — The hull. [0.6]** `collision_hull(source, collision)` returns a basis
+**CHC-8 — The hull.** `collision_hull(source, collision)` returns a basis
 and the sequence of dimensions that reached it. With `T` the symmetric
 polarization of `h`,
 
@@ -1526,7 +1527,7 @@ beside a basis would be storing the same fact twice with two ways to disagree.
 What the sequence is for is the control, where `2, 4, 11, 20, 20` on
 `examples.thompson24_homogeneous` is a number this project did not set itself.
 
-**CHC-9 — Transport. [0.6]** Each point and the image are expressed in the
+**CHC-9 — Transport.** Each point and the image are expressed in the
 basis: the coordinates of a point `v` are the unique `c` with `B^T c = v`.
 
 If any point or the image is not in the span, `transport` raises and cites this
@@ -1538,7 +1539,7 @@ Distinctness is preserved because `B` has rank `m`, so distinct points of `W`
 have distinct coordinates. STEP-4 therefore holds, and it holds in the other
 direction too.
 
-**CHC-10 — Provenance is recorded, and not settable. [0.6]** As BCW-9. The
+**CHC-10 — Provenance is recorded, and not settable.** As BCW-9. The
 public constructor takes a basis and records `SUPPLIED`; `build` computes the
 hull and records `CONSTRUCTED`.
 
@@ -1637,10 +1638,10 @@ real step a caller has to take and not a formality.
 that is left out on cost rather than kept as a cheap self-check. SYM-7 says
 what was measured and what the affordable substitute is worth.
 
-**SYM-1 — The identity. [0.6]** `target == (X, Y) - grad(P)` with `P` as
+**SYM-1 — The identity.** `target == (X, Y) - grad(P)` with `P` as
 displayed, checked as a polynomial identity in one shared `PolyRing`.
 
-**SYM-2 — The target is a gradient map. [0.6]** `target == id - grad(P)` for
+**SYM-2 — The target is a gradient map.** `target == id - grad(P)` for
 the `P` that SYM-1 exhibits, and `form` returns it.
 
 The same equation as SYM-1, and the page states it twice on purpose: SYM-1 is
@@ -1648,8 +1649,8 @@ The same equation as SYM-1, and the page states it twice on purpose: SYM-1 is
 potential, and here it is". A reader checking the first is checking arithmetic;
 a reader checking the second is checking the property this milestone was for.
 
-**SYM-3 — The source's displacement is homogeneous of degree at least two.
-[0.6]** As CHC-3, and needed for the same reason at one remove: `P` is
+**SYM-3 — The source's displacement is homogeneous of degree at least
+two.** As CHC-3, and needed for the same reason at one remove: `P` is
 homogeneous of degree `d + 1` only if `h` is homogeneous of degree `d`. A
 source that fails this lifts to a form with no degree at all.
 
@@ -1657,7 +1658,7 @@ Can fail on supplied data, and it is where the compression and this step meet:
 `CompressionStep` is what produces a source that satisfies it, and so is
 `HomogenizationStep`.
 
-**SYM-4 — The source is Keller. [0.6]** `source.determinant() == 1`.
+**SYM-4 — The source is Keller.** `source.determinant() == 1`.
 
 Nilpotence of `J(h)` needs no obligation here, by the argument CHC-4 gives:
 under SYM-3 a constant determinant is `det(I + s J(h)) = 1` for every `s`, and
@@ -1665,7 +1666,7 @@ Cayley-Hamilton finishes it. The two obligations are the same statement about
 the same shape of source, and the page says so rather than repeating the
 derivation.
 
-**SYM-5 — Dimension, generators and domain. [0.6]**
+**SYM-5 — Dimension, generators and domain.**
 `target.dimension == 2 * m`; the `2m` generators are those of `variables`, in
 order, and each satisfies RC-4 against `source.ring`; and the coefficient
 domain of the target is the source's with `i` adjoined.
@@ -1678,14 +1679,14 @@ target supplied over `QQ` for a source over `QQ` would satisfy every other
 obligation here up to the point where a coefficient of `P` fails to be
 representable, and the failure would then be reported as an arithmetic one.
 
-**SYM-6 — The degrees. [0.6]** `form` is homogeneous of degree `d + 1`, and
+**SYM-6 — The degrees.** `form` is homogeneous of degree `d + 1`, and
 every non-zero component of `target.displacement()` is homogeneous of degree
 `d`.
 
 Implied by SYM-1 with SYM-3, and checked because both are cheap: the check
 reads monomials and computes nothing.
 
-**SYM-7 — The determinant is one, and it is not recomputed. [0.6]**
+**SYM-7 — The determinant is one, and it is not recomputed.**
 `det J(target) = 1` follows from SYM-1, SYM-3 and SYM-4 by part 3 of Theorem 3,
 which gives that the Hessian of `P` is nilpotent. `verify()` does not compute
 it.
@@ -1708,7 +1709,7 @@ six as an independent cross-check in the sense `AGENTS.md` gives that phrase,
 and a caller who wants more at forty has the sample-point route and the
 knowledge that the polynomial one is out of reach.
 
-**SYM-8 — Transport, and the vector it goes through. [0.6]** With
+**SYM-8 — Transport, and the vector it goes through.** With
 `source(p) = source(q)` and `p != q`,
 
 ```
@@ -1722,7 +1723,7 @@ and the equation `(I + J h(q)^T) rho = p - q` is checked rather than the
 inverse trusted. That is the same shape as UNI-6: an exhibited object with its
 defining equation checked beats an asserted one.
 
-**SYM-9 — A collision of more than two points is refused. [0.6]**
+**SYM-9 — A collision of more than two points is refused.**
 `transport` raises and cites this obligation.
 
 The lift carries a pair. Which pair, and which of the two is `p`, changes both
@@ -1730,16 +1731,16 @@ lifted points, so a step that picked would be making a mathematical choice
 silently. Every collision this milestone produces has three points, so this is
 reached in practice and not in principle.
 
-**SYM-10 — The two lifted points are distinct. [0.6]** The argument is on the
+**SYM-10 — The two lifted points are distinct.** The argument is on the
 second block and not the first: `p != q` gives `p - q != 0`, hence
 `rho != 0`, hence `i rho != 0`, which is the second block of one point against
 the zero of the other. STEP-4 therefore holds without an argument about the
 first block, where `p` and `q + rho` might in principle agree.
 
-**SYM-11 — No `EA` claim. [0.6]** `filtration_level` is `math.inf`, as for
+**SYM-11 — No `EA` claim.** `filtration_level` is `math.inf`, as for
 `HomogenizationStep` and `CompressionStep`.
 
-**SYM-12 — Provenance is recorded, and not settable. [0.6]** As BCW-9.
+**SYM-12 — Provenance is recorded, and not settable.** As BCW-9.
 
 ### Which of these can fail on supplied data
 
