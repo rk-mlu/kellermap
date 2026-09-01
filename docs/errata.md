@@ -224,3 +224,30 @@ now been corrected twice by a person who looked where the searching did not.
 the published figures". What it says now is that two routes reached 19 and 38
 independently, which is evidence about the numbers and not about either route,
 and that nothing here is first.
+
+## Macfarlane's map was in the source archive after all
+
+**Said, in `docs/provenance.md` and in the comment beside the exclusion list of
+`pyproject.toml`:** that neither of the two maps whose licence could not be
+established is in the distribution, and that Macfarlane's values "stay in
+`tests/data.py`".
+
+**True:** they were also transcribed into
+`scripts/reconstruct_macfarlane13.py`, and the archive ships `/scripts`. So the
+values were distributed, which is what `AGENTS.md` forbids and what the
+exclusion of `tests/data.py` was put in place to prevent.
+
+**Found** by reading the reconstruction scripts in work package 9 of milestone
+0.6, while measuring something else.
+
+**Corrected** by the pattern that already existed for the other map:
+`reconstruct_alpoege19.py` reads the nineteen-dimensional map from
+`tests/data.py` rather than holding it, since work package 8 of 0.5, and the
+thirteen-variable one is read the same way now. The archive was rebuilt and
+checked: the script it ships holds no components.
+
+The shape is one this repository has met before, and the docstring of that very
+script names it — a correction made in two places out of three. The rule about
+not distributing unlicensed data was applied to one map, written into the
+packaging comment, written into the provenance page, and not applied to the
+second map that needed it.

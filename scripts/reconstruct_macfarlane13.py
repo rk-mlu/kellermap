@@ -50,7 +50,11 @@ The exit status is 0 if every check passes and 1 otherwise.
 
 from __future__ import annotations
 
+import importlib.util
+import sys
 from dataclasses import dataclass
+from pathlib import Path
+from types import ModuleType
 
 import sympy as sp
 
@@ -197,55 +201,74 @@ def in_macfarlanes_order(components: tuple[sp.Expr, ...]) -> tuple[sp.Expr, ...]
 
 
 # --------------------------------------------------------------------------
-# Macfarlane's map, transcribed
+# Macfarlane's map, read and not copied
+#
+# It is somebody else's mathematics and his repository carries no licence, so
+# this project holds it once, in ``tests/data.py``, which the source archive
+# excludes. This file carried a second transcription of the same values until
+# work package 9 of 0.6, which put them into the distribution: ``pyproject.toml``
+# ships ``scripts/``. The nineteen-dimensional map was moved out of the archive
+# for that reason in work package 8 of 0.5 and this map was not moved with it.
+#
+# Reading rather than copying costs nothing here. The chain below is still
+# computed without the library, and what it is compared against is still a
+# value this project did not produce.
 # --------------------------------------------------------------------------
 
-_RR = (
-    -_11 * _12,
-    3 * _1 * _3 - _8 * _9 - 3 * _5 * _6,
-    -_8 * _10 + 4 * _2**2 - _4 * _5 - _6 * _7,
-    2 * _12 * _13,
-    3 * _2**2,
-    sp.Integer(0),
-    3 * _2 * _3 - _2 * _5,
-    _1 * _2,
-    6 * _1 * _3 - 3 * _1 * _5 - 3 * _3 * _6,
-    -_1 * _7 + 7 * _2**2 - _3 * _4,
-    _1 * _3,
-    -R(1, 2) * _1**2,
-    _2**2,
-)
 
-_GG = (
-    -2 * _1 * _3 * _8
-    + _1 * _5 * _8
-    - R(1, 3) * _1 * _2 * _9
-    + 4 * _1 * _2**2
-    + _3 * _6 * _8
-    - 3 * _2**2 * _6,
-    _1 * _7 * _8
-    - _1 * _2 * _10
-    - 7 * _2**2 * _8
-    + _3 * _4 * _8
-    - 3 * _2**2 * _4
-    - 3 * _2 * _3 * _6
-    + _2 * _5 * _6,
-    _1**2 * _13 - 2 * _12 * _2**2,
-    -R(1, 2) * _1**2 * _11 + _1 * _12 * _3,
-    _1 * _2 * _3,
-    _1**2 * _2,
-)
+def published() -> ModuleType:
+    """Return the module holding the map this reduction ends at."""
+    root = Path(__file__).resolve().parent.parent
+    path = root / "tests" / "data.py"
+    spec = importlib.util.spec_from_file_location("published_map", path)
+    if spec is None or spec.loader is None or not path.exists():
+        raise FileNotFoundError(
+            f"{path} is not here. Macfarlane's thirteen-variable map is "
+            "somebody else's mathematics and his repository carries no "
+            "licence, so this project does not distribute it: the file is in "
+            "the repository and excluded from the source archive."
+        )
 
-_BB = (
-    -_GG[3] - R(3, 2) * _GG[5],
-    3 * _GG[0],
-    _GG[1] + 3 * _GG[4],
-    -_GG[2],
-    _GG[4],
-    _GG[5],
-) + (sp.Integer(0),) * 7
+    module = importlib.util.module_from_spec(spec)
+    sys.path.insert(0, str(root))
+    spec.loader.exec_module(module)
 
-MACFARLANE = tuple(sp.expand(X[i] + _RR[i] + _BB[i]) for i in range(13))
+    return module
+
+
+def macfarlane() -> tuple[sp.Expr, ...]:
+    """Return his components, in this file's generators.
+
+    ``tests/data.py`` writes them over ``m1`` to ``m13`` and this file over
+    ``x1`` to ``x13``. Renaming is a change of presentation and not of the map.
+    """
+    module = published()
+    renaming = dict(zip(module.MACFARLANE_VARIABLES, X[:DIMENSION], strict=True))
+
+    return tuple(
+        sp.expand(component.xreplace(renaming))
+        for component in module.MACFARLANE_COMPONENTS
+    )
+
+
+def macfarlane_points() -> tuple[tuple[sp.Expr, ...], ...]:
+    """Return the two preimages his data carries."""
+    return tuple(
+        tuple(sp.sympify(value) for value in point)
+        for point in published().MACFARLANE_POINTS
+    )
+
+
+def third_point() -> tuple[sp.Expr, ...]:
+    """Return the preimage his data does not carry, in his numbering.
+
+    His derivation restricts Thompson's twenty-four-variable form, and what
+    arrives there is what Thompson carried: two points. Alpoege's map has
+    three, and a chain from it brings all three. This one is this project's;
+    the two above are his, and it is held beside them.
+    """
+    return tuple(sp.sympify(value) for value in published().MACFARLANE_THIRD_POINT)
+
 
 ALPOEGE_COLLISION = (
     (sp.Integer(0), sp.Integer(0), R(-1, 4)),
@@ -254,48 +277,6 @@ ALPOEGE_COLLISION = (
 )
 """Alpoege's three preimages of one image, before the normalization."""
 
-
-MACFARLANE_POINTS = (
-    (0, 0, R(-1, 4), 0, 0, 0, 0, 0, 0, 0, 0, 0, 0),
-    (
-        1,
-        R(-3, 2),
-        R(13, 2),
-        R(-9, 4),
-        3,
-        R(3, 2),
-        R(99, 4),
-        R(3, 2),
-        R(-3, 4),
-        R(-45, 8),
-        R(-13, 2),
-        R(1, 2),
-        R(-9, 4),
-    ),
-)
-
-THIRD_POINT = (
-    -1,
-    R(3, 2),
-    R(13, 2),
-    R(-9, 4),
-    3,
-    R(-3, 2),
-    R(-99, 4),
-    R(3, 2),
-    R(3, 4),
-    R(-45, 8),
-    R(13, 2),
-    R(1, 2),
-    R(-9, 4),
-)
-"""The preimage his data does not carry, in his numbering.
-
-His derivation restricts Thompson's twenty-four-variable form, and what
-arrives there is what Thompson carried: two points. Alpoege's map has three,
-and a chain from it brings all three. This one is this project's; the two above
-are his.
-"""
 
 DIMENSION = 13
 DEGREE = 3
@@ -355,42 +336,44 @@ def check(label: str, held: bool) -> bool:
 def main() -> int:
     passed = []
 
-    print("Macfarlane's map, as transcribed")
-    passed.append(check(f"it has {DIMENSION} components", len(MACFARLANE) == DIMENSION))
-    degree = max(sp.Poly(c, *X[:DIMENSION]).total_degree() for c in MACFARLANE)
+    print("Macfarlane's map, as read from tests/data.py")
+    passed.append(
+        check(f"it has {DIMENSION} components", len(macfarlane()) == DIMENSION)
+    )
+    degree = max(sp.Poly(c, *X[:DIMENSION]).total_degree() for c in macfarlane())
     passed.append(check(f"its degree is {DEGREE}", degree == DEGREE))
     for trial, seed in enumerate(SAMPLE_POINTS):
         sample = dict(zip(X[:DIMENSION], seed, strict=True))
         passed.append(
             check(
                 f"its Jacobian determinant is {DETERMINANT} at sample point {trial}",
-                determinant_at(MACFARLANE, sample) == DETERMINANT,
+                determinant_at(macfarlane(), sample) == DETERMINANT,
             )
         )
 
     images = []
-    for index, preimage in enumerate(MACFARLANE_POINTS):
+    for index, preimage in enumerate(macfarlane_points()):
         substitution = dict(zip(X[:DIMENSION], preimage, strict=True))
-        images.append(tuple(sp.expand(c.xreplace(substitution)) for c in MACFARLANE))
+        images.append(tuple(sp.expand(c.xreplace(substitution)) for c in macfarlane()))
         passed.append(
             check(
                 f"point {index} is a preimage of the first point",
-                images[-1] == tuple(sp.sympify(c) for c in MACFARLANE_POINTS[0]),
+                images[-1] == tuple(sp.sympify(c) for c in macfarlane_points()[0]),
             )
         )
     passed.append(check("the two images agree", images[0] == images[1]))
     passed.append(
         check(
             "the two preimages differ",
-            tuple(sp.sympify(c) for c in MACFARLANE_POINTS[0])
-            != tuple(sp.sympify(c) for c in MACFARLANE_POINTS[1]),
+            tuple(sp.sympify(c) for c in macfarlane_points()[0])
+            != tuple(sp.sympify(c) for c in macfarlane_points()[1]),
         )
     )
 
     print("\nThe collision, carried through the chain")
     carried = [in_macfarlanes_order(transport(point)) for point in ALPOEGE_COLLISION]
     passed.append(check("it arrives with three preimages", len(set(carried)) == 3))
-    for index, wanted in enumerate(MACFARLANE_POINTS):
+    for index, wanted in enumerate(macfarlane_points()):
         passed.append(
             check(
                 f"the first two are his, point {index}",
@@ -400,15 +383,15 @@ def main() -> int:
     passed.append(
         check(
             "the third is the one his data does not carry",
-            carried[2] == tuple(sp.sympify(c) for c in THIRD_POINT),
+            carried[2] == tuple(sp.sympify(c) for c in third_point()),
         )
     )
     substitution = dict(zip(X[:DIMENSION], carried[2], strict=True))
     passed.append(
         check(
             "and it is a preimage of the same image",
-            tuple(sp.expand(c.xreplace(substitution)) for c in MACFARLANE)
-            == tuple(sp.sympify(c) for c in MACFARLANE_POINTS[0]),
+            tuple(sp.expand(c.xreplace(substitution)) for c in macfarlane())
+            == tuple(sp.sympify(c) for c in macfarlane_points()[0]),
         )
     )
 
@@ -424,7 +407,7 @@ def main() -> int:
     passed.append(
         check(
             "reordered into his numbering, it is his map",
-            in_macfarlanes_order(built) == MACFARLANE,
+            in_macfarlanes_order(built) == macfarlane(),
         )
     )
 

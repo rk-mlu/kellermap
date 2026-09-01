@@ -50,8 +50,14 @@ no licence and stay in `tests/data.py`.
 
 `tests/data.py` holds the published nineteen-dimensional map and
 `macfarlane13`. Neither source carries a licence file, so neither is in the
-distribution: `pyproject.toml` ships `scripts/` and `src/`, and the values stay
-in the test tree. What is checked against them is recorded here.
+distribution: `pyproject.toml` excludes that one file from an archive that
+otherwise ships `/src`, `/tests`, `/docs` and `/scripts`.
+
+Both reconstruction scripts therefore *read* their target rather than holding
+it, and say so when the file is absent. That is a rule about every place a
+value could sit and not about one place: until work package 9 of 0.6,
+`scripts/reconstruct_macfarlane13.py` carried its own transcription and the
+archive shipped it. `docs/errata.md` records it.
 
 Nothing else in the repository is somebody else's.
 
