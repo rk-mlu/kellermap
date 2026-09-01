@@ -1887,11 +1887,19 @@ figures already do -- the script fails when the page states a figure it does
 not measure, and `tests/test_documentation.py` fails when the page stops
 stating one it does.
 
-The literature check found a second published quartic figure. Prellberg's 40
-comes from Thompson's 24 by compressing first; a Zenodo record of 23 July 2026
-reports 48 from the same 24 by applying de Bondt-van den Essen directly, with
-382 monomials over `Q(i)`. So the published pair is 40 and 48, and this
-project's 38 is below both. Nothing smaller was found at either stage.
+The literature check found a second published quartic figure, and missed a
+third record that has both of this project's. Prellberg's 40 comes from
+Thompson's 24 by compressing first; a Zenodo record of 23 July 2026 reports 48
+from the same 24 by applying de Bondt-van den Essen directly. A commit of
+30 July 2026 in `royvanrijn/jacobian-research` states 19 cubic homogeneous and
+38 quartic together, from a twelve-variable map derived from Macfarlane's
+`F13`, and the maintainer found it a week after this package closed.
+
+So neither number here is first, and `docs/references.md` says so.
+`docs/errata.md` records what the section claimed and how the search missed a
+Markdown file in a repository, which is the second time: the eleven-variable
+map was in a gist. A search engine is not a literature search when the
+literature is in repositories.
 
 The same record corrects the nilpotency index of Thompson's map from 17 to 18.
 Nothing here rests on it: the reconstruction does not recompute that index and

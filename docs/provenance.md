@@ -22,8 +22,8 @@ and carry their own terms.
 
 `kellermap.examples.gao_quartic` and `gao_quartic_collision` are from Shuhong
 Gao, arXiv:2608.00222v1, licensed CC BY 4.0. Attribution, the licence link and
-a statement of changes are in the section above and in the docstring of the
-map.
+a statement of changes are in the docstring of the map and in
+`docs/references.md` under "A second family of counterexamples".
 
 Thompson's twenty-four-variable map, its twenty-dimensional restriction, the
 collision and the vector `rho` are transcribed from the ancillary file
@@ -32,7 +32,6 @@ with the rest of that submission. Attribution, the licence link and a statement
 of changes are in the docstring of every place that holds them. The formulas
 are not altered; the checks around them are this project's, are a subset of the
 ancillary file's eleven, and add one it does not make.
-
 
 Two places hold Thompson's map. `scripts/reconstruct_prellberg40.py` has the
 displacement in the source's own shape, and

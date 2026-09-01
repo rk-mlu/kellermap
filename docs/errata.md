@@ -192,3 +192,35 @@ tense; and six of the twenty maps are over `QQ`.
 by a test, and the module had grown four times since the header was written.
 The figures were removed rather than re-measured, and work package 9 of 0.6
 reads every docstring in the tree for the same reason.
+
+## Nineteen and thirty-eight were said to be below everything published
+
+**Said, in work package 8 of milestone 0.6:** that at the cubic homogeneous
+stage this project reaches 19 where the published figures are 24 and 20, that
+at the quartic gradient form it reaches 38 where they are 40 and 48, and that
+"the literature was searched again before this section was written and nothing
+smaller was found at either stage". The section also claimed the composition
+itself as the contribution, on the ground that nobody had put those five pieces
+in a row.
+
+**True:** both numbers were already published. A commit of 30 July 2026 in
+`royvanrijn/jacobian-research` derives a twelve-variable degree-three map from
+Macfarlane's `F13` and states three upper bounds together — 12 at degree three,
+19 cubic homogeneous, 38 for the quartic gradient form — by a different route,
+a month before this project reached them.
+
+**Found** by the maintainer, a week after the section was written.
+
+**How the search missed it.** The queries asked for the numbers and for the
+names of the constructions, and the record is a Markdown file in a GitHub
+repository that those queries do not reach. That is the second time: the
+eleven-variable map was in a gist and was missed the same way, and the entry
+above says a check made for a number one has just reached will not find a
+smaller one. This adds a second lesson to that one. A search engine is not a
+literature search when the literature is in repositories, and this project has
+now been corrected twice by a person who looked where the searching did not.
+
+**Where the corrected statement lives:** `docs/references.md`, under "Against
+the published figures". What it says now is that two routes reached 19 and 38
+independently, which is evidence about the numbers and not about either route,
+and that nothing here is first.

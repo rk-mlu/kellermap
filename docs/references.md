@@ -253,13 +253,27 @@ of `docs/roadmap.md`.
 
 ### Against the published figures
 
-At the cubic homogeneous stage the published figures are Thompson's 24 and the
-20 that Macfarlane found and that Prellberg's hull reproduces. This project
-reaches 19.
+Both numbers this pipeline reaches were published before it reached them, by
+one source, and this page said otherwise for a week. `docs/errata.md` records
+what it said.
 
-At the quartic gradient form there are two published figures. Prellberg's is
-40, from Thompson's 24 by compressing first. The other is 48, from Thompson's
-24 by the de Bondt-van den Essen construction applied directly, recorded in
+**van Rijn, R.** *A twelve-variable degree-three Keller counterexample.*
+`royvanrijn/jacobian-research`, commit of 30 July 2026.
+<https://github.com/royvanrijn/jacobian-research>
+
+That record derives a twelve-variable degree-three map from Macfarlane's `F13`
+by what it calls a coordinate-pair restriction, and states three upper bounds
+together: 12 at degree three, 19 cubic homogeneous, and 38 for the quartic
+gradient form. It says of itself that it is an upper-bound theorem and not a
+minimality or priority claim.
+
+So 19 and 38 are its figures as well as this project's, by a different route
+and a month earlier. What was new here is neither number.
+
+The other figures at those stages are Thompson's 24 and Macfarlane's 20 for the
+cubic homogeneous form; Prellberg's 40 for the quartic, from Thompson's 24 by
+compressing first; and 48 from the same 24 by the de Bondt-van den Essen
+construction applied directly, recorded in
 
 **Santibáñez Leal, F.** *The consequence cascade of the Jacobian
 counterexample, with an explicit dimension-48 witness against the Hessian
@@ -270,15 +284,16 @@ which reports a quartic potential in 48 variables with 382 monomials over
 Thompson's map from 17 to 18. Nothing here rests on that index; this page has
 never asserted it and the Prellberg reconstruction does not recompute it.
 
-This project reaches 38. The literature was searched again before this section
-was written and nothing smaller was found at either stage.
-
 ### What that does and does not establish
 
-It establishes that composing published constructions gives smaller explicit
-witnesses than either of them alone, and that each composition step carries a
-machine-checkable certificate. Nineteen is below twenty, and thirty-eight is
-below forty and below forty-eight.
+It establishes that composing published constructions reaches the smallest
+figures anybody has published at those two stages, and that every step of the
+composition carries a machine-checkable certificate. Two routes arriving at 19
+and 38 independently is evidence about the numbers and not about either route.
+
+What it does not establish is that anything here is first. It is not: those two
+bounds were stated on 30 July 2026, and this project reached them on 30 August
+by a chain of five constructions none of which is its own.
 
 It establishes nothing about minimality. The number depends on the map the
 pipeline starts from, and `spacerat11` is the smallest degree-three map this
@@ -289,9 +304,10 @@ points are not a theorem.
 
 It establishes no new mathematics. The eleven-variable map is Spacerat's, the
 two stages are Bass, Connell and Wright's, the compression and the lift are
-Prellberg's. What this project contributed is the composition, the
-certificates, and the observation that nobody had put these five pieces in a
-row.
+Prellberg's. What this project contributed is the composition and the
+certificates. It once said it had also contributed the observation that nobody
+had put these five pieces in a row; somebody had reached the same two numbers
+by a different route a month earlier.
 
 The density goes the other way and the table says so. Prellberg's `P` at 40
 variables has 350 monomials; this project's at 38 has 386, and at 40 -- the
@@ -430,30 +446,69 @@ read it after the check had been made.
 The rule that produced it is measured on this map alone. The same rule did not
 finish on Gao's in twenty-five minutes.
 
-## Related cubic Keller-map benchmarks
+## Related counterexamples, by stage
 
-Useful as comparison and as benchmark targets. Note that these are *different*
-reductions, not alternative descriptions of `examples.bcw17()`.
+BCW reduce in three stages, and a dimension means nothing without saying which
+stage it is at. The tables are sorted by stage for that reason. Within a stage
+the rows are comparable; across stages they are not, and the same map appears
+at two stages if two of its forms are published.
 
-| Source | Dimension | Shape | Determinant | In the suite |
-| --- | --- | --- | --- | --- |
-| this project, `examples.alpoege15()` (derived) | 15 | degree 3 | 1 | yes |
-| this project, `examples.bcw17()` (derived) | 17 | degree 3 | 1 | yes |
-| <https://rhicksrad.github.io/jacobian-degree3/> | 19 | degree 3 | −2 | yes* |
-| <https://github.com/wtho704/explicit-cubic-homogeneous-jacobian-counterexample> | 24 | cubic homogeneous | 1 | yes |
-| <https://gist.github.com/Spacerat/08b4a43f6b6ca57178efabc220170ce8> | 11 | degree 3 | −2 | yes |
+These are *different* reductions of the same source, not alternative
+descriptions of one another.
 
-\* The nineteen-dimensional map is in the suite from a checkout and not from
-the source archive, which excludes `tests/data.py`: it is somebody else's
-mathematics and its licence could not be established. Without the file the
-tests that need it skip themselves and say why.
+### Degree three
 
-Two of the rows changed in milestone 0.6. Thompson's map came in with work
+| Source | Dimension | Determinant | In the suite |
+| --- | --- | ---: | --- |
+| <https://gist.github.com/Spacerat/08b4a43f6b6ca57178efabc220170ce8> | 11 | −2 | yes |
+| <https://github.com/royvanrijn/jacobian-research> | 12 | 1 | no |
+| this project, `examples.alpoege12()` (derived) | 12 | 1 | yes |
+| A. Macfarlane, `F13` | 13 | 1 | no |
+| this project, `examples.alpoege13()` (derived) | 13 | 1 | yes |
+| this project, `examples.alpoege15()` (derived) | 15 | 1 | yes |
+| this project, `examples.bcw17()` (derived) | 17 | 1 | yes |
+| <https://rhicksrad.github.io/jacobian-degree3/> | 19 | −2 | yes* |
+| A. Long, arXiv:2607.18186 | 39 | | no |
+
+### Cubic homogeneous
+
+| Source | Dimension | In the suite |
+| --- | --- | --- |
+| <https://github.com/royvanrijn/jacobian-research> | 19 | no |
+| this project, from `spacerat11` | 19 | derived, not stored |
+| A. Macfarlane, `G20` | 20 | no |
+| this project, from `alpoege12` | 20 | derived, not stored |
+| <https://github.com/wtho704/explicit-cubic-homogeneous-jacobian-counterexample> | 24 | yes |
+| A. Long, arXiv:2607.18186 | 79 | no |
+
+### Quartic gradient form
+
+| Source | Dimension | In the suite |
+| --- | --- | --- |
+| <https://github.com/royvanrijn/jacobian-research> | 38 | no |
+| this project, from `spacerat11` | 38 | derived, not stored |
+| arXiv:2608.12543v1 | 40 | derived, not stored |
+| Zenodo 21504303 | 48 | no |
+
+\* The nineteen-dimensional map at degree three is in the suite from a checkout
+and not from the source archive, which excludes `tests/data.py`: it is somebody
+else's mathematics and its licence could not be established. Without the file
+the tests that need it skip themselves and say why.
+
+"derived, not stored" means the suite builds the map from a stored one and
+verifies every step, and holds no copy of the result.
+`scripts/measure_pipeline.py` recomputes all six of those rows.
+
+Two rows entered the suite in milestone 0.6. Thompson's map came in with work
 package 4 as `examples.thompson24_homogeneous`, because the compression is
 checked against it; Spacerat's came in with work package 6 as
 `examples.spacerat11`, because the pipeline through it reaches nineteen. Both
 are transcribed from the licensed presentation and not from the link in the
-table, which `docs/provenance.md` records.
+row, which `docs/provenance.md` records.
+
+Macfarlane's `F13` and `G20` and the twelve-variable map above are not in the
+suite and cannot be: neither repository carries a licence. They are cited and
+not copied, and `tests/data.py` holds the one earlier case of the same kind.
 
 The two rows belonging to this project are both marked *derived*, and both mean
 the same thing by it: the suite builds each of them from Alpöge's map and

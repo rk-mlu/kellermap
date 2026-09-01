@@ -98,11 +98,11 @@ compares: cubic homogeneous, and the quartic gradient form of Zhao's Vanishing
 Conjecture.
 
 From `examples.spacerat11` the chain is 11, 22, 23, 19, 38, every step
-verified. Nineteen is below the smallest published cubic homogeneous figure and
-thirty-eight below the smallest published quartic one. What that does and does
-not establish is in `docs/references.md`: it composes published constructions,
-it claims no minimality, and the forms it produces are denser than the
-published ones.
+verified. Those are the smallest figures published at either stage, and they
+were published elsewhere first, by a different route and a month earlier. What
+that does and does not establish is in `docs/references.md`: it composes
+published constructions, it claims no minimality and no priority, and the forms
+it produces are denser than the published ones.
 
 `docs/roadmap.md` carries the plan and the measurements behind it.
 `CHANGELOG.md` lists what each release changed, and the milestones before this
