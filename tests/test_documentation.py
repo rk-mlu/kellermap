@@ -508,6 +508,45 @@ def test_the_untargeted_figures_appear_on_the_contract_page() -> None:
     assert not missing, f"the page does not state {missing}"
 
 
+@pytest.mark.parametrize("path", PROSE, ids=lambda path: path.name)
+def test_no_wrapped_line_begins_a_numbered_list_by_accident(path: Path) -> None:
+    """A sentence wrapped so that a number lands at the start of a line.
+
+    Markdown then reads ``1. This is`` as the first item of an ordered list and
+    breaks the paragraph around it. It happened in the sentence "the two
+    derived reductions are over QQ with determinant 1. This is a third
+    combination", where the wrap put ``1.`` in the first column of a bullet's
+    continuation.
+
+    Nothing else catches it. The text is correct, the line is inside the width
+    limit, and only a rendered page shows the fault.
+
+    The rule is not that the numbers count up, which was the first attempt and
+    which this file's own lists refuted: a wrapped ``1.`` is a perfectly good
+    first item, and a real item may follow an indented paragraph rather than
+    another item. The rule is that a list starts after a blank line. An item
+    that follows prose directly is a wrapped sentence unless a numbered item is
+    already open above it.
+    """
+    numbered = re.compile(r"^ *\d+\. ")
+    previous = ""
+    inside = False
+
+    for number, line in enumerate(
+        path.read_text(encoding="utf-8").splitlines(), start=1
+    ):
+        if numbered.match(line):
+            assert not previous.strip() or inside, (
+                f"{path.name}:{number} reads as a list item and follows prose "
+                "directly; a wrapped sentence looks like this"
+            )
+            inside = True
+        elif line.strip() and not line.startswith(" "):
+            inside = False
+
+        previous = line
+
+
 def test_the_pipeline_figures_appear_on_the_references_page() -> None:
     """The same tie as for the untargeted figures, on the other measurement.
 

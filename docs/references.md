@@ -133,7 +133,7 @@ Two properties matter for how this map could be used, and neither is a defect:
 - Its coefficients include `3/8`, `9/4` and `43/2`, so it is over `QQ`, and its
   determinant is 2, so it is not normalized. Alpöge's map is over `ZZ` with
   determinant −2, and the two derived reductions are over `QQ` with determinant
-  1. This is a third combination, and since a step preserves the coefficient
+  one. This is a third combination, and since a step preserves the coefficient
   domain it is a different search space again.
 - The collision above is not rational: two of its three points live over
   `Q(√-23)`. Alpöge's collision is rational, and every `Collision` in this
