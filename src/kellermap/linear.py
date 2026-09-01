@@ -25,8 +25,10 @@ because a transposition is what the Gauss elimination naturally produces and
 is easier to read against a hand computation.
 
 This is why the linear part gets its own type rather than a scaling parameter
-on ``ElementaryFactor``, and why ``LinearStep`` in version 0.2 is the only
-kind of step permitted to change the Jacobian determinant.
+on ``ElementaryFactor``, and why ``LinearStep`` is the only kind of step
+permitted to change the Jacobian determinant. Six step types exist now and the
+claim has survived all of them: every other one carries a determinant of one
+from its source to its target.
 """
 
 from __future__ import annotations

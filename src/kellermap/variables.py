@@ -3,7 +3,7 @@
 The responsibility isolated here is deliberately narrow: given a polynomial
 ring and a count, produce that many new generator names. Everything about
 *when* to extend, and about keeping names reproducible across a whole
-reduction sequence, belongs to the ``ReductionContext`` of version 0.2.
+reduction sequence, belongs to ``ReductionContext``.
 """
 
 from __future__ import annotations

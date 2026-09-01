@@ -6,8 +6,13 @@ project to check: evaluation, no polynomial arithmetic, no ring.
 
 The type exists so that a reduction can *carry* one. A degree reduction that
 loses the counterexample it started from has reduced the wrong thing, and
-``Step.transport`` in version 0.2 moves a collision from a map to its
-successor. That the collision then still holds is verified, never assumed.
+``Step.transport`` moves a collision from a map to its successor. That the
+collision then still holds is verified, never assumed.
+
+Every step type transports, and since milestone 0.6 not all of them transport
+everything. ``CompressionStep`` refuses a collision whose points leave the
+subspace it restricted to, and ``SymmetricLiftStep`` carries a pair and refuses
+a wider one. A refusal is an answer and not a failure of this type.
 
 See ``docs/contracts.md`` for the obligations ``verify`` checks.
 """

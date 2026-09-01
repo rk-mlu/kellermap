@@ -18,8 +18,9 @@ are false and stay false: a collision of ``F`` becomes a collision of ``F'``,
 which is what ``transport`` computes. The Jacobian determinant is unchanged
 for the same reason.
 
-The class verifies such a step; it does not look for one. Searching is
-milestone 0.4.
+The class verifies such a step; it does not look for one. Searching is what
+``kellermap.search``, ``kellermap.peeling`` and ``kellermap.untargeted`` do,
+and none of them returns a certificate.
 
 Two things are wider here than in the paper, because the reduction of
 Alpoege's map to dimension 17 needs them and the identity holds for both:

@@ -1920,14 +1920,17 @@ check has to be made.
 **WP 9** removes the `[0.6]` markers from `contracts.md`, brings the
 documentation up to date and prepares the release.
 
-It also closes the gap WP 2 found and closed for one map only. A
-`reconstruct_*` script checks the figures written into it and does not compare
-its components with the example in `kellermap.examples`, so two renderings of
-one chain can drift apart in a coordinate that no figure sees.
-`tests/test_examples.py` closes it for `alpoege12`; the other five scripts are
-this package's, and the first thing it does is measure what loading five more
-scripts costs the fast suite. If that is too much, the comparison goes behind a
-slow marker rather than being dropped, and this page says which.
+It closes the gap WP 2 found and closed for one map only, and the measurement
+that was to decide where the comparison goes settled it: loading the three
+remaining scripts that hold a chain and rebuilding it costs 0.2 seconds
+together, so `tests/test_examples.py` compares all four in the fast suite and
+no slow marker is needed. Two scripts need no comparison, since
+`reconstruct_alpoege19.py` and `reconstruct_macfarlane13.py` read their target
+from `tests/data.py` rather than holding one.
+
+That measurement is also where the package found that
+`reconstruct_macfarlane13.py` was carrying a transcription of an unlicensed map
+into the source archive. `docs/errata.md` records it.
 
 *The pages first, and as a restructuring of its own.* `docs/references.md` has
 grown to 1149 lines and 32 sections, and it now mixes four things: the

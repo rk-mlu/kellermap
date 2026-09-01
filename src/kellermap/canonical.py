@@ -14,8 +14,11 @@ for that, because it does not clear a denominator. Over ``k(T)`` it reports two
 spellings of one point as two points, which is COL-4 read backwards.
 
 ``cancel(together(...))`` decides equality for rational functions, which is
-what the coefficient domains of this project were until 0.5: ``QQ``,
-``QQ[T]``, ``QQ(T)`` and their nestings.
+what most of the coefficient domains of this project are: ``QQ``, ``QQ[T]``,
+``QQ(T)`` and their nestings. Milestone 0.6 added ``QQ_I``, where a point of a
+collision carries ``I`` because the symmetric lift puts it there; ``cancel``
+handles that, since ``I`` is a coefficient and not a radical it treats as an
+atom.
 
 It is not enough for a point over a number field, and that was measured rather
 than foreseen. ``sqrt(2) + sqrt(3)`` and ``sqrt(5 + 2*sqrt(6))`` are the same

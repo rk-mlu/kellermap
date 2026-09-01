@@ -249,6 +249,42 @@ def formula(arrow: str, subtracted: str) -> str:
 # --------------------------------------------------------------------------
 
 
+def test_no_citation_names_a_family_that_does_not_exist() -> None:
+    """A citation to an invented family is unchecked, so it is checked here.
+
+    ``CITED`` is filtered against ``FAMILIES`` before the number is compared.
+    A citation with a real prefix and an impossible number is therefore
+    reported, and one whose prefix belongs to no family at all is skipped. That
+    is the wrong way round: the second is the easier mistake to make, because a
+    plausible two-letter prefix invented while writing a docstring reads
+    exactly like a real one.
+
+    It was made in work package 9 of milestone 0.6. The module docstring of
+    ``kellermap.polynomial_map`` cited a family of nine obligations for
+    ``PolynomialMap``, and the page has none for it at all. Nothing but reading
+    found it, and this test is why it will not need reading twice.
+
+    The examples are described rather than written here, since a citation in
+    this docstring is a citation in this repository.
+    """
+    # Two tokens in the tree have the shape of a citation and are not one.
+    # They are named rather than matched by a rule, because a rule loose
+    # enough to admit them would admit an invented family as well.
+    not_citations = {"UTF-8", "RFC-3629"}
+
+    for path in PROSE + CODE:
+        for citation in CITED.findall(path.read_text(encoding="utf-8")):
+            if citation in not_citations:
+                continue
+
+            family = citation.rsplit("-", 1)[0]
+
+            assert family in FAMILIES, (
+                f"{path.name} cites {citation}, and {family} is not a family "
+                "docs/contracts.md defines"
+            )
+
+
 def test_the_page_defines_exactly_the_families_that_are_checked() -> None:
     """Equality and not inclusion.
 

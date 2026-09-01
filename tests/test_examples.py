@@ -558,30 +558,50 @@ def test_its_collision_continues_alpoeges_as_well() -> None:
     )
 
 
-def test_the_script_and_the_example_denote_one_map() -> None:
-    """The independent rendering against the one the driver produced.
+@pytest.mark.parametrize(
+    ("script", "example"),
+    [
+        ("reconstruct_bcw17", "bcw17"),
+        ("reconstruct_alpoege15", "alpoege15"),
+        ("reconstruct_alpoege13", "alpoege13"),
+        ("reconstruct_alpoege12", "alpoege12"),
+    ],
+    ids=lambda value: value,
+)
+def test_each_script_and_its_example_denote_one_map(script: str, example: str) -> None:
+    """Two renderings of one chain, compared where nothing else compares them.
 
-    ``scripts/reconstruct_alpoege12.py`` replays the ten steps in plain SymPy
-    without this library. The script checks the dimension, the degree, the
-    determinant and the carried points against values written into it; nothing
-    in it compares the components with ``examples.alpoege12``, and the two
-    could drift apart in a coordinate that none of those figures sees.
+    Each ``reconstruct_*`` script replays its chain in plain SymPy without this
+    library, and checks the dimension, the degree, the determinant and the
+    carried points against values written into it. None of them compares the
+    *components* with the example it denotes, so the two could drift apart in a
+    coordinate that no figure sees.
 
-    The same gap is open for ``reconstruct_alpoege13.py`` and is not closed
-    here.
+    Work package 2 of milestone 0.6 closed this for ``alpoege12`` alone and
+    named the rest as open. They cost 0.2 seconds together, measured before
+    this test was written, so there was no reason to leave them behind a slow
+    marker.
+
+    Two scripts are not here and need not be. ``reconstruct_alpoege19.py`` and
+    ``reconstruct_macfarlane13.py`` read their target from ``tests/data.py``
+    rather than holding one, which is the same separation by another route, and
+    ``reconstruct_spacerat11.py`` has its own test below because it compares a
+    transcription rather than a chain.
     """
     root = Path(__file__).resolve().parent.parent
-    path = root / "scripts" / "reconstruct_alpoege12.py"
-    spec = importlib.util.spec_from_file_location("reconstruct_alpoege12", path)
+    path = root / "scripts" / f"{script}.py"
+    spec = importlib.util.spec_from_file_location(script, path)
     assert spec is not None and spec.loader is not None
     module = importlib.util.module_from_spec(spec)
     sys.modules[spec.name] = module
     spec.loader.exec_module(module)
 
-    rebuilt = tuple(sp.expand(c) for c in module.reduce_alpoege())
-    example = tuple(sp.expand(c) for c in examples.alpoege12().components)
+    rebuilt = tuple(sp.expand(component) for component in module.reduce_alpoege())
+    stored = tuple(
+        sp.expand(component) for component in getattr(examples, example)().components
+    )
 
-    assert rebuilt == example
+    assert rebuilt == stored
 
 
 def test_no_coordinate_of_it_is_a_triangular_extension() -> None:

@@ -1,3 +1,31 @@
+"""Polynomial maps, and the arithmetic every other module in this package uses.
+
+``PolynomialMap`` is a tuple of components over a ``sympy`` ``PolyRing``, with
+value semantics: two maps are equal when their rings and their components are,
+and nothing mutates. Everything else here -- automorphisms, steps, chains,
+searches -- is built on it and adds no arithmetic of its own.
+
+Three decisions in this file are the ones the rest of the package depends on,
+and ``docs/architecture.md`` gives the reasons at length.
+
+The ring is the map's, not the caller's. Construction clones it, recursively
+through a composite coefficient domain, so a map cannot be changed by changing
+the ring it was built from.
+
+``PolyElement`` is the internal representation and ``sp.Expr`` the boundary.
+Callers pass and receive expressions; the arithmetic happens in the ring, where
+zero has one answer and a degree is not a guess about cancellation.
+
+The Jacobian determinant is computed and not asserted, by strategies that pick
+themselves from the shape of the matrix. Which one ran is not part of the
+answer.
+
+This module has no obligations of its own on the contract page, which is
+deliberate: it is the substrate the obligations are stated over rather than a
+verification surface. The one family that constrains it directly is DOM-1 to
+DOM-4, on what a caller may say about the coefficient ring.
+"""
+
 from __future__ import annotations
 
 import math
