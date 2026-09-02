@@ -138,7 +138,7 @@ class _Echelon:
         return all(value == self._domain.zero for value in self.reduce(vector))
 
 
-def _field(source: PolynomialMap, obligation: str) -> Domain:
+def _field(source: PolynomialMap, obligation: str | None) -> Domain:
     """Return the coefficient domain, or raise if it is not one this works over.
 
     CHC-2 and CHC-8 both need a field of characteristic zero. The elimination
@@ -153,24 +153,34 @@ def _field(source: PolynomialMap, obligation: str) -> Domain:
     a field of characteristic zero throughout.
     """
     domain = source.ring.domain
+    complaint = None
 
     if not domain.is_Field:
-        raise VerificationError(
-            obligation,
+        complaint = (
             f"The coefficient domain is {domain}, which is not a field. The "
             "hull divides by a pivot and by d!, so it needs one; over_field() "
-            "moves a map to the field of fractions of its domain.",
+            "moves a map to the field of fractions of its domain."
         )
-
-    if domain.characteristic() != 0:
-        raise VerificationError(
-            obligation,
+    elif domain.characteristic() != 0:
+        complaint = (
             f"The coefficient domain is {domain}, of characteristic "
             f"{domain.characteristic()}. The polarization divides by d!, which "
-            "needs characteristic zero.",
+            "needs characteristic zero."
         )
 
-    return domain
+    if complaint is None:
+        return domain
+
+    # Two callers and two kinds of error, which is what the error table
+    # promises for each. ``collision_hull`` is a function that verifies its
+    # arguments, so it raises a ``VerificationError`` citing CHC-8. The
+    # constructor raises ``ValueError`` like every other constructor invariant
+    # of this type, since CHC-2 says so and an audit of ``0.6.0rc2`` found the
+    # page and the code disagreeing about it.
+    if obligation is None:
+        raise ValueError(complaint)
+
+    raise VerificationError(obligation, complaint)
 
 
 def _to_domain(vector: Vector, domain: Domain) -> tuple[Element, ...]:
@@ -417,7 +427,7 @@ class CompressionStep:
                 f"{source.dimension}."
             )
 
-        domain = _field(source, "CHC-2")
+        domain = _field(source, None)
         echelon = _Echelon(domain)
         canonical = []
         for row in rows:

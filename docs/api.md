@@ -1198,9 +1198,9 @@ True
 
 A collision is lifted as a pair, and the two points are treated differently:
 one goes to `(p, 0)` and the other to `(q + rho, i rho)`. Which is which the
-step decides, since a `Collision` compares its points as a set and would
-otherwise transport to two different answers. A collision of more than two
-points is refused, because which pair is lifted changes the result:
+step decides, since a `Collision` compares its points as a set and a caller has
+no order to express. Which *two* it does not decide, so a collision of more
+than two points is refused:
 
 ```python
 >>> fold = over_field(PolynomialMap((x1,), (x1 + x1**2,)))
@@ -1213,7 +1213,7 @@ points is refused, because which pair is lifted changes the result:
 ... )
 Traceback (most recent call last):
     ...
-kellermap.errors.VerificationError: [SYM-9] The lift carries a pair and this collision has 3 points. Which two, and which of them is the first, changes both lifted points, so the step does not choose; narrow the collision before lifting it.
+kellermap.errors.VerificationError: [SYM-9] The lift carries a pair and this collision has 3 points. Which two are lifted changes the result, so the step does not choose them; narrow the collision before lifting it.
 
 ```
 

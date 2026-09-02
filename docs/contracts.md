@@ -1447,7 +1447,10 @@ obligation of its own.
 of `n` coordinates over the source's coefficient domain, and they are linearly
 independent. The domain has to be a field of characteristic zero, as under
 CHC-8 and for the same reason: the elimination that decides independence
-divides by a pivot.
+divides by a pivot. Being an invariant of the constructor, that raises
+`ValueError` like the rest of this obligation, where `collision_hull` raises a
+`VerificationError` citing CHC-8. The page and the code disagreed about which
+until an audit of `0.6.0rc2`.
 
 The entries are stored through the domain and not as they arrived. Over a
 fraction field `(T^2 - 1)/(T - 1)` and `T + 1` are one element and two
@@ -1642,11 +1645,13 @@ can cross. This one crosses it deliberately, and SYM-5 says so; a source whose
 domain already contains `i` gains nothing.
 
 **Transport takes a pair, and it is asymmetric in it.** The lift sends `p` to
-`(p, 0)` and `q` to `(q + rho, i rho)`. Which of the two points is which
-changes both lifted points, so the step does not choose: SYM-9 refuses a
-collision that does not have exactly two, and the caller narrows a wider one.
-Everything this milestone builds carries three points, so that narrowing is a
-real step a caller has to take and not a formality.
+`(p, 0)` and `q` to `(q + rho, i rho)`. Two questions follow and they have
+different answers. *Which two points* are lifted the step does not decide:
+SYM-9 refuses a collision that does not have exactly two, and the caller
+narrows a wider one, which is a real step since everything this milestone
+builds carries three. *Which of the two is `p`* the step does decide, under
+SYM-8, because a collision compares its points as a set and a caller has no
+order to express.
 
 **The determinant is not checked.** It is the first obligation on this page
 that is left out on cost rather than kept as a cheap self-check. SYM-7 says
@@ -1672,7 +1677,18 @@ Can fail on supplied data, and it is where the compression and this step meet:
 `CompressionStep` is what produces a source that satisfies it, and so is
 `HomogenizationStep`.
 
-**SYM-4 — The source is Keller.** `source.determinant() == 1`.
+**SYM-4 — The source is Keller, over a field of characteristic zero.**
+`source.determinant() == 1`, and the coefficient domain is a field of
+characteristic zero.
+
+The second half is the boundary Theorem 3 states for both of its constructions
+and CHC-4 already draws for the compression. It was missing here until an audit
+of `0.6.0rc2`, and a source over `GF(5)` reached SymPy's own
+`UnificationFailed` instead of an answer: adjoining `i` is a statement about a
+field.
+
+The determinant is compared by `canonical.agree` and not by `!=`, so a source
+over `RR` whose determinant is `1.0` is not refused for the spelling.
 
 Nilpotence of `J(h)` needs no obligation here, by the argument CHC-4 gives:
 under SYM-3 a constant determinant is `det(I + s J(h)) = 1` for every `s`, and
@@ -1735,14 +1751,22 @@ q  |-->  (q + rho, i rho)
 Which of the two points is `p` the step decides and the caller does not. COL-6
 makes a collision a statement about a *set*, so a step that took the order its
 tuple happened to carry would send two equal collisions to two unequal results,
-and both would verify. `0.6.0rc1` did that until an audit found it. Any
-function of the set would serve; what the implementation uses is a total order
-on the printed coordinates, which is a choice and not a discovery.
+and both would verify. `0.6.0rc1` did that until an audit found it.
+
+Any function of the set would serve, and the order has to be total on
+*expressions* and not on their printed form. `0.6.0rc2` sorted by `str`, where
+`Symbol("a", positive=True)` and `Symbol("a", negative=True)` have one key and
+a stable sort keeps whatever order arrived. The implementation uses `srepr`,
+which writes the assumptions out. It is a choice and not a discovery.
 
 `rho` is computed and not stored, since the source and the pair determine it,
 and the equation `(I + J h(q)^T) rho = p - q` is checked rather than the
 inverse trusted. That is the same shape as UNI-6: an exhibited object with its
 defining equation checked beats an asserted one.
+
+The residual is decided by `canonical.agree`. `expand` is not a decision
+procedure for a rational function, and `0.6.0rc2` refused a collision that
+holds because a residual that is zero did not expand to zero.
 
 **SYM-9 — A collision of more than two points is refused.**
 `transport` raises and cites this obligation.

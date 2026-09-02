@@ -311,9 +311,54 @@ inventory gap and not a licence fault. Three documents also counted six step
 types where there are seven, and several sentences of the form "every other
 step" had been made false by the two step types added after them.
 
+That last cleanup was reported as finished and was not. The audit of
+`0.6.0rc2` found three more places: `kellermap.linear`, which I had *rewritten*
+in the same pass and given the wrong count again; `kellermap.bcw.unipotent` and
+`kellermap.bcw.homogenization`, whose claims about "every other step" I had
+narrowed to "in this package" without checking that the package had gained two
+more step types. A count corrected by hand in six places out of nine is the
+same defect as a rule applied in two places out of three.
+
 **What the audit says about the controls.** The mutation probe caught 34 of 34
 and the coverage is 100 per cent, and neither contradicts the findings: the
 domains, the interaction between `transport` and equality, and the installed
 archive all lie outside what those controls examine. Two of the three code
 faults are about a *value* rather than a *branch*, and a branch-based control
 cannot see them.
+
+## Five findings of the audit of `0.6.0rc2`
+
+**`make release` deleted the wheel it had just checked.** `sdist-test` began
+with `rm -rf dist` and rebuilt only the archive, so after a green release the
+only artefact left was the archive and `dist-check` had seen nothing else. The
+archive is built into its own directory now, and `make dist-complete` requires
+exactly one wheel and one archive before `dist-check` runs.
+
+**`SYM-8` refused a collision that holds.** The residual of `rho`'s defining
+equation was compared with `expand`, which does not decide equality for
+rational functions: over `QQ(a, b)` a residual that is zero did not expand to
+zero. `canonical.agree` decides it now, and so do the two comparisons beside
+it -- the determinant of the matrix and of the source, where `1.0` over `RR`
+is not `1` to `!=`.
+
+**The orientation by `str` was not total.** `Symbol("a", positive=True)` and
+`Symbol("a", negative=True)` print alike, so both sort keys were equal and a
+stable sort kept the order the tuple carried: the fault of `0.6.0rc1` returned
+for exactly those points, hidden by the `rho` fault above. The key is `srepr`
+now, which writes the assumptions out.
+
+**The symmetric lift had no domain boundary.** The compression got one in
+`0.6.0rc2` and the lift did not, so a source over `GF(5)` reached `unify` and
+ended in SymPy's `UnificationFailed`. SYM-4 now asks for the same field of
+characteristic zero, which is the setting Theorem 3 states for both.
+
+**CHC-2 and the code disagreed about an error type.** The page called it a
+constructor invariant raising `ValueError` and the new field check raised
+`VerificationError`. The constructor raises `ValueError` like every other
+invariant of that type; `collision_hull`, which is a function that verifies its
+arguments, raises `VerificationError` citing CHC-8.
+
+Two of the five were introduced by the fixes for the previous audit, which is
+worth recording as its own observation: a repair made under time pressure is
+where the next fault goes in, and the second audit found more faults in the
+first audit's repairs than in the code they repaired.

@@ -14,6 +14,7 @@ build_env/
 min_env/
 sdist_env/
 sdist_tree/
+sdist_build/
 wheels/
 
 # Tool caches and reports

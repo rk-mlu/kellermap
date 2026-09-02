@@ -4,7 +4,7 @@ Notable changes per release. The milestone plan and its reasoning live in
 `docs/roadmap.md`, the binding obligations of the verification surface in
 `docs/contracts.md`.
 
-## 0.6.0rc2
+## 0.6.0rc3
 
 The second and third stages of the Reduction Theorem, and the two constructions
 that carry the result to the form the literature compares. Everything before
@@ -109,6 +109,30 @@ entries, three of them from this milestone.
   now. Three documents counted six step types where there are seven, and
   `docs/provenance.md` did not list `examples.spacerat11` among the third-party
   maps, though its docstring carries the attribution.
+
+### Fixed after the audit of `0.6.0rc2`
+
+- `make release` deleted the wheel it had just checked: `sdist-test` began by
+  emptying `dist/` and rebuilt only the archive. The archive is built into its
+  own directory now, and `make dist-complete` requires exactly one wheel and
+  one archive before `dist-check` runs.
+- `SYM-8` refused a collision that holds. The residual of `rho`'s defining
+  equation was compared with `expand`, which does not decide equality for a
+  rational function. `canonical.agree` decides it now, and the two comparisons
+  beside it with it.
+- The orientation of the lifted pair sorted by `str`, which is not injective:
+  two symbols of one name and different assumptions had one key, so the fault
+  of `0.6.0rc1` returned for those points. The key is `srepr` now.
+- The symmetric lift had no domain boundary where the compression has one. A
+  source over `GF(5)` reached SymPy's `UnificationFailed`; SYM-4 asks for a
+  field of characteristic zero now, which is what Theorem 3 assumes for both
+  constructions.
+- CHC-2 and the code disagreed about an error type. The constructor raises
+  `ValueError` like its other invariants; `collision_hull` raises
+  `VerificationError` citing CHC-8.
+- Three module docstrings still counted six step types or claimed things of
+  "every other step" that two of them no longer satisfy. The previous entry
+  reported that cleanup as finished and it was not.
 
 ### Known limits
 

@@ -48,12 +48,34 @@ from dataclasses import dataclass
 import sympy as sp
 from sympy.polys.rings import PolyElement, PolyRing
 
+from .canonical import agree
 from .collision import Collision
 from .context import ReductionContext
 from .errors import VerificationError
 from .polynomial_map import PolynomialMap
 from .reduction import Provenance
 from .variables import VariableFactory, reserved_names
+
+
+def _field(source: PolynomialMap) -> None:
+    """Raise unless the coefficient domain is one this construction works over.
+
+    Theorem 3 of arXiv:2608.12543v1 works over a subfield of the complex
+    numbers of characteristic zero, and so does the compression that CHC-4
+    guards the same way. The lift adjoins ``i``, which is a statement about a
+    field, and over ``GF(5)`` ``0.6.0rc2`` reached ``unify`` and ended in
+    SymPy's own ``UnificationFailed``. A raw error from a library this one
+    wraps is not an answer.
+    """
+    domain = source.ring.domain
+
+    if not domain.is_Field or domain.characteristic() != 0:
+        raise VerificationError(
+            "SYM-4",
+            f"The coefficient domain is {domain}. The lift adjoins i to a "
+            "field of characteristic zero, which is the setting of Theorem 3; "
+            "over_field() moves a map to the field of fractions of its domain.",
+        )
 
 
 def _degree(source: PolynomialMap) -> int:
@@ -166,6 +188,7 @@ class SymmetricLiftStep:
         earlier than ``verify``, because the formula cannot be written down
         without a degree.
         """
+        _field(source)
         _degree(source)
 
         context = ReductionContext() if factory is None else ReductionContext(factory)
@@ -300,10 +323,11 @@ class SymmetricLiftStep:
         gives: under SYM-3 a constant determinant is ``det(I + s J(h)) = 1``
         for every ``s``, and Cayley-Hamilton finishes it.
         """
+        _field(self._source)
         _degree(self._source)
 
         determinant = self._source.determinant()
-        if determinant != 1:
+        if not agree(determinant, sp.Integer(1)):
             raise VerificationError(
                 "SYM-4",
                 f"The source has Jacobian determinant {determinant}, not one, "
@@ -394,9 +418,9 @@ class SymmetricLiftStep:
             raise VerificationError(
                 "SYM-9",
                 f"The lift carries a pair and this collision has "
-                f"{len(collision.points)} points. Which two, and which of them "
-                "is the first, changes both lifted points, so the step does "
-                "not choose; narrow the collision before lifting it.",
+                f"{len(collision.points)} points. Which two are lifted changes "
+                "the result, so the step does not choose them; narrow the "
+                "collision before lifting it.",
             )
 
         first, second = self._oriented(collision.points)
@@ -428,16 +452,24 @@ class SymmetricLiftStep:
         unequal ones. RC1 did that, and both results verified, which is the
         worst shape for such a fault.
 
-        Sorting by the printed form is a choice and not a discovery. What
-        matters is that it is a function of the set: any total order that
-        equal collisions agree on would do, and this one needs nothing of the
-        coefficient domain but that its elements can be printed.
+        The key is ``srepr`` and not ``str``. Printing is not injective:
+        ``Symbol("a", positive=True)`` and ``Symbol("a", negative=True)`` are
+        two symbols that print alike, so both keys would be equal, Python's
+        stable sort would keep the order the tuple happened to carry, and the
+        fault this method exists to prevent would come back for exactly those
+        points. ``srepr`` writes the assumptions out, so it separates them.
+        An audit of ``0.6.0rc2`` found that.
+
+        It is still a choice and not a discovery. Any total order that equal
+        collisions agree on would serve; this one needs nothing of the
+        coefficient domain but that its elements have a structural
+        representation, which every SymPy expression has.
         """
 
-        def printed(point: tuple[sp.Expr, ...]) -> list[str]:
-            return [str(value) for value in point]
+        def structural(point: tuple[sp.Expr, ...]) -> list[str]:
+            return [sp.srepr(value) for value in point]
 
-        first, second = sorted(points, key=printed)
+        first, second = sorted(points, key=structural)
 
         return first, second
 
@@ -448,6 +480,13 @@ class SymmetricLiftStep:
 
         Exhibited rather than trusted, in the shape of UNI-6: the vector is
         computed and then put back into the equation that defines it.
+
+        The residual is decided by ``canonical.agree`` and not by ``expand``.
+        Over a rational function field a residual can be zero and not expand to
+        zero, and ``0.6.0rc2`` refused a valid collision for that reason. The
+        same holds for the two comparisons around it, the determinant of the
+        matrix and of the source: ``1.0`` over ``RR`` is not ``1`` to ``!=``
+        and is to ``agree``.
 
         The matrix is invertible for a Keller source, since ``det J(F)`` is one
         there. A source that is not one can make it singular, and SYM-4 is what
@@ -469,7 +508,7 @@ class SymmetricLiftStep:
             [sp.expand(a - b) for a, b in zip(first, second, strict=True)]
         )
 
-        if matrix.det() == 0:
+        if agree(matrix.det(), sp.Integer(0)):
             raise VerificationError(
                 "SYM-8",
                 "I + J h(q)^T is singular at the second point, so rho is not "
@@ -481,7 +520,10 @@ class SymmetricLiftStep:
 
         # The defining equation, checked rather than the solver trusted.
         residual = matrix * sp.Matrix(list(rho)) - difference
-        if sp.expand(residual) != sp.zeros(dimension, 1):  # pragma: no cover - solver
+        satisfied = all(
+            agree(residual[index], sp.Integer(0)) for index in range(dimension)
+        )
+        if not satisfied:  # pragma: no cover - solver
             raise VerificationError(
                 "SYM-8",
                 "The computed rho does not satisfy (I + J h(q)^T) rho = p - q.",

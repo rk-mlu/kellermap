@@ -14,11 +14,12 @@ and a nilpotent matrix stays nilpotent under a substitution and a scaling.
 Not a composition
 -----------------
 
-Every other step in this package has the shape ``A o F^[m] o B`` and exhibits
-the factorization, because "invertible" is a claim and a list of generators
-with their inverses is something a reader can check. There is nothing to
-factor here. The target is not conjugate to the source, no automorphism
-relates them, and they do not have the same dimension.
+The three step types written before this one have the shape ``A o F^[m] o B``
+and exhibit the factorization, because "invertible" is a claim and a list of
+generators with their inverses is something a reader can check. There is
+nothing to factor here, and the two written after it have nothing either. The
+target is not conjugate to the source, no automorphism relates them, and they
+do not have the same dimension.
 
 What relates them is a slice: at ``T = 1`` the first ``n`` components are the
 source, since ``N(1) = N_(1) + N_(2) + N_(3)``. Three things follow, and

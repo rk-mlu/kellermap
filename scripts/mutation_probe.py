@@ -44,7 +44,8 @@ aims at. The set grew to eighteen with ``UnipotentStep``, whose three source
 obligations are the first here that a constructed step cannot make true, and to
 twenty-four with the homogenization twenty-nine with the
 compression, thirty-four with the symmetric lift and thirty-seven with the
-findings of the audit of ``0.6.0rc1``.
+findings of the audit of ``0.6.0rc1`` and thirty-eight with those of
+``0.6.0rc2``.
 
 They do **not** reproduce the ten misses of the first run, and until
 ``0.4.0rc14`` this file and ``CHANGELOG.md`` said they did. Two reasons. The
@@ -334,8 +335,15 @@ PROBES: tuple[Probe, ...] = (
         "SYM-4",
         "the source of the lift is Keller",
         "src/kellermap/lift.py",
-        "        if determinant != 1:",
+        "        if not agree(determinant, sp.Integer(1)):",
         "        if False:",
+    ),
+    Probe(
+        "SYM-4",
+        "the coefficient domain of the lift is a field of characteristic zero",
+        "src/kellermap/lift.py",
+        "    if not domain.is_Field or domain.characteristic() != 0:",
+        "    if False:",
     ),
     Probe(
         "SYM-5",
@@ -355,7 +363,7 @@ PROBES: tuple[Probe, ...] = (
         "SYM-8",
         "the pair is oriented from the set and not from the tuple",
         "src/kellermap/lift.py",
-        "        first, second = sorted(points, key=printed)",
+        "        first, second = sorted(points, key=structural)",
         "        first, second = points",
     ),
     Probe(
@@ -363,14 +371,14 @@ PROBES: tuple[Probe, ...] = (
         "the coefficient domain of the compression is a field",
         "src/kellermap/compression.py",
         "    if not domain.is_Field:",
-        "    if False:",
+        "    if False and not domain.is_Field:",
     ),
     Probe(
         "CHC-8",
         "the coefficient domain has characteristic zero",
         "src/kellermap/compression.py",
-        "    if domain.characteristic() != 0:",
-        "    if False:",
+        "    elif domain.characteristic() != 0:",
+        "    elif False:",
     ),
 )
 

@@ -29,9 +29,11 @@ caller trips over them. The target is not in ``MA^1``: its displacement has the
 linear part ``(Y, 0)``. And the step doubles the dimension, so a chain applies
 it once, at the end, and not repeatedly -- UNI-2 refuses its own target.
 
-There is nothing here to search for. Every other step type in this package has
-a choice in it; given a source, this one is determined up to the names of the
-fresh generators.
+There is nothing here to search for. ``BCWStep`` chooses a component and two
+factors, ``LinearStep`` a matrix, ``TranslationStep`` a shift, and
+``CompressionStep`` a collision; given a source, this one is determined up to
+the names of the fresh generators. So are the homogenization and the symmetric
+lift, both written after it.
 
 See ``docs/contracts.md``, UNI-1 to UNI-12.
 """

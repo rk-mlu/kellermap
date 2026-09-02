@@ -183,6 +183,14 @@ The commit message says what was run. Where a gate was left to the maintainer,
 it is named as such rather than omitted, so that a green list is a list of
 things somebody actually ran.
 
+**`make release` is the maintainer's.** It takes about twenty minutes, which is
+past what the assistant's tool budget reliably allows, and a chain cut off in
+the middle reports nothing about the gates after the cut. The assistant runs
+the parts it can name individually -- `ruff`, both `mypy` runs, `pytest --cov`,
+`make reconstruct`, `make measure`, and `scripts/mutation_probe.py` where a
+change touches an obligation -- and says which of the release-only gates it did
+not run.
+
 **An exploratory computation that runs longer than ten minutes is the
 maintainer's.** Not because the assistant's machine is slower -- the two are
 within a fifth of each other on the same determinant -- but because the

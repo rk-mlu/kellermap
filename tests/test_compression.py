@@ -260,7 +260,10 @@ def test_a_source_over_a_ring_that_is_not_a_field_is_refused() -> None:
     assert "not a field" in failure.value.message
     assert "over_field()" in failure.value.message
 
-    with pytest.raises(VerificationError, match=r"\[CHC-2\]"):
+    # The constructor raises ValueError, as CHC-2 says every invariant of it
+    # does, where the function raises a VerificationError. The page and the
+    # code said different things about this until an audit of 0.6.0rc2.
+    with pytest.raises(ValueError, match="not a field"):
         CompressionStep(source, source, ((1, 0, 0),), (w1,))
 
 

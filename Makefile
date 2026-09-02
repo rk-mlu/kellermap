@@ -1,5 +1,6 @@
 .PHONY: all format lint typecheck test test-slow test-all coverage docs \
-        reconstruct measure check check-full build-test sdist-test test-minimum \
+        reconstruct measure check check-full build-test sdist-test dist-complete \
+        test-minimum \
         lock-check \
         dist-check release clean
 
@@ -89,7 +90,7 @@ check-full: lint typecheck test-all
 # .venv314 broke `uv build`.
 build-test:
 	@echo "--> Removing old builds..."
-	rm -rf dist build_env min_env sdist_env sdist_tree
+	rm -rf dist build_env min_env sdist_env sdist_tree sdist_build
 	@echo "--> Building wheel and sdist..."
 	uv build
 	@echo "--> Creating a fresh venv (build_env)..."
@@ -111,19 +112,25 @@ build-test:
 # the archive deliberately excludes, and it failed for everyone who ran the
 # suite the way this target does.
 sdist-test:
-	@echo "--> Removing old builds..."
-	rm -rf dist sdist_env sdist_tree
-	@echo "--> Building the source archive..."
-	uv build --sdist
+	@echo "--> Removing the unpacked tree and its venv..."
+	rm -rf sdist_env sdist_tree
+	@echo "--> Building the source archive, without touching dist/..."
+	# Into its own directory. Building into dist/ meant `rm -rf dist` first,
+	# which deleted the wheel build-test had just checked: after a green
+	# `make release` the only artefact left was the archive, and dist-check
+	# had seen nothing else. An audit of 0.6.0rc2 found it.
+	rm -rf sdist_build
+	uv build --sdist --out-dir sdist_build
 	@echo "--> Unpacking it..."
 	mkdir sdist_tree
-	tar -xzf dist/*.tar.gz -C sdist_tree --strip-components=1
+	tar -xzf sdist_build/*.tar.gz -C sdist_tree --strip-components=1
 	@echo "--> Creating a fresh venv (sdist_env)..."
 	uv venv --python 3.10 sdist_env
 	@echo "--> Installing the unpacked archive and pytest..."
 	VIRTUAL_ENV=sdist_env uv pip install ./sdist_tree pytest
 	@echo "--> Running the suite the archive ships, from the archive..."
 	cd sdist_tree && ../sdist_env/bin/python -m pytest -q
+	rm -rf sdist_build
 	@echo "Success: the shipped suite passes against the shipped package."
 
 # Resolution to the smallest permitted versions rather than to the newest.
@@ -156,6 +163,17 @@ test-minimum:
 # metadata the way PyPI reads it. An incomplete README or an unreadable
 # description would otherwise be noticed only at upload, where the version
 # number is already taken.
+# What `make release` is meant to leave behind: one wheel and one archive, both
+# checked. Named as a gate because two targets build into `dist/` and the
+# second used to remove what the first had made.
+dist-complete:
+	@echo "--> Checking that dist/ holds exactly one wheel and one archive..."
+	@test "$$(ls dist/*.whl 2>/dev/null | wc -l)" = "1" || \
+		{ echo "dist/ does not hold exactly one wheel"; exit 1; }
+	@test "$$(ls dist/*.tar.gz 2>/dev/null | wc -l)" = "1" || \
+		{ echo "dist/ does not hold exactly one source archive"; exit 1; }
+	@echo "Success: both artefacts are there."
+
 dist-check:
 	@echo "--> Checking the built artefacts..."
 	uv run --with twine twine check dist/*
@@ -168,7 +186,7 @@ lock-check:
 
 # All release gates before a tag.
 release: lock-check check-full coverage reconstruct measure build-test sdist-test \
-        dist-check test-minimum
+        dist-complete dist-check test-minimum
 
 # --------------------------------------------------------------------------
 
@@ -180,4 +198,4 @@ clean:
 	rm -rf .ruff_cache
 	rm -rf htmlcov
 	rm -f .coverage
-	rm -rf dist build_env min_env sdist_env sdist_tree
+	rm -rf dist build_env min_env sdist_env sdist_tree sdist_build

@@ -95,11 +95,16 @@ def test_the_coefficient_domain_gains_i(lifted: SymmetricLiftStep) -> None:
 
 
 def test_a_domain_that_already_has_i_is_unchanged() -> None:
-    """Adjoining ``i`` twice adjoins it once."""
-    source = PolynomialMap((x1, x2, x3), (x1 + sp.I * x2**3, x2, x3))
+    """Adjoining ``i`` twice adjoins it once.
 
-    assert source.ring.domain == sp.ZZ_I
-    assert SymmetricLiftStep.build(source).target.ring.domain == sp.ZZ_I
+    Over ``QQ_I`` and not over ``ZZ_I``: SYM-4 asks for a field, so the
+    Gaussian *integers* are refused like any other ring, and the Gaussian
+    rationals are what a caller reaches through ``over_field``.
+    """
+    source = over_field(PolynomialMap((x1, x2, x3), (x1 + sp.I * x2**3, x2, x3)))
+
+    assert source.ring.domain == sp.QQ_I
+    assert SymmetricLiftStep.build(source).target.ring.domain == sp.QQ_I
 
 
 def test_a_source_over_an_algebraic_number_field_lifts() -> None:
@@ -239,6 +244,24 @@ def test_a_linear_source_is_refused() -> None:
     assert "below two" in failure.value.message
 
 
+def test_a_source_over_a_finite_field_is_refused() -> None:
+    """SYM-4, the boundary the compression had and this step did not.
+
+    Adjoining ``i`` is a statement about a field of characteristic zero, which
+    is what Theorem 3 assumes for both of its constructions. Over ``GF(5)``
+    ``0.6.0rc2`` reached SymPy's ``unify`` and ended in ``UnificationFailed``:
+    a raw error from a library this one wraps is not an answer.
+    """
+    ring = sp.ring("y1,y2", sp.GF(5))[0]
+    first, second = ring.gens
+    source = PolynomialMap.from_ring(ring, (first + second**3, second))
+
+    with pytest.raises(VerificationError, match=r"\[SYM-4\]") as failure:
+        SymmetricLiftStep.build(source)
+
+    assert "characteristic zero" in failure.value.message
+
+
 def test_a_source_that_is_not_Keller_is_refused() -> None:  # noqa: N802
     """SYM-4, the negative control, and it fails on a constructed step.
 
@@ -365,6 +388,46 @@ def test_the_lifted_points_differ_in_the_second_block() -> None:
     first, second = moved.points
 
     assert first[1:] != second[1:]
+
+
+def test_the_orientation_separates_symbols_that_print_alike() -> None:
+    """SYM-8 again, on the case ``str`` cannot see.
+
+    ``Symbol("a", positive=True)`` and ``Symbol("a", negative=True)`` are two
+    symbols that print as ``a``. Ordering by the printed form gave both points
+    the same key, Python's stable sort then kept the order the tuple carried,
+    and the fault of ``0.6.0rc1`` came back for exactly those points. ``srepr``
+    writes the assumptions out.
+    """
+    positive = sp.Symbol("a", positive=True)
+    negative = sp.Symbol("a", negative=True)
+
+    assert positive != negative
+    assert str(positive) == str(negative)
+    assert sp.srepr(positive) != sp.srepr(negative)
+
+    points = ((positive,), (negative,))
+    step = SymmetricLiftStep.build(FOLD)
+
+    assert step._oriented(points) == step._oriented(points[::-1])
+
+
+def test_the_rho_equation_is_decided_canonically() -> None:
+    """SYM-8, and a valid collision ``0.6.0rc2`` refused.
+
+    Over a rational function field the residual of the defining equation can be
+    zero without expanding to zero. ``expand`` then reported a vector that
+    satisfies its equation as one that does not, and the step refused a
+    collision that holds.
+    """
+    variable = sp.Symbol("x")
+    first, second = sp.symbols("a b")
+    source = PolynomialMap((variable,), (variable - variable**2 / (first + second),))
+    collision = Collision(((first,), (second,)), tuple(source(first)))
+
+    moved = SymmetricLiftStep.build(source).transport(collision)
+
+    assert len(moved.points) == 2
 
 
 def test_transport_refuses_more_than_two_points() -> None:
