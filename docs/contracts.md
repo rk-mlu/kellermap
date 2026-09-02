@@ -1682,7 +1682,8 @@ Can fail on supplied data, and it is where the compression and this step meet:
 characteristic zero.
 
 The second half is the boundary Theorem 3 states for both of its constructions
-and CHC-4 already draws for the compression. It was missing here until an audit
+and CHC-2 and CHC-8 already draw for the compression. This paragraph named
+CHC-4 for it, which is the obligation about the source being a Keller map. It was missing here until an audit
 of `0.6.0rc2`, and a source over `GF(5)` reached SymPy's own
 `UnificationFailed` instead of an answer: adjoining `i` is a statement about a
 field.

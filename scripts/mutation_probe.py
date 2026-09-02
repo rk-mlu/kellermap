@@ -45,7 +45,7 @@ obligations are the first here that a constructed step cannot make true, and to
 twenty-four with the homogenization twenty-nine with the
 compression, thirty-four with the symmetric lift and thirty-seven with the
 findings of the audit of ``0.6.0rc1`` and thirty-eight with those of
-``0.6.0rc2``.
+``0.6.0rc2`` and thirty-nine with those of ``0.6.0rc3``.
 
 They do **not** reproduce the ten misses of the first run, and until
 ``0.4.0rc14`` this file and ``CHANGELOG.md`` said they did. Two reasons. The
@@ -340,10 +340,17 @@ PROBES: tuple[Probe, ...] = (
     ),
     Probe(
         "SYM-4",
-        "the coefficient domain of the lift is a field of characteristic zero",
+        "the coefficient domain of the lift is a field",
         "src/kellermap/lift.py",
-        "    if not domain.is_Field or domain.characteristic() != 0:",
-        "    if False:",
+        "    if not domain.is_Field:\n        raise VerificationError(",
+        "    if False:\n        raise VerificationError(",
+    ),
+    Probe(
+        "SYM-4",
+        "the coefficient domain of the lift has characteristic zero",
+        "src/kellermap/lift.py",
+        "    if domain.characteristic() != 0:\n        raise VerificationError(",
+        "    if False:\n        raise VerificationError(",
     ),
     Probe(
         "SYM-5",
@@ -363,7 +370,7 @@ PROBES: tuple[Probe, ...] = (
         "SYM-8",
         "the pair is oriented from the set and not from the tuple",
         "src/kellermap/lift.py",
-        "        first, second = sorted(points, key=structural)",
+        "        first, second = sorted(points, key=cmp_to_key(structural))",
         "        first, second = points",
     ),
     Probe(

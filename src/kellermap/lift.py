@@ -44,6 +44,7 @@ from __future__ import annotations
 
 import math
 from dataclasses import dataclass
+from functools import cmp_to_key
 
 import sympy as sp
 from sympy.polys.rings import PolyElement, PolyRing
@@ -61,20 +62,37 @@ def _field(source: PolynomialMap) -> None:
     """Raise unless the coefficient domain is one this construction works over.
 
     Theorem 3 of arXiv:2608.12543v1 works over a subfield of the complex
-    numbers of characteristic zero, and so does the compression that CHC-4
-    guards the same way. The lift adjoins ``i``, which is a statement about a
+    numbers of characteristic zero, and so does the compression, where CHC-2
+    and CHC-8 draw the same boundary. CHC-4 is about the source being a Keller
+    map and not about its domain; this docstring cited it wrongly until an
+    audit of ``0.6.0rc3``. The lift adjoins ``i``, which is a statement about a
     field, and over ``GF(5)`` ``0.6.0rc2`` reached ``unify`` and ended in
     SymPy's own ``UnificationFailed``. A raw error from a library this one
     wraps is not an answer.
     """
     domain = source.ring.domain
 
-    if not domain.is_Field or domain.characteristic() != 0:
+    # Two conditions and two messages. Joined by ``or`` they were one branch,
+    # so the test over ``GF(5)`` reached the characteristic alone and a
+    # mutation that dropped the field half went unnoticed; and the advice to
+    # use ``over_field`` is wrong for ``GF(5)``, whose field of fractions is
+    # itself. An audit of ``0.6.0rc3`` found both.
+    if not domain.is_Field:
         raise VerificationError(
             "SYM-4",
-            f"The coefficient domain is {domain}. The lift adjoins i to a "
-            "field of characteristic zero, which is the setting of Theorem 3; "
-            "over_field() moves a map to the field of fractions of its domain.",
+            f"The coefficient domain is {domain}, which is not a field. The "
+            "lift adjoins i to a field of characteristic zero, which is the "
+            "setting of Theorem 3; over_field() moves a map to the field of "
+            "fractions of its domain.",
+        )
+
+    if domain.characteristic() != 0:
+        raise VerificationError(
+            "SYM-4",
+            f"The coefficient domain is {domain}, of characteristic "
+            f"{domain.characteristic()}. The lift is stated over a subfield of "
+            "the complex numbers, and adjoining i to a field of positive "
+            "characteristic is a different construction.",
         )
 
 
@@ -452,24 +470,40 @@ class SymmetricLiftStep:
         unequal ones. RC1 did that, and both results verified, which is the
         worst shape for such a fault.
 
-        The key is ``srepr`` and not ``str``. Printing is not injective:
-        ``Symbol("a", positive=True)`` and ``Symbol("a", negative=True)`` are
-        two symbols that print alike, so both keys would be equal, Python's
-        stable sort would keep the order the tuple happened to carry, and the
-        fault this method exists to prevent would come back for exactly those
-        points. ``srepr`` writes the assumptions out, so it separates them.
-        An audit of ``0.6.0rc2`` found that.
+        The order has to be a function of the *values*, and two orders that
+        looked structural were not. Sorting by ``str`` fails because printing
+        is not injective: ``Symbol("a", positive=True)`` and
+        ``Symbol("a", negative=True)`` print alike, both keys are equal, and a
+        stable sort then keeps whatever order arrived. Sorting by ``srepr``
+        fails the other way: it is injective on *representations* and not a
+        function of equality. ``Symbol("a", finite=True, positive=True)`` and
+        ``Symbol("a", positive=True, finite=True)`` are one symbol with two
+        representations, and a third symbol can sort between them, so one set
+        of points gets two orientations. SymPy's cache hides that by reusing
+        symbols; ``SYMPY_USE_CACHE=no`` shows it. Audits of ``0.6.0rc2`` and
+        ``0.6.0rc3`` found the two in turn.
 
-        It is still a choice and not a discovery. Any total order that equal
-        collisions agree on would serve; this one needs nothing of the
-        coefficient domain but that its elements have a structural
-        representation, which every SymPy expression has.
+        ``Basic.compare`` is the canonical ordering SymPy uses internally. It
+        returns zero exactly for equal expressions, so it is a function of
+        equality and not of spelling.
+
+        It is still a choice and not a discovery: any total order that equal
+        collisions agree on would serve.
         """
 
-        def structural(point: tuple[sp.Expr, ...]) -> list[str]:
-            return [sp.srepr(value) for value in point]
+        def structural(first: tuple[sp.Expr, ...], second: tuple[sp.Expr, ...]) -> int:
+            for left, right in zip(first, second, strict=True):
+                decision = sp.sympify(left).compare(sp.sympify(right))
+                if decision:
+                    return int(decision)
 
-        first, second = sorted(points, key=structural)
+            # Not reachable: two points that compare equal in every coordinate
+            # are one point, and a Collision whose points coincide cannot be
+            # built -- COL-4 makes that a constructor invariant. The branch is
+            # here because a comparison function has to be total.
+            return 0  # pragma: no cover - the points of a collision differ
+
+        first, second = sorted(points, key=cmp_to_key(structural))
 
         return first, second
 

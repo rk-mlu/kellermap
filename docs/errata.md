@@ -362,3 +362,36 @@ Two of the five were introduced by the fixes for the previous audit, which is
 worth recording as its own observation: a repair made under time pressure is
 where the next fault goes in, and the second audit found more faults in the
 first audit's repairs than in the code they repaired.
+
+## Four findings of the audit of `0.6.0rc3`
+
+**The orientation by `srepr` was not a function of equality.** The fix for the
+previous audit replaced `str`, which is not injective, with `srepr`, which is
+injective on *representations*: `Symbol("a", finite=True, positive=True)` and
+`Symbol("a", positive=True, finite=True)` are one symbol written two ways, and
+a third symbol sorts between them, so one set of points got two orientations
+again. SymPy's cache hides this by reusing symbols, and every test in the suite
+passed with `SYMPY_USE_CACHE=no` as well, so no control could have seen it. The
+order is `Basic.compare` now, which returns zero exactly for equal expressions,
+and two regression tests run in a fresh process with the cache off.
+
+That is the third orientation and the third audit to find it, which is worth
+saying plainly: `str` was wrong because printing loses information, `srepr` was
+wrong because it keeps information that equality does not. Both looked
+structural. The property needed was never "distinguishes different things" but
+"agrees on equal things", and only the third attempt was chosen for it.
+
+**The two halves of the lift's domain check were one branch.** Joined by `or`,
+the test over `GF(5)` reached the characteristic alone, and a mutation dropping
+the field half was caught by the wrong test. They are two branches with two
+messages now, and two probes.
+
+**The advice to use `over_field` was wrong for a finite field**, whose field of
+fractions is itself. The compression had separated the two messages; the lift
+had not.
+
+**Three texts.** SYM-4 and the docstring of `lift._field` cited CHC-4 for the
+compression's domain boundary, which is CHC-2 and CHC-8; CHC-4 is about the
+source being a Keller map. `AGENTS.md` listed the release gates without
+`dist-complete`, which the previous release candidate had added. And a sentence
+in `CHANGELOG.md` had lost its verb.

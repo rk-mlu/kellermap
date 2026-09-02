@@ -4,7 +4,7 @@ Notable changes per release. The milestone plan and its reasoning live in
 `docs/roadmap.md`, the binding obligations of the verification surface in
 `docs/contracts.md`.
 
-## 0.6.0rc3
+## 0.6.0rc4
 
 The second and third stages of the Reduction Theorem, and the two constructions
 that carry the result to the form the literature compares. Everything before
@@ -118,8 +118,8 @@ entries, three of them from this milestone.
   one archive before `dist-check` runs.
 - `SYM-8` refused a collision that holds. The residual of `rho`'s defining
   equation was compared with `expand`, which does not decide equality for a
-  rational function. `canonical.agree` decides it now, and the two comparisons
-  beside it with it.
+  rational function. `canonical.agree` decides it now, and so do the two
+  comparisons beside it.
 - The orientation of the lifted pair sorted by `str`, which is not injective:
   two symbols of one name and different assumptions had one key, so the fault
   of `0.6.0rc1` returned for those points. The key is `srepr` now.
@@ -133,6 +133,22 @@ entries, three of them from this milestone.
 - Three module docstrings still counted six step types or claimed things of
   "every other step" that two of them no longer satisfy. The previous entry
   reported that cleanup as finished and it was not.
+
+### Fixed after the audit of `0.6.0rc3`
+
+- The orientation of the lifted pair sorted by `srepr`, which is injective on
+  representations and not a function of equality: one symbol written two ways
+  gave two orientations of one set of points. `Basic.compare` decides it now,
+  and two regression tests run in a fresh process with `SYMPY_USE_CACHE=no`,
+  which is the only way the suite can see the fault.
+- The two halves of SYM-4's domain check were one branch, so a finite field
+  reached the characteristic alone and the field half had no control of its
+  own. Two branches, two messages, two probes.
+- The advice to use `over_field()` was wrong for a finite field, whose field of
+  fractions is itself.
+- SYM-4 and a docstring cited CHC-4 for the compression's domain boundary,
+  which is CHC-2 and CHC-8. `AGENTS.md` listed the release gates without
+  `dist-complete`, and a sentence in this file had lost its verb.
 
 ### Known limits
 

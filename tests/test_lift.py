@@ -15,6 +15,10 @@ known.
 """
 
 import math
+import os
+import subprocess
+import sys
+from pathlib import Path
 
 import pytest
 import sympy as sp
@@ -33,6 +37,8 @@ from kellermap import (
 )
 from kellermap.bcw import HomogenizationStep, UnipotentStep
 from kellermap.variables import IndexedVariableFactory
+
+ROOT = Path(__file__).resolve().parent.parent
 
 x1, x2, x3 = sp.symbols("x1 x2 x3")
 
@@ -244,6 +250,25 @@ def test_a_linear_source_is_refused() -> None:
     assert "below two" in failure.value.message
 
 
+def test_a_source_over_a_ring_that_is_not_a_field_is_refused() -> None:
+    """SYM-4, the half of it a finite field cannot reach.
+
+    ``GF(5)`` is a field, so the test below exercises the characteristic and
+    not the field condition. Joined by ``or`` the two were one branch, and a
+    mutation that dropped the field half was caught by the wrong test; an audit
+    of ``0.6.0rc3`` asked for both halves to be reached separately.
+    """
+    ring = sp.ring("y1,y2", sp.ZZ)[0]
+    first, second = ring.gens
+    source = PolynomialMap.from_ring(ring, (first + second**3, second))
+
+    with pytest.raises(VerificationError, match=r"\[SYM-4\]") as failure:
+        SymmetricLiftStep.build(source)
+
+    assert "not a field" in failure.value.message
+    assert "over_field()" in failure.value.message
+
+
 def test_a_source_over_a_finite_field_is_refused() -> None:
     """SYM-4, the boundary the compression had and this step did not.
 
@@ -259,7 +284,11 @@ def test_a_source_over_a_finite_field_is_refused() -> None:
     with pytest.raises(VerificationError, match=r"\[SYM-4\]") as failure:
         SymmetricLiftStep.build(source)
 
-    assert "characteristic zero" in failure.value.message
+    assert "characteristic 5" in failure.value.message
+
+    # No advice to use over_field here: the field of fractions of a finite
+    # field is itself, so the suggestion would send a caller in a circle.
+    assert "over_field()" not in failure.value.message
 
 
 def test_a_source_that_is_not_Keller_is_refused() -> None:  # noqa: N802
@@ -346,18 +375,20 @@ def test_a_target_over_the_wrong_domain_fails(lifted: SymmetricLiftStep) -> None
 def test_transport_lifts_the_pair_asymmetrically() -> None:
     """SYM-8. One point goes to ``(p, 0)`` and the other to ``(q + rho, i rho)``.
 
-    The step orients the pair itself, so ``q`` here is ``0`` and ``p`` is
-    ``-1``: on this source ``h = x1^2``, the matrix at ``q = 0`` is ``1``, and
-    ``rho = p - q = -1``. The second point is therefore ``(-1, -i)``.
+    The step orients the pair itself, so ``p`` here is ``0`` and ``q`` is
+    ``-1``: on this source ``h = x1^2``, the matrix at ``q = -1`` is ``-1``,
+    and ``rho = -(p - q) = -1``. The second point is therefore ``(-2, -i)``.
 
     The image moves with the orientation, which is not a defect: a different
     pair of preimages of one map has a different image, and both are
-    collisions of the target.
+    collisions of the target. The values here changed three times while the
+    order was corrected, which is why the test asserts that the result is a
+    collision of the target and not only what its coordinates are.
     """
     moved = SymmetricLiftStep.build(FOLD).transport(FOLD_COLLISION)
 
-    assert moved.points == ((-1, 0), (-1, -sp.I))
-    assert moved.image == (-1, -sp.I)
+    assert moved.points == ((0, 0), (-2, -sp.I))
+    assert moved.image == (0, 0)
     assert moved.verify(SymmetricLiftStep.build(FOLD).target) is None
 
 
@@ -428,6 +459,97 @@ def test_the_rho_equation_is_decided_canonically() -> None:
     moved = SymmetricLiftStep.build(source).transport(collision)
 
     assert len(moved.points) == 2
+
+
+def test_the_orientation_is_a_function_of_equality_without_the_cache() -> None:
+    """SYM-8, in a fresh process with SymPy's cache off.
+
+    The two orders tried before this one both looked structural and were not.
+    ``str`` is not injective, so equal keys let a stable sort keep whatever
+    arrived. ``srepr`` is injective on representations and not a function of
+    equality: ``Symbol("a", finite=True, positive=True)`` and
+    ``Symbol("a", positive=True, finite=True)`` are one symbol written two
+    ways, and a third symbol sorts between them, so one set of points got two
+    orientations.
+
+    SymPy's cache hides it, because a second ``Symbol`` call with the same
+    arguments returns the first object. This test therefore starts a process
+    with ``SYMPY_USE_CACHE=no``, which is how an audit of ``0.6.0rc3`` found
+    it and the only way the suite can see it: with the cache on, the fault is
+    invisible and every test here passes.
+
+    What the subprocess checks is the whole claim and not a part of it: the two
+    collisions are equal and hash alike, their transports are equal and hash
+    alike, and both verify.
+    """
+    program = (
+        "import sys; sys.path.insert(0, '.');"
+        "import sympy as sp;"
+        "from kellermap import Collision, PolynomialMap, SymmetricLiftStep,"
+        " over_field;"
+        "x = sp.Symbol('x1');"
+        "F = over_field(PolynomialMap((x,), (x + x**2,)));"
+        "step = SymmetricLiftStep.build(F);"
+        "p1 = sp.Symbol('a', finite=True, positive=True);"
+        "p2 = sp.Symbol('a', positive=True, finite=True);"
+        "q = sp.Symbol('a', negative=True);"
+        "one = step._oriented(((p1,), (q,)));"
+        "other = step._oriented(((p2,), (q,)));"
+        "print(sp.srepr(p1) != sp.srepr(p2), p1 == p2, one == other)"
+    )
+    environment = dict(os.environ, SYMPY_USE_CACHE="no")
+    result = subprocess.run(
+        [sys.executable, "-c", program],
+        capture_output=True,
+        text=True,
+        check=True,
+        cwd=ROOT,
+        env=environment,
+    )
+
+    # The first two say the process really is without the cache and really has
+    # two representations of one symbol; without them a green third value would
+    # mean nothing.
+    assert result.stdout.split() == ["True", "True", "True"], result.stdout
+
+
+def test_two_equal_collisions_transport_alike_without_the_cache() -> None:
+    """The same, through the public surface and on a real collision.
+
+    ``t + t^2`` folds ``a`` onto ``-1 - a``, so the two points below collide
+    for any ``a``. The test above works on ``_oriented``; this one shows that
+    the fault it prevents is reachable from ``transport``, and checks the
+    outgoing collisions verify, since two unequal results that both verify is
+    the shape this whole line of findings has.
+    """
+    program = (
+        "import sys; sys.path.insert(0, '.');"
+        "import sympy as sp;"
+        "from kellermap import Collision, PolynomialMap, SymmetricLiftStep,"
+        " over_field;"
+        "x = sp.Symbol('x1');"
+        "F = over_field(PolynomialMap((x,), (x + x**2,)));"
+        "step = SymmetricLiftStep.build(F);"
+        "p1 = sp.Symbol('a', finite=True, positive=True);"
+        "p2 = sp.Symbol('a', positive=True, finite=True);"
+        "one = Collision(((p1,), (-1 - p1,)), tuple(F(p1)));"
+        "other = Collision(((p2,), (-1 - p2,)), tuple(F(p2)));"
+        "a = step.transport(one); b = step.transport(other);"
+        "print(one == other, hash(one) == hash(b and other),"
+        " a == b, hash(a) == hash(b),"
+        " a.verify(step.target) is None, b.verify(step.target) is None)"
+    )
+    environment = dict(os.environ, SYMPY_USE_CACHE="no")
+    result = subprocess.run(
+        [sys.executable, "-c", program],
+        capture_output=True,
+        text=True,
+        check=True,
+        cwd=ROOT,
+        env=environment,
+    )
+
+    assert result.stdout.split() == ["True"] * 6, result.stdout
 
 
 def test_transport_refuses_more_than_two_points() -> None:

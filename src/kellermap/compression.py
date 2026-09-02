@@ -162,6 +162,10 @@ def _field(source: PolynomialMap, obligation: str | None) -> Domain:
             "moves a map to the field of fractions of its domain."
         )
     elif domain.characteristic() != 0:
+        # No advice to use ``over_field`` here: the field of fractions of a
+        # finite field is itself, so the suggestion would send a caller in a
+        # circle. The compression already separated the two messages; the lift
+        # did not until an audit of ``0.6.0rc3``.
         complaint = (
             f"The coefficient domain is {domain}, of characteristic "
             f"{domain.characteristic()}. The polarization divides by d!, which "

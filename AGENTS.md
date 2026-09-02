@@ -132,7 +132,7 @@ python scripts/measure_pipeline.py
 `make reconstruct` runs the eight reconstructions, and `make measure` the
 figures behind the untargeted family and behind the pipeline of 0.6. Before a
 tag, `make release` adds `lock-check`, `coverage`, `build-test`, `sdist-test`,
-`dist-check` and `test-minimum`.
+`dist-complete`, `dist-check` and `test-minimum`.
 
 `build-test` and `sdist-test` are two gates and not one. The first installs the
 wheel and runs the tests of the working tree; the second unpacks the source

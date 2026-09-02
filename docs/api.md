@@ -1206,7 +1206,7 @@ than two points is refused:
 >>> fold = over_field(PolynomialMap((x1,), (x1 + x1**2,)))
 >>> pair = Collision(((0,), (-1,)), (0,))
 >>> SymmetricLiftStep.build(fold).transport(pair).points
-((-1, 0), (-1, -I))
+((0, 0), (-2, -I))
 >>> three = over_field(PolynomialMap((x1, x2), (x1 + x1**2, x2 + x2**2)))
 >>> SymmetricLiftStep.build(three).transport(
 ...     Collision(((0, 0), (-1, 0), (0, -1)), (0, 0))
