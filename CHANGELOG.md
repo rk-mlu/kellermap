@@ -4,7 +4,7 @@ Notable changes per release. The milestone plan and its reasoning live in
 `docs/roadmap.md`, the binding obligations of the verification surface in
 `docs/contracts.md`.
 
-## 0.6.0rc5
+## 0.6.0rc6
 
 The second and third stages of the Reduction Theorem, and the two constructions
 that carry the result to the form the literature compares. Everything before
@@ -166,6 +166,33 @@ entries, three of them from this milestone.
   because `b` is truthy. It checked the intended claim by accident.
 - A line in `docs/contracts.md` had grown past the width of the page.
 
+### Fixed after the audit of `0.6.0rc5`
+
+- SYM-8 refused a collision that holds. `Function` takes `nargs` beside the
+  assumptions, so `Function("g", nargs=1)(t)` and
+  `Function("g", nargs=(1, 2))(t)` are unequal applied functions whose classes
+  agree in name, in module and in declared assumptions. `Basic.compare`
+  returns zero both ways and the class metadata tied, so the step refused. The
+  order reads the keywords the class was built with now, which is what SymPy's
+  own `UndefinedFunction.__eq__` compares.
+- `docs/contracts.md` said under SYM-8 that the order "has to be total on
+  expressions" and that the implementation uses `srepr`. Neither held: no
+  totality was ever established, and `srepr` was replaced in `0.6.0rc3`. The
+  page states what the order does and states the refusal as an outcome of it.
+- SYM-8 can refuse a collision that holds, and the page did not say so under
+  "Which of these can fail on supplied data". It is the one obligation there
+  that is both a self-check and a clause supplied data can fail, and the page
+  now says which half is which.
+- The refusal said the two points "have the same class". In the case the audit
+  found, their classes differ and only the metadata the step reads agrees. It
+  says "the same ordering metadata" now and names the four components.
+- A docstring in `tests/test_lift.py` said the tie cannot arise from SymPy's
+  public API, which the `nargs` pair refutes. The hand-built pair stays as the
+  control for the case that remains, with the claim corrected.
+- `scripts/mutation_probe.py` has a forty-second probe, for the component of
+  the order the audit found missing. Its sentence counting the set had lost a
+  conjunction and named two counts in a row without one.
+
 ### Known limits
 
 - SYM-7 is stated and not checked. The determinant of the gradient form follows
@@ -178,6 +205,12 @@ entries, three of them from this milestone.
   measurement for 0.7.
 - Nothing here computes `Delta^m(P^m)`, so the last link of the chain this
   project follows is not in the repository. It is milestone 0.8.
+- `SymmetricLiftStep.transport` can refuse a collision that holds. It orients
+  the pair itself, because a collision is a set, and two points that are
+  unequal, compare equal and carry the same class metadata cannot be ordered
+  by anything it reads. No total order on SymPy expressions is claimed and the
+  refusal is what stands in place of one. It is deterministic, and every
+  collision this milestone produces is far from it.
 
 ## 0.5.0
 

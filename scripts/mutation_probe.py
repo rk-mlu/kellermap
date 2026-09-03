@@ -41,12 +41,13 @@ They ask today's question of today's code. Every one of them should report
 ``CAUGHT``; a miss means a control has been lost since ``0.4.0rc13``, and
 ``tests/test_scripts.py`` checks that every fragment still matches the code it
 aims at. The set grew to eighteen with ``UnipotentStep``, whose three source
-obligations are the first here that a constructed step cannot make true, and to
-twenty-four with the homogenization twenty-nine with the
-compression, thirty-four with the symmetric lift and thirty-seven with the
-findings of the audit of ``0.6.0rc1`` and thirty-eight with those of
-``0.6.0rc2`` and thirty-nine with those of ``0.6.0rc3`` and forty-one with those of
-``0.6.0rc4``.
+obligations are the first here that a constructed step cannot make true. It
+grew to twenty-four with the homogenization, to twenty-nine with the
+compression and to thirty-four with the symmetric lift. The audits of milestone
+0.6 added the rest: three with ``0.6.0rc1``, one with ``0.6.0rc2``, one with
+``0.6.0rc3``, two with ``0.6.0rc4`` and one with ``0.6.0rc5``, which makes
+forty-two. That sentence had lost a conjunction and named two counts in a row
+without one until ``0.6.0rc6``.
 
 They do **not** reproduce the ten misses of the first run, and until
 ``0.4.0rc14`` this file and ``CHANGELOG.md`` said they did. Two reasons. The
@@ -373,6 +374,13 @@ PROBES: tuple[Probe, ...] = (
         "src/kellermap/lift.py",
         "                if left == right:\n                    continue",
         "                if False:\n                    continue",
+    ),
+    Probe(
+        "SYM-8",
+        "the keywords a class was built with are read",
+        "src/kellermap/lift.py",
+        '            built = dict(getattr(kind, "_kwargs", {}) or {})',
+        "            built = {}",
     ),
     Probe(
         "SYM-9",

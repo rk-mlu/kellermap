@@ -497,23 +497,48 @@ class SymmetricLiftStep:
         already known to differ, and the one thing required of a key there is
         that it decides -- not that it agrees with equality.
 
-        The tie-break is the class: its module, its qualified name and its
-        declared assumptions, which is what separates two ``Function`` classes
-        of one name. If even that ties, the step refuses under SYM-8 rather
-        than taking the order the tuple happened to carry. Keeping that order
-        silently is the fault three audits in a row have found, and a refusal
-        is an answer where two verifying results are not.
+        The tie-break is the class, and if even that ties, the step refuses
+        under SYM-8 rather than taking the order the tuple happened to carry.
+        Keeping that order silently is the fault three audits in a row have
+        found, and a refusal is an answer where two verifying results are not.
+
+        That refusal is reachable from the public API, and this docstring said
+        it was not until an audit of ``0.6.0rc5``. ``Function("g", nargs=1)``
+        and ``Function("g", nargs=(1, 2))`` are two classes with one name, one
+        module and one set of declared assumptions, so the rank of
+        ``0.6.0rc5`` tied on them, and a collision built from the two refused
+        although it holds. ``rank`` reads the construction keywords now, which
+        decides that pair. It does not make the order total, and SYM-8 no
+        longer claims that it is: the refusal is a documented outcome on valid
+        supplied data rather than a branch nothing can reach.
         """
 
-        def rank(value: sp.Expr) -> tuple[str, str, str]:
-            """Return a decision for values already known to be unequal."""
+        def rank(value: sp.Expr) -> tuple[str, str, str, str]:
+            """Return metadata of the class, for values already known to differ.
+
+            Four components: the module, the qualified name, the declared
+            assumptions, and the keywords the class was built with. The last
+            is SymPy's own ``_kwargs``, which is what ``UndefinedFunction``
+            compares in its ``__eq__`` and hashes in its ``__hash__``, so two
+            classes that differ in it are two classes to SymPy as well. It is
+            read defensively: a class that does not carry it ranks as if it
+            carried nothing, which is the case for every class that is not
+            built by ``Function(...)``.
+
+            This is metadata and not an ordering of expressions. Two unequal
+            values whose classes agree in all four components tie here, and
+            ``structural`` then refuses rather than choosing. Nothing on this
+            page claims the four are enough for every SymPy class.
+            """
             kind = type(value)
             declared = dict(getattr(kind, "default_assumptions", {}) or {})
+            built = dict(getattr(kind, "_kwargs", {}) or {})
 
             return (
                 str(getattr(kind, "__module__", "")),
                 str(getattr(kind, "__qualname__", kind.__name__)),
                 repr(sorted((str(name), str(held)) for name, held in declared.items())),
+                repr(sorted((str(name), str(held)) for name, held in built.items())),
             )
 
         def structural(first: tuple[sp.Expr, ...], second: tuple[sp.Expr, ...]) -> int:
@@ -533,7 +558,10 @@ class SymmetricLiftStep:
                     "SYM-8",
                     f"The two points cannot be put in an order: {left} and "
                     f"{right} are different expressions that compare equal and "
-                    "have the same class. The lift treats its two points "
+                    "carry the same ordering metadata -- module, qualified "
+                    "name, declared assumptions and construction keywords. "
+                    "Their classes may still differ in something this step "
+                    "does not read. The lift treats its two points "
                     "differently, so an order it cannot decide is a result it "
                     "cannot give.",
                 )

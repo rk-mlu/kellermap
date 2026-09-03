@@ -436,3 +436,48 @@ Two smaller things came with it. A test asserted `hash(one) == hash(b and
 other)`, where `b` is truthy and the expression is `hash(other)`: the intended
 claim was checked, by accident. And a line in `contracts.md` had grown past the
 width the rest of the page keeps.
+
+## The fifth order, and a page that had stopped describing it
+
+**Said, in `0.6.0rc5`:** under SYM-8, that the order of the two lifted points
+"has to be total on *expressions*", and that the implementation uses `srepr`.
+The section listing what supplied data can fail named SYM-8 only as a
+self-check of the library's own arithmetic. The refusal message said the two
+points "have the same class", and a docstring in `tests/test_lift.py` said the
+undecidable pair cannot arise from SymPy's public API.
+
+**True:** none of the four. `srepr` was replaced in `0.6.0rc3` and by
+`Basic.compare` with class metadata behind it in `0.6.0rc4`, so the sentence
+had been two versions stale. Totality was never established for any of the
+five orders, and cannot be read off SymPy's public API. SYM-8 can refuse a
+collision that holds, which is exactly what supplied data failing an
+obligation means. In the case found, the two classes differ and only the
+metadata the step reads agrees. And the pair does arise from the public API:
+
+    u = Function("g", nargs=1)(t)
+    v = Function("g", nargs=(1, 2))(t)
+
+`nargs` is not an assumption, so `default_assumptions` agrees; the name and
+the module agree; `compare` returns zero both ways. `F(x) = x - x^2/(u + v)`
+sends both to `uv/(u + v)`, so the collision holds, verifies, and was refused.
+
+**Found** by an audit of `0.6.0rc5`, which built the map and both orders of
+the collision and reported that they refuse identically.
+
+**Now:** `rank` reads `_kwargs` as a fourth component, which is what SymPy's
+own `UndefinedFunction.__eq__` compares and `__hash__` hashes, so two classes
+that differ in it are two classes to SymPy too. SYM-8 states the refusal as an
+outcome, states no totality, and appears in the list of what supplied data can
+fail. The message names the four components it read.
+
+This is the fifth order and the first correction that does not replace one. It
+could not have been: since `0.6.0rc4` the last resort is a refusal, so a rank
+that fails to decide gives no answer instead of two, and any later component
+can only turn refusals into answers. The four orders before that each replaced
+the previous one because each could still produce a wrong result. That is the
+difference between refining a key and repairing one, and it is the reason this
+entry is short where the one above it is long.
+
+What it does not do is make the order total. `tests/test_lift.py` keeps the
+hand-built pair as the control for the tie that remains, with its docstring
+corrected: the tie is not adversarial, only that particular pair is.

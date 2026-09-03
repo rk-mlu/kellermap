@@ -44,8 +44,9 @@ Two of the forty-four are unlike anything this page carried before, and a
 review should weigh them as such. SYM-7 is the only obligation this library
 states and does not check: the determinant of the gradient form follows from
 the identity and the source, and computing it did not finish in eight hours.
-CHC-9 and SYM-9 are the first transports that may refuse a collision which
-genuinely holds for their source, which is an answer and not a failure.
+CHC-9, SYM-8 and SYM-9 are the first transports that may refuse a collision
+which genuinely holds for their source, which is an answer and not a failure.
+SYM-8 was added to that list after an audit of `0.6.0rc5`.
 
 One obligation was amended while it was implemented. UNI-9 takes its
 determinant in one more coordinate rather than over `k[T]`; the amendment is
@@ -1754,11 +1755,31 @@ makes a collision a statement about a *set*, so a step that took the order its
 tuple happened to carry would send two equal collisions to two unequal results,
 and both would verify. `0.6.0rc1` did that until an audit found it.
 
-Any function of the set would serve, and the order has to be total on
-*expressions* and not on their printed form. `0.6.0rc2` sorted by `str`, where
-`Symbol("a", positive=True)` and `Symbol("a", negative=True)` have one key and
-a stable sort keeps whatever order arrived. The implementation uses `srepr`,
-which writes the assumptions out. It is a choice and not a discovery.
+The order is a function of the two points and not of their printed form. It
+asks `==` first, so everything after that sees two values already known to
+differ; then `Basic.compare`; then metadata of the class, which is its module,
+its qualified name, its declared assumptions and the keywords it was built
+with. Four orderings were tried before this one, and `docs/errata.md` says what
+each of them missed.
+
+**The order can refuse, and that is part of this obligation.** Where two
+unequal values compare equal and their classes agree in all four components,
+`transport` raises and cites SYM-8 rather than taking the order the tuple
+happened to carry. The refusal is deterministic and is the same for either
+order of arrival.
+
+No totality is claimed. This paragraph said the order "has to be total on
+expressions" and named `srepr` as the implementation until an audit of
+`0.6.0rc5`; the first was a claim nothing established and the second had been
+stale since `0.6.0rc3`. What is claimed is weaker and checkable: the order
+decides or it refuses, and it never depends on the order of arrival.
+
+The refusal is reachable from valid supplied data, and this page implied it was
+not. `Function("g", nargs=1)` and `Function("g", nargs=(1, 2))` are two classes
+with one name, one module and one set of declared assumptions; the metadata of
+`0.6.0rc5` tied on them, and a collision that holds was refused. The
+construction keywords decide that pair. That they decide every pair is not
+something this page asserts.
 
 `rho` is computed and not stored, since the source and the pair determine it,
 and the equation `(I + J h(q)^T) rho = p - q` is checked rather than the
@@ -1791,10 +1812,17 @@ first block, where `p` and `q + rho` might in principle agree.
 ### Which of these can fail on supplied data
 
 SYM-1 and SYM-2 for a supplied target, SYM-3 and SYM-4 always, SYM-5's domain
-clause for a supplied target, and SYM-9 for a supplied collision.
+clause for a supplied target, and SYM-8's orientation and SYM-9 for a supplied
+collision.
 
-SYM-8's equation cannot fail where the arithmetic is right, and is a self-check
-of it. SYM-6 follows from SYM-1 and is retained because it is free. SYM-7 is
+SYM-8 stands in both categories and is the only obligation on this page that
+does. Its equation for `rho` cannot fail where the arithmetic is right and is a
+self-check of it. Its orientation can fail on a collision that holds, when the
+two points cannot be put in an order by anything the step reads. This paragraph
+named only the self-check until an audit of `0.6.0rc5`, and a reader took from
+it that a valid collision always transports.
+
+SYM-6 follows from SYM-1 and is retained because it is free. SYM-7 is
 not checked at all, which is a third category this page has not needed before,
 and the section above says what was measured before it was put there.
 

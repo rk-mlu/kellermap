@@ -592,6 +592,58 @@ def test_two_classes_of_one_name_do_not_flip_the_orientation() -> None:
     assert other.verify(step.target) is None
 
 
+def test_two_classes_of_one_name_and_one_arity_rule_do_not_refuse() -> None:
+    """SYM-8, and the tie the class metadata of ``0.6.0rc5`` did not break.
+
+    ``Function`` takes ``nargs`` beside the assumptions, and it is not an
+    assumption: ``Function("g", nargs=1)`` and ``Function("g", nargs=(1, 2))``
+    are two classes with one name, one module and one set of declared
+    assumptions. ``compare`` returns zero both ways, as for the pair above,
+    and the three components ``0.6.0rc5`` ranked by tied as well, so a
+    collision that holds was refused. An audit of ``0.6.0rc5`` found it.
+
+    ``rank`` reads ``_kwargs`` now, which is what SymPy's own
+    ``UndefinedFunction.__eq__`` compares, so two classes that differ in it
+    are two classes to SymPy too. That decides this pair. It does not make
+    the order total, and the test below keeps the refusal for the case where
+    the metadata does tie.
+    """
+    argument = sp.Symbol("t")
+    one_argument = sp.Function("g", nargs=1)(argument)
+    one_or_two = sp.Function("g", nargs=(1, 2))(argument)
+
+    assert type(one_argument) is not type(one_or_two)
+    assert one_argument != one_or_two
+    assert one_argument.compare(one_or_two) == one_or_two.compare(one_argument) == 0
+    assert type(one_argument).__module__ == type(one_or_two).__module__
+    assert type(one_argument).__qualname__ == type(one_or_two).__qualname__
+    assert (
+        type(one_argument).default_assumptions == type(one_or_two).default_assumptions
+    )
+
+    # x - x^2 / (u + v) sends both u and v to uv / (u + v), so the collision
+    # is a real one and not a pair asserted to collide.
+    source = over_field(
+        PolynomialMap((x1,), (x1 - x1**2 / (one_argument + one_or_two),))
+    )
+    image = tuple(source(one_argument))
+    forwards = Collision(((one_argument,), (one_or_two,)), image)
+    backwards = Collision(((one_or_two,), (one_argument,)), image)
+
+    assert forwards == backwards
+    assert hash(forwards) == hash(backwards)
+    assert forwards.verify(source) is None
+
+    step = SymmetricLiftStep.build(source)
+    first = step.transport(forwards)
+    second = step.transport(backwards)
+
+    assert first == second
+    assert hash(first) == hash(second)
+    assert first.verify(step.target) is None
+    assert second.verify(step.target) is None
+
+
 def test_the_order_moves_on_when_a_coordinate_agrees() -> None:
     """SYM-8 on points that share a coordinate.
 
@@ -619,12 +671,17 @@ def test_an_order_the_step_cannot_decide_is_refused() -> None:
     carried is what three audits in a row have found; a refusal is an answer
     where two verifying results are not.
 
-    The pair is built and not found. SymPy's public ``Function`` API returns
-    one class for one name and one set of assumptions, cache or no cache, so
-    the case does not arise from it -- the two classes here are made by hand
-    and given the same name, module and assumptions. That makes this an
-    adversarial control rather than a case a caller will meet, which is what a
-    last resort should have.
+    The pair is built and not found, and the docstring here said the case
+    does not arise from SymPy's public API at all. It does: the test below
+    reaches the same tie through ``Function(..., nargs=...)``, an audit of
+    ``0.6.0rc5`` found it, and ``rank`` reads the construction keywords since.
+    What is adversarial is only this pair. The two classes are made by hand
+    and given the same name, module, assumptions and -- by not being built
+    through ``Function`` at all -- the same absent construction keywords.
+
+    The refusal is therefore not a branch that only a hand-made class can
+    reach. It is what SYM-8 does whenever the four components tie, and no
+    claim is made that four are enough for every class SymPy has.
     """
     argument = sp.Symbol("t")
 
@@ -646,6 +703,11 @@ def test_an_order_the_step_cannot_decide_is_refused() -> None:
         step._oriented(((left,), (right,)))
 
     assert "cannot be put in an order" in failure.value.message
+
+    # The message said "have the same class" until an audit of ``0.6.0rc5``
+    # produced two points whose classes differ and whose metadata does not.
+    assert "same ordering metadata" in failure.value.message
+    assert "same class" not in failure.value.message
 
 
 def test_transport_refuses_more_than_two_points() -> None:
