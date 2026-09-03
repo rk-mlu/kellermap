@@ -372,8 +372,10 @@ injective on *representations*: `Symbol("a", finite=True, positive=True)` and
 a third symbol sorts between them, so one set of points got two orientations
 again. SymPy's cache hides this by reusing symbols, and every test in the suite
 passed with `SYMPY_USE_CACHE=no` as well, so no control could have seen it. The
-order is `Basic.compare` now, which returns zero exactly for equal expressions,
-and two regression tests run in a fresh process with the cache off.
+order was `Basic.compare` after that, and two regression tests run in a fresh
+process with the cache off. The entry below says what `Basic.compare` does not
+do; this paragraph claimed it returns zero exactly for equal expressions, and
+that is the claim the next audit refuted.
 
 That is the third orientation and the third audit to find it, which is worth
 saying plainly: `str` was wrong because printing loses information, `srepr` was
@@ -395,3 +397,42 @@ compression's domain boundary, which is CHC-2 and CHC-8; CHC-4 is about the
 source being a Keller map. `AGENTS.md` listed the release gates without
 `dist-complete`, which the previous release candidate had added. And a sentence
 in `CHANGELOG.md` had lost its verb.
+
+## The fourth order, and what the first three had in common
+
+An audit of `0.6.0rc4` found that `Basic.compare` is not a function of equality
+either. SymPy's public `Function` API builds a fresh class per call, so
+`Function("f", real=True)(t)` and `Function("f", positive=True)(t)` are unequal
+expressions of two classes with one name; `compare` separates classes by name
+and returns zero both ways. Their `srepr` is the same string, and
+`default_sort_key` ties on them as well, so none of the three orderings tried
+so far decides here. Two equal collisions transported to two unequal results
+and both verified, which is the shape all four findings have had.
+
+The interesting part is not the fourth ordering. It is that the first three
+were all wrong in one way, and the way was not visible while looking for a
+better ordering.
+
+Each was used *instead of* an equality test rather than *after* one. That put
+two requirements on one key: agree on everything equal, and separate everything
+unequal. `str` failed the second, `srepr` failed the first, `compare` failed
+the second again. Each fix addressed the requirement the previous version had
+failed and was chosen without noticing the other, which is why three audits in
+a row found the same fault at the same place.
+
+The comparison asks `left == right` first now. Everything after that sees only
+values already known to differ, so the one thing required of a key there is
+that it decides. The tie-break is the class -- module, qualified name, declared
+assumptions -- and if even that ties, the step refuses under SYM-8 rather than
+taking the order the tuple carried.
+
+That refusal is the other half of the lesson. The three previous versions all
+had a silent fallback, and a silent fallback is what turns a tie into two
+verifying answers. `tests/test_lift.py` builds the undecidable pair by hand,
+since SymPy's public API does not produce one, so the last resort has a control
+rather than a pragma.
+
+Two smaller things came with it. A test asserted `hash(one) == hash(b and
+other)`, where `b` is truthy and the expression is `hash(other)`: the intended
+claim was checked, by accident. And a line in `contracts.md` had grown past the
+width the rest of the page keeps.

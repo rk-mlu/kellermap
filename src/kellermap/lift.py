@@ -483,19 +483,60 @@ class SymmetricLiftStep:
         symbols; ``SYMPY_USE_CACHE=no`` shows it. Audits of ``0.6.0rc2`` and
         ``0.6.0rc3`` found the two in turn.
 
-        ``Basic.compare`` is the canonical ordering SymPy uses internally. It
-        returns zero exactly for equal expressions, so it is a function of
-        equality and not of spelling.
+        ``Basic.compare`` is not one either, and an audit of ``0.6.0rc4``
+        showed it: it separates expression classes by name, and SymPy's public
+        ``Function`` API builds different classes with one name, so
+        ``Function("f", real=True)(t)`` and ``Function("f", positive=True)(t)``
+        are unequal and compare as equal. Their ``srepr`` is the same string,
+        and ``default_sort_key`` ties on them too.
 
-        It is still a choice and not a discovery: any total order that equal
-        collisions agree on would serve.
+        What the three attempts had in common is the mistake, and it is not
+        about which ordering is canonical. Each was used *instead of* an
+        equality test rather than *after* one. The comparison below asks
+        ``left == right`` first, so everything after it sees only values
+        already known to differ, and the one thing required of a key there is
+        that it decides -- not that it agrees with equality.
+
+        The tie-break is the class: its module, its qualified name and its
+        declared assumptions, which is what separates two ``Function`` classes
+        of one name. If even that ties, the step refuses under SYM-8 rather
+        than taking the order the tuple happened to carry. Keeping that order
+        silently is the fault three audits in a row have found, and a refusal
+        is an answer where two verifying results are not.
         """
+
+        def rank(value: sp.Expr) -> tuple[str, str, str]:
+            """Return a decision for values already known to be unequal."""
+            kind = type(value)
+            declared = dict(getattr(kind, "default_assumptions", {}) or {})
+
+            return (
+                str(getattr(kind, "__module__", "")),
+                str(getattr(kind, "__qualname__", kind.__name__)),
+                repr(sorted((str(name), str(held)) for name, held in declared.items())),
+            )
 
         def structural(first: tuple[sp.Expr, ...], second: tuple[sp.Expr, ...]) -> int:
             for left, right in zip(first, second, strict=True):
-                decision = sp.sympify(left).compare(sp.sympify(right))
+                left, right = sp.sympify(left), sp.sympify(right)
+                if left == right:
+                    continue
+
+                decision = left.compare(right)
                 if decision:
                     return int(decision)
+
+                if rank(left) != rank(right):
+                    return -1 if rank(left) < rank(right) else 1
+
+                raise VerificationError(
+                    "SYM-8",
+                    f"The two points cannot be put in an order: {left} and "
+                    f"{right} are different expressions that compare equal and "
+                    "have the same class. The lift treats its two points "
+                    "differently, so an order it cannot decide is a result it "
+                    "cannot give.",
+                )
 
             # Not reachable: two points that compare equal in every coordinate
             # are one point, and a Collision whose points coincide cannot be

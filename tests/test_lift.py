@@ -535,7 +535,7 @@ def test_two_equal_collisions_transport_alike_without_the_cache() -> None:
         "one = Collision(((p1,), (-1 - p1,)), tuple(F(p1)));"
         "other = Collision(((p2,), (-1 - p2,)), tuple(F(p2)));"
         "a = step.transport(one); b = step.transport(other);"
-        "print(one == other, hash(one) == hash(b and other),"
+        "print(one == other, hash(one) == hash(other),"
         " a == b, hash(a) == hash(b),"
         " a.verify(step.target) is None, b.verify(step.target) is None)"
     )
@@ -550,6 +550,102 @@ def test_two_equal_collisions_transport_alike_without_the_cache() -> None:
     )
 
     assert result.stdout.split() == ["True"] * 6, result.stdout
+
+
+def test_two_classes_of_one_name_do_not_flip_the_orientation() -> None:
+    """SYM-8, and the tie ``Basic.compare`` leaves.
+
+    ``Function`` is public API and builds a fresh class per call, so
+    ``Function("f", real=True)(t)`` and ``Function("f", positive=True)(t)`` are
+    unequal expressions of two classes with one name. ``compare`` separates
+    classes by name, so it returns zero both ways; ``srepr`` prints both as
+    ``Function('f')(Symbol('t'))``; ``default_sort_key`` ties as well. An audit
+    of ``0.6.0rc4`` found that none of the three decides here.
+
+    The order asks ``==`` first and falls back to the class -- module,
+    qualified name, declared assumptions -- which is what separates these two.
+    """
+    argument = sp.Symbol("t")
+    real = sp.Function("f", real=True)(argument)
+    positive = sp.Function("f", positive=True)(argument)
+
+    assert real != positive
+    assert real.compare(positive) == positive.compare(real) == 0
+    assert sp.srepr(real) == sp.srepr(positive)
+    assert sp.default_sort_key(real) == sp.default_sort_key(positive)
+
+    source = over_field(PolynomialMap((x1,), (x1 - x1**2 / (real + positive),)))
+    image = tuple(source(real))
+    forwards = Collision(((real,), (positive,)), image)
+    backwards = Collision(((positive,), (real,)), image)
+
+    assert forwards == backwards
+    assert hash(forwards) == hash(backwards)
+
+    step = SymmetricLiftStep.build(source)
+    one = step.transport(forwards)
+    other = step.transport(backwards)
+
+    assert one == other
+    assert hash(one) == hash(other)
+    assert one.verify(step.target) is None
+    assert other.verify(step.target) is None
+
+
+def test_the_order_moves_on_when_a_coordinate_agrees() -> None:
+    """SYM-8 on points that share a coordinate.
+
+    The comparison walks the coordinates and skips the ones that are equal.
+    Nothing else in this file has two points agreeing anywhere, so without this
+    the skip was never taken, and a comparison that stopped at the first
+    coordinate instead of moving on would have gone unnoticed.
+    """
+    source = over_field(PolynomialMap((x1, x2), (x1, x2 + x2**2)))
+    step = SymmetricLiftStep.build(source)
+    points = ((7, 0), (7, -1))
+
+    oriented = step._oriented(points)
+
+    assert oriented == step._oriented(points[::-1])
+    assert oriented[0][0] == oriented[1][0] == 7
+    assert oriented[0][1] != oriented[1][1]
+
+
+def test_an_order_the_step_cannot_decide_is_refused() -> None:
+    """SYM-8, the last resort, and the reason it is a refusal.
+
+    Two expressions that are unequal, compare as equal and have one class
+    cannot be ordered by anything this step knows. Taking the order the tuple
+    carried is what three audits in a row have found; a refusal is an answer
+    where two verifying results are not.
+
+    The pair is built and not found. SymPy's public ``Function`` API returns
+    one class for one name and one set of assumptions, cache or no cache, so
+    the case does not arise from it -- the two classes here are made by hand
+    and given the same name, module and assumptions. That makes this an
+    adversarial control rather than a case a caller will meet, which is what a
+    last resort should have.
+    """
+    argument = sp.Symbol("t")
+
+    first = type("f", (sp.Function,), {})
+    second = type("f", (sp.Function,), {})
+    second.__module__ = first.__module__
+    second.__qualname__ = first.__qualname__
+
+    left, right = first(argument), second(argument)
+
+    assert left != right
+    assert left.compare(right) == 0
+    assert type(left).__qualname__ == type(right).__qualname__
+    assert type(left).default_assumptions == type(right).default_assumptions
+
+    step = SymmetricLiftStep.build(FOLD)
+
+    with pytest.raises(VerificationError, match=r"\[SYM-8\]") as failure:
+        step._oriented(((left,), (right,)))
+
+    assert "cannot be put in an order" in failure.value.message
 
 
 def test_transport_refuses_more_than_two_points() -> None:

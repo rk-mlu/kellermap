@@ -36,7 +36,7 @@ machine-checkable certificate.
 
 ## Project Status
 
-Current version: **0.6.0rc4**
+Current version: **0.6.0rc5**
 
 ### What the library does
 

@@ -191,6 +191,13 @@ the parts it can name individually -- `ruff`, both `mypy` runs, `pytest --cov`,
 change touches an obligation -- and says which of the release-only gates it did
 not run.
 
+`pytest -m ""` is not one of them. `make release` depends on `check-full`,
+which is `lint typecheck test-all`, and `test-all` is `pytest -m ""`. Naming it
+beside `make release` as a second thing left to the maintainer says that a gate
+is unrun when it is about to run, which is the opposite of what this list is
+for. The assistant names `pytest -m slow` when it runs that part itself, and
+`make release` alone otherwise.
+
 **An exploratory computation that runs longer than ten minutes is the
 maintainer's.** Not because the assistant's machine is slower -- the two are
 within a fifth of each other on the same determinant -- but because the

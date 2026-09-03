@@ -45,7 +45,8 @@ obligations are the first here that a constructed step cannot make true, and to
 twenty-four with the homogenization twenty-nine with the
 compression, thirty-four with the symmetric lift and thirty-seven with the
 findings of the audit of ``0.6.0rc1`` and thirty-eight with those of
-``0.6.0rc2`` and thirty-nine with those of ``0.6.0rc3``.
+``0.6.0rc2`` and thirty-nine with those of ``0.6.0rc3`` and forty-one with those of
+``0.6.0rc4``.
 
 They do **not** reproduce the ten misses of the first run, and until
 ``0.4.0rc14`` this file and ``CHANGELOG.md`` said they did. Two reasons. The
@@ -358,6 +359,20 @@ PROBES: tuple[Probe, ...] = (
         "src/kellermap/lift.py",
         "        if self._target.ring.domain != wanted:",
         "        if False:",
+    ),
+    Probe(
+        "SYM-8",
+        "an order the step cannot decide is refused",
+        "src/kellermap/lift.py",
+        "                if rank(left) != rank(right):",
+        "                if True:",
+    ),
+    Probe(
+        "SYM-8",
+        "equality is asked before the order is",
+        "src/kellermap/lift.py",
+        "                if left == right:\n                    continue",
+        "                if False:\n                    continue",
     ),
     Probe(
         "SYM-9",

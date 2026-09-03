@@ -4,7 +4,7 @@ Notable changes per release. The milestone plan and its reasoning live in
 `docs/roadmap.md`, the binding obligations of the verification surface in
 `docs/contracts.md`.
 
-## 0.6.0rc4
+## 0.6.0rc5
 
 The second and third stages of the Reduction Theorem, and the two constructions
 that carry the result to the form the literature compares. Everything before
@@ -149,6 +149,22 @@ entries, three of them from this milestone.
 - SYM-4 and a docstring cited CHC-4 for the compression's domain boundary,
   which is CHC-2 and CHC-8. `AGENTS.md` listed the release gates without
   `dist-complete`, and a sentence in this file had lost its verb.
+
+### Fixed after the audit of `0.6.0rc4`
+
+- The orientation of the lifted pair used `Basic.compare`, which is not a
+  function of equality: `Function` builds a fresh class per call, so two
+  applied functions of one name are unequal and compare as equal. `srepr` and
+  `default_sort_key` tie on them too. The comparison asks `==` first now, falls
+  back to the class -- module, qualified name, declared assumptions -- and
+  refuses under SYM-8 if even that ties, rather than keeping the order the
+  tuple carried.
+- What the four orderings had in common is in `docs/errata.md`: each was used
+  instead of an equality test rather than after one, which asked a single key
+  to agree on everything equal and separate everything unequal.
+- A test asserted `hash(one) == hash(b and other)`, which is `hash(other)`
+  because `b` is truthy. It checked the intended claim by accident.
+- A line in `docs/contracts.md` had grown past the width of the page.
 
 ### Known limits
 
