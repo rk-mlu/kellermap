@@ -14,6 +14,7 @@ authors:
 license: MIT
 repository-code: "https://github.com/rk-mlu/kellermap"
 version: 0.6.0
+doi: 10.5281/zenodo.22299353
 keywords:
   - Keller maps
   - Jacobian conjecture

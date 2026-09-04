@@ -135,6 +135,14 @@ README_VERSION = re.compile(r"^Current version: \*\*(.+)\*\*$", re.MULTILINE)
 NEWEST_RELEASE = re.compile(r"^## (\S+)$", re.MULTILINE)
 CITATION_VERSION = re.compile(r"^version: (\S+)$", re.MULTILINE)
 
+# The DOI stands in two places. Zenodo reserves it before publication, so it
+# was written into both before the archive was built and the record can cite
+# itself. The README states it as a Markdown link, where the label and the
+# target are two copies of one string; the backreference holds those together
+# and the test below holds the pair against ``CITATION.cff``.
+CITATION_DOI = re.compile(r"^doi: (\S+)$", re.MULTILINE)
+README_DOI = re.compile(r"^DOI: \[(\S+)\]\(https://doi\.org/\1\)\.", re.MULTILINE)
+
 # A live marker such as ``[0.5]`` closing the bold title of an obligation the
 # milestone has not implemented yet. ``AGENTS.md`` says it is removed when the
 # milestone closes, and until now nothing said whether it had been.
@@ -657,6 +665,27 @@ def test_the_four_places_that_carry_the_version_agree() -> None:
     assert only_match(CITATION_VERSION, ROOT / "CITATION.cff") == declared
 
 
+def test_the_two_places_that_carry_the_doi_agree() -> None:
+    """``CITATION.cff`` and the project status of the README.
+
+    ``docs/deposit.md`` expected this to be a fifth number joining the four
+    above, written after the deposit. Zenodo reserves a DOI before
+    publication, so it was written before the archive was built instead, and
+    the archive carries the DOI of the record it goes into.
+
+    It is not a fifth number in that test. A version and a DOI do not have to
+    agree with each other, only with themselves, and comparing them in one
+    place would say they do.
+
+    This is the version DOI. The concept DOI, which resolves to the newest
+    version, is not reservable and is not in the repository; ``deposit.md``
+    says where it goes when the record is published.
+    """
+    reserved = only_match(CITATION_DOI, ROOT / "CITATION.cff")
+
+    assert only_match(README_DOI, ROOT / "README.md") == reserved
+
+
 def test_no_release_appears_twice_in_the_changelog() -> None:
     """Comparing the version does not suffice when it stands there twice.
 
@@ -885,3 +914,21 @@ def test_a_version_pattern_that_finds_nothing_fails_loudly(tmp_path: Path) -> No
 
     with pytest.raises(AssertionError):
         only_match(DECLARED_VERSION, empty)
+
+
+def test_a_doi_whose_link_and_label_disagree_is_not_read(tmp_path: Path) -> None:
+    """The control for the backreference in ``README_DOI``.
+
+    A Markdown link states the DOI twice, and a README edited by hand can end
+    up with one new and one old. Without the backreference the pattern would
+    read the label, the comparison with ``CITATION.cff`` would pass, and the
+    link would still resolve to the wrong record.
+    """
+    readme = tmp_path / "README.md"
+    readme.write_text(
+        "DOI: [10.5281/zenodo.22299353](https://doi.org/10.5281/zenodo.1).\n",
+        encoding="utf-8",
+    )
+
+    with pytest.raises(AssertionError):
+        only_match(README_DOI, readme)

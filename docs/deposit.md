@@ -29,11 +29,29 @@ So the deposit is manual, and what is uploaded is the built source archive.
 from inside it, and `dist-complete` shows that both artefacts exist. The
 archive is the artefact this project checks; the repository tarball is not.
 
+## Reserve the DOI first
+
+Zenodo reserves a DOI on a draft, before anything is published. Doing that
+first is worth an extra step: the DOI goes into `CITATION.cff` and `README.md`,
+those go into the release commit, and the archive that is uploaded carries the
+DOI of the record it goes into. An archive that cannot cite itself is a small
+thing, and avoiding it costs one click in the right order.
+
+This page said to write the DOI in afterwards, which would have meant a commit
+after the tag, an archive naming no record, and a repository whose newest
+commit is not the one that was deposited. The order below is the one used for
+`0.6.0`.
+
+That is the version DOI. The concept DOI, which resolves to the newest
+version, is not reservable; it exists once the record is published, and it
+belongs in `README.md` beside the other, described as what it is.
+
 ## What to upload
 
-The `.tar.gz` from `dist/`, after a green `make release`. Not the wheel: it
-carries the package and none of the reconstruction scripts, the documentation
-or the tests, which is most of what makes this repository worth citing.
+The `.tar.gz` from `dist/`, after a green `make release` on the commit that
+carries the reserved DOI. Not the wheel: it carries the package and none of the
+reconstruction scripts, the documentation or the tests, which is most of what
+makes this repository worth citing.
 
 Before uploading, one check by hand, because it is the one that matters here:
 
@@ -54,6 +72,9 @@ below and `docs/provenance.md` for why.
 
 *Version:* the version of the archive, which is the number `pyproject.toml`
 carries.
+
+*DOI:* the reserved one, `10.5281/zenodo.22299353` for `0.6.0`. It is already
+in `CITATION.cff` and `README.md`; the form only has to keep it.
 
 *Related identifiers:* the GitHub release tag, and the PyPI release of the same
 version. Both are "is supplement to" or "is identical to" as the form's
@@ -99,12 +120,14 @@ decided what entered the repository.
 
 ## After the deposit
 
-The DOI goes into `CITATION.cff` and into `README.md`. Zenodo mints two: one
-for the record and one for the concept, which resolves to the newest version.
-The concept DOI is the one to cite for "the software", the version DOI for a
-specific state; `CITATION.cff` carries a version, so it carries the version
-one.
+The version DOI is already in the repository, so what is left is the concept
+DOI, which Zenodo assigns when the record is published. It is the one to cite
+for "the software" rather than for a state, and it goes into `README.md` beside
+the version DOI, said to be the concept one. `CITATION.cff` carries a version,
+so it keeps the version DOI and not this one.
 
-That makes the DOI a fifth place holding a number that has to agree with the
-others. `tests/test_documentation.py` already holds four of them together and
-should hold this one too.
+`tests/test_documentation.py` holds the version DOI in the two places that
+carry it, with a control for the case where the label and the target of the
+Markdown link disagree. It is not a fifth number in the test that holds the
+version together: a version and a DOI do not have to agree with each other,
+only each with itself, and one test comparing both would say that they do.

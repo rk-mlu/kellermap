@@ -63,6 +63,12 @@ entries, three of them from this milestone.
   than leaving the wording of a permanent record to a browser session. The
   version stands in four places now and `tests/test_documentation.py` holds
   the four together.
+- The DOI of this version, `10.5281/zenodo.22299353`, in `CITATION.cff` and in
+  `README.md`. Zenodo reserves a DOI on a draft, so it was written in before
+  the archive was built and the archive carries the DOI of the record it goes
+  into. `docs/deposit.md` had the two steps the other way round and now says
+  to reserve first; a test holds the two places together, with a control for a
+  Markdown link whose label and target disagree.
 
 ### Changed
 

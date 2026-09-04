@@ -38,6 +38,10 @@ machine-checkable certificate.
 
 Current version: **0.6.0**
 
+DOI: [10.5281/zenodo.22299353](https://doi.org/10.5281/zenodo.22299353). That
+is the DOI of this version. `CITATION.cff` carries it, and `docs/deposit.md`
+says what the record holds.
+
 ### What the library does
 
 - **Polynomial maps** over a sparse `PolyRing`, with value semantics:
