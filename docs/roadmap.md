@@ -2076,45 +2076,101 @@ that is a statement about the route and not about the number.
 
 # Version 0.7
 
-## Performance engineering
+What BCW still owes, the two things milestone 0.6 measured and could not
+finish, and the first question about the search that is worth asking in that
+order.
 
-Profile the complete reduction pipeline and optimize only measured bottlenecks.
+Milestone 0.6 built the second and third stages of the Reduction Theorem and
+the compression that follows them, so a map goes from degree three to a quartic
+gradient form with every step certified. Two things it left behind. The
+Reduction Theorem is not finished: Theorem 2.1(b) asks for more than a cubic
+homogeneous form. And one obligation of the symmetric lift is worded around a
+computation that did not finish, so it is argued rather than checked.
 
-Possible work:
+The plan below puts those two first, then the link this project has never had,
+then the search.
 
-- power caching during repeated composition,
-- further determinant strategies beyond the unipotent-block case of 0.1,
-- fraction-free or modular determinant algorithms,
-- parallel candidate evaluation,
-- memory-aware term storage,
-- reduced conversion at certificate boundaries.
+## What BCW still owes
 
-Evaluate optional acceleration through python-flint or Singular only if the
-PolyRing benchmarks demonstrate that pure SymPy cannot reach the target
-problem sizes. Any accelerator must preserve the PolyRing-level mathematical
-semantics and certificate format.
+Theorem 2.1(b) asks for a form linear in each original variable and quadratic
+only in `T`. This project produces the cubic homogeneous form and stops there,
+which is enough for the corollary the literature usually quotes and is not the
+theorem.
 
-Milestone 0.6 left one bottleneck measured rather than guessed at, which is
-what this milestone asks for. The Jacobian determinant of the symmetric lift of
-Thompson's compressed twenty -- 40 variables, cubic homogeneous, over
-`QQ(i)` -- did not finish in eight hours, where the same determinant at a
-random rational point takes 22 seconds and the same size over `QQ` is
-seconds. SYM-7 is worded
-around that, and a determinant strategy that closes the gap would let the
-obligation be checked rather than argued.
+The case is small and stored: `(x + y^3, y)` homogenizes to a verified
+five-dimensional target that still carries a `y^3`. Every obligation on that
+target holds. It is the refinement that is missing and not a defect in what
+exists, and `docs/references.md` says which is which.
 
-Whether the cost is the dimension, the domain or the density is not known.
-Those are three measurements and the first thing to do.
+What the refinement costs in dimensions is not known here, and the first
+figure the work package should produce is that one.
 
-## What the chains that peel finds say about the search
+## What the two published eleven- and twelve-variable maps have in common
 
-Milestone 0.6 twice compared a chain `peel` found against what
-`untargeted_candidates` offers, and twice the answer was mostly no: two of
-seven steps matched for `macfarlane13`, none of six for `spacerat11`. The
-second number is the interesting one, because it is not explained by the shape
-of the factors.
+Two reductions at degree three were published from different sources by
+different people, and they use the same four moves.
 
-Sorted by shape, the six steps of the `spacerat11` chain are:
+The eleven-variable map comes from Alpoege's three-variable map of degree
+seven. A monomial-by-monomial BCW reduction of it needs 39 variables. The
+published derivation reaches 11 by: eliminating several products against one
+shared coordinate; reusing a coordinate already introduced rather than
+introducing the same factor twice; cancelling `x^2 y^2` against the square of a
+coordinate that is already an output; and deleting a triangular coordinate
+after a determinant-one change on a pair of them.
+
+The twelve-variable map comes from Macfarlane's `F13` and is described in quite
+different language, as a coordinate-pair restriction. Written out, its two
+automorphisms are a source graph `x_13 + x_2^2` and a target completion
+`y_4 - y_8^2`. The completion cancels the quartic the graph creates, and it
+cancels it because `F13` has a component `x_8 + x_1 x_2`. That is the third
+move above, and the restriction to the level set is the fourth.
+
+The first two moves are carrier reuse, which this library has had since 0.3 and
+which `AGENTS.md` marks as an extension beyond the paper. The third is an
+elementary automorphism on the target and may already be expressible; that is a
+question for a work package and not something to assume here. The fourth has no
+step type.
+
+**What that does not mean.** It does not mean the library cannot reach these
+maps. `examples.spacerat11` is reached from `alpoege()` by six `BCWStep`s,
+which `scripts/reconstruct_spacerat11.py` replays, and none of the six is a
+descent. So the fourth move is a route this library cannot express and not a
+map it cannot produce. Whether the twelve-variable map is also reachable
+without it is open, and is one of the things WP 4 should settle.
+
+The reason to care is the search rather than the certificates. Both published
+derivations pass through a dimension they then leave, and a search that only
+ever goes down cannot follow either.
+
+## The packages
+
+**WP 1** measures the bottleneck of SYM-7. The Jacobian determinant of the
+symmetric lift of Thompson's compressed twenty -- 40 variables, cubic
+homogeneous, over `QQ(i)` -- did not finish in eight hours. The same
+determinant at a random rational point takes 22 seconds, and the same size over
+`QQ` is seconds. Whether the cost is the dimension, the domain or the density
+is not known, and those are three measurements. Nothing is optimized in this
+package; the deliverable is which of the three it is, as a script that takes a
+budget and prints the cheap figures first.
+
+**WP 2** implements the multi-affine refinement of Theorem 2.1(b), as a step
+type with its obligations written first. `(x + y^3, y)` is the smallest case
+and the first test. The package also states what the refinement costs in
+dimensions on the maps already in the suite, because a stage that is not
+measured cannot be set beside the tables in `docs/references.md`.
+
+**WP 3** adds the de Bondt-van den Essen step, which is the one link of the
+published chain this repository has never had. It needs a field containing
+`i` throughout, which the symmetric lift already requires, so the domain
+question is settled before the package starts.
+
+**WP 4** is a measurement and decides the rest of the milestone. Two parts.
+
+The first was specified in 0.6 and not run. Milestone 0.6 twice compared a
+chain `peel` found against what `untargeted_candidates` offers, and twice the
+answer was mostly no: two of seven steps matched for `macfarlane13`, none of
+six for `spacerat11`. Sorted by shape, the six steps of the `spacerat11` chain
+are:
 
 | step | terms in the two factors | carried |
 | ---: | --- | --- |
@@ -2127,45 +2183,90 @@ Sorted by shape, the six steps of the `spacerat11` chain are:
 
 Three of them use only monomials and carried coordinates, which is exactly what
 the enumerator deals in, and none of the three is offered. So there are two
-independent gaps and the shape accounts for one of them.
+independent gaps and the shape accounts for one of them. The first is known:
+`peel` divides a displacement and can produce a factor with several terms, and
+the enumerator splits a leading monomial and cannot. Steps 1, 4 and 6 are that,
+with 3, 2 and 6 terms. The second is a hypothesis: the enumerator is anchored
+to the *leading* monomial of a component, and the products of steps 2, 3 and 5
+may sit elsewhere in theirs. That would make the anchor and not the shape the
+reason. For each of the thirteen steps in the two chains, record which of the
+two reasons applies, or a third if neither does.
 
-The first is known: `peel` divides a displacement and can produce a factor with
-several terms, and the enumerator splits a leading monomial and cannot. Steps
-1, 4 and 6 are that, with 3, 2 and 6 terms.
+The second part is new. Take the four moves of the section above and, for each,
+say which step type of this library expresses it, or that none does. The third
+move is the interesting one, because an elementary automorphism on the target
+is available and whether it reaches that particular shear is a question with an
+answer. The fourth is the one expected to be missing, and "expected" is the
+word: it is a reading of two derivations and not a measurement.
 
-The second is a hypothesis and this milestone did not test it: the enumerator
-is anchored to the *leading* monomial of a component, and the products of steps
-2, 3 and 5 may sit elsewhere in theirs. That would make the anchor and not the
-shape the reason.
+**WP 5** is conditional on WP 4 and is written when WP 4 has run. If the
+descent is missing and wanted, it is a certificate first: a step that
+verifies a *supplied* claim that a map is a triangular extension of a
+smaller one, with
+the pair of determinant-one changes exhibited rather than asserted. The search
+for the pair is a separate thing and comes after, which is the same division
+`BCWStep` and `peel` already stand on.
 
-The measurement is small and specific. For each of the thirteen steps in the
-two chains, record which of the two reasons applies, or a third if neither
-does. Only then is it clear whether widening what the enumerator offers is
-worth anything, and which widening.
+**WP 6** is the target the milestone is for, and it is a search question and
+not a construction question. The chain from Alpoege's map to `spacerat11`
+exists: six steps, found by `peel`, which is given the target. Deriving the map
+that way needs the map. The question is whether a search that is *not* given
+the target finds those six steps, or any six, under a budget.
 
-## What the search should minimize
+The deliverable is that answer and not a success. If the search does not get
+there, the package says at which of the four moves it stopped and what the
+budget was when it stopped, in the shape WP 1 uses. A measured failure at a
+named step is worth more here than an unbounded run, and 0.6 has the precedent:
+SYM-7 rests on a computation that was stopped after eight hours and reported as
+having been stopped.
 
-The untargeted search minimizes the dimension at degree three. Milestone 0.6
-made the number that gets compared computable, and it is the one after four
-more stages.
+The twelve-variable map is the second probe of the same machinery, from
+`macfarlane13` rather than from Alpoege. It is worth stating what that does and
+does not need: the derivation is published and the map need not be transcribed,
+because a chain that produces it produces its coefficients. Neither repository
+that carries it has a licence, so a transcription is not available anyway, and
+`docs/references.md` records both as cited and not copied.
 
-There is nothing new to build for this. The homogenization and the compression
-are determined by the map and the collision, so a search "for a small
-homogeneous form" would walk exactly the space `reduce_to_degree3` already
-walks and only score it differently. It is a new objective and not a new
-reducer, which is the smaller change of the two.
+### Why the order
 
-One further freedom was checked and is empty. The hull is generated by the
-collision points, all three of them were always used, and a pair might generate
-less. It does not: on all three maps and all three pairs the compressed
-dimension is unchanged, 19, 20 and 22. Whatever spread there is comes from the
-chain and not from the choice of points.
+WP 1 before WP 2 although WP 2 is the more important of the two. WP 2 makes the
+chain longer, and a determinant that does not finish at 40 variables will not
+finish at whatever the refinement produces. Knowing which of the three costs
+dominates is worth more before the input grows than after.
 
-What makes the retargeting affordable is that the whole pipeline costs between
-two and seven seconds per endpoint. That is far too slow per node -- the driver
-that found `alpoege12` examined 404117 states -- and cheap per *endpoint*. So
-the shape is a beam on the present weight, which becomes a prefilter, and the
-real objective evaluated on the best few endpoints it survives with.
+WP 4 before WP 5 and WP 6 because it decides both. If the enumerator's gap is
+the anchor rather than the shape, the widening is small and WP 6 may need
+nothing new. If the descent is missing and needed, WP 5 exists and WP 6 waits
+for it. Writing either package now would be writing it against a guess.
+
+WP 3 is independent of all of them and can go anywhere. It is placed third
+because it is the one package whose result is a new link rather than a better
+version of an existing one, and a milestone that ends with only measurements
+and a search would be a thin one.
+
+## An open question this milestone raises and does not answer
+
+Both published derivations pass through a larger dimension before reaching the
+smaller one: 12 before 11, 13 before 12. Every search this project has goes
+down and never up. Whether a search that may go up finds anything the present
+one does not is a real question and is not this milestone's: it changes the
+shape of the search and not one of its steps, and the measurement that would
+justify it is WP 4.
+
+## What is not planned
+
+No minimality, at any stage, for the same reason 0.6 gives.
+
+No priority claim, and in particular none about eleven against twelve. The
+degree-three table in `docs/references.md` carries a determinant column because
+its rows are not normalized alike: the eleven-variable map has determinant `-2`
+and a linear part that is not the identity, the twelve-variable ones have
+determinant one. Whether the normalization preserves the dimension is a
+calculation nobody here has done, and until it is done the two numbers are not
+a comparison.
+
+No claim about Zhao's Vanishing Conjecture. `Delta^m(P^m)` is 0.8 and stays
+there.
 
 ---
 
