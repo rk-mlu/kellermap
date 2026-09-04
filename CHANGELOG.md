@@ -33,8 +33,9 @@ the published ones: 386 monomials against 350 at the quartic stage.
 
 Three pages were split out of `docs/references.md`, which had grown to four
 subjects at once. `docs/provenance.md` holds what an audit reads and
-`docs/errata.md` what this project reported wrongly and corrected — twelve
-entries, three of them from this milestone.
+`docs/errata.md` what this project reported wrongly and corrected — eighteen
+entries, five of them findings of the audits of this milestone's release
+candidates.
 
 ### Added
 
