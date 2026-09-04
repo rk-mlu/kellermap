@@ -1995,6 +1995,26 @@ The shape is the one WP 12 of 0.5 had. Two faults of that milestone were found
 by an audit rather than by a test, and the package that closed the milestone
 carried the test group neither of the packages before it would have produced.
 
+### WP 10, which was not in this plan
+
+**WP 10** prepares the Zenodo deposit: `CITATION.cff`, `docs/deposit.md`, the
+disclosure section of `docs/provenance.md`, and the rule in `AGENTS.md` that a
+new way of distributing the repository is checked against the licence rule
+before it is used.
+
+It is not in the list above because the deposit was not part of the plan when
+the milestone was cut. It joins the milestone rather than waiting for 0.7
+because a record is minted from a released archive and the release is here, and
+because the check it carries belongs to this milestone: the automatic GitHub
+integration would have published `tests/data.py`, which the source archive
+excludes because its licence could not be established. That is the second time
+this milestone that a distribution channel would have shipped an unlicensed
+map, and `docs/errata.md` holds the first.
+
+Nothing is minted by the package. The deposit happens after a green
+`make release`, by hand, and `docs/deposit.md` carries the one check to run
+before uploading.
+
 ### Why the order
 
 WP 2 comes second because every package after it should be measured on the

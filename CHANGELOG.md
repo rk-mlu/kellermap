@@ -58,6 +58,11 @@ entries, three of them from this milestone.
 - `scripts/reconstruct_spacerat11.py` and `scripts/measure_pipeline.py`, joined
   to `make reconstruct` and `make measure`.
 - `docs/provenance.md` and `docs/errata.md`.
+- `CITATION.cff`, shipped in the source archive, and `docs/deposit.md`, which
+  holds the description text and the procedure of the Zenodo deposit rather
+  than leaving the wording of a permanent record to a browser session. The
+  version stands in four places now and `tests/test_documentation.py` holds
+  the four together.
 
 ### Changed
 
@@ -70,6 +75,17 @@ entries, three of them from this milestone.
   through one determinant.
 - `docs/references.md` states the position and no longer tells the story of how
   it was corrected; `docs/errata.md` does that.
+- `docs/provenance.md` gains "How this repository was written", which is the
+  one place stating which generative models were used, in which roles, what
+  the arrangement found, and who answers for the result. `CITATION.cff` and
+  the Zenodo description point at it rather than repeating it.
+- `AGENTS.md` gains the rule that a new way of distributing the repository is
+  checked against the licence rule before it is used. It has now failed twice
+  at a channel nobody checked, and `docs/deposit.md` records the check for the
+  third.
+- The `Documentation` list in `README.md` still described `references.md` as
+  the page holding the provenance of the fixed data, which stopped being true
+  when this milestone split it. It names all seven pages now.
 
 ### Fixed
 

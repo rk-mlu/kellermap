@@ -78,6 +78,59 @@ is an inventory gap and not a licence fault.
 
 ---
 
+## How this repository was written
+
+This section is the one place that says it. `CITATION.cff` and the description
+of the Zenodo record both point here rather than repeating it, because a
+statement kept in three places diverges, and this repository has an errata page
+that says so four times over.
+
+**Tools.** Two generative models were used, in two separate roles.
+
+| role | model |
+| --- | --- |
+| writing the code, the tests and the documentation | Claude Opus 5 |
+| auditing the release candidates | ChatGPT 5.6 Sol |
+
+**What each did.** The first drafted source, tests, documentation and commit
+messages in a conversation with the maintainer, milestone by milestone and work
+package by work package, under the working agreement in `AGENTS.md`. The second
+was given a release candidate and asked to find what was wrong with it; the
+findings of milestone 0.6 are in `docs/errata.md`, under the release candidate
+that carried them.
+
+**Why two.** An audit by the model that wrote the code would not be one. The
+two are not independent in the way two people are -- overlapping training data,
+related failure modes, neither deterministic -- so what the arrangement gives
+is better than nothing and less than independence. What it gave here is on
+record: six audits, and each of the first five found faults that the suite,
+the coverage and the mutation probe had all passed. Twice the fault was in a
+repair made for the previous audit.
+
+The audits are not blind. The auditing model reads `AGENTS.md`,
+`docs/errata.md` and the roadmap, so it knows where this project has already
+been wrong. That cuts both ways, and the second audit shows the productive
+half: it looked again where the first had found something and found two new
+faults there. Whether it looked less carefully elsewhere is not something this
+project can tell.
+
+**Who is responsible.** The maintainer. He set the tasks, ran the gates that
+the assistant's tool budget cannot reach -- `make release`, the mutation probe
+on a full suite, and every exploratory computation over ten minutes -- read the
+deliveries, and decided what entered the repository. Neither model is an author
+of this work, in the sense the scientific norms use that word: an author
+answers for the result, and a model cannot. That is also why the authorship of
+the Zenodo record and of `CITATION.cff` lists one person.
+
+**What was verified rather than trusted.** Every claim in this repository is
+under a gate that a person ran: the obligations of `docs/contracts.md` with a
+negative control each, forty-two mutation probes, eight reconstructions that do
+not import the library, two measurement scripts tied to the pages in both
+directions, and the audits. `docs/errata.md` lists what got through anyway,
+which is the honest measure of how much any of it is worth.
+
+---
+
 ## The fixed test data
 
 `examples.bcw17()` returns a 17-dimensional map whose components this

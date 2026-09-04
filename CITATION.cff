@@ -1,0 +1,44 @@
+cff-version: 1.2.0
+message: >-
+  If you use this software, please cite it using the metadata from this file.
+title: "kellermap"
+type: software
+authors:
+  - family-names: Kruse
+    given-names: Raphael
+    orcid: "https://orcid.org/0000-0002-8341-5097"
+    affiliation: "Martin-Luther-Universität Halle-Wittenberg"
+    city: Halle
+    region: Sachsen-Anhalt
+    country: DE
+license: MIT
+repository-code: "https://github.com/rk-mlu/kellermap"
+version: 0.6.0rc6
+keywords:
+  - Keller maps
+  - Jacobian conjecture
+  - polynomial automorphisms
+  - certified computation
+  - computer algebra
+  - SymPy
+abstract: >-
+  A Python library that constructs and verifies reductions of polynomial maps
+  with constant Jacobian determinant. Every transformation is a certificate
+  object that carries its own obligations, and verification names the
+  obligation that failed rather than returning a boolean; a collision is
+  transported across each step and re-verified, so a reduction of a
+  counterexample is still a counterexample.
+
+  Milestone 0.6 implements the second and third stages of the Bass-Connell-
+  Wright Reduction Theorem, collision-hull compression, and the symmetric lift
+  to the gradient form of a quartic. The constructions are other people's; what
+  this project contributes is the composition of them, the certificates, and
+  eight independent reconstruction scripts that recompute the published results
+  without using the library. No minimality and no priority is claimed for any
+  figure it reaches: docs/references.md states what each comparison does and
+  does not establish, and docs/errata.md records what this project reported
+  wrongly and corrected.
+
+  Generative AI tools were used in writing this software and in auditing its
+  release candidates. docs/provenance.md says which tools, in which roles, and
+  what was verified by whom. Neither model is an author.

@@ -113,6 +113,7 @@ SCANNED = (
     "CONTRIBUTING.md",
     "AGENTS.md",
     "CHANGELOG.md",
+    "CITATION.cff",
     "pyproject.toml",
     "Makefile",
     ".gitignore",

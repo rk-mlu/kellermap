@@ -280,6 +280,14 @@ should keep them intact.
   in the source's format adds only a closed-loop check.
 - If an attachment is clearly not meant for this project — personal data, for
   instance — do not process it, and say so.
+- **A new way of distributing the repository is checked against the licence
+  rule before it is used.** The rule is about every place a value can land and
+  not about one file. It has now failed twice at a new channel: the source
+  archive shipped `scripts/reconstruct_macfarlane13.py` with a transcription of
+  an unlicensed map inside it, and the Zenodo GitHub integration would have
+  published `tests/data.py`, which the archive excludes and version control
+  does not. `docs/deposit.md` records the check for the channel that came
+  third.
 
 ---
 

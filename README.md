@@ -248,11 +248,16 @@ Most important documents:
 api.md            public API, with examples the test suite executes
 architecture.md   design decisions and the reasons for them
 contracts.md      binding obligations of the verification surface
-references.md     sources, and the provenance of the fixed test data
+references.md     sources, and the comparisons with published figures
+provenance.md     where the fixed data came from, and how this repository
+                  was written
+errata.md         what this project reported wrongly, and the correction
+deposit.md        what goes into the Zenodo record, and why not the
+                  automatic route
 roadmap.md        milestones
 ```
 
-`CHANGELOG.md` sits at the repository root.
+`CHANGELOG.md` and `CITATION.cff` sit at the repository root.
 
 ---
 

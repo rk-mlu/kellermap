@@ -133,6 +133,7 @@ FAMILIES = {
 DECLARED_VERSION = re.compile(r'^version = "(.+)"$', re.MULTILINE)
 README_VERSION = re.compile(r"^Current version: \*\*(.+)\*\*$", re.MULTILINE)
 NEWEST_RELEASE = re.compile(r"^## (\S+)$", re.MULTILINE)
+CITATION_VERSION = re.compile(r"^version: (\S+)$", re.MULTILINE)
 
 # A live marker such as ``[0.5]`` closing the bold title of an obligation the
 # milestone has not implemented yet. ``AGENTS.md`` says it is removed when the
@@ -636,17 +637,24 @@ def test_the_order_table_agrees_with_the_measurement_script() -> None:
     assert not missing, f"the table does not carry the rows for {missing}"
 
 
-def test_the_three_places_that_carry_the_version_agree() -> None:
-    """``pyproject.toml``, the project status in the README, the top heading.
+def test_the_four_places_that_carry_the_version_agree() -> None:
+    """``pyproject.toml``, the README status, the top heading, ``CITATION.cff``.
 
-    Three copies of one number, maintained by hand, and up to 0.4.0rc8 nothing
-    compared them. ``pyproject.toml`` is the binding one and the other two have
-    to follow it.
+    Four copies of one number, maintained by hand, and up to 0.4.0rc8 nothing
+    compared them. ``pyproject.toml`` is the binding one and the others have to
+    follow it.
+
+    The citation file joined them when the Zenodo deposit was prepared. It
+    could have been written without a version, which is valid CFF, and that
+    would have been one number less to keep in step; a citation that does not
+    say which version it is worth is worth less, so it carries one and this
+    test carries it too.
     """
     declared = only_match(DECLARED_VERSION, ROOT / "pyproject.toml")
 
     assert only_match(README_VERSION, ROOT / "README.md") == declared
     assert only_match(NEWEST_RELEASE, ROOT / "CHANGELOG.md") == declared
+    assert only_match(CITATION_VERSION, ROOT / "CITATION.cff") == declared
 
 
 def test_no_release_appears_twice_in_the_changelog() -> None:
