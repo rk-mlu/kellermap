@@ -2148,10 +2148,17 @@ ever goes down cannot follow either.
 symmetric lift of Thompson's compressed twenty -- 40 variables, cubic
 homogeneous, over `QQ(i)` -- did not finish in eight hours. The same
 determinant at a random rational point takes 22 seconds, and the same size over
-`QQ` is seconds. Whether the cost is the dimension, the domain or the density
-is not known, and those are three measurements. Nothing is optimized in this
-package; the deliverable is which of the three it is, as a script that takes a
-budget and prints the cheap figures first.
+`QQ` is seconds. Nothing is optimized in this package; the deliverable is which
+factor carries the cost, and the specification below is written before the run
+so that the figures do not pick the question.
+
+The package owes `docs/contracts.md` one amendment, and it is stated here
+rather than left to the end. The second paragraph of SYM-7 names two dimensions
+and nothing else, so it reads as a statement about size. After WP 1 it names
+the factor that was measured. If none is isolated it says so, and names the
+factors that were separated. No new obligation and no new identifier: this
+package builds no step type, changes no `verify()` and adds no check to the
+verification surface.
 
 **WP 2** implements the multi-affine refinement of Theorem 2.1(b), as a step
 type with its obligations written first. `(x + y^3, y)` is the smallest case
@@ -2226,6 +2233,137 @@ does not need: the derivation is published and the map need not be transcribed,
 because a chain that produces it produces its coefficients. Neither repository
 that carries it has a licence, so a transcription is not available anyway, and
 `docs/references.md` records both as cited and not copied.
+
+### The measurement of WP 1
+
+The point of the package is not one more timing. It is to replace a single
+negative with a ladder of positives.
+
+"Did not finish in eight hours" has no witness. A search result has one: the
+external driver that found `alpoege12` in milestone 0.5 ran for hours, was not
+taken into the repository, and did not need to be, because the map it produced
+verifies in seconds. A computation that does not terminate produces nothing to
+put beside it, which is why this one line of SYM-7 rests on a measurement where
+everything else in the contract rests on an object.
+
+So the deliverable is shaped by which of two outcomes the run has.
+
+*If the cost is the method*, the result is positive and the question dissolves.
+The determinant completes, SYM-7 becomes an obligation that is checked rather
+than argued, and the check is its own reproduction.
+
+*If the cost is not the method*, the result stays negative, and the
+reproducible form is not the cell that failed. It is the ladder that did not:
+a sequence of dimensions that each completed, with their times, from which
+forty is an extrapolation rather than a single abandoned run. Every cell of
+that ladder is cheap and terminates. The claim then lives in the slope, and a
+slope can be recomputed.
+
+**Four factors and not three.** The plan said dimension, domain and density.
+The **method** is a fourth and was missing. `Matrix.det` chooses between
+Bareiss, Berkowitz and LU, and a `DomainMatrix` over `QQ_I[x1..x40]` does
+fraction-free arithmetic in the domain instead of generic `Expr` arithmetic. At
+40 by 40 with polynomial entries those differ by more than a constant. A
+measurement that separates three causes where there are four does not fail to
+find the fourth; it distributes it over the three.
+
+That is also the arm with the largest consequence, and the expectation is
+written down here so that it can be wrong on record: the method is where this
+is expected to land.
+
+**Dimension.** The suite has no ladder. Six is where a lift's determinant costs
+under a hundredth of a second; the next cubic homogeneous forms it can reach
+are 19, 20, 22 and 24, whose lifts are 38, 40, 44 and 48, and 40 already does
+not finish. There is nothing between 6 and 38, so the ladder has to be built:
+pad a small map with identity coordinates, which raises the dimension and
+leaves the nonlinear content alone.
+
+What that measures is the cost of matrix size at fixed nonlinear content, and
+that is a lower bound on the effect of dimension rather than the effect itself.
+Padding adds rows that are unit vectors, and an elimination that exploits them
+pays little for them. If padding is cheap, the honest conclusion is that size
+alone is not the cost, not that dimension is free.
+
+**Domain.** Two arms, and they measure different things. The first replaces `i`
+by a rational constant in the same matrix. Sparsity and degree are kept and the
+object is not: the result is not a lift, its determinant need not be one, and
+the check below does not apply to it. The second keeps the field and changes
+how it is written, `QQ_I` against an explicit `QQ(a)` with `a^2 + 1`. That one
+is arguably part of the method and is recorded under both.
+
+**Density.** Monomials per entry. The two natural points are close together --
+Thompson's compressed twenty gives a `P` of 350 monomials and `spacerat11`
+gives 386, at 40 and 38 -- and ten per cent apart separates nothing. The axis
+therefore has to be synthetic: at one padded dimension, vary the number of
+nonlinear terms of the map underneath. Synthetic, and the page says so.
+
+**Method.** `Matrix.det` with each of `bareiss`, `berkowitz` and `lu`, the
+default, and `DomainMatrix.det` over the polynomial ring. Fixed dimension,
+fixed domain, fixed density.
+
+**Two kinds of figure, and only one of them can be a gate.** This is where the
+first draft of this page overreached, and the correction belongs in it.
+
+The structural figures are machine-independent: the dimension of each rung of
+the ladder, the monomials in each arm, that a determinant which completes on a
+lift arm is one, and that the perturbed control is not one. Those are figures
+of the same kind `scripts/measure_pipeline.py` already holds against
+`docs/references.md`, and they are gated the same way -- recomputed, compared
+with the number on the page, and a mismatch stops the run.
+
+The timings are not. A second is a statement about a machine, a Python version
+and a SymPy version, and no assertion about one belongs in a suite that runs
+elsewhere. They are recorded on this page beside the three, and what makes them
+checkable is a rerun and a comparison rather than a gate. One cell is a
+calibration cell that any second machine runs, in the way `0.6` used the
+sample-point determinant to show that two machines were within a fifth of each
+other before letting the eight hours stand.
+
+An answer is therefore a ratio per factor with the other three held fixed, and
+"no single factor" is an allowed outcome, declared allowed here because a
+specification that only admits a winner will find one.
+
+**Where each part runs.** The cheap cells go into
+`scripts/measure_determinant.py`, in the shape of `measure_pipeline.py`: it
+recomputes the structural figures, checks them against this page, and prints
+the timings without asserting them. It joins `make measure`, the gate list of
+`AGENTS.md` and the two tests in `tests/test_documentation.py` that hold the
+list and the Makefile against each other.
+
+An earlier draft of this section said such a script would be the first thing in
+`scripts/` that is not a gate. That was wrong. `measure_pipeline.py` and
+`untargeted_space.py` are measurements and are gates, and what makes them gates
+is exactly this: a measurement becomes a gate by checking its own figures
+against the page that states them.
+
+The expensive cell stays in `experiments/`, which is local and outside version
+control, and produces the one line that does not terminate. A file that runs
+for hours and whose statement is carried by the ladder does not belong in the
+archive, on the same reasoning that kept the `alpoege12` search driver out of
+it in `0.5`.
+
+**The budget, and what an overrun prints.** The script takes a budget per cell,
+prints the cheap cells first, and prints the budget it exceeded rather than a
+time. A cell that runs out is recorded as over the budget and never as a
+number. Milestone 0.6 has the case that made this a rule: two runs of about
+fifteen and about twelve minutes were cut off by the environment and could be
+reported as nothing at all.
+
+Cells over ten minutes are the maintainer's. Each run records the machine, the
+Python version and the SymPy version, not so that anyone repeats the number but
+so that a later run can be compared with it.
+
+**The one check, and its control.** Where a determinant completes on an arm
+that is still a lift, it must be one. A timing of a computation that is allowed
+to be wrong measures nothing. The control is a perturbed matrix whose
+determinant is not one, on which the script says so and does not report a time.
+Without it there is no way to tell whether the check runs.
+
+**One thing to settle by looking, early.** If any construction the measurement
+needs is more than a call to the existing API -- padding a map with identity
+coordinates is the candidate -- it belongs in the library or the suite and not
+in a local script. That is a question the first hour of the package answers,
+and it is written here so that it is answered rather than assumed.
 
 ### Why the order
 
