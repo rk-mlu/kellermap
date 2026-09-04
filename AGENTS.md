@@ -173,11 +173,32 @@ learn what 97 already say.
 says so; a claim about the slow markers that was not run does not go into a
 commit message.
 
-`scripts/mutation_probe.py` moves for a different reason, and with an
-exception. It re-runs the suite twelve times, so it grows with the suite and is
-the second-largest cost. But it is the only thing that catches an obligation
-added without a control, so the assistant runs it whenever a change adds or
-alters an obligation, a check, or a negative control, and not otherwise.
+**A whole sweep of `scripts/mutation_probe.py` is the maintainer's.** It
+re-runs the suite once per probe, so it grows with both. At forty-two probes
+and a suite of a hundred seconds it is past what the assistant's tool budget
+reliably allows, and a sweep cut off in the middle reports nothing about the
+probes after the cut. Milestone 0.6 has the case: a sweep was reaped after
+twenty-two of forty-one and the remaining nineteen had to be run again
+separately.
+
+The assistant runs a **selection**, and runs it whenever a change adds or
+alters an obligation, a check, or a negative control:
+
+```
+python scripts/mutation_probe.py SYM-8      # the clause the change touches
+python scripts/mutation_probe.py SYM        # the family
+python scripts/mutation_probe.py lift.py    # everything on the file
+python scripts/mutation_probe.py --list SYM # what that would run
+```
+
+A selection is not a smaller sweep. Each probe still runs the whole fast
+suite, so a CAUGHT means what it always meant; what a selection cannot say is
+that the *set* has no gap, which is what a whole sweep is for. The commit
+message names the selection that was run and leaves the sweep to the
+maintainer.
+
+A selector that names nothing is an error and not an empty run, because an
+empty run prints the same sentence a clean one does.
 
 The commit message says what was run. Where a gate was left to the maintainer,
 it is named as such rather than omitted, so that a green list is a list of
@@ -187,9 +208,9 @@ things somebody actually ran.
 past what the assistant's tool budget reliably allows, and a chain cut off in
 the middle reports nothing about the gates after the cut. The assistant runs
 the parts it can name individually -- `ruff`, both `mypy` runs, `pytest --cov`,
-`make reconstruct`, `make measure`, and `scripts/mutation_probe.py` where a
-change touches an obligation -- and says which of the release-only gates it did
-not run.
+`make reconstruct`, `make measure`, and a selection from
+`scripts/mutation_probe.py` where a change touches an obligation -- and says
+which of the release-only gates it did not run.
 
 `pytest -m ""` is not one of them. `make release` depends on `check-full`,
 which is `lint typecheck test-all`, and `test-all` is `pytest -m ""`. Naming it

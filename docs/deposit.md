@@ -130,4 +130,11 @@ so it keeps the version DOI and not this one.
 carry it, with a control for the case where the label and the target of the
 Markdown link disagree. It is not a fifth number in the test that holds the
 version together: a version and a DOI do not have to agree with each other,
-only each with itself, and one test comparing both would say that they do.
+only each with itself, and one test comparing both would say that they do. The
+concept DOI stands in one place, so nothing can compare it with a second copy;
+what is checked is that it is not the version DOI, since a number pasted from a
+browser after the release is the one that can end up as a duplicate.
+
+For `0.6.0` the two are `10.5281/zenodo.22299353` for the version and
+`10.5281/zenodo.22299351` for the concept. They differ in one digit, which is
+the reason for the check above.

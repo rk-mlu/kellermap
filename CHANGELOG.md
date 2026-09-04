@@ -70,6 +70,11 @@ candidates.
   into. `docs/deposit.md` had the two steps the other way round and now says
   to reserve first; a test holds the two places together, with a control for a
   Markdown link whose label and target disagree.
+- The concept DOI, `10.5281/zenodo.22299351`, in `README.md`. It resolves to
+  the newest version and is the one to cite for the software rather than for a
+  state. Zenodo assigns it at publication and not before, so this entry and
+  the two files it names were written after the tag `v0.6.0`, which does not
+  carry them. `CITATION.cff` states a version and keeps the version DOI.
 
 ### Changed
 

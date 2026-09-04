@@ -135,13 +135,21 @@ README_VERSION = re.compile(r"^Current version: \*\*(.+)\*\*$", re.MULTILINE)
 NEWEST_RELEASE = re.compile(r"^## (\S+)$", re.MULTILINE)
 CITATION_VERSION = re.compile(r"^version: (\S+)$", re.MULTILINE)
 
-# The DOI stands in two places. Zenodo reserves it before publication, so it
-# was written into both before the archive was built and the record can cite
-# itself. The README states it as a Markdown link, where the label and the
+# The version DOI stands in two places. Zenodo reserves it before publication,
+# so it was written into both before the archive was built and the record can
+# cite itself. The README states it as a Markdown link, where the label and the
 # target are two copies of one string; the backreference holds those together
 # and the test below holds the pair against ``CITATION.cff``.
+#
+# The concept DOI is a third number and stands in one place. It is not
+# reservable: Zenodo assigns it when the record is published, so it entered
+# after the release. ``CITATION.cff`` carries a version and therefore keeps the
+# version DOI, which is why nothing compares this one against that file.
 CITATION_DOI = re.compile(r"^doi: (\S+)$", re.MULTILINE)
 README_DOI = re.compile(r"^DOI: \[(\S+)\]\(https://doi\.org/\1\)\.", re.MULTILINE)
+README_CONCEPT_DOI = re.compile(
+    r"^Concept DOI: \[(\S+)\]\(https://doi\.org/\1\)\.", re.MULTILINE
+)
 
 # A live marker such as ``[0.5]`` closing the bold title of an obligation the
 # milestone has not implemented yet. ``AGENTS.md`` says it is removed when the
@@ -677,13 +685,29 @@ def test_the_two_places_that_carry_the_doi_agree() -> None:
     agree with each other, only with themselves, and comparing them in one
     place would say they do.
 
-    This is the version DOI. The concept DOI, which resolves to the newest
-    version, is not reservable and is not in the repository; ``deposit.md``
-    says where it goes when the record is published.
+    This is the version DOI. The concept DOI resolves to the newest version
+    and is checked below; it is a different number and has to stay one.
     """
     reserved = only_match(CITATION_DOI, ROOT / "CITATION.cff")
 
     assert only_match(README_DOI, ROOT / "README.md") == reserved
+
+
+def test_the_concept_doi_is_not_the_version_doi() -> None:
+    """Two DOIs on one page, and the wrong one is easy to paste twice.
+
+    Zenodo assigns the concept DOI at publication, so it could not be written
+    beside the version DOI before the release and had to be added afterwards,
+    from a browser, by hand. The two differ in one digit.
+
+    Nothing here can say that the number resolves to this project. What it can
+    say is that two entries claiming to be different numbers are two numbers,
+    and that each Markdown link agrees with its own label.
+    """
+    version = only_match(README_DOI, ROOT / "README.md")
+    concept = only_match(README_CONCEPT_DOI, ROOT / "README.md")
+
+    assert concept != version
 
 
 def test_no_release_appears_twice_in_the_changelog() -> None:

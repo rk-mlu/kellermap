@@ -177,6 +177,67 @@ def test_a_fragment_is_written_back_exactly(probe: ModuleType, tmp_path) -> None
     assert path.read_text(encoding="utf-8") == "kept = 1\nchecked = True\n"
 
 
+def test_no_selector_selects_everything(probe: ModuleType) -> None:
+    """The command without arguments stays the whole sweep it was."""
+    assert probe.select(probe.PROBES, []) == probe.PROBES
+
+
+def test_a_family_a_clause_and_a_path_each_select(probe: ModuleType) -> None:
+    """The three ways a change is described are the three ways to select.
+
+    A family is a prefix and a clause is not: ``SYM`` has to reach more than
+    ``SYM-8``, or selecting by family would be selecting by accident.
+    """
+    family = probe.select(probe.PROBES, ["SYM"])
+    clause = probe.select(probe.PROBES, ["SYM-8"])
+    path = probe.select(probe.PROBES, ["lift.py"])
+
+    assert clause and set(clause) < set(family)
+    assert {entry.obligation for entry in clause} == {"SYM-8"}
+    assert set(family) <= set(path)
+    assert all(entry.path.endswith("lift.py") for entry in path)
+
+
+def test_a_selection_keeps_the_order_of_the_set(probe: ModuleType) -> None:
+    """And does not repeat a probe two selectors both name.
+
+    ``SYM`` and ``SYM-8`` overlap, and a run listing four probes twice would
+    report eight results for four controls.
+    """
+    both = probe.select(probe.PROBES, ["SYM-8", "SYM"])
+
+    assert both == tuple(entry for entry in probe.PROBES if entry in set(both))
+    assert len(both) == len(set(both))
+
+
+def test_a_selector_that_names_nothing_stops_the_run(probe: ModuleType) -> None:
+    """The control for the selection, and the reason it is not a warning.
+
+    An empty selection would print "0 of 0 promises have no control", which is
+    what a clean whole sweep prints. A typo would then read as a pass, so it
+    is an exit and not a line of output.
+    """
+    with pytest.raises(SystemExit, match="No probe matches 'SYM8'"):
+        probe.select(probe.PROBES, ["SYM8"])
+
+
+def test_listing_runs_nothing(
+    probe: ModuleType, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """``--list`` answers which probes a selector reaches without paying for them.
+
+    Nothing stubs ``sweep`` here. If ``--list`` ran the probes, this test would
+    take minutes rather than milliseconds, which is a failure a reader can see.
+    """
+    assert probe.main(["--list", "SYM-8"]) == 0
+
+    printed = capsys.readouterr().out.splitlines()
+
+    assert printed
+    assert all(line.startswith("SYM-8") for line in printed)
+    assert "promises have no control" not in "\n".join(printed)
+
+
 def test_the_working_copy_carries_what_the_suite_reads(
     probe: ModuleType,
     tmp_path,  # type: ignore[no-untyped-def]

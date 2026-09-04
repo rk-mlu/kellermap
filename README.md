@@ -39,8 +39,12 @@ machine-checkable certificate.
 Current version: **0.6.0**
 
 DOI: [10.5281/zenodo.22299353](https://doi.org/10.5281/zenodo.22299353). That
-is the DOI of this version. `CITATION.cff` carries it, and `docs/deposit.md`
-says what the record holds.
+is the DOI of this version, and the one `CITATION.cff` carries.
+
+Concept DOI: [10.5281/zenodo.22299351](https://doi.org/10.5281/zenodo.22299351).
+That one resolves to the newest version. Cite it for the software, and the
+version DOI above for a particular state of it. `docs/deposit.md` says what the
+record holds.
 
 ### What the library does
 

@@ -63,11 +63,27 @@ re-derives.
 
 Usage::
 
-    python scripts/mutation_probe.py
+    python scripts/mutation_probe.py                # every probe
+    python scripts/mutation_probe.py SYM            # one family
+    python scripts/mutation_probe.py SYM-8 CHC-2    # named clauses
+    python scripts/mutation_probe.py lift.py        # every probe on one file
+    python scripts/mutation_probe.py --list SYM     # what that would run
+
+A selection exists because a whole sweep re-runs the suite once per probe and
+grows with both. It is for a change that touches one obligation, so that the
+probes for it can be run beside the change rather than at the end of the
+milestone. It does not replace a whole sweep, which is the only run that says
+the set has no gap, and the output says so when a selection is running.
+
+What a selection does not do is narrow the suite. Each probe still runs every
+fast test, because a probe asks whether *anything* catches the edit; choosing
+which tests may answer would turn a control that exists into a miss, and a
+miss is the one thing this script is for.
 """
 
 from __future__ import annotations
 
+import argparse
 import shutil
 import subprocess
 import sys
@@ -516,11 +532,85 @@ def sweep(
     return missed
 
 
-def main() -> int:
-    print(f"{len(PROBES)} probes, run against a copy of the project.")
-    print("The repository is not written to.\n")
-    missed = sweep(PROBES)
-    print(f"\n{missed} of {len(PROBES)} promises have no control.")
+def matches(probe: Probe, selector: str) -> bool:
+    """Return whether one selector names one probe.
+
+    Three ways, because three are the ways a change is described: the clause
+    it touches (``SYM-8``), the family that clause belongs to (``SYM``), and
+    the file it edits (``lift.py``, matched anywhere in the path).
+    """
+    return (
+        probe.obligation == selector
+        or probe.obligation.split("-")[0] == selector
+        or selector in probe.path
+    )
+
+
+def select(probes: Sequence[Probe], selectors: Sequence[str]) -> tuple[Probe, ...]:
+    """Return the probes the selectors name, in the order the set holds them.
+
+    No selectors means all of them, so that the command without arguments is
+    the whole sweep it has always been.
+
+    A selector that names nothing stops the run. The alternative is worse than
+    it looks: an empty selection prints "0 of 0 promises have no control",
+    which is the sentence a clean sweep prints, so a typo would read as a pass.
+    """
+    if not selectors:
+        return tuple(probes)
+
+    keep: set[int] = set()
+    for selector in selectors:
+        found = {
+            index for index, probe in enumerate(probes) if matches(probe, selector)
+        }
+
+        if not found:
+            families = sorted({probe.obligation.split("-")[0] for probe in probes})
+            raise SystemExit(
+                f"No probe matches {selector!r}. The families are "
+                f"{', '.join(families)}, and a path fragment such as 'lift.py' "
+                "also selects."
+            )
+
+        keep |= found
+
+    return tuple(probes[index] for index in sorted(keep))
+
+
+def main(argv: Sequence[str] | None = None) -> int:
+    parser = argparse.ArgumentParser(
+        description="Delete one check at a time and see whether a test notices."
+    )
+    parser.add_argument(
+        "selector",
+        nargs="*",
+        help="an obligation, a family of obligations, or part of a path",
+    )
+    parser.add_argument(
+        "--list",
+        action="store_true",
+        dest="listing",
+        help="print what would run, and run nothing",
+    )
+    arguments = parser.parse_args(argv)
+    chosen = select(PROBES, arguments.selector)
+
+    if arguments.listing:
+        for probe in chosen:
+            print(f"{probe.obligation:7} {probe.what:46} {probe.path}")
+
+        return 0
+
+    print(f"{len(chosen)} of {len(PROBES)} probes, run against a copy of the project.")
+    print("The repository is not written to.")
+
+    if len(chosen) != len(PROBES):
+        print("A selection. Only a whole sweep says the set has no gap.")
+
+    print()
+    missed = sweep(chosen)
+    print(f"\n{missed} of {len(chosen)} promises have no control.")
 
     # No non-zero return value: a miss is a question and not a defect. Whoever
     # puts this script into a chain decides what number to expect.
