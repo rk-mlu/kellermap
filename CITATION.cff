@@ -13,7 +13,7 @@ authors:
     country: DE
 license: MIT
 repository-code: "https://github.com/rk-mlu/kellermap"
-version: 0.6.0rc6
+version: 0.6.0
 keywords:
   - Keller maps
   - Jacobian conjecture

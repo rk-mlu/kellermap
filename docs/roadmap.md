@@ -1397,6 +1397,19 @@ smallest one reachable. No work package assumes otherwise.
 
 # Version 0.6
 
+**Status: released as `0.6.0`.** The milestone went through six release
+candidates and six external audits; the last found no blocker. The first five
+each found something the fast suite, the coverage requirement and the mutation
+probe had all passed, and twice the finding was in a repair made for the
+previous audit. `docs/errata.md` carries them under the candidate that carried
+them, and `CHANGELOG.md` one consolidated entry for the release.
+
+Ten work packages, and the plan below is what they were for. It lists nine; the
+tenth prepares the Zenodo deposit, was not in the plan when the milestone was
+cut, and says so where it stands. What is not here is the multi-affine
+refinement of Theorem 2.1(b), which is stated under "What is not planned", and
+the last link of the chain, which is 0.8.
+
 The second and third stages of the Reduction Theorem, and the compression that
 follows them.
 

@@ -4,7 +4,7 @@ Notable changes per release. The milestone plan and its reasoning live in
 `docs/roadmap.md`, the binding obligations of the verification surface in
 `docs/contracts.md`.
 
-## 0.6.0rc6
+## 0.6.0
 
 The second and third stages of the Reduction Theorem, and the two constructions
 that carry the result to the form the literature compares. Everything before
@@ -96,118 +96,74 @@ entries, three of them from this milestone.
   pattern `reconstruct_alpoege19.py` has had since 0.5.
 - A sentence in `docs/references.md` wrapped so that a number began a line, and
   Markdown read it as an ordered list. A test now covers the class.
+- The source archive shipped a suite that failed: one test imported
+  `tests/data.py`, which the archive excludes on purpose. It skips now, and
+  `make sdist-test` unpacks the archive, installs it and runs the suite the
+  archive ships. `build-test` never saw this, because it runs the tests of the
+  working tree. The fault had stood since 0.5.
 
-### Fixed after the audit of `0.6.0rc1`
+### Found in review
 
-- `SymmetricLiftStep.transport` treated the two points of a collision
-  asymmetrically, where COL-6 makes a collision a statement about a set. Two
-  equal collisions transported to two unequal results and both verified. The
-  step orients the pair itself now.
+None of these reached a release. Every one was introduced inside this
+milestone and found before it closed, by six external audits of the release
+candidates and by the maintainer. They are listed because a defect that was
+caught is evidence about the review and not an embarrassment, and because the
+first of them is five defects that are one defect.
+
+- **The orientation of the two lifted points went through five orderings.** A
+  collision is a set, so `SymmetricLiftStep.transport` has to decide which of
+  the two points is which. The first version took the order the tuple happened
+  to carry, and two equal collisions transported to two unequal results that
+  both verified. `str`, `srepr` and `Basic.compare` each replaced the one
+  before and each failed on a pair the next audit produced: two symbols of one
+  name with different assumptions, one symbol written two ways, two `Function`
+  classes of one name. What they had in common is not the choice of key. Each
+  was used instead of an equality test rather than after one, which asks a
+  single key to agree on everything equal and separate everything unequal. The
+  released version asks `==` first, then `Basic.compare`, then metadata of the
+  class, and refuses under SYM-8 where all of that ties. `docs/errata.md`
+  carries the five in full, and the fifth is the only one that did not replace
+  the version before it.
 - `collision_hull` and `CompressionStep` did field arithmetic over any
-  coefficient domain. Both require a field of characteristic zero now, which is
-  the setting of the paper, and a value the domain cannot represent raises the
-  `ValueError` CHC-2 promises rather than the domain's own error. CHC-8 cited
-  DOM-1 for characteristic zero, which DOM-1 does not say.
+  coefficient domain, and the symmetric lift had no domain boundary at all.
+  All three require a field of characteristic zero now, which is what Theorem 3
+  assumes. A value the domain cannot represent raises the `ValueError` CHC-2
+  promises rather than the domain's own error, and a source over `GF(5)` no
+  longer reaches SymPy's `UnificationFailed`.
 - `CompressionStep` stored basis entries as they arrived, so two spellings of
   one element gave two steps that verify alike and compare unequal. They go
   through the domain now.
 - `SymmetricLiftStep.build` failed over an algebraic number field, because
   adjoining `i` there gives a field whose elements `convert` cannot unify with
   the source's. Coefficients go through SymPy now.
-- The source archive shipped a suite that failed: one test imported
-  `tests/data.py`, which the archive excludes on purpose. It skips now, and
-  `make sdist-test` unpacks the archive, installs it and runs the suite the
-  archive ships. `build-test` never saw this, because it runs the tests of the
-  working tree. The fault predates this milestone.
-- `README.md` and this file called the milestone "the rest of the Reduction
-  Theorem". Theorem 2.1(b) asks in addition for a form linear in each original
-  variable, which is not implemented; both say "the second and third stages"
-  now. Three documents counted six step types where there are seven, and
-  `docs/provenance.md` did not list `examples.spacerat11` among the third-party
-  maps, though its docstring carries the attribution.
-
-### Fixed after the audit of `0.6.0rc2`
-
-- `make release` deleted the wheel it had just checked: `sdist-test` began by
-  emptying `dist/` and rebuilt only the archive. The archive is built into its
-  own directory now, and `make dist-complete` requires exactly one wheel and
-  one archive before `dist-check` runs.
-- `SYM-8` refused a collision that holds. The residual of `rho`'s defining
-  equation was compared with `expand`, which does not decide equality for a
-  rational function. `canonical.agree` decides it now, and so do the two
-  comparisons beside it.
-- The orientation of the lifted pair sorted by `str`, which is not injective:
-  two symbols of one name and different assumptions had one key, so the fault
-  of `0.6.0rc1` returned for those points. The key is `srepr` now.
-- The symmetric lift had no domain boundary where the compression has one. A
-  source over `GF(5)` reached SymPy's `UnificationFailed`; SYM-4 asks for a
-  field of characteristic zero now, which is what Theorem 3 assumes for both
-  constructions.
-- CHC-2 and the code disagreed about an error type. The constructor raises
-  `ValueError` like its other invariants; `collision_hull` raises
-  `VerificationError` citing CHC-8.
-- Three module docstrings still counted six step types or claimed things of
-  "every other step" that two of them no longer satisfy. The previous entry
-  reported that cleanup as finished and it was not.
-
-### Fixed after the audit of `0.6.0rc3`
-
-- The orientation of the lifted pair sorted by `srepr`, which is injective on
-  representations and not a function of equality: one symbol written two ways
-  gave two orientations of one set of points. `Basic.compare` decides it now,
-  and two regression tests run in a fresh process with `SYMPY_USE_CACHE=no`,
-  which is the only way the suite can see the fault.
+- SYM-8's residual was compared with `expand`, which does not decide equality
+  for a rational function, so a collision that holds was refused.
+  `canonical.agree` decides it now, and so do the two comparisons beside it.
 - The two halves of SYM-4's domain check were one branch, so a finite field
   reached the characteristic alone and the field half had no control of its
   own. Two branches, two messages, two probes.
-- The advice to use `over_field()` was wrong for a finite field, whose field of
-  fractions is itself.
-- SYM-4 and a docstring cited CHC-4 for the compression's domain boundary,
-  which is CHC-2 and CHC-8. `AGENTS.md` listed the release gates without
-  `dist-complete`, and a sentence in this file had lost its verb.
-
-### Fixed after the audit of `0.6.0rc4`
-
-- The orientation of the lifted pair used `Basic.compare`, which is not a
-  function of equality: `Function` builds a fresh class per call, so two
-  applied functions of one name are unequal and compare as equal. `srepr` and
-  `default_sort_key` tie on them too. The comparison asks `==` first now, falls
-  back to the class -- module, qualified name, declared assumptions -- and
-  refuses under SYM-8 if even that ties, rather than keeping the order the
-  tuple carried.
-- What the four orderings had in common is in `docs/errata.md`: each was used
-  instead of an equality test rather than after one, which asked a single key
-  to agree on everything equal and separate everything unequal.
+- `make release` deleted the wheel it had just checked, because `sdist-test`
+  began by emptying `dist/`. The archive is built into its own directory now,
+  and `make dist-complete` requires exactly one wheel and one archive before
+  `dist-check` runs.
 - A test asserted `hash(one) == hash(b and other)`, which is `hash(other)`
   because `b` is truthy. It checked the intended claim by accident.
-- A line in `docs/contracts.md` had grown past the width of the page.
-
-### Fixed after the audit of `0.6.0rc5`
-
-- SYM-8 refused a collision that holds. `Function` takes `nargs` beside the
-  assumptions, so `Function("g", nargs=1)(t)` and
-  `Function("g", nargs=(1, 2))(t)` are unequal applied functions whose classes
-  agree in name, in module and in declared assumptions. `Basic.compare`
-  returns zero both ways and the class metadata tied, so the step refused. The
-  order reads the keywords the class was built with now, which is what SymPy's
-  own `UndefinedFunction.__eq__` compares.
-- `docs/contracts.md` said under SYM-8 that the order "has to be total on
-  expressions" and that the implementation uses `srepr`. Neither held: no
-  totality was ever established, and `srepr` was replaced in `0.6.0rc3`. The
-  page states what the order does and states the refusal as an outcome of it.
-- SYM-8 can refuse a collision that holds, and the page did not say so under
-  "Which of these can fail on supplied data". It is the one obligation there
-  that is both a self-check and a clause supplied data can fail, and the page
-  now says which half is which.
-- The refusal said the two points "have the same class". In the case the audit
-  found, their classes differ and only the metadata the step reads agrees. It
-  says "the same ordering metadata" now and names the four components.
-- A docstring in `tests/test_lift.py` said the tie cannot arise from SymPy's
-  public API, which the `nargs` pair refutes. The hand-built pair stays as the
-  control for the case that remains, with the claim corrected.
-- `scripts/mutation_probe.py` has a forty-second probe, for the component of
-  the order the audit found missing. Its sentence counting the set had lost a
-  conjunction and named two counts in a row without one.
+- The contract page and the code disagreed four times about which obligation
+  covers what. CHC-8 cited DOM-1 for characteristic zero, which DOM-1 does not
+  say; CHC-2's error type was one thing on the page and another in the
+  constructor; SYM-4 and a docstring cited CHC-4 for a boundary that is CHC-2
+  and CHC-8; and SYM-8 claimed an order total on expressions, named an
+  implementation two versions stale, and did not list its own refusal among
+  what supplied data can fail.
+- Documentation claimed six step types where there are seven, or claimed of
+  "every other step" something two of them no longer satisfy, in three rounds,
+  and twice an entry of this file reported that cleanup as finished when it was
+  not. `README.md` and this file called the milestone "the rest of the
+  Reduction Theorem", where Theorem 2.1(b) asks in addition for a form linear
+  in each original variable. `docs/provenance.md` did not list
+  `examples.spacerat11` among the third-party maps, and the advice to use
+  `over_field()` was wrong for a finite field, whose field of fractions is
+  itself.
 
 ### Known limits
 
@@ -223,8 +179,9 @@ entries, three of them from this milestone.
   project follows is not in the repository. It is milestone 0.8.
 - `SymmetricLiftStep.transport` can refuse a collision that holds. It orients
   the pair itself, because a collision is a set, and two points that are
-  unequal, compare equal and carry the same class metadata cannot be ordered
-  by anything it reads. No total order on SymPy expressions is claimed and the
+  unequal, compare equal and carry the same class metadata -- module, qualified
+  name, declared assumptions and construction keywords -- cannot be ordered by
+  anything it reads. No total order on SymPy expressions is claimed and the
   refusal is what stands in place of one. It is deterministic, and every
   collision this milestone produces is far from it.
 
