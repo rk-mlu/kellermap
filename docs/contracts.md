@@ -1725,20 +1725,44 @@ it.
 
 This is a departure from UNI-10, HOM-7 and CHC-6, which all keep the
 determinant as a cheap self-check, and it is a departure on a measurement
-rather than on a preference. At dimension six a lift's determinant costs under
-a hundredth of a second. On the forty-variable lift of Thompson's compressed
-twenty it did not finish in eight hours. `docs/roadmap.md` under work package 7
-records the runs and the two machines they were made on.
+rather than on a preference. On the thirty-eight-variable lift of
+`spacerat11`, `determinant()` was stopped after nineteen hours and
+forty-eight minutes without returning. `docs/roadmap.md` under work package 1
+of milestone 0.7 records the runs and the machines they were made on.
 
-What is affordable there is the determinant at a point: 25 seconds, and one,
-at each of two random rational points of the space. That is the check the
+**The reason is the carrier and not the dimension.** `determinant()` takes the
+Schur complement of the unipotent block a map carries, so a BCW-reduced map of
+any size leaves a four-by-four determinant: the unipotent step, the
+homogenization and the compression all do, at 22, 23 and 19 variables. The
+gradient form of a quartic carries no such block. Of the 38 coordinates of the
+lift, 29 have a diagonal entry of one and 9 survive the acyclicity test, so
+the complement is 29 by 29 with 10364 monomials in it. Forming it costs two
+tenths of a second. Its determinant is the whole of the cost.
+
+This paragraph named dimension six against dimension forty until `0.7`, and
+read as a statement about size. Size is what it is not. The lift is the one
+target in the chain that gives up the structure the other three stages are
+cheap by.
+
+What was not isolated is which property of that complement carries the cost --
+its width, the density of its entries, the coefficient domain or the
+elimination used. Each candidate probe changed the problem instead of scaling
+it. Narrowing the complement by a different acyclicity rule reaches 21 by 21
+and 13627 monomials, denser rather than smaller, and buys nothing. A leading
+`k` by `k` submatrix is a smaller matrix with a far larger answer, because the
+determinant of the whole is one and a corner of it cancels not at all. Any
+probe that does not preserve that cancellation measures a different kind of
+problem, and none that preserves it is cheap.
+
+What is affordable is the determinant at a point: 25 seconds, and one, at each
+of two random rational points of the space. That is the check the
 `reconstruct_*` scripts make and it is worth exactly what they say it is worth
 -- a value other than one falsifies the claim, and agreement at finitely many
 points does not prove it.
 
 So the obligation is not checked, a test computes the determinant at dimension
 six as an independent cross-check in the sense `AGENTS.md` gives that phrase,
-and a caller who wants more at forty has the sample-point route and the
+and a caller who wants more on a real lift has the sample-point route and the
 knowledge that the polynomial one is out of reach.
 
 **SYM-8 — Transport, and the vector it goes through.** With

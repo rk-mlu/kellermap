@@ -34,8 +34,12 @@ and ``q`` to ``(q + rho, i rho)``. Which point is which changes both, so a
 collision of more than two points is refused rather than narrowed silently.
 
 The determinant of the target is not checked. It follows from the identity and
-the source, and on the forty-variable lift of Thompson's compressed twenty it
-did not finish in eight hours. SYM-7 carries the measurement.
+the source, and it is out of reach: on the thirty-eight-variable lift of
+``spacerat11`` it was stopped after nineteen hours without returning. The
+reason is this step and not the size of its target. Every earlier stage leaves
+a four-by-four determinant whatever its dimension, because the Schur
+complement removes the unipotent block a BCW-reduced map carries. A gradient
+form carries none. SYM-7 has the figures.
 
 See ``docs/contracts.md``, SYM-1 to SYM-12.
 """
