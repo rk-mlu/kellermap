@@ -2092,18 +2092,29 @@ then the search.
 
 ## What BCW still owes
 
-Theorem 2.1(b) asks for a form linear in each original variable and quadratic
-only in `T`. This project produces the cubic homogeneous form and stops there,
-which is enough for the corollary the literature usually quotes and is not the
-theorem.
+Theorem 2.1(b) asks for a form linear in every variable except `T` and
+quadratic only in `T`. Every variable and not only the ones the source began
+with: the coordinates the unipotent reduction and the refinement itself buy
+fall under the same condition. This project produces the cubic homogeneous form
+and stops there, which is enough for the corollary the literature usually
+quotes and is not the theorem.
 
 The case is small and stored: `(x + y^3, y)` homogenizes to a verified
 five-dimensional target that still carries a `y^3`. Every obligation on that
 target holds. It is the refinement that is missing and not a defect in what
 exists, and `docs/references.md` says which is which.
 
-What the refinement costs in dimensions is not known here, and the first
-figure the work package should produce is that one.
+What the refinement costs in dimensions was the first figure the work package
+was asked to produce, and it is now on the contract page under UNT-12: roughly
+a tripling at degree three, and endpoints of 67, 73 and 79 variables from the
+three maps this project can start from. The order inverts on the way, where the
+four stages of 0.6 were monotone.
+
+The refinement is a fork and not a further stage. `docs/architecture.md` says
+why under "Where the pipeline forks": the symmetric lift does not carry the
+property, nothing between the gradient form and the Vanishing Conjecture asks
+for it, and the cost of carrying it there would be about 130 variables against
+38.
 
 ## What the two published eleven- and twelve-variable maps have in common
 
@@ -2150,11 +2161,55 @@ owed `docs/contracts.md` was one amendment to the wording of SYM-7, stated
 before the run and made after it. The figures and the four factors that turned
 out to be factors of the wrong object are below.
 
-**WP 2** implements the multi-affine refinement of Theorem 2.1(b), as a step
-type with its obligations written first. `(x + y^3, y)` is the smallest case
-and the first test. The package also states what the refinement costs in
-dimensions on the maps already in the suite, because a stage that is not
-measured cannot be set beside the tables in `docs/references.md`.
+**WP 2** states what the multi-affine refinement of Theorem 2.1(b) claims,
+and measures it. Documentation only, apart from one docstring named below.
+HOM-11, HOM-12 and UNT-12 are added, `docs/architecture.md` gains "Where the
+pipeline forks", and this page gains the figures.
+
+**It is not a step type, and the plan said it was.** The correction is the
+finding of the package. Component `i` of a `BCWStep` target is
+`(F_i - c P Q) - X_u Q - P X_v - X_u X_v`, so the target is multi-affine at
+that component exactly when `P` and `Q` are free of a square, when `u` does not
+occur in `Q` and `v` not in `P`, and when `u` and `v` are distinct. That is a
+condition on the choice of factors and not a new certificate, and
+`(x + y^3, y)` reaches the multi-affine form in three ordinary `BCWStep`s,
+from dimension 2 to dimension 6, with the chain verified and the determinant
+one. A step type would have been a second way of writing what BCW-1 to BCW-12
+already say.
+
+**What it does need is a second enumerator.** `untargeted_candidates` returns
+nothing at a map of degree three, by UNT-2, and UNT-1 caps each part of a
+split at `deg(F) - 2`, which is one there. So `reduce_to_multi_affine` is not
+`reduce_to_degree3` with a different stopping rule; it is a walk with its own
+anchor, and UNT-12 states it. Neither UNT-1 nor UNT-2 is amended.
+
+The package is documentation and one line of `kellermap.bcw.homogenization`,
+whose module docstring cites "HOM-1 to HOM-10" and would become a stale range
+the moment HOM-12 exists. The exception is named here rather than hidden, in
+the shape WP 1 of 0.4 used for the same kind of edit. No behaviour, no
+signature and no test changes.
+
+**One thing is left open deliberately.** The property has to survive
+`LinearStep.normalize` and `UnipotentStep` to reach the homogenization, and
+both preserve it by inspection: the first composes a constant matrix on the
+left, the second builds `(F_(2) + Y, -F_(3))` out of homogeneous parts and one
+linear block. Neither carries an obligation for it. Giving the unipotent step
+one of its own would be the thorough choice and adding nothing is the smaller
+one, and the decision waits for WP 2.1, where a test either wants it or does
+not.
+
+**WP 2.1** implements the walk: `reduce_to_multi_affine` in
+`kellermap.untargeted`, against UNT-12, with the checks of HOM-11 and HOM-12
+in `HomogenizationStep.verify`. `(x + y^3, y)` is the smallest case and the
+first test. The negative control for HOM-12 has to supply a multi-affine
+source and a target that breaks the conclusion; feeding it a map that is not
+multi-affine establishes nothing, because the hypothesis is then false and the
+obligation passes for the wrong reason.
+
+It is numbered 2.1 and not 3 because renumbering the four packages behind it
+would touch "Why the order" and every reference to them, for a split that was
+planned rather than forced. WP 11.1 of milestone 0.5 is the precedent, and the
+reason there was the same: an order is a separate change from what it orders.
 
 **WP 3** adds the de Bondt-van den Essen step, which is the one link of the
 published chain this repository has never had. It needs a field containing

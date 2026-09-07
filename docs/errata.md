@@ -481,3 +481,30 @@ entry is short where the one above it is long.
 What it does not do is make the order total. `tests/test_lift.py` keeps the
 hand-built pair as the control for the tie that remains, with its docstring
 corrected: the tie is not adversarial, only that particular pair is.
+
+## Theorem 2.1(b) was stated for the original variables only
+
+**Said, from 0.6 until work package 2 of 0.7:** that part (b) of the Reduction
+Theorem asks for a normal form linear in each *original* variable and quadratic
+only in `T`. `README.md`, `CHANGELOG.md`, `docs/references.md` and
+`docs/roadmap.md` all carried that reading, and the entry above repeats it.
+
+**True:** it asks for a form linear in every variable except `T`. The
+distinction is not a nuance. The unipotent reduction doubles the dimension and
+the refinement itself buys coordinates, so a form that is multi-affine in the
+variables the source began with and quadratic in a coordinate bought on the way
+would satisfy the weaker reading and not the theorem.
+
+**Found** by the maintainer, on the delivery of work package 2 of 0.7, against
+the source.
+
+**Now:** the four pages state the condition over every variable except `T`, and
+say that the bought coordinates fall under it. Nothing measured has to be
+redone. The count in `exploration/measure_multi_affine.py` exempted the
+parameter and nothing else from the first run, so the figures under UNT-12 --
+67, 73 and 79 -- were made against the correct reading while the prose around
+them stated the weaker one. HOM-12 was worded over the fresh generator rather
+than over the original variables for the same reason and is unchanged.
+
+`CHANGELOG.md` keeps its wording in the `0.6.0` entry, which records what was
+said at that release.

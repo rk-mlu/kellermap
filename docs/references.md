@@ -609,8 +609,10 @@ are that arithmetic exactly, since `2 * 39 + 1 = 79`.
 
 What this project builds is those two stages and not the whole of Theorem 2.1.
 Part (b) of that theorem asks for a normal form that is in addition linear in
-each of the original variables and quadratic only in `T`, which Proposition
-(3.1) delivers in a second half this library does not implement. The map a
+every variable except `T` and quadratic only in `T`, which Proposition (3.1)
+delivers in a second half this library does not implement. Every variable and
+not only the ones the source began with: the coordinates the earlier stages
+buy fall under it too. The map a
 chain reaches here is cubic homogeneous with nilpotent Jacobian and need not be
 multi-affine: `(x + y^3, y)` homogenizes to a verified five-dimensional target
 that still carries a `y^3`.

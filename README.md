@@ -61,8 +61,8 @@ record holds.
   Section 4's second step, which doubles the dimension and makes the Jacobian
   of the displacement nilpotent; `HomogenizationStep` is the third, which adds
   one variable and makes the displacement cubic homogeneous. Not the whole of
-  Theorem 2.1: the normal form there is also linear in each original variable,
-  and that refinement is not implemented.
+  Theorem 2.1: the normal form there is also linear in every variable except
+  the homogenizing parameter, and that refinement is not implemented.
 - **Compression and the gradient form.** `CompressionStep` restricts a
   homogeneous map to the subspace its collision generates, which is the one
   step that *lowers* the dimension; `SymmetricLiftStep` turns the result into

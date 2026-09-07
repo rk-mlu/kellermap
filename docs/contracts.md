@@ -53,8 +53,8 @@ determinant in one more coordinate rather than over `k[T]`; the amendment is
 visible in its wording, with the measurement that prompted it.
 
 **Milestone `0.5`, closed.** The milestone added the untargeted enumerator and
-the search over it, UNT-1 to UNT-11, and the coefficient ring as something a
-caller states, DOM-1 to DOM-4. Its obligations carried the `[0.5]` marker while
+the search over it, UNT-1 to UNT-11. It also made the coefficient ring
+something a caller states, DOM-1 to DOM-4. Its obligations carried the `[0.5]` marker while
 it ran and carry none now. The measurement the UNT obligations rest on stands
 beside them, under "The untargeted search", because it is the reason they read
 as they do.
@@ -1354,6 +1354,42 @@ appended and the appended value is the same for all of them.
 
 **HOM-10 — Provenance is recorded, and not settable.** As BCW-9.
 
+**HOM-11 — The parameter occurs to degree at most two. [0.7]** In every
+monomial of `target - X` the exponent of the fresh generator is at most two.
+
+This is the second half of Theorem 2.1(b), and HOM-1 already gives it: the
+parts of the displacement are scaled by `T^2`, by `T` and by one, and by
+nothing else, so no target of this step can breach it. It is retained for the
+reason HOM-5 to HOM-8 are retained, and it turns the half of 2.1(b) this step
+is responsible for from an argument into a check.
+
+**HOM-12 — A multi-affine source gives a multi-affine target. [0.7]** If no
+variable occurs squared in any monomial of `source - X`, then no variable other
+than the fresh generator occurs squared in any monomial of `target - X`.
+
+This is the first half of Theorem 2.1(b), and the step neither produces it nor
+could: by HOM-1 every monomial of the target's displacement is a monomial of
+the source's times a power of the parameter, so the step creates no square it
+was not given. What reaches the property is `reduce_to_multi_affine` under
+UNT-12, at degree three. The obligation says that the last stage does not lose
+it again.
+
+It is conditional, and therefore says nothing about a source that is not
+multi-affine, which is every source this project had before `0.7`. That is
+deliberate. An obligation that refused such a source would break the chain
+towards the gradient form, which runs through this step and does not want the
+property; `docs/architecture.md` records why the two ends of the pipeline fork
+here.
+
+Two stages of the chain lie between the refinement and this step, and neither
+carries an obligation of its own for the property. `LinearStep.normalize`
+composes a constant matrix on the left, so each component of the target is a
+linear combination of components of the source. `UnipotentStep` builds
+`(F_(2) + Y, -F_(3))` out of homogeneous parts of the source's displacement and
+one linear block. Both preserve the property by inspection and neither is held
+to it. Whether UNI wants an obligation of its own is open and recorded in
+`docs/roadmap.md` under WP 2 of milestone `0.7`.
+
 ### Which of these can fail on supplied data
 
 HOM-1 for a supplied target, and HOM-2 and HOM-3 always.
@@ -1369,6 +1405,14 @@ HOM-4 in its freshness half is a constructor invariant and is not reachable by
 `verify()`. HOM-5 to HOM-8 follow from HOM-1 and are retained as self-checks
 that localize an error to the step that made it. There is no invertibility
 obligation here, because there is nothing exhibited to be invertible.
+
+HOM-11 and HOM-12 follow from HOM-1 in the same way and are self-checks for the
+same reason. HOM-12 is the one to read twice: it is the only obligation in this
+family whose hypothesis is a property of the source that the source is not
+required to have, so it passes silently on every map this project carried
+before `0.7`. A negative control therefore has to supply a multi-affine source
+and a target that breaks the conclusion, and a test that only feeds it
+`alpoege13` establishes nothing.
 
 ---
 
@@ -2867,6 +2911,73 @@ WP 12 discards, and cannot give this promise: a bound that prunes too much
 reports a reachable chain as an exhausted space, and that result is wrong
 rather than slow. The two are separate packages so that a failure in the second
 cannot have its cause in the first.
+
+**UNT-12 — The multi-affine walk anchors on the squared monomial, and it is a
+second enumerator. [0.7]** At a map of degree three,
+`reduce_to_multi_affine` offers one candidate per factorization `M = P Q` of a
+monomial of the displacement in which some variable occurs squared, with `P`
+and `Q` each free of a square. It refuses a factorization whose carrier occurs
+in the opposite factor, and one whose two slots name the same coordinate.
+
+**Why it is not UNT-1 with another stopping rule.** UNT-2 says the space is
+empty at degree three, and says that this is the stopping rule of the
+untargeted search rather than a condition placed on it. UNT-1 also caps each
+part of a split at `deg(F) - 2`, which is one at degree three, so the split
+this walk needs -- a part of degree two against a part of degree one -- lies
+outside both obligations. Widening them would weaken a correct statement about
+the degree reduction in order to house a different walk, so neither is amended
+and this obligation stands beside them.
+
+**Where the refusals come from.** Component `i` of a `BCWStep` target is
+`(F_i - c P Q) - X_u Q - P X_v - X_u X_v`. The product that is removed does not
+reappear, and the three terms that replace it are free of a square exactly when
+`P` and `Q` are, when `u` does not occur in `Q` and `v` does not occur in `P`,
+and when `u` and `v` are distinct coordinates. The refusals are those three
+conditions and nothing further.
+
+Two shapes this library admits are unreachable for this walk. The repeated
+fresh slot of BCW-12 gives `X_u^2`. Two `Carried` slots on one coordinate give
+the same, and the ten-step chain of `alpoege12` takes that shape twice. Neither
+obligation is withdrawn or narrowed. A multi-affine walk does not offer them;
+every other walk in this library still does.
+
+No completeness, in the shape UNT-4 gives it, and no minimality. The rule
+measured below buys two fresh coordinates for every squared monomial and reuses
+no carrier, so every dimension it reaches is an upper bound.
+
+### What the multi-affine refinement costs
+
+Measured before the walk was implemented, with ordinary `BCWStep`s under the
+rule above, every step verified. `alpoege13` normalized, made unipotent and
+homogenized is the endpoint of Theorem 2.1(b), and the three columns after the
+first are that chain:
+
+| at degree three | multi-affine | unipotent | 2.1(b) |
+| ---: | ---: | ---: | ---: |
+| `alpoege13`, 13 | 33 | 66 | 67 |
+| `alpoege12`, 12 | 36 | 72 | 73 |
+| `spacerat11`, 11 | 39 | 78 | 79 |
+
+No endpoint has a squared variable other than the parameter, and none has a
+power of the parameter above two, which is the pair HOM-11 and HOM-12 state.
+The measurement was made against that reading from the start: it exempts the
+parameter and nothing else, so the coordinates the refinement and the unipotent
+reduction buy are counted with the rest.
+
+Two things in the table are worth reading twice. The order inverts: the
+smallest map at degree three gives the largest endpoint, where the four stages
+of milestone `0.6` were monotone on the same three maps. And the refinement
+roughly triples the dimension, which is why `docs/architecture.md` records the
+fork rather than a detour.
+
+The cost of verifying the chain follows neither the dimension nor the density.
+The unipotent target of `spacerat11` is the widest of the three at 78
+coordinates and the densest at 310 monomials, and it verifies in 26 seconds
+against 133 for `alpoege13` at 66 coordinates and 272 monomials. The domain is
+not the reason; the figures are over `QQ` throughout. What UNI-9 spends is a
+determinant, and work package 1 of milestone `0.7` found that a determinant
+follows the carrier and not the size. That is a hypothesis here and not a
+measurement, and it is recorded in `docs/roadmap.md` rather than claimed.
 
 ### What the dimension thirteen does and does not establish
 

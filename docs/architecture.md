@@ -22,6 +22,63 @@ numbered obligation at a time; where the two disagree, `contracts.md` governs.
 
 ---
 
+## Where the pipeline forks
+
+After the first stage of the Reduction Theorem the pipeline has two ends. They
+are two ends and not one route with an optional detour, and the distinction is
+the reason this section exists.
+
+The **counterexample end** is what milestone 0.6 built: unipotent reduction,
+homogenization, collision-hull compression, symmetric lift. It carries a
+collision through every step and arrives at the gradient form of a quartic,
+which is the object Zhao's Vanishing Conjecture is about.
+
+The **theorem end** is Theorem 2.1(b) of Bass, Connell and Wright. Its normal
+form is cubic homogeneous, linear in every variable except the homogenizing
+parameter, and quadratic only in that parameter. Every variable, not only the
+ones the source began with: the coordinates the earlier stages buy are held to
+the same condition. This library produced the first of the three and
+neither of the other two until milestone 0.7. That is a gap in the Reduction
+Theorem and not a defect in what exists.
+
+The two ends share the unipotent reduction and the homogenization, and they
+part before both, at degree three. A multi-affine endpoint at that degree is
+reached by further `BCWStep`s under UNT-12; the two stages after it preserve
+the property, and HOM-11 and HOM-12 say so at the end of the chain.
+
+### Why it is a fork
+
+Three reasons, and the first two are about the constructions rather than about
+cost.
+
+**The symmetric lift does not carry the property.** For
+`P(X, Y) = i sum_j Y_j h_j(X + i Y)` a square in `y_j` arises exactly from the
+term `Y_j h_j(X + i Y)` when `x_j` occurs in `h_j`. So `P` is multi-affine only
+when `h` is multi-affine *and* every component of the displacement is free of
+its own variable. The second condition is a separate statement about the
+diagonal of the Jacobian, and the refinement does not produce it. Thompson's
+twenty-four-variable map has the second and not the first.
+
+**Nothing downstream asks for the property.** A multi-affine quartic is
+harmonic, but a nilpotent Hessian already gives `Delta(P) = 0` through the
+trace, so the refinement adds no hypothesis at the first power, and nothing
+follows for the higher ones the Vanishing Conjecture is about. No source this
+project cites uses multi-affineness in that direction, and `docs/references.md`
+carries the check rather than this page.
+
+**The cost runs the other way.** The refinement roughly triples the dimension
+at degree three, so a chain that reaches the gradient form in 38 variables
+today would reach it in about 130. The determinant of that form at 38 variables
+already did not finish in nineteen hours; the measurements are in
+`docs/contracts.md` under UNT-12 and under SYM-7.
+
+So the refinement completes the theorem and does not join the counterexample
+chain. A caller who wants the normal form of Theorem 2.1(b) takes the second
+end. A caller who wants a counterexample to the Vanishing Conjecture takes the
+first, and neither pays for the other.
+
+---
+
 ## Design Principles
 
 The implementation follows five guiding principles.

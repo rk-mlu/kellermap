@@ -38,7 +38,7 @@ as for ``LinearStep`` and ``TranslationStep`` and for a different reason than
 either: those are compositions whose factors are not elementary, and this is
 not a composition.
 
-See ``docs/contracts.md``, HOM-1 to HOM-10.
+See ``docs/contracts.md``, HOM-1 to HOM-12.
 """
 
 from __future__ import annotations
