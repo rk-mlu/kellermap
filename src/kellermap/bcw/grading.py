@@ -1,4 +1,4 @@
-"""Reading a displacement by degree, for the second and third steps of Section 4.
+"""Reading a displacement by degree, for Section 4 and for Theorem 2.1(b).
 
 Both steps take a displacement apart by total degree and put it back together
 differently. The second scales every part by one parameter, ``X + T N``, which
@@ -11,12 +11,23 @@ share lives here rather than in either of them.
 ``scaled_displacement`` is the first, and it is also the shape the second is
 built from. ``homogeneous_part`` is what both read.
 
+``squared_terms`` reads the same displacement by degree in each single
+variable rather than by total degree. That is the other half of Theorem
+2.1(b), and it is here for the reason the two constructions above are: three
+places need it and none of them owns it. HOM-12 asks it of a target, UNT-12
+asks it of a source, and the walk that reaches the property measures itself
+by it.
+
 See ``docs/contracts.md``: UNI-9 uses the first construction, HOM-1 the
-second, and HOM-3 the first again on the other side of the step.
+second, HOM-3 the first again on the other side of the step, and HOM-11,
+HOM-12 and UNT-12 the third.
 """
 
 from __future__ import annotations
 
+from collections.abc import Iterable
+
+import sympy as sp
 from sympy.polys.rings import PolyElement
 
 from ..polynomial_map import PolynomialMap
@@ -39,6 +50,43 @@ def homogeneous_part(polynomial: PolyElement, degree: int) -> PolyElement:
     ]
 
     return ring.from_terms(terms) if terms else ring.zero
+
+
+def squared_terms(
+    polynomial_map: PolynomialMap,
+    exempt: Iterable[sp.Symbol] = (),
+) -> tuple[tuple[int, tuple[int, ...]], ...]:
+    """Return every term of the displacement that squares a variable.
+
+    One pair per term: the index of the component and the exponent vector.
+    Empty exactly when the map is multi-affine, which is what Theorem 2.1(b)
+    asks for besides the cubic homogeneous form.
+
+    ``exempt`` names the variables that do not count. The theorem exempts the
+    homogenizing parameter and nothing else -- not the coordinates the earlier
+    stages buy -- so HOM-12 passes the one generator ``HomogenizationStep``
+    introduces and UNT-12 passes none.
+
+    The order is the ring's, made total by sorting, so that a walk over the
+    result does not depend on which monomial a dictionary offered first.
+    """
+    positions = {
+        index
+        for index, variable in enumerate(polynomial_map.variables)
+        if variable in set(exempt)
+    }
+
+    found = []
+    for index, component in enumerate(polynomial_map.displacement().to_polynomials()):
+        for monomial in sorted(component.itermonoms()):
+            if any(
+                exponent >= 2
+                for position, exponent in enumerate(monomial)
+                if position not in positions
+            ):
+                found.append((index, monomial))
+
+    return tuple(found)
 
 
 def scaled_displacement(polynomial_map: PolynomialMap) -> PolynomialMap:

@@ -1410,9 +1410,22 @@ HOM-11 and HOM-12 follow from HOM-1 in the same way and are self-checks for the
 same reason. HOM-12 is the one to read twice: it is the only obligation in this
 family whose hypothesis is a property of the source that the source is not
 required to have, so it passes silently on every map this project carried
-before `0.7`. A negative control therefore has to supply a multi-affine source
-and a target that breaks the conclusion, and a test that only feeds it
-`alpoege13` establishes nothing.
+before `0.7`.
+
+*Amended when the checks were implemented.* This paragraph asked for a negative
+control that supplies a multi-affine source and a target breaking the
+conclusion. There is no such control, and the reason is the order of `verify()`:
+HOM-1 runs first, and by HOM-1 every monomial of the target's displacement is a
+monomial of the source's times a power of the parameter, so a target that
+breaks HOM-11 or HOM-12 breaks HOM-1 and is named as that. Both raises carry
+`# pragma: no cover` with the argument beside them, as HOM-5 to HOM-7 do, and
+neither takes a probe in `scripts/mutation_probe.py` for the reason that script
+gives about clauses which cannot fail on supplied data.
+
+What is controlled instead is `squared_terms`, which both read. Its control is
+a map that is multi-affine in the variables a source began with and squares a
+coordinate an earlier stage bought: that map satisfies the reading this project
+carried until `0.7` and not the theorem, and the predicate reports it.
 
 ---
 
@@ -2913,11 +2926,47 @@ rather than slow. The two are separate packages so that a failure in the second
 cannot have its cause in the first.
 
 **UNT-12 — The multi-affine walk anchors on the squared monomial, and it is a
-second enumerator. [0.7]** At a map of degree three,
-`reduce_to_multi_affine` offers one candidate per factorization `M = P Q` of a
-monomial of the displacement in which some variable occurs squared, with `P`
-and `Q` each free of a square. It refuses a factorization whose carrier occurs
-in the opposite factor, and one whose two slots name the same coordinate.
+second enumerator. [0.7]** At a map of degree at most three,
+`reduce_to_multi_affine` offers one candidate per factorization `M = P Q` into
+two parts of positive degree, of every monomial `M` of the displacement in
+which some variable occurs squared. A candidate whose target does not lower
+`remaining_excess` is left out. A source above degree three is refused by
+name, since the normal form of Theorem 2.1(b) is cubic as well.
+
+*Amended when the walk was implemented, and the amendment is the first two
+sentences.* This obligation required `P` and `Q` each to be free of a square,
+and it said the walk refuses a factorization whose carrier occurs in the
+opposite factor or whose two slots name one coordinate. Both were wrong, and
+in opposite directions.
+
+The first made the smallest case of the theorem unreachable rather than
+expensive. `y^3` has no factorization into two square-free parts at all, so a
+walk under the old wording offers nothing at `(x + y^3, y)` and never starts.
+What keeps the walk finite is the measure below and not the shape of the
+parts.
+
+The second refused where it should pass over. A carrier that would square a
+variable is not the only way to supply that factor: the factor can be bought
+instead, which costs a dimension and keeps the step. Refusing leaves a map with
+no candidate where one exists, and a walk that has to arrive cannot afford
+that. The wording says *passed over* now.
+
+**The measure.** `remaining_excess` is the sum of `3 ** excess(M)` over the
+monomials of the displacement that square a variable, where `excess(M)` is the
+total degree less the number of variables in it. Zero exactly when the map is
+multi-affine.
+
+The base is three because two would not do. A step removes `M` and puts
+`X_u Q`, `P X_v` and `X_u X_v` in its place, and gives `Q` a component of its
+own when its slot is fresh. Only two of those five can square a variable, and
+each carries the excess of `Q`, which is at least one below the excess of `M`.
+So the measure falls whenever `base ** e > 2 * base ** (e - 1)`.
+
+**The walk arrives, and that is a consequence and not a hope.** For any
+monomial of excess `e` the split into its radical and the rest is among the
+candidates and lowers the measure, and a measure of positive integers cannot
+fall forever. The count of squared monomials would not do instead: the first
+step on `y^3` replaces one by two while the measure falls from nine to six.
 
 **Why it is not UNT-1 with another stopping rule.** UNT-2 says the space is
 empty at degree three, and says that this is the stopping rule of the
@@ -2928,47 +2977,69 @@ outside both obligations. Widening them would weaken a correct statement about
 the degree reduction in order to house a different walk, so neither is amended
 and this obligation stands beside them.
 
-**Where the refusals come from.** Component `i` of a `BCWStep` target is
-`(F_i - c P Q) - X_u Q - P X_v - X_u X_v`. The product that is removed does not
-reappear, and the three terms that replace it are free of a square exactly when
-`P` and `Q` are, when `u` does not occur in `Q` and `v` does not occur in `P`,
-and when `u` and `v` are distinct coordinates. The refusals are those three
-conditions and nothing further.
+**Which slot a factor gets.** Component `i` of a `BCWStep` target is
+`(F_i - c P Q) - X_u Q - P X_v - X_u X_v`. The product cancels, and the three
+terms that replace it are free of a square exactly when `u` does not occur in
+`Q`, `v` does not occur in `P`, and `u` and `v` are two coordinates rather than
+one. A coordinate that already holds a factor supplies it and costs nothing,
+UNT-9; a coordinate that would break one of the three conditions is passed
+over and the factor is bought.
+
+A slot on the component the step acts on cannot arise, and there is no branch
+against it, for the reason `_slot` gives for the two enumerators above. A
+carrier's value is its whole displacement, the acting component's displacement
+contains the squared monomial, and a factor is a proper divisor of that
+monomial.
 
 Two shapes this library admits are unreachable for this walk. The repeated
-fresh slot of BCW-12 gives `X_u^2`. Two `Carried` slots on one coordinate give
-the same, and the ten-step chain of `alpoege12` takes that shape twice. Neither
-obligation is withdrawn or narrowed. A multi-affine walk does not offer them;
-every other walk in this library still does.
+fresh slot of BCW-12 gives `X_u^2`, so two fresh slots carrying the same value
+take two coordinates here and not one. Two `Carried` slots on one coordinate
+give the same, and the ten-step chain of `alpoege12` takes that shape twice.
+Neither obligation is withdrawn or narrowed. A multi-affine walk does not offer
+them; every other walk in this library still does.
 
-No completeness, in the shape UNT-4 gives it, and no minimality. The rule
-measured below buys two fresh coordinates for every squared monomial and reuses
-no carrier, so every dimension it reaches is an upper bound.
+No completeness, in the shape UNT-4 gives it, and no minimality. The walk is
+greedy and takes the first chain it finds, so every dimension in the table
+below is an upper bound.
 
 ### What the multi-affine refinement costs
 
-Measured before the walk was implemented, with ordinary `BCWStep`s under the
-rule above, every step verified. `alpoege13` normalized, made unipotent and
-homogenized is the endpoint of Theorem 2.1(b), and the three columns after the
-first are that chain:
+Two rules and two columns, because the second changed the first by a third.
 
-| at degree three | multi-affine | unipotent | 2.1(b) |
+The first column was measured before the walk existed, with ordinary
+`BCWStep`s under a rule that buys two coordinates for every squared monomial
+and reuses no carrier. The second is what `reduce_to_multi_affine` reaches,
+every step verified. Both are upper bounds and neither is a claim of
+minimality:
+
+| at degree three | crude rule | the walk, UNT-12 | steps |
 | ---: | ---: | ---: | ---: |
-| `alpoege13`, 13 | 33 | 66 | 67 |
-| `alpoege12`, 12 | 36 | 72 | 73 |
-| `spacerat11`, 11 | 39 | 78 | 79 |
+| `alpoege13`, 13 | 33 | 20 | 10 |
+| `alpoege12`, 12 | 36 | 24 | 12 |
+| `spacerat11`, 11 | 39 | 26 | 14 |
 
-No endpoint has a squared variable other than the parameter, and none has a
-power of the parameter above two, which is the pair HOM-11 and HOM-12 state.
-The measurement was made against that reading from the start: it exempts the
-parameter and nothing else, so the coordinates the refinement and the unipotent
-reduction buy are counted with the rest.
+Carrier reuse is the whole of the difference, and it is the same saving UNT-9
+records for the degree reduction. The step count is the same under both rules;
+what changes is how many coordinates a step buys.
 
-Two things in the table are worth reading twice. The order inverts: the
-smallest map at degree three gives the largest endpoint, where the four stages
-of milestone `0.6` were monotone on the same three maps. And the refinement
-roughly triples the dimension, which is why `docs/architecture.md` records the
-fork rather than a detour.
+The order inverts under both rules: the smallest map at degree three gives the
+largest multi-affine map, where the four stages of milestone `0.6` were
+monotone on the same three maps.
+
+**The endpoints of Theorem 2.1(b) are stated for the crude rule only.**
+`alpoege13` normalized, made unipotent and homogenized under that rule is 66
+and then 67, `alpoege12` 72 and 73, and `spacerat11` 78 and 79, each with no
+squared variable other than the parameter and no power of the parameter above
+two. Those figures stand. The same chain from the 20, 24 and 26 of the walk
+has not been measured: `LinearStep.normalize` alone costs 34 seconds on the
+twenty, against 13 on the thirty-three, and the unipotent step at forty
+coordinates did not return inside the budget the assistant's environment
+allows. `2n + 1` is arithmetic and not a certificate, so no endpoint is
+recorded for the second column until a run produces one.
+
+That the smaller map is the more expensive one is the third instance of a
+pattern this milestone keeps meeting, after work package 1 and after the
+timings below: cost follows the structure of a map and not its size.
 
 The cost of verifying the chain follows neither the dimension nor the density.
 The unipotent target of `spacerat11` is the widest of the three at 78

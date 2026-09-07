@@ -2198,18 +2198,59 @@ one of its own would be the thorough choice and adding nothing is the smaller
 one, and the decision waits for WP 2.1, where a test either wants it or does
 not.
 
-**WP 2.1** implements the walk: `reduce_to_multi_affine` in
-`kellermap.untargeted`, against UNT-12, with the checks of HOM-11 and HOM-12
-in `HomogenizationStep.verify`. `(x + y^3, y)` is the smallest case and the
-first test. The negative control for HOM-12 has to supply a multi-affine
-source and a target that breaks the conclusion; feeding it a map that is not
-multi-affine establishes nothing, because the hypothesis is then false and the
-obligation passes for the wrong reason.
+**WP 2.1** implements the walk. `reduce_to_multi_affine` and
+`remaining_excess` in `kellermap.untargeted`, `squared_terms` in
+`kellermap.bcw.grading`, and the checks of HOM-11 and HOM-12 in
+`HomogenizationStep.verify`.
 
 It is numbered 2.1 and not 3 because renumbering the four packages behind it
 would touch "Why the order" and every reference to them, for a split that was
 planned rather than forced. WP 11.1 of milestone 0.5 is the precedent, and the
 reason there was the same: an order is a separate change from what it orders.
+
+Done, and it amended two things it was written against.
+
+**UNT-12 required both parts of a split to be free of squares, and that made
+the smallest case unreachable.** `y^3` has no such factorization at all, so the
+walk offered nothing at `(x + y^3, y)` and never started. What bounds the walk
+is `remaining_excess`, a measure in the shape of UNT-3, and not the shape of
+the parts. The obligation now says so and the amendment is visible in its
+wording.
+
+It also said the walk *refuses* a carrier that would square a variable. It
+passes over it: the factor is bought instead, which costs a dimension and keeps
+the step. Refusing leaves a map with no candidate where one exists, which a
+walk that has to arrive cannot afford.
+
+**HOM-11 and HOM-12 cannot fail after HOM-1, so the negative control this page
+asked for does not exist.** By HOM-1 every monomial of the target's
+displacement is a monomial of the source's times a power of the parameter, so a
+target that breaks either breaks HOM-1 and is named as that. Both raises carry
+`# pragma: no cover`, as HOM-5 to HOM-7 do, and neither takes a probe. What is
+controlled instead is `squared_terms`, and its control is the map the
+correction of WP 2 was about: multi-affine in the variables a source began with
+and squaring a coordinate an earlier stage bought.
+
+**The figures improve by a third, and the improvement is carrier reuse.** The
+walk reaches 20, 24 and 26 where the rule measured in WP 2 reached 33, 36 and
+39, in the same number of steps. `docs/contracts.md` carries both columns under
+UNT-12, because the endpoints of Theorem 2.1(b) recorded there are the crude
+rule's and the walk's have not been measured.
+
+They have not been measured because the smaller maps are the more expensive
+ones. `LinearStep.normalize` alone costs 34 seconds on the twenty against 13 on
+the thirty-three, and the unipotent step at forty coordinates did not return
+inside the budget the assistant's environment allows. That is the third time
+this milestone that cost follows structure and not size, after WP 1 and after
+the verification timings under UNT-12, and the run belongs to the maintainer
+under the rule in `AGENTS.md`.
+
+**One thing is still open, and the package did not settle it.** WP 2 left the
+question of whether `UnipotentStep` wants an obligation for the property.
+`tests/test_multi_affine.py` checks that neither it nor `LinearStep.normalize`
+loses it, which is the control an obligation would have. Whether that check
+should be an obligation instead of a test is a decision and not a measurement,
+and nothing in this package forces it either way.
 
 **WP 3** adds the de Bondt-van den Essen step, which is the one link of the
 published chain this repository has never had. It needs a field containing

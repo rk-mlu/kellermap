@@ -60,9 +60,10 @@ record holds.
 - **The second and third stages of the Reduction Theorem.** `UnipotentStep` is
   Section 4's second step, which doubles the dimension and makes the Jacobian
   of the displacement nilpotent; `HomogenizationStep` is the third, which adds
-  one variable and makes the displacement cubic homogeneous. Not the whole of
-  Theorem 2.1: the normal form there is also linear in every variable except
-  the homogenizing parameter, and that refinement is not implemented.
+  one variable and makes the displacement cubic homogeneous. Theorem 2.1(b)
+  asks in addition for a form linear in every variable except the homogenizing
+  parameter; `reduce_to_multi_affine` is what reaches it, and HOM-11 and HOM-12
+  are what say so at the end of the chain.
 - **Compression and the gradient form.** `CompressionStep` restricts a
   homogeneous map to the subspace its collision generates, which is the one
   step that *lowers* the dimension; `SymmetricLiftStep` turns the result into
@@ -74,10 +75,12 @@ record holds.
   it is transported across every step, so a reduction of a counterexample is
   still a counterexample. Two of the seven step types may refuse a collision
   rather than carry it, and say why.
-- **Three searches.** `search` walks from a source towards a target and is told
+- **Four searches.** `search` walks from a source towards a target and is told
   what a fresh coordinate may carry; `peel` walks back from a target and is
   told nothing else; `reduce_to_degree3` is given a source alone and reduces it
-  to degree three.
+  to degree three; `reduce_to_multi_affine` starts there and removes the
+  squares, which is the half of Theorem 2.1(b) the homogenization cannot
+  supply.
 - **Example maps** that recur, including four maps this project did not write
   and the reductions it derived from them.
 - **Obligations, not conventions.** Every promise the verification surface

@@ -56,7 +56,7 @@ from ..errors import VerificationError
 from ..polynomial_map import PolynomialMap
 from ..reduction import Provenance
 from ..variables import FixedVariableFactory, VariableFactory, reserved_names
-from .grading import homogeneous_part, scaled_displacement
+from .grading import homogeneous_part, scaled_displacement, squared_terms
 
 FILTRATION_DEGREE = 2
 """Where the target lands in the filtration. See HOM-6.
@@ -255,11 +255,17 @@ class HomogenizationStep:
     # ----------------------------------------------------------------------
 
     def verify(self) -> None:
-        """Check HOM-1 to HOM-8, or raise ``VerificationError``.
+        """Check HOM-1 to HOM-8, HOM-11 and HOM-12, or raise ``VerificationError``.
 
         The source is checked first. HOM-2 and HOM-3 are the reason the step
         applies at all, and a failure there is a statement about the caller's
         map rather than about this step's arithmetic.
+
+        HOM-11 and HOM-12 are the two halves of Theorem 2.1(b) and are checked
+        after HOM-1, which is what makes them unreachable: a target equal to
+        the formula's output satisfies both. They are here for the reason
+        HOM-5 to HOM-7 are, to name the step that made an error rather than
+        the chain that carried it.
         """
         if self._verified:
             return
@@ -268,6 +274,8 @@ class HomogenizationStep:
         self._verify_generators()
         self._verify_identity()
         self._verify_homogeneity()
+        self._verify_parameter_degree()
+        self._verify_multi_affine()
         self._verify_filtration()
         self._verify_slice()
         self._verify_determinant()
@@ -342,6 +350,55 @@ class HomogenizationStep:
             raise VerificationError(
                 "HOM-5",
                 "The last component of the target is not the fresh variable.",
+            )
+
+    def _verify_parameter_degree(self) -> None:
+        """HOM-11.
+
+        The second half of Theorem 2.1(b). The three slots of HOM-1 lift by
+        ``T^2``, ``T`` and nothing, and the parameter is fresh against the
+        source's ring, so no target of this step can carry a higher power.
+        """
+        position = self._target.dimension - 1
+        powers = {
+            monomial[position]
+            for component in self._target.displacement().to_polynomials()
+            for monomial in component.itermonoms()
+        }
+
+        if powers - {0, 1, 2}:  # pragma: no cover - implied by HOM-1
+            raise VerificationError(
+                "HOM-11",
+                f"The target carries {self._variable} to the powers "
+                f"{sorted(powers)}. Theorem 2.1(b) allows at most the square, "
+                "and the three slots of the regrading give no more.",
+            )
+
+    def _verify_multi_affine(self) -> None:
+        """HOM-12.
+
+        The first half of Theorem 2.1(b), and conditional: the step preserves
+        the property and does not produce it. By HOM-1 every monomial of the
+        target's displacement is a monomial of the source's times a power of
+        the parameter, so a square in the target that is not the parameter's
+        was a square in the source.
+
+        A source that is not multi-affine makes the hypothesis false and this
+        obligation silent, which is every source this project carried before
+        ``0.7``. ``reduce_to_multi_affine`` is what makes it say something.
+        """
+        if squared_terms(self._source):
+            return
+
+        offending = squared_terms(self._target, exempt=(self._variable,))
+        if offending:  # pragma: no cover - implied by HOM-1
+            index, monomial = offending[0]
+            raise VerificationError(
+                "HOM-12",
+                f"The source is multi-affine and component {index} of the "
+                f"target squares a variable, in the monomial {monomial}. "
+                "The regrading multiplies monomials of the source by powers "
+                "of T and creates no square of its own.",
             )
 
     def _verify_filtration(self) -> None:

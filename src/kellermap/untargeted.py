@@ -1,4 +1,4 @@
-"""Proposition (3.1) applied without a target, UNT-1 to UNT-5.
+"""Proposition (3.1) applied without a target, UNT-1 to UNT-5 and UNT-12.
 
 ``search`` and ``peel`` both need a target. An untargeted search has only a
 source and the instruction to reach degree three, so nothing tells it which
@@ -7,6 +7,12 @@ bounds it, and it carries the measurements those obligations rest on.
 
  UNT-6 to UNT-9 widen the offer to
 factors that are sums and UNT-10 and UNT-11 order it. All eleven are built.
+
+UNT-12 is a second walk over the same step type and not a widening of the
+first. ``reduce_to_degree3`` stops where the enumerator runs out, at degree
+three; ``reduce_to_multi_affine`` starts there and removes the squares that
+Theorem 2.1(b) forbids. The two anchor on different monomials, measure
+themselves by different quantities, and share only ``BCWStep``.
 
 Two things here are worth reading before the code.
 
@@ -27,12 +33,14 @@ from __future__ import annotations
 
 from collections.abc import Iterator
 from dataclasses import dataclass
+from typing import cast
 
 import sympy as sp
 from sympy.polys.domains import Domain
 
 from .bcw import BCWStep
-from .bcw.step import Carried
+from .bcw.grading import squared_terms
+from .bcw.step import Carried, Factor, Fresh
 from .context import ReductionContext
 from .guards import counts, maps, searched_domain
 from .polynomial_map import CopiedDomain, PolynomialMap
@@ -624,6 +632,288 @@ def reduce_to_degree3(
         # end, so saying it did would be a claim it cannot support. This read
         # ``True`` there until an external audit put the three side by side and
         # UNT-4 promises the same four fields as the other two.
+        False if reduction is not None else not cut_off[0],
+        domain,
+    )
+
+
+EXCESS_BASE = 3
+"""The base of the measure in UNT-12.
+
+Three, and two would not do. A step removes one monomial ``M`` and puts
+``X_u Q``, ``P X_v`` and ``X_u X_v`` in its place, and gives ``Q`` a component
+of its own when its slot is fresh. Only two of those five can carry a square,
+and each of them carries the excess of ``Q``, which is at least one below the
+excess of ``M``. So the measure falls whenever ``base ** e > 2 * base ** (e -
+1)``, which is ``base > 2``.
+
+``WEIGHT_BASE`` is three for a different reason -- three terms of one degree
+lower -- and the agreement of the two numbers is a coincidence.
+"""
+
+
+def _excess(monomial: tuple[int, ...]) -> int:
+    """Return how far a monomial is from being free of squares.
+
+    The total degree less the number of variables in it, so a square-free
+    monomial has zero and ``y**3`` has two. It is the exponent the measure of
+    UNT-12 raises its base to.
+    """
+    return sum(exponent - 1 for exponent in monomial if exponent >= 1)
+
+
+def remaining_excess(source: PolynomialMap, base: int = EXCESS_BASE) -> int:
+    """Return the measure of UNT-12: what is left to make multi-affine.
+
+    The sum of ``base ** excess(M)`` over every monomial ``M`` of the
+    displacement that squares a variable. Zero exactly when the map is
+    multi-affine, which is the target of ``reduce_to_multi_affine``.
+
+    A step has to lower it, and the count of squared monomials will not serve
+    instead: the first step on ``(x + y**3, y)`` replaces one squared monomial
+    by two, and the count rises from one to two while this measure falls from
+    nine to six.
+    """
+    return sum(base ** _excess(monomial) for _, monomial in squared_terms(source))
+
+
+def _factor_splits(
+    monomial: tuple[int, ...],
+) -> Iterator[tuple[tuple[int, ...], tuple[int, ...]]]:
+    """Yield the ways to write ``monomial`` as a product of two parts.
+
+    Each part has positive degree and nothing else is asked of it. UNT-1 caps
+    a part at ``deg(F) - 2``, which is one at degree three and would leave
+    nothing to yield; the cap belongs to the degree reduction, where a part of
+    full degree would be the monomial itself and the step would remove nothing.
+
+    Neither part is required to be free of squares. ``y**3`` has no such
+    factorization at all, and requiring one would make the smallest case of
+    Theorem 2.1(b) unreachable rather than expensive. What keeps the walk
+    finite is the measure and not the shape of the parts.
+
+    Each pair is yielded once, as ``_splits`` does it and for the reason SEA-2
+    gives.
+    """
+    for left in _divisors(monomial):
+        right = tuple(whole - part for whole, part in zip(monomial, left, strict=True))
+        if sum(left) < 1 or sum(right) < 1:
+            continue
+        if left > right:
+            continue
+
+        yield left, right
+
+
+def _multi_affine_slots(
+    source: PolynomialMap,
+    parts: tuple[tuple[int, ...], tuple[int, ...]],
+    carried: dict[sp.Expr, int],
+) -> tuple[Slot, Slot]:
+    """Return the two slots for a split, taking a carrier where one is safe.
+
+    Component ``i`` of the target is ``(F_i - c P Q) - X_u Q - P X_v -
+    X_u X_v``. The product cancels and the three terms that replace it are
+    free of squares exactly when ``u`` does not occur in ``Q``, ``v`` does not
+    occur in ``P``, and ``u`` and ``v`` are two coordinates rather than one.
+
+    A carrier that breaks any of those is not refused, it is passed over: the
+    factor is offered fresh instead, which costs a dimension and keeps the
+    step. Refusing would leave a map with no candidate at all where one exists,
+    and UNT-12 is a walk that has to arrive.
+
+    A slot on the component the step acts on is what ``BCWStep`` rejects, and
+    there is no branch against it here for the reason ``_slot`` gives for the
+    two enumerators above: it cannot arise. A carrier's value is its whole
+    displacement, the acting component's displacement contains the squared
+    monomial, and a factor is a proper divisor of that monomial. A component
+    cannot hold both.
+    """
+    variables = source.variables
+    values = tuple(_monomial(part, variables) for part in parts)
+
+    chosen: list[Slot] = []
+    taken: set[int] = set()
+    for position in (0, 1):
+        holder = carried.get(values[position])
+        other = parts[1 - position]
+        if holder is not None and holder not in taken and other[holder] == 0:
+            chosen.append(Carried(holder))
+            taken.add(holder)
+            continue
+        chosen.append(values[position])
+
+    return chosen[0], chosen[1]
+
+
+def _multi_affine_level(
+    slots: tuple[Slot, Slot], parts: tuple[tuple[int, ...], tuple[int, ...]]
+) -> int:
+    """Return the ``EA`` level ``H`` reaches, as ``Candidate`` computes it.
+
+    ``H`` displaces the fresh coordinates by their factors, so its filtration
+    degree is one below the smallest order among them. The factors here are
+    monomials of positive degree, so the level is never ``-1`` and BCW-6 never
+    refuses it; a factor of degree one gives ``EA^0``, which UNT-8 admits.
+    """
+    degrees = [
+        sum(part)
+        for slot, part in zip(slots, parts, strict=True)
+        if not isinstance(slot, Carried)
+    ]
+    if not degrees:
+        return 1
+
+    return min(min(degrees) - 1, 1)
+
+
+def multi_affine_steps(
+    source: PolynomialMap,
+    naming: ReductionContext,
+) -> tuple[BCWStep, ...]:
+    """Return the steps of UNT-12 at this map, in the order of UNT-10.
+
+    Built rather than proposed, for the reason ``ordered_steps`` gives: the
+    order is by what a step removes and that is not known before the step
+    exists. A step that does not lower ``remaining_excess`` is left out here,
+    which is where the measure is applied.
+
+    Largest removal first, and among equals fewest coordinates bought, so a
+    split into two square-free parts is preferred to one that leaves work
+    behind, and a carrier is preferred to a purchase.
+    """
+    built: list[tuple[tuple[int, int], BCWStep]] = []
+    before = remaining_excess(source)
+    carried = _carried_values(source)
+    displacement = source.displacement().to_polynomials()
+
+    for index, monomial in squared_terms(source):
+        coefficient = source.ring.domain.to_sympy(
+            displacement[index].to_dict()[monomial]
+        )
+        for parts in _factor_splits(monomial):
+            slots = _multi_affine_slots(source, parts, carried)
+            supply = iter(
+                naming.variables(
+                    source.ring, sum(not isinstance(slot, Carried) for slot in slots)
+                )
+            )
+            factors = tuple(
+                slot if isinstance(slot, Carried) else Fresh(slot, next(supply))
+                for slot in slots
+            )
+            step = BCWStep.build(
+                source,
+                index,
+                *cast(tuple[Factor, Factor], factors),
+                _multi_affine_level(slots, parts),
+                coefficient,
+            )
+            removed = before - remaining_excess(step.target)
+            if removed <= 0:
+                # A split that leaves as much behind as it removes. It happens:
+                # at ``x**2 y`` the split ``y * x**2`` moves the square into a
+                # fresh component and into the residue, where the split
+                # ``x * x y`` clears it. UNT-12 is what leaves this one out.
+                continue
+            built.append(((-removed, step.target.dimension - source.dimension), step))
+
+    return tuple(step for _, step in sorted(built, key=lambda pair: pair[0]))
+
+
+def reduce_to_multi_affine(
+    source: PolynomialMap,
+    *,
+    budget: int = 20000,
+    context: ReductionContext | None = None,
+    over: Domain | None = None,
+) -> ReductionOutcome:
+    """Look for a chain from ``source`` to a multi-affine map, UNT-12.
+
+    The endpoint of Theorem 2.1(b) is reached in three moves and this is the
+    first: a cubic map with no square, then ``UnipotentStep``, then
+    ``HomogenizationStep``, whose HOM-11 and HOM-12 say that the property
+    arrived. The two later steps preserve it and neither produces it.
+
+    The source must already have degree at most three, and a higher one is
+    refused by name rather than reduced silently: ``reduce_to_degree3`` is the
+    walk that lowers a degree, and a chain that mixed the two would be
+    measured by two quantities at once. Degree three is an invariant of this
+    walk. A part of a split has degree below the monomial's, so every term the
+    step introduces has degree at most that of the monomial it removes.
+
+    Depth first, ordered by UNT-10, with the same budget and the same outcome
+    as ``reduce_to_degree3``. A source that is already multi-affine is the base
+    case and not a failure: there is nothing to build, and the outcome reports
+    no reduction with nothing examined, as UNT-5 has it for degree three.
+
+    The walk arrives. For a monomial of excess ``e`` the split into its radical
+    and the rest gives two terms of excess ``e - 1`` at most, against one of
+    ``e``, so the measure falls; that split is always among the candidates, and
+    a measure of positive integers cannot fall forever. What is not claimed is
+    that it arrives cheaply or that a shorter chain does not exist: the rule
+    measured for milestone 0.7 buys two coordinates for most squares, and the
+    dimensions it reaches are upper bounds.
+    """
+    maps(source=source)
+    counts(budget=budget)
+    domain = searched_domain(over, source)
+    if context is not None and not isinstance(context, ReductionContext):
+        # Before the base case, for the reason ``reduce_to_degree3`` gives: a
+        # multi-affine source names no coordinate, so a wrong context would
+        # pass unremarked there and raise from inside only for another map.
+        raise TypeError(
+            "context must be a ReductionContext; "
+            f"got {type(context).__name__}: {context!r}"
+        )
+
+    degree = source.degree()
+    if degree > 3:
+        raise ValueError(
+            f"The source has degree {degree}. The normal form of Theorem "
+            "2.1(b) is cubic as well as multi-affine, and reduce_to_degree3 "
+            "is the walk that lowers a degree."
+        )
+
+    naming = context if context is not None else ReductionContext()
+
+    remaining = [budget]
+    deepest = [0]
+    cut_off = [False]
+
+    def walk(current: PolynomialMap, steps: tuple[BCWStep, ...]) -> Reduction | None:
+        deepest[0] = max(deepest[0], len(steps))
+
+        if not squared_terms(current):
+            return Reduction(steps) if steps else None
+        if remaining[0] <= 0:
+            cut_off[0] = True
+
+            return None
+
+        for step in multi_affine_steps(current, naming):
+            if remaining[0] <= 0:
+                cut_off[0] = True
+
+                return None
+
+            remaining[0] -= 1
+            found = walk(step.target, (*steps, step))
+            if found is not None:
+                return found
+
+        return None  # pragma: no cover
+        # Unreachable for the reason the same line in ``reduce_to_degree3``
+        # is: the split into the radical and the rest always lowers the
+        # measure, so a descent that is not cut off arrives, and one that is
+        # returns above.
+
+    reduction = walk(source, ())
+
+    return ReductionOutcome(
+        reduction,
+        budget - max(remaining[0], 0),
+        deepest[0],
         False if reduction is not None else not cut_off[0],
         domain,
     )

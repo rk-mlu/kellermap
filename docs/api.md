@@ -46,7 +46,7 @@ what they do.
 ```python
 >>> import kellermap
 >>> kellermap.__all__
-['DEFAULT_VARIABLE_FACTORY', 'Candidate', 'Collision', 'CompressionStep', 'Dilation', 'ElementaryAutomorphism', 'ElementaryFactor', 'FixedVariableFactory', 'IndexedVariableFactory', 'LinearAutomorphism', 'LinearFactor', 'LinearStep', 'PeelOutcome', 'PolynomialMap', 'Provenance', 'Reduction', 'ReductionOutcome', 'ReductionContext', 'SearchOutcome', 'Step', 'SymmetricLiftStep', 'TranslationStep', 'Transposition', 'Transvection', 'Undo', 'VariableFactory', 'VerificationError', 'anchors', 'collision_hull', 'conjugate', 'diagonal_matching', 'enumerate_candidates', 'lowers_the_weight', 'field_ring', 'over_field', 'peel', 'reduce_to_degree3', 'remaining_weight', 'reserved_names', 'search', 'untargeted_candidates']
+['DEFAULT_VARIABLE_FACTORY', 'Candidate', 'Collision', 'CompressionStep', 'Dilation', 'ElementaryAutomorphism', 'ElementaryFactor', 'FixedVariableFactory', 'IndexedVariableFactory', 'LinearAutomorphism', 'LinearFactor', 'LinearStep', 'PeelOutcome', 'PolynomialMap', 'Provenance', 'Reduction', 'ReductionOutcome', 'ReductionContext', 'SearchOutcome', 'Step', 'SymmetricLiftStep', 'TranslationStep', 'Transposition', 'Transvection', 'Undo', 'VariableFactory', 'VerificationError', 'anchors', 'collision_hull', 'conjugate', 'diagonal_matching', 'enumerate_candidates', 'lowers_the_weight', 'multi_affine_steps', 'field_ring', 'over_field', 'peel', 'reduce_to_degree3', 'reduce_to_multi_affine', 'remaining_excess', 'remaining_weight', 'reserved_names', 'search', 'untargeted_candidates']
 
 ```
 
@@ -1378,6 +1378,65 @@ under REV-11:
 That is UNT-5, the base case of Proposition (3.1)'s induction: nothing to
 reduce, so nothing to build. A caller who wants to tell it from a search that
 found nothing asks the source for its degree, which is cheaper than the search.
+
+### The multi-affine walk
+
+`reduce_to_multi_affine` starts where `reduce_to_degree3` stops. Theorem 2.1(b)
+asks for a normal form that is cubic homogeneous, linear in every variable
+except `T` and quadratic only in `T`. The last two are what this walk and the
+homogenization together supply, and UNT-12 states it.
+
+`remaining_excess` is its measure: the sum of `3 ** excess(M)` over the
+monomials of the displacement that square a variable, where the excess is the
+total degree less the number of variables in the monomial. It is zero exactly
+when the map is multi-affine.
+
+```python
+>>> from kellermap import reduce_to_multi_affine, remaining_excess
+>>> cube = over_field(PolynomialMap((x, y), (x + y**3, y)))
+>>> remaining_excess(cube)
+9
+>>> outcome = reduce_to_multi_affine(cube)
+>>> remaining_excess(outcome.reduction.target)
+0
+>>> outcome.reduction.target.degree(), outcome.reduction.target.determinant()
+(3, 1)
+>>> outcome.reduction.verify() is None
+True
+
+```
+
+The count of squared monomials would not serve as the measure. The first step
+on `y**3` replaces one squared monomial by two, so the count rises where the
+measure falls:
+
+```python
+>>> from kellermap.context import ReductionContext
+>>> from kellermap.untargeted import multi_affine_steps
+>>> from kellermap.bcw.grading import squared_terms
+>>> first = multi_affine_steps(cube, ReductionContext())[0].target
+>>> len(squared_terms(cube)), len(squared_terms(first))
+(1, 2)
+>>> remaining_excess(cube), remaining_excess(first)
+(9, 6)
+
+```
+
+A source that is already multi-affine is the base case, as degree three is for
+`reduce_to_degree3`, and a source above degree three is refused by name rather
+than reduced:
+
+```python
+>>> outcome = reduce_to_multi_affine(first.__class__(
+...     (x, y), (x + x * y, y)))
+>>> outcome.reduction is None, outcome.examined, outcome.exhausted
+(True, 0, True)
+>>> reduce_to_multi_affine(quintic)
+Traceback (most recent call last):
+    ...
+ValueError: The source has degree 5. The normal form of Theorem 2.1(b) is cubic as well as multi-affine, and reduce_to_degree3 is the walk that lowers a degree.
+
+```
 
 ---
 

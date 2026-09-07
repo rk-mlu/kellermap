@@ -129,9 +129,11 @@ kellermap/
 │                         Candidate, enumerate_candidates, anchors,
 │                         conjugate, diagonal_matching
 ├── peeling.py            peel, Undo, moves, factor
-├── untargeted.py         reduce_to_degree3, the walk with no target:
-│                         untargeted_candidates, ordered_steps,
-│                         remaining_weight, ReductionOutcome
+├── untargeted.py         reduce_to_degree3 and reduce_to_multi_affine, the
+│                         walks with no target: untargeted_candidates,
+│                         ordered_steps, remaining_weight,
+│                         multi_affine_steps, remaining_excess,
+│                         ReductionOutcome
 ├── guards.py             what the three walks check before they begin
 ├── compression.py        CompressionStep, collision_hull
 ├── lift.py               SymmetricLiftStep
@@ -178,12 +180,21 @@ chain that has been built and verified, or nothing. Looking for a
 factorization and certifying one are separate questions, and the directory says
 so.
 
-Three walks and not two, since 0.5, and they differ in what bounds them.
-`search` is given a target and a pool and divides a displacement. `peel` is
-given a target and divides it backwards. `untargeted` is given neither and
-splits a leading monomial instead, which is a narrower rule and therefore a
-different space: a step `peel` can take need not be one `untargeted_candidates`
-offers, and an audit of `0.5.0rc1` found a page claiming otherwise.
+Four walks and not two, and they differ in what bounds them. `search` is given
+a target and a pool and divides a displacement. `peel` is given a target and
+divides it backwards. `reduce_to_degree3` is given neither and splits a leading
+monomial instead, which is a narrower rule and therefore a different space: a
+step `peel` can take need not be one `untargeted_candidates` offers, and an
+audit of `0.5.0rc1` found a page claiming otherwise.
+
+`reduce_to_multi_affine` is the fourth, added in 0.7, and it is not the third
+with another stopping rule. It starts at degree three, where the third stops
+and where its enumerator is empty by UNT-2; it anchors on the monomials that
+square a variable rather than on the leading ones; and it measures itself by
+`remaining_excess` rather than by `remaining_weight`, which is zero everywhere
+it runs. The two share `BCWStep` and nothing else. They are in one module
+because they are the two walks that are given no target, which is the
+distinction the directory draws.
 
 `guards.py` holds the questions all three answer before they spend anything: whether the bounds are numbers a walk can count with, and whether the
 endpoints leave a chain to look for at all (REV-11). It is a module rather than
