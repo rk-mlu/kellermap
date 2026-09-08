@@ -2322,6 +2322,61 @@ may sit elsewhere in theirs. That would make the anchor and not the shape the
 reason. For each of the thirteen steps in the two chains, record which of the
 two reasons applies, or a third if neither does.
 
+**Run, and there are three reasons rather than two.**
+`exploration/measure_untargeted_gap.py` rebuilds both chains and reports each
+condition of UNT-1, UNT-2, UNT-6 and UNT-7 on its own, so that a step failing
+two is not filed under whichever was tested first:
+
+| | offered | narrow offer | wide offer |
+| --- | --- | --- | --- |
+| `spacerat11` 1 | no | shape | divisor 4 of 3, cofactors 3 of 3 |
+| `spacerat11` 2 | no | anchor | no divisor |
+| `spacerat11` 3 | no | shape | cofactors 3 of 3 |
+| `spacerat11` 4 | no | shape | cofactors 2 of 2 |
+| `spacerat11` 5 | no | anchor | no divisor |
+| `spacerat11` 6 | no | shape | cofactors 6 of 4 |
+| `macfarlane13` 1 | no | shape | divisor 4 of 3, cofactors 2 of 3 |
+| `macfarlane13` 2 | no | anchor | no divisor |
+| `macfarlane13` 3 | no | anchor | no divisor |
+| `macfarlane13` 4 | no | shape | cofactors 2 of 3 |
+| `macfarlane13` 5 | no | shape | divisor 3 of 2 |
+| `macfarlane13` 6 | yes | shape | -- |
+| `macfarlane13` 7 | yes | shape | -- |
+
+**The shape is not one of the three.** It decides which of the two offers a
+step is a question for, and nothing more: every step with a multi-term factor
+is answered by the wide enumerator's conditions, and two of them are offered.
+The sentence above that the shape accounts for one of the gaps is too coarse
+and this table replaces it.
+
+**The anchor, four steps, and it is the sole reason for each.** Both factors of
+`spacerat11` 2 and 5 and of `macfarlane13` 2 and 3 are monomials, the product
+occurs in the component the step acts on, and both parts stay under
+`deg(F) - 2`. What fails is only that the product has degree four in a map of
+degree five or six. The hypothesis of 0.6 is confirmed, and confirmed exactly.
+
+**The grouping, six steps.** UNT-6 offers a divisor against the sum of *every*
+cofactor of degree four or more, and these steps want something else. Four want
+a part of that sum. `spacerat11` 6 wants more than it: its factor has six terms
+against the four UNT-6 can build, because `peel` divides the whole displacement
+and `_cofactor_sum` collects only the monomials of degree four or more. The two
+cases pull in opposite directions and a single widening will not reach both.
+
+**The divisor degree, three steps, and this one is ours.** UNT-7 fixes the
+divisor at `deg(F) // 2`, and its own docstring calls that a stated choice and
+not a proved one. For `macfarlane13` 5 it is the only thing between the step
+and the offer: the cofactor sum matches exactly and the divisor has degree
+three where the rule wants two.
+
+So the three differ in what they would cost. The divisor degree is a constant
+in this library and reaches one step of thirteen. The anchor is a rule of
+UNT-1 and reaches four. The grouping is two changes and reaches five or six.
+None of that is a decision this package takes; it is what WP 5 and WP 6 are
+now able to be written against.
+
+The second part of this package, the four moves against the step types, has not
+been run.
+
 The second part is new. Take the four moves of the section above and, for each,
 say which step type of this library expresses it, or that none does. The third
 move is the interesting one, because an elementary automorphism on the target
