@@ -147,6 +147,7 @@ the implementation is required to guarantee.
 - [HomogenizationStep](#homogenizationstep)
 - [CompressionStep](#compressionstep)
 - [SymmetricLiftStep](#symmetricliftstep)
+- [DescentStep](#descentstep)
 - [Reduction](#reduction)
 - [Search](#search)
 - [Peeling](#peeling)
@@ -1922,6 +1923,144 @@ than the theorem.
 
 ---
 
+## DescentStep
+
+The fourth move of the two published derivations at degree three, and the one
+this library has had no step type for. Work package 4 of milestone `0.7`
+settled that it is missing rather than expected to be: six of the seven step
+types cannot lower a dimension at all, and the seventh, `CompressionStep`,
+restricts along a linear embedding under CHC-1 and wants a homogeneous
+displacement under CHC-3, where this move restricts to the level set of a
+quadric on a map whose displacement carries two degrees at once.
+
+**What the move is.** Two changes of determinant one, one on each side, after
+which one coordinate is triangular and can be deleted. In Macfarlane's
+thirteen-variable map the two are a source graph on the pair `(x_13, x_2)` and
+a target completion on the pair `(y_4, y_8)`, and the completion cancels a
+quartic because `x_8 + x_1 x_2` is already a component. The eleven-variable
+derivation reaches the same shape by a different route.
+
+**Where it sits.** At degree three, among the moves of the reduction, and not
+in the chain towards the gradient form. It stands last here because it is the
+newest and because none of it is implemented; the pipeline is the seven types
+above.
+
+**Why the identifier is `DSC`.** The obvious three-letter abbreviation of
+"descent" spells a German article, which is on the word list of
+`tests/test_language.py`, so every line citing such an obligation would be
+reported as German. The check is right to do that: it reads a lowered line and
+cannot tell an identifier from a word. An exemption added to make a prefix fit
+would weaken the list for every page, and a prefix is the cheaper thing to
+change. A new family should be tried against that list before it is written
+out.
+
+**What this package does not do.** It does not look for the two changes. The
+step verifies a claim a caller supplies, and searching for the pair is a
+separate thing that comes after, on the division `BCWStep` and `peel` already
+stand on. So there is no `build()` in `0.7`, and DSC-7 says what follows from
+that.
+
+The step keeps the source, the index of the coordinate to delete, and the two
+automorphisms. Everything else is derived: the conjugate `left . source .
+right`, the tail that the deleted component carries, and the target.
+
+**DSC-1 — The conjugate and the deletion. [0.7]** With
+`C = left . source . right` and `k = index`, `target` has as its components the
+`C_j` for `j != k`, in their order, read in the ring of DSC-2.
+
+Derived and not supplied, for the reason `G` and `H` are derived in BCW-3:
+storing the target beside the two automorphisms would let a reader be told two
+things that can disagree. What cannot be derived is the tail, `C_k - X_k`,
+because the deletion is what throws it away; the step keeps it, and DSC-6 is
+what it is kept for.
+
+**DSC-2 — Dimension and generators. [0.7]** `target.dimension ==
+source.dimension - 1`, and the generators are the source's with the `k`-th
+removed, in order.
+
+The second step type that lowers a dimension, after `CompressionStep`. It
+lowers it by one where CHC-5 lowers it to the rank of a hull, and the two are
+otherwise unrelated: one deletes a coordinate that has become triangular, the
+other restricts to a subspace a collision lies in.
+
+**DSC-3 — The coordinate is triangular in the conjugate. [0.7]** In
+`C = left . source . right`,
+
+    C_k - X_k   is free of X_k, and
+    C_j         is free of X_k for every j != k.
+
+This is the claim the caller supplies and the obligation the family exists for.
+Everything else here either follows from it or is a property of the objects
+handed in. A step whose two automorphisms do not make the coordinate triangular
+fails here and nowhere else, and the exception names the coordinate and the
+component that still mentions it.
+
+The second half is what makes the deletion well defined rather than a
+truncation. Without it the components that survive would still refer to a
+generator that the target does not have.
+
+**DSC-4 — The two changes are exhibited. [0.7]** `left` and `right` are
+`ElementaryAutomorphism`s over the source's ring, each stored as its ordered
+factorization, and each is applied on the side it is named for: `right` on the
+source's variables, `left` on the components.
+
+Determinant one is not checked, because it is not a claim here. An
+`ElementaryFactor` is `X_j |-> X_j + P` with `P` free of `X_j`, so its Jacobian
+is unitriangular and the determinant of a product of them is one by
+construction. That is the shape of BCW-4 and BCW-5: the factorization is kept
+so that "invertible with determinant one" is something a reader can see rather
+than something the page asserts.
+
+An automorphism with no factors is admitted on either side. The move needs one
+change on each side in Macfarlane's derivation and the page does not know that
+every instance does.
+
+**DSC-5 — The determinant carries over. [0.7]** `target.determinant() ==
+source.determinant()`.
+
+A self-check of this library's own arithmetic. Under DSC-3 the Jacobian of `C`
+is block triangular with a one in the `k`-th place on the diagonal, and the two
+automorphisms contribute one each by DSC-4, so the two determinants agree. It
+is here because the descent is the only move in this library that could quietly
+lose the Keller property while lowering a dimension, and a caller should not
+have to recompute a determinant to find that it did not.
+
+**DSC-6 — A collision transports, and the transport is exhibited. [0.7]** For a
+`Collision` of the source at points `p_1, ..., p_r`, the transported points are
+the `right.inverse()(p_i)` with their `k`-th coordinate deleted, and they are a
+`Collision` of the target.
+
+They stay distinct, which is not automatic for a projection and is worth the
+argument. If two of them agreed, the two points they come from agreed outside
+`k` and had the same image under `C`; the `k`-th component of `C` is
+`X_k + (C_k - X_k)` with the tail free of `X_k` by DSC-3, so their `k`-th
+coordinates agreed too and the points were one point.
+
+**DSC-7 — Provenance is recorded, and not settable. [0.7]** As BCW-9, with one
+difference: `0.7` gives this type no `build()`, so every instance is `SUPPLIED`
+and nothing in this milestone can produce a `CONSTRUCTED` one.
+
+That is the integrity marker doing its job rather than a gap. A descent whose
+two changes came from a caller is a different thing from one this library
+found, and until there is a search to find them, saying so is the whole of what
+provenance has to say here.
+
+### Which of these can fail on supplied data
+
+DSC-3 always, and DSC-4 in the part that asks the two arguments to be
+automorphisms over the source's ring.
+
+DSC-1 and DSC-2 are constructor invariants and are not reachable by `verify()`.
+DSC-5 and DSC-6 follow from DSC-3 and are retained as self-checks that localize
+an error to the step that made it, in the shape HOM-5 to HOM-8 are retained.
+
+DSC-3 is the one to weigh. It is the only obligation in this library whose
+failure says nothing about the map it was given and everything about the claim
+that came with it: the source may be perfectly good and the two automorphisms
+simply wrong.
+
+---
+
 ## Reduction
 
 A chain of steps, and the induction over them.
@@ -3323,6 +3462,14 @@ for a certificate, which is what this entry says and what has not changed.
 
 **No minimality.** Nothing claims a reduction is the shortest, or the
 lowest-dimensional, or that dimension 17 cannot be improved.
+
+**No degree bound on a descent.** Nothing requires the target of a
+`DescentStep` to have a degree at most the source's, and the omission is the
+point of the move rather than an oversight. The completion on the target side
+may raise a degree while the deletion lowers a dimension, which is why both
+published derivations pass through a dimension they then leave, and why a
+search that only ever goes down cannot follow either. A step type that bounded
+the degree here would rule out the one thing this type exists to express.
 
 **No smallest unipotent lift.** `UnipotentStep` doubles the dimension, which is
 what Section 4 does. Nothing claims that a map in `MA^1` of degree three has no

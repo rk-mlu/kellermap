@@ -112,6 +112,7 @@ FAMILIES = {
     "BCW",
     "CHC",
     "COL",
+    "DSC",
     "DOM",
     "HOM",
     "LIN",

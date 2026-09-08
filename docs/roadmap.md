@@ -2422,13 +2422,54 @@ is available and whether it reaches that particular shear is a question with an
 answer. The fourth is the one expected to be missing, and "expected" is the
 word: it is a reading of two derivations and not a measurement.
 
-**WP 5** is conditional on WP 4 and is written when WP 4 has run. If the
-descent is missing and wanted, it is a certificate first: a step that
-verifies a *supplied* claim that a map is a triangular extension of a
-smaller one, with
-the pair of determinant-one changes exhibited rather than asserted. The search
-for the pair is a separate thing and comes after, which is the same division
-`BCWStep` and `peel` already stand on.
+**WP 5** was conditional on WP 4, which has run: the descent is missing, and
+missing as a property of the step-type surface rather than as a reading of two
+derivations. So it is a certificate first, and this package is the obligations
+and nothing else. `DSC-1` to `DSC-7` are in `docs/contracts.md`, marked `[0.7]`.
+
+**What the step keeps and what it derives.** The source, the index of the
+coordinate to delete, and two `ElementaryAutomorphism`s, one applied on each
+side. The conjugate, the tail the deleted component carries, and the target are
+derived, for the reason `G` and `H` are derived in BCW-3.
+
+**One obligation carries the package.** DSC-3 says that in the conjugate the
+`k`-th component displaces `X_k` by something free of `X_k` and no other
+component mentions `X_k`. That is the supplied claim, and it is the only place
+a wrong claim can fail; DSC-1 and DSC-2 are constructor invariants and DSC-5
+and DSC-6 follow from DSC-3. It is also the only obligation in this library
+whose failure says nothing about the map it was given: the source may be
+perfectly good and the two automorphisms simply wrong.
+
+**Determinant one is not checked.** An `ElementaryFactor` is `X_j |-> X_j + P`
+with `P` free of `X_j`, so a product of them has determinant one by
+construction. Keeping the factorization is what makes that visible, which is
+the shape BCW-4 and BCW-5 already use, and computing a determinant to confirm
+it would be asserting what the objects exhibit.
+
+**No `build()`, so no `CONSTRUCTED` provenance in this milestone.** Searching
+for the two changes is the separate thing WP 6 is about, on the division
+`BCWStep` and `peel` already stand on. DSC-7 says what follows rather than
+leaving the absence to be read as a gap.
+
+**Nothing bounds the degree**, and `docs/contracts.md` lists that under the
+deliberate non-obligations. The completion may raise a degree while the
+deletion lowers a dimension; that is the move, and it is why both published
+derivations pass through a dimension they then leave.
+
+The identifier is not the obvious abbreviation of "descent", because those
+three letters spell a German article that `tests/test_language.py` looks for,
+and every line citing such an obligation would be reported as German. The check
+is right and the prefix was the cheaper thing to change. A new family should be
+tried against that list before it is written out.
+
+**WP 5.1** implements it: the step type against DSC-1 to DSC-7, its negative
+controls, and `docs/architecture.md`, which this package does not touch because
+it describes what exists. The controls that matter are for DSC-3, one for each
+half: a pair of automorphisms that leaves the deleted component non-triangular,
+and a pair that leaves another component mentioning the coordinate. Whether the
+data to exercise it comes from Macfarlane's map or from a constructed example
+is a question for that package; the thirteen-variable map is fixed input here
+and the published twelve-variable one is not transcribed.
 
 **WP 6** is the target the milestone is for, and it is a search question and
 not a construction question. The chain from Alpoege's map to `spacerat11`
