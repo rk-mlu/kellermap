@@ -2374,8 +2374,46 @@ UNT-1 and reaches four. The grouping is two changes and reaches five or six.
 None of that is a decision this package takes; it is what WP 5 and WP 6 are
 now able to be written against.
 
-The second part of this package, the four moves against the step types, has not
-been run.
+**Part two: the four moves against the step types.** One move per row, and the
+third has the answer the plan hoped for:
+
+| move | step type |
+| --- | --- |
+| several products against one shared coordinate | `BCWStep`, `Carried` slots, BCW-10 |
+| a coordinate reused rather than a factor introduced twice | the same |
+| `x^2 y^2` against the square of a coordinate already an output | `BCWStep` with both slots `Carried`, `m = 0` |
+| deleting a triangular coordinate after a determinant-one change | none |
+
+**The third move is expressible, and it is not hypothetical.** Both slots
+`Carried` on one coordinate makes `H` the identity and `G` the elementary
+automorphism `X_i - c X_u^2`, so the step buys no coordinate and its whole
+content is the completion on the target. Macfarlane's own components are the
+shape the move needs: `m8 + m1 m2` is the coordinate that is already an output,
+and squaring it is what cancels an `m1^2 m2^2`. And the shape is already in use
+here: step three of the ten in `scripts/reconstruct_alpoege12.py` is
+`Step(2, Carried(3), Carried(3), 3)`, which squares one coordinate against
+itself. So the answer to the question 0.6 left open is yes, and no work package
+follows from it.
+
+That also settles what UNT-12 gives up. The multi-affine walk cannot offer this
+shape, because `X_u^2` is exactly what it exists to remove. That is a narrowing
+of one walk and not of the certificate surface, which is what the obligation
+says, and the third move is the concrete thing it forgoes.
+
+**The fourth move has no step type, and now for a stated reason rather than an
+expectation.** Of the seven step types, six cannot lower a dimension at all:
+BCW-2 adds `m` in `{0, 1, 2}`, UNI-5 doubles, HOM-4 adds one, SYM doubles, and
+the linear and the translation steps leave it alone. The only one that lowers
+it is `CompressionStep`, and it cannot express this move for two independent
+reasons. CHC-1 restricts along a linear embedding `B`, where the restriction
+here is to the level set of `x_13 - x_2^2`, which is not a linear subspace. And
+CHC-3 asks the source's displacement to be homogeneous of one degree at least
+two, where the displacement of Macfarlane's map carries degrees two and three
+together, so the construction cannot even be attempted on it.
+
+So the fourth move is missing in the way WP 5 was written for, and the reading
+of two derivations that the plan called an expectation is now a statement about
+this library's surface.
 
 The second part is new. Take the four moves of the section above and, for each,
 say which step type of this library expresses it, or that none does. The third
