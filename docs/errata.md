@@ -508,3 +508,29 @@ than over the original variables for the same reason and is unchanged.
 
 `CHANGELOG.md` keeps its wording in the `0.6.0` entry, which records what was
 said at that release.
+
+## The roadmap for 0.7 planned a step milestone 0.6 had built
+
+**Said, in `docs/roadmap.md` from the plan for 0.7 until work package 2.1
+closed:** that WP 3 would add the de Bondt-van den Essen step, *the one link of
+the published chain this repository has never had*.
+
+**True:** that link was `SymmetricLiftStep`, delivered in work package 6 of
+milestone 0.6 under SYM-1 to SYM-12. The de Bondt-van den Essen step and the
+symmetric lift are the same construction, and `docs/references.md` says so in
+the entry for arXiv:2608.12543v1: part 3 of its Theorem 3 writes the gradient
+form out, and that form is what `kellermap.lift` computes.
+
+**Found** by the maintainer, asking whether WP 3 was connected to that paper. It
+is, and the connection is that the paper is why the step exists here.
+
+**How it survived.** The note was written while the step was genuinely absent.
+Reading the paper closed the gap, milestone 0.6 implemented it three packages
+later, and the roadmap for 0.7 was written from the older note rather than from
+the tree. The tell was inside the note: it settled the domain question by
+observing that the symmetric lift already requires `Q(i)`, which distinguishes
+the step from the lift while naming the property the two share.
+
+**Now:** WP 3 stays listed as withdrawn, with its wording and the reason, and
+the packages behind it keep their numbers. Nothing that was built is affected;
+what was wrong was a plan to build it again.

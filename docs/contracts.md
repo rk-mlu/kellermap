@@ -3004,42 +3004,66 @@ below is an upper bound.
 
 ### What the multi-affine refinement costs
 
-Two rules and two columns, because the second changed the first by a third.
+Two rules, and the second improves the first by a third.
 
-The first column was measured before the walk existed, with ordinary
-`BCWStep`s under a rule that buys two coordinates for every squared monomial
-and reuses no carrier. The second is what `reduce_to_multi_affine` reaches,
-every step verified. Both are upper bounds and neither is a claim of
-minimality:
+The crude rule was measured before the walk existed: ordinary `BCWStep`s,
+two coordinates bought for every squared monomial, no carrier reused. The walk
+is `reduce_to_multi_affine` under this obligation. Both are upper bounds and
+neither is a claim of minimality. Every step of all six chains is verified,
+and the last column is the endpoint of Theorem 2.1(b), reached through
+`LinearStep.normalize`, `UnipotentStep` and `HomogenizationStep`:
 
-| at degree three | crude rule | the walk, UNT-12 | steps |
-| ---: | ---: | ---: | ---: |
-| `alpoege13`, 13 | 33 | 20 | 10 |
-| `alpoege12`, 12 | 36 | 24 | 12 |
-| `spacerat11`, 11 | 39 | 26 | 14 |
+| | rule | steps | multi-affine | unipotent | 2.1(b) |
+| --- | --- | ---: | ---: | ---: | ---: |
+| `alpoege13`, 13 | crude | 10 | 33 | 66 | 67 |
+| `alpoege13`, 13 | walk | 10 | 20 | 40 | 41 |
+| `alpoege12`, 12 | crude | 12 | 36 | 72 | 73 |
+| `alpoege12`, 12 | walk | 12 | 24 | 48 | 49 |
+| `spacerat11`, 11 | crude | 14 | 39 | 78 | 79 |
+| `spacerat11`, 11 | walk | 14 | 26 | 52 | 53 |
 
-Carrier reuse is the whole of the difference, and it is the same saving UNT-9
-records for the degree reduction. The step count is the same under both rules;
-what changes is how many coordinates a step buys.
+All six endpoints have no squared variable other than the parameter and no
+power of the parameter above two, which is the pair HOM-11 and HOM-12 state.
+The count exempts the parameter and nothing else, so the coordinates the
+refinement and the unipotent reduction buy are counted with the rest.
 
-The order inverts under both rules: the smallest map at degree three gives the
-largest multi-affine map, where the four stages of milestone `0.6` were
-monotone on the same three maps.
+Carrier reuse is the whole of the difference between the two rules. The step
+count is identical under both; what changes is how many coordinates a step
+buys, and that is the same saving UNT-9 records for the degree reduction.
 
-**The endpoints of Theorem 2.1(b) are stated for the crude rule only.**
-`alpoege13` normalized, made unipotent and homogenized under that rule is 66
-and then 67, `alpoege12` 72 and 73, and `spacerat11` 78 and 79, each with no
-squared variable other than the parameter and no power of the parameter above
-two. Those figures stand. The same chain from the 20, 24 and 26 of the walk
-has not been measured: `LinearStep.normalize` alone costs 34 seconds on the
-twenty, against 13 on the thirty-three, and the unipotent step at forty
-coordinates did not return inside the budget the assistant's environment
-allows. `2n + 1` is arithmetic and not a certificate, so no endpoint is
-recorded for the second column until a run produces one.
+The order inverts under both rules. The smallest map at degree three gives the
+largest endpoint, where the four stages of milestone `0.6` were monotone on the
+same three maps.
 
-That the smaller map is the more expensive one is the third instance of a
-pattern this milestone keeps meeting, after work package 1 and after the
-timings below: cost follows the structure of a map and not its size.
+### What verifying these six chains cost
+
+The determinant of UNI-9, in seconds, beside the dimension it ran at:
+
+| | crude | walk |
+| --- | --- | --- |
+| `alpoege13` | 108 at 66 | 182 at 40 |
+| `alpoege12` | 168 at 72 | 35 at 48 |
+| `spacerat11` | 22 at 78 | 41 at 52 |
+
+The cheapest of the six is the largest and the dearest is the smallest. Nothing
+here is monotone in the dimension, and the direction is not even constant
+between the two rules on one map: the walk costs `alpoege13` two thirds more
+than the crude rule at 26 coordinates fewer, costs `alpoege12` a fifth of it,
+and costs `spacerat11` about twice.
+
+So a timing taken on one of these maps says nothing about the others, and this
+page states none of them as a cost of the stage. It is consistent with what
+work package 1 found -- that a determinant follows the carrier rather than the
+size -- and six chains that agree with a hypothesis are not a test of it. What
+would test it is a run that varies the carrier and holds the dimension, and
+that has not been done.
+
+One regularity is worth recording because it makes the figures readable. HOM-7
+costs what UNI-9 costs, to within three per cent, in every one of the six: 109
+against 108, 177 against 182, 162 against 168, 37 against 35, 21 against 22, 41
+against 41. The two obligations compute the same kind of determinant at one
+extra coordinate, so the agreement is expected, and its absence would have said
+that one of the numbers was noise.
 
 The cost of verifying the chain follows neither the dimension nor the density.
 The unipotent target of `spacerat11` is the widest of the three at 78

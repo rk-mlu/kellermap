@@ -2233,17 +2233,21 @@ and squaring a coordinate an earlier stage bought.
 
 **The figures improve by a third, and the improvement is carrier reuse.** The
 walk reaches 20, 24 and 26 where the rule measured in WP 2 reached 33, 36 and
-39, in the same number of steps. `docs/contracts.md` carries both columns under
-UNT-12, because the endpoints of Theorem 2.1(b) recorded there are the crude
-rule's and the walk's have not been measured.
+39, in the same number of steps. Both chains were then carried to the endpoint
+of Theorem 2.1(b) by the maintainer, six runs in all: 41, 49 and 53 under the
+walk against 67, 73 and 79 under the crude rule, every step verified, every
+endpoint with no squared variable besides the parameter and no power of the
+parameter above two. `docs/contracts.md` carries the table under UNT-12.
 
-They have not been measured because the smaller maps are the more expensive
-ones. `LinearStep.normalize` alone costs 34 seconds on the twenty against 13 on
-the thirty-three, and the unipotent step at forty coordinates did not return
-inside the budget the assistant's environment allows. That is the third time
-this milestone that cost follows structure and not size, after WP 1 and after
-the verification timings under UNT-12, and the run belongs to the maintainer
-under the rule in `AGENTS.md`.
+**The timings say less than they look like saying, and the page says so.**
+The cheapest of the six determinants is the largest map and the dearest is the
+smallest, and the direction is not constant between the two rules on one map:
+the walk costs `alpoege13` two thirds more at 26 coordinates fewer, costs
+`alpoege12` a fifth, and costs `spacerat11` about twice. That is consistent
+with what WP 1 found about the carrier, and six chains that agree with a
+hypothesis are not a test of it. A run that varies the carrier and holds the
+dimension would be, and it is not scheduled: nothing in the milestone rests on
+the answer.
 
 **One thing is still open, and the package did not settle it.** WP 2 left the
 question of whether `UnipotentStep` wants an obligation for the property.
@@ -2252,10 +2256,43 @@ loses it, which is the control an obligation would have. Whether that check
 should be an obligation instead of a test is a decision and not a measurement,
 and nothing in this package forces it either way.
 
-**WP 3** adds the de Bondt-van den Essen step, which is the one link of the
-published chain this repository has never had. It needs a field containing
-`i` throughout, which the symmetric lift already requires, so the domain
-question is settled before the package starts.
+**WP 3 is withdrawn**, and the number stays here withdrawn rather than being
+reused, as `docs/contracts.md` keeps a withdrawn obligation.
+
+It read: *adds the de Bondt-van den Essen step, which is the one link of the
+published chain this repository has never had. It needs a field containing `i`
+throughout, which the symmetric lift already requires, so the domain question
+is settled before the package starts.*
+
+Milestone 0.6 delivered it. The de Bondt-van den Essen step and the symmetric
+lift are one construction and not two: part 3 of Theorem 3 of
+arXiv:2608.12543v1 writes it out as `P(X, Y) = i * sum_j Y_j h_j(X + i Y)`.
+Under that reference `docs/references.md` says that this gradient form *is* the
+one de Bondt and van den Essen ask for. `kellermap.lift` implements the
+formula, SYM-1 to SYM-12 hold it, and the last sentence of the withdrawn
+package -- that the domain question is settled because the symmetric lift
+already needs `Q(i)` -- is the sentence that gives it away. It distinguishes
+the step from the lift while naming the property the two share.
+
+The note survived because it was written before Prellberg's paper was read.
+Until then the step was recorded as architecturally absent, which it was; what
+the paper supplied was the explicit form that made it implementable, and 0.6
+implemented it three packages later without the roadmap for 0.7 being reread
+against that.
+
+Nothing moves down. WP 4, WP 5 and WP 6 keep their numbers, and "Why the order"
+is unchanged: WP 4 was never conditional on this package, and the two below it
+are conditional on WP 4.
+
+**One thing to know when writing about this.** The exemption in
+`tests/test_language.py` is the literal string `van den Essen`, and the check
+reads a file line by line, so wrapping the name across a line break defeats it
+and reports correct English as German. That happened while this entry was being
+written. The remedy taken is to keep the name on one line; scanning joined
+lines instead would report a line number that is not where the words are. It is
+a false positive rather than a hole, which is the opposite of the failure the
+word list is warned about, and it is worth knowing about because the name is
+now in four pages.
 
 **WP 4** is a measurement and decides the rest of the milestone. Two parts.
 
