@@ -2462,14 +2462,32 @@ and every line citing such an obligation would be reported as German. The check
 is right and the prefix was the cheaper thing to change. A new family should be
 tried against that list before it is written out.
 
-**WP 5.1** implements it: the step type against DSC-1 to DSC-7, its negative
-controls, and `docs/architecture.md`, which this package does not touch because
-it describes what exists. The controls that matter are for DSC-3, one for each
-half: a pair of automorphisms that leaves the deleted component non-triangular,
-and a pair that leaves another component mentioning the coordinate. Whether the
-data to exercise it comes from Macfarlane's map or from a constructed example
-is a question for that package; the thirteen-variable map is fixed input here
-and the published twelve-variable one is not transcribed.
+**WP 5.1** implements it: `DescentStep` in `kellermap.descent`, at the top
+level and not in `kellermap.bcw`, since that subpackage holds one paper and
+this move is in neither of its propositions. Done, and it found one thing the
+obligations did not anticipate.
+
+**A wrong claim could have produced a plausible map.** `PolynomialMap` takes a
+symbol outside its generators into the coefficient domain, so deleting a
+coordinate that a surviving component still mentions yields a map in which that
+coordinate has quietly become a parameter, with no error anywhere. The target
+therefore checks the second half of DSC-3 itself rather than leaving it to
+`verify`, and a caller who reaches for it first gets the exception naming the
+variable. The obligation is unchanged; what changed is where it is enforced.
+
+The negative controls are the two halves of DSC-3, and they differ from the
+passing case by one argument each: the same source with and without its
+completion, and a source whose deleted component displaces its own variable.
+
+The transport is checked against a collision that was not made for it.
+Alpoege's map with one triangular coordinate added descends back to Alpoege's
+map, and the three points come back as they went in.
+
+`docs/architecture.md` gains the module and a paragraph saying that the descent
+belongs to neither end of the pipeline: it is the fourth move at degree three,
+it lowers a dimension by one where `CompressionStep` lowers it to the rank of a
+hull, and it is the only step type whose target may have a higher degree than
+its source.
 
 **WP 6** is the target the milestone is for, and it is a search question and
 not a construction question. The chain from Alpoege's map to `spacerat11`

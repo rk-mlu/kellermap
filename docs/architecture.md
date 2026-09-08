@@ -41,6 +41,13 @@ the same condition. This library produced the first of the three and
 neither of the other two until milestone 0.7. That is a gap in the Reduction
 Theorem and not a defect in what exists.
 
+`DescentStep` belongs to neither end. It is the fourth move of the two
+published reductions at degree three, it lowers a dimension by one where
+`CompressionStep` lowers it to the rank of a hull, and it is the only step type
+whose target may have a higher degree than its source. Nothing produces one
+yet: the two changes it verifies come from a caller, and the search for them is
+a separate question.
+
 The two ends share the unipotent reduction and the homogenization, and they
 part before both, at degree three. A multi-affine endpoint at that degree is
 reached by further `BCWStep`s under UNT-12; the two stages after it preserve
@@ -136,6 +143,7 @@ kellermap/
 │                         ReductionOutcome
 ├── guards.py             what the three walks check before they begin
 ├── compression.py        CompressionStep, collision_hull
+├── descent.py            DescentStep
 ├── lift.py               SymmetricLiftStep
 ├── examples.py           the Keller maps written out more than once
 ├── errors.py             VerificationError

@@ -46,7 +46,7 @@ what they do.
 ```python
 >>> import kellermap
 >>> kellermap.__all__
-['DEFAULT_VARIABLE_FACTORY', 'Candidate', 'Collision', 'CompressionStep', 'Dilation', 'ElementaryAutomorphism', 'ElementaryFactor', 'FixedVariableFactory', 'IndexedVariableFactory', 'LinearAutomorphism', 'LinearFactor', 'LinearStep', 'PeelOutcome', 'PolynomialMap', 'Provenance', 'Reduction', 'ReductionOutcome', 'ReductionContext', 'SearchOutcome', 'Step', 'SymmetricLiftStep', 'TranslationStep', 'Transposition', 'Transvection', 'Undo', 'VariableFactory', 'VerificationError', 'anchors', 'collision_hull', 'conjugate', 'diagonal_matching', 'enumerate_candidates', 'lowers_the_weight', 'multi_affine_steps', 'field_ring', 'over_field', 'peel', 'reduce_to_degree3', 'reduce_to_multi_affine', 'remaining_excess', 'remaining_weight', 'reserved_names', 'search', 'untargeted_candidates']
+['DEFAULT_VARIABLE_FACTORY', 'Candidate', 'Collision', 'CompressionStep', 'DescentStep', 'Dilation', 'ElementaryAutomorphism', 'ElementaryFactor', 'FixedVariableFactory', 'IndexedVariableFactory', 'LinearAutomorphism', 'LinearFactor', 'LinearStep', 'PeelOutcome', 'PolynomialMap', 'Provenance', 'Reduction', 'ReductionOutcome', 'ReductionContext', 'SearchOutcome', 'Step', 'SymmetricLiftStep', 'TranslationStep', 'Transposition', 'Transvection', 'Undo', 'VariableFactory', 'VerificationError', 'anchors', 'collision_hull', 'conjugate', 'diagonal_matching', 'enumerate_candidates', 'lowers_the_weight', 'multi_affine_steps', 'field_ring', 'over_field', 'peel', 'reduce_to_degree3', 'reduce_to_multi_affine', 'remaining_excess', 'remaining_weight', 'reserved_names', 'search', 'untargeted_candidates']
 
 ```
 
@@ -1220,6 +1220,58 @@ kellermap.errors.VerificationError: [SYM-9] The lift carries a pair and this col
 `verify` does not compute the determinant of the target. It follows from the
 identity and the source, and at the dimensions this construction reaches it is
 not affordable; SYM-7 carries the measurement.
+
+---
+
+## The descent
+
+`DescentStep(source, index, left, right)` deletes a coordinate that two
+elementary changes have made triangular. The conjugate is
+`left . source . right`; when its `index`-th component displaces that variable
+by something free of it, and no other component mentions it, the target is what
+is left.
+
+The two changes come from the caller. There is no `build` here, so the
+provenance is always `SUPPLIED`, and searching for the pair is a separate
+question.
+
+```python
+>>> from kellermap import DescentStep, ElementaryAutomorphism, ElementaryFactor
+>>> x, y, z = sp.symbols("x y z")
+>>> plain = PolynomialMap((x, y, z), (x + y**2, y, z + x * y))
+>>> completion = ElementaryAutomorphism(
+...     (ElementaryFactor(plain.ring, 0, -z**2),)
+... )
+>>> source = completion.inverse().apply_to(plain)
+>>> source.components[0]
+x**2*y**2 + 2*x*y*z + x + y**2 + z**2
+>>> step = DescentStep(source, 2, left=completion)
+>>> step.verify() is None
+True
+>>> step.target.components
+(x + y**2, y)
+>>> step.variables, step.tail()
+((x, y), x*y)
+
+```
+
+The tail is offered because the deletion is what throws it away: the target
+alone does not determine it, and rebuilding the source needs it.
+
+Without the completion the same source fails, and the message names the
+coordinate and the component that still mentions it:
+
+```python
+>>> DescentStep(source, 2).verify()
+Traceback (most recent call last):
+    ...
+kellermap.errors.VerificationError: [DSC-3] Component 0 of the conjugate mentions z, the coordinate this step deletes. Deleting it would leave a component referring to a generator the target does not have.
+
+```
+
+A collision goes through, with its points undone by `right` and the deleted
+coordinate dropped. The points stay distinct because the deleted component is
+the variable plus a tail free of it.
 
 ---
 

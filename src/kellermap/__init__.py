@@ -1,6 +1,7 @@
 from .collision import Collision
 from .compression import CompressionStep, collision_hull
 from .context import ReductionContext
+from .descent import DescentStep
 from .elementary import ElementaryAutomorphism, ElementaryFactor
 from .errors import VerificationError
 from .lift import SymmetricLiftStep
@@ -54,6 +55,7 @@ __all__ = [
     "Candidate",
     "Collision",
     "CompressionStep",
+    "DescentStep",
     "Dilation",
     "ElementaryAutomorphism",
     "ElementaryFactor",
