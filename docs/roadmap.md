@@ -2509,6 +2509,106 @@ because a chain that produces it produces its coefficients. Neither repository
 that carries it has a licence, so a transcription is not available anyway, and
 `docs/references.md` records both as cited and not copied.
 
+**Run.** `exploration/measure_untargeted_reach.py`, and the answer is no, in a
+way the plan did not expect.
+
+**The budget is not what stops it.** From Alpoege's map, normalized or not,
+`reduce_to_degree3` reaches dimension 13 in seven steps in under half a second,
+having examined seven maps against a budget of twenty thousand. Examined equals
+the number of steps, so the walk never backtracked and never spent anything.
+There is no moment at which it stopped and no move at which it stopped, which
+is what this package was written to report. What bounds it is the greedy rule
+and the offer.
+
+**It does not fail at a move; it never rejoins.** Started on the published
+chain's own maps, one at a time, it leaves for 13 or 14 every time:
+
+| started before step | n, degree | the walk reaches |
+| ---: | --- | --- |
+| 1 | 3, degree 7 | 13 in seven steps |
+| 2 | 5, degree 6 | 13 in six |
+| 3 | 6, degree 6 | 14 in five |
+| 4 | 7, degree 5 | 13 in four |
+| 5 | 8, degree 5 | 13 in three |
+| 6 | 10, degree 5 | 13 in two |
+
+The last row is the one to read. Handed five of the six steps for free, one
+step and two dimensions from the end, the walk still takes two steps to 13
+rather than one to 11. Work package 4 says why: none of the six steps is in the
+offer, and step six misses it because `peel` divides the whole displacement
+where UNT-6 collects only the monomials of degree four or more, so its second
+factor has six terms against the four the enumerator can build.
+
+**What the walk does use.** Carrier reuse, the first two of the four moves, at
+four of its seven steps. The third move, a coordinate squared against itself,
+at none. The fourth at none and it could not: a walk over `BCWStep` has no
+descent to take, which is what `DescentStep` was added for and what makes WP 5
+a prerequisite for any answer other than this one.
+
+**What is not established.** That no chain of six exists under this offer. The
+walk is greedy and takes the first candidate at every map; a broader search is
+a different measurement, and a bounded one that found nothing would say
+nothing, which is the reading `examples.alpoege12` already carries for the
+external run that produced it.
+
+### The first conclusion was too fast
+
+This package first closed with "the reason is the offer rather than the
+search". That is wrong, and reading the external driver is what showed it.
+
+**One of the two dimensions is the search.** The beam driver that produced
+`examples.alpoege12` searches the *same* offer -- `untargeted_candidates` of
+0.5, unchanged since -- and reaches twelve where the greedy walk reaches
+thirteen. So the greedy rule alone costs a dimension, and attributing the whole
+gap to the offer was an error.
+
+**And that run never looked at eleven.** It ran under a hard bound of twelve
+and its own docstring says states outside the bound are never built; of its
+404117 states, 79202 were pruned by that bound. It is a statement about twelve
+and about nothing below it. Reading it as evidence about eleven was the second
+error.
+
+### What is measured now
+
+`exploration/measure_dimension_eleven.py` searches the offer exhaustively under
+a hard bound of eleven, from each map of the published chain in turn, and asks
+whether a map of degree three is reachable at all. No weight rule: a step that
+leaves UNT-3's weight alone or raises it is built like any other, so what is
+exhausted is the offer and not a walk over it.
+
+| from | built | states | degree three reachable |
+| --- | ---: | ---: | --- |
+| n=10, degree 5 | 2 | 3 | no, exhausted |
+| n=8, degree 5 | 33 | 34 | no, exhausted |
+| n=7, degree 5 | 299 | 300 | no, exhausted |
+| n=6, degree 6 | 2885 | 2721 | no, exhausted |
+| n=5, degree 6 | 20146 | 15537 | cut off at 230 s |
+
+So for the back half of the published chain the answer is now a measured
+negative about the offer and not a reading of one walk: under a bound of
+eleven, from those four maps, there is nothing to find. For the front half it
+is open, and the `n=5` row is the maintainer's under the rule in `AGENTS.md`.
+
+### The experiment that would settle it
+
+Rerun the external driver with `--max-dimension 11`. It searches the same offer
+with a beam per dimension and resumes from a checkpoint, which is what the
+front half needs and what an exhaustive walk from `n=5` cannot give inside a
+tool budget.
+
+Two things to know before starting it. The driver refuses to run against
+anything but `0.5.x`; relaxing that one guard is all it needs, and the
+self-test then passes against 0.6.0. And a three-minute run at a beam of three
+hundred reaches weight six at dimension eleven having built 22137 states,
+against the 404117 of the two-hour run that found twelve, so three minutes is
+nothing and the driver says as much itself: it prints that no non-existence
+claim is implied.
+
+WP 4 measured the offer and named three ways to widen it, with their reach.
+Whether eleven needs one of them, or only a longer search, is the question this
+package leaves open, and it is the first thing 0.8 should settle rather than
+assume.
+
 ### WP 1, and what it found
 
 **Where the cost is.** `determinant()` takes the Schur complement of the
