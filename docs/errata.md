@@ -534,3 +534,55 @@ the step from the lift while naming the property the two share.
 **Now:** WP 3 stays listed as withdrawn, with its wording and the reason, and
 the packages behind it keep their numbers. Nothing that was built is affected;
 what was wrong was a plan to build it again.
+
+## The widened offer was assigned to a milestone that does not contain it
+
+**Said, in three places of `docs/roadmap.md` under work package 6:** that
+widening the untargeted offer -- the anchor, the grouping, the divisor degree
+that work package 4 measured -- was 0.8's, and the first thing 0.8 should
+settle.
+
+**True:** milestone 0.8 is the last link of the chain, `Delta^m(P^m)`, and a
+benchmark runner. Nothing about the offer was ever in it. The three levers were
+not assigned to any milestone, and saying they belonged to the next one made a
+plan out of a preference.
+
+**Found** by the maintainer, who read the section and asked why, since it does
+not say so.
+
+**Now:** the levers are WP 7 of milestone 0.7, added to the packages of the
+milestone whose own work package 4 produced them. The three sentences are
+corrected.
+
+The near miss worth naming: the open-question section of 0.7 does park a search
+question for later -- whether a search may go up in dimension -- and it names
+WP 4 as the measurement that would justify it. That is a different question.
+WP 7 widens what a step may be at one map; going up changes which maps a search
+will stand on. Reading one as the other is how the misassignment survived three
+paragraphs.
+
+## A bought coordinate was said not to be able to carry a sum
+
+**Said, in `docs/roadmap.md` under work package 7, for one commit:** that no
+`BCWStep` buys a coordinate carrying a sum, because Proposition (3.1) buys one
+that carries one factor, and that the published eleven-variable map is
+therefore not the output of a chain.
+
+**True:** a `Fresh` slot takes an arbitrary polynomial. That is why UNT-6
+exists at all -- the grouped splits offer a divisor against a sum of cofactors
+-- and a step whose bought coordinate carries `-x^2 + x z_2 z_3` builds and
+verifies. The conclusion drawn from it was wrong too: `peel` found a six-step
+chain to that map, and component three of the map is a single step of
+Proposition (3.1) written out, which the page now shows.
+
+**Found** by the maintainer, asking for a worked example of what rewriting to
+degree three means. Writing the example out is what showed the claim was false.
+
+**Now:** the paragraph says what is actually different about the two
+presentations, which is whether the abbreviations are chosen one at a time
+against a residue or all at once against the original map, and it carries the
+worked example.
+
+The lesson is narrow and worth keeping: the claim was about a shape the library
+does support, and one call would have settled it. It was made from the shape of
+the published components rather than from the type of a slot.

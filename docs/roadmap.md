@@ -2576,18 +2576,97 @@ whether a map of degree three is reachable at all. No weight rule: a step that
 leaves UNT-3's weight alone or raises it is built like any other, so what is
 exhausted is the offer and not a walk over it.
 
-| from | built | states | degree three reachable |
-| --- | ---: | ---: | --- |
-| n=10, degree 5 | 2 | 3 | no, exhausted |
-| n=8, degree 5 | 33 | 34 | no, exhausted |
-| n=7, degree 5 | 299 | 300 | no, exhausted |
-| n=6, degree 6 | 2885 | 2721 | no, exhausted |
-| n=5, degree 6 | 20146 | 15537 | cut off at 230 s |
+| from | coordinates to spend | built | states | degree three reachable |
+| --- | ---: | ---: | ---: | --- |
+| n=10, degree 5 | 1 | 2 | 2 | no, exhausted |
+| n=8, degree 5 | 3 | 33 | 33 | no, exhausted |
+| n=7, degree 5 | 4 | 299 | 299 | no, exhausted |
+| n=6, degree 6 | 5 | 2885 | 2720 | no, exhausted |
+| n=5, degree 6 | 6 | 52070 | 40299 | no, exhausted, in five shards |
+| n=3, degree 7 | 8 | -- | -- | not run here; see the beam run below |
 
-So for the back half of the published chain the answer is now a measured
-negative about the offer and not a reading of one walk: under a bound of
-eleven, from those four maps, there is nothing to find. For the front half it
-is open, and the `n=5` row is the maintainer's under the rule in `AGENTS.md`.
+The five-variable row was cut off in the first version and is finished here by
+splitting the candidates at the starting map across shards and adding the
+pieces. A shard carries its own visited set, so a state reachable through two
+shards is built twice and the two totals are over-counts; what they are not is
+an over-count of the conclusion, since every shard ran out.
+
+So every map of the published chain except its starting point now carries a
+measured negative: under a bound of eleven the offer runs out and there is
+nothing of degree three to find. The maintainer then ran the external beam
+driver under the same bound of eleven, from Alpoege's map, and it traversed its
+search space without finding an eleven-variable reduction either.
+
+### What that negative is about, and what it is not about
+
+It is about `untargeted_candidates` and nothing else. Both searches enumerate
+the same offer: the leading splits of UNT-1 and UNT-2 and the grouped splits of
+UNT-6 and UNT-7. Two negatives over one offer are one negative.
+
+**No descent is proposed.** `DescentStep` has no `build` by DSC-7 and neither
+search constructs one, so the fourth move is outside every search in this
+repository. That is a statement about the searches and not about the step type,
+which exists and verifies.
+
+**The anchor is half-widened already, and it is the wrong half.** UNT-1 anchors
+on a monomial of degree exactly `deg(F)`, so a step whose product is a monomial
+of lower degree is not offered. UNT-6 does go below that -- it anchors on a
+divisor of the monomials of degree four or more -- but it wants a sum on the
+other side, so it never offers a step whose two factors are both monomials.
+Between them the two leave a hole exactly where four of the thirteen peeled
+steps sit: WP 4 records them as failing UNT-1 on the anchor alone and UNT-6 on
+`w0`, having no sum to divide.
+
+**And the published steps are outside the offer by construction.** WP 4
+measured that none of the six is in it. So neither search could have found the
+published chain, and what they establish is that no *other* chain over this
+offer reaches eleven either. That is worth having and it is not the question
+the milestone asked.
+
+**Two of the six are not even divisions of a component.** Expanding the product
+a step removes and comparing it against the component it acts on, steps two
+to five of the published chain remove a sub-sum of that component and steps one
+and six do not: step six removes six monomials where only five of the eleven in
+the component are divisible by its monomial factor. `peel` divides backwards
+from a target, so a step it finds need not be a division of anything on the
+source side. Any widened enumerator has to decide what it does about that, and
+"offer every sub-sum" is not an answer at eleven terms.
+
+So the question is now clean, and it is WP 7 below. WP 4 named three levers --
+the anchor, the grouping, the divisor degree -- with their reach over the
+thirteen peeled steps. Whether eleven is reachable at all is a question about a
+widened offer, and no run over the present one can answer it.
+
+**What that costs.** The space grows by about nine per coordinate of headroom:
+3 states at one coordinate, 34 at three, 300 at four, 2721 at five. Eight
+coordinates is therefore some two million states, and holding two million maps
+in a visited set is what ran a machine out of memory. The set holds
+sixteen-byte digests now; a collision would lose a subtree rather than invent
+one, which is the direction an exhaustiveness claim can be wrong in only by
+saying what it covered.
+
+Whether that run is still worth making depends on the beam run below. If the
+driver's own statistics show it pruned nothing -- its output carries the kept
+and the total at every depth, and its counter for beam pruning -- then it
+already traversed the same space and this script would repeat it.
+
+**Two things the second version fixed.** The first carried a depth bound at
+fourteen, because a search over an offer with no weight rule need not end. It
+is not needed and it does not belong inside an exhaustiveness claim: of the
+2885 steps built from the six-variable map, not one failed to lower the weight
+of UNT-3, so the weight bounds the depth on its own. The script now counts the
+steps that do not lower it and prints the count, so the assumption is measured
+at every run rather than trusted. With the depth bound gone a state need only
+be expanded once, and `PolynomialMap` hashes by content, so it is its own key;
+the first version spelled every component out with `str` to build one.
+
+**Where the time goes, since it is not going to improve much.** About ten
+milliseconds a state, nearly all inside `BCWStep.build`, and nearly all of that
+in `clone_ring`: one build constructs some fifty rings. That is not waste.
+`clone_ring` deliberately avoids SymPy's cache and its docstring records the
+failure that decision prevents -- a shared mutable domain that converted `T*u`
+to zero -- so memoizing it is not the free speedup it looks like. Anyone
+tempted by it should read that docstring first.
 
 ### The experiment that would settle it
 
@@ -2606,8 +2685,7 @@ claim is implied.
 
 WP 4 measured the offer and named three ways to widen it, with their reach.
 Whether eleven needs one of them, or only a longer search, is the question this
-package leaves open, and it is the first thing 0.8 should settle rather than
-assume.
+package leaves open, and WP 7 is where it is taken up.
 
 ### WP 1, and what it found
 
@@ -2694,14 +2772,120 @@ because it is the one package whose result is a new link rather than a better
 version of an existing one, and a milestone that ends with only measurements
 and a search would be a thin one.
 
+**WP 7** widens the offer, because WP 6 established that no run over the
+present one can answer the milestone's question and WP 4 already measured what
+widening would buy.
+
+It was not in the plan. The plan stopped at WP 6 because WP 6 was expected to
+give an answer; it gave a measurement of the wrong space instead, and the
+package that follows from that is this one. It is added here rather than
+deferred: this milestone is the one that asks about the search, and the three
+levers came out of its own work package 4.
+
+**Two things measured before the package was written, and both change it.**
+
+*A descent adds nothing here, and the reason is not that it is unimplemented.*
+The only descent family that is finite without new theory is the one with both
+changes the identity: delete a coordinate that is already triangular and that
+no other component mentions. It never fires. Not one of the 2721 states of the
+exhausted six-variable space has such a coordinate, and neither does any map of
+the published chain, its target included. A descent with changes that are not
+the identity needs the two automorphisms, and which pair to try is the search
+problem DSC-7 deferred rather than a family to enumerate. Adding descent
+proposals to the offer and rerunning the beam is therefore not the cheap first
+experiment it looks like: there is nothing finite to add.
+
+*The published map is presented as a set of abbreviations and not as a chain,
+and one of its components is a single step.* Section 6 of arXiv:2608.05392v1
+writes the map down all at once: eight of the eleven components pin an
+auxiliary coordinate to a subexpression of the source map, the other three are
+the source rewritten in those coordinates, and its Lemma 6.1 exhibits the
+section that recovers all eight from `(x, y, z)` together.
+
+Component three is the smallest case and it is worth writing out, because it
+shows that the two presentations describe one object. Alpoege's third component
+is `2x - 3x^2 z_2 - x^3 z_3` and its quartic monomial is `x^3 z_3`. Buying two
+coordinates for `-x^2` and for `x z_3` -- a single `BCWStep`, both slots fresh
+-- turns that component into
+
+    -h k - h x z_3 + k x^2 - 3 x^2 z_2 + 2 x
+
+with the two components `h - x^2` and `k + x z_3` beside it. The three new
+terms have degrees 2, 3 and 3; on the section `h = x^2`, `k = -x z_3` they sum
+back to `-x^3 z_3` exactly. That is what rewriting to degree three means: one
+monomial of degree four becomes three of degree at most three in more
+variables, and the two extra components are what force the new coordinates to
+stand for what they abbreviate.
+
+The result is term for term the third component of `examples.spacerat11`, and
+its ninth and tenth components are the two bought ones. So that component of
+the published map *is* one step of Proposition (3.1), and the six steps `peel`
+found are a chain and not an artefact.
+
+**What that makes WP 7.** The difference between the two presentations is
+whether the abbreviations are chosen one at a time, each against the residue
+the last one left, or all at once against the original map. The published
+construction does the second and uses eight. A search that does the first has
+to guess, at every map, which abbreviation the ones after it will want.
+
+Whether the second formulation is worth building here is the question this
+package should measure before it widens anything. It is not one of the three
+levers; it is a different way of asking for the same object, and the levers
+would only bring a step-at-a-time walk closer to imitating it. Section 10 of
+the same paper poses its own minimization in that spirit, over automorphisms
+rather than abbreviations.
+
+**Measurement first, as WP 1, WP 2 and WP 4 were.** Two figures decide the
+shape of everything after them.
+
+Does a widened offer contain the six steps of the published chain? WP 4 says
+what each of the thirteen peeled steps misses, so the widening that would reach
+all of them is known on paper. What is not known is whether a rule general
+enough to offer them stays finite.
+
+And how much bigger does the space get? The present offer gives about nine
+states per coordinate of headroom. A widening that offers every sub-sum of a
+component multiplies that by two to the number of terms, and `spacerat11` step
+six acts on a component with eleven of them. A rule that cannot be enumerated
+is not a widening, and the measurement is what says which of the three levers
+can be pulled alone.
+
+**Two decisions the measurement of WP 6 already forces.** Expanding each
+published step against the component it acts on, steps two to five remove a
+sub-sum of that component and steps one and six do not: step six removes six
+monomials where only five of the eleven in the component are divisible by its
+monomial factor. `peel` divides backwards from a target, so a step it finds
+need not divide anything on the source side. An enumerator that only ever
+offers divisions of a component cannot reach those two, and one that offers
+more has to say what more means.
+
+The second is the anchor. UNT-1 wants degree exactly `deg(F)` and UNT-6 wants a
+sum on the other side, so a step whose two factors are monomials of lower
+degree falls between them. That hole holds four of the thirteen and it is the
+cheapest of the three to close, which is a reason to measure it separately
+rather than to close it first.
+
+**What this package does not do.** It does not change UNT-1 or UNT-6. A widened
+offer is a second enumerator beside them, in the shape UNT-12 already used for
+the multi-affine walk: widening a correct statement about the degree reduction
+to house a different search is what that obligation declined to do, and the
+same reason holds here.
+
+Nor does it search. Whether a widened offer reaches eleven is a run, and a run
+belongs after the enumerator it runs over exists.
+
 ## An open question this milestone raises and does not answer
 
 Both published derivations pass through a larger dimension before reaching the
 smaller one: 12 before 11, 13 before 12. Every search this project has goes
 down and never up. Whether a search that may go up finds anything the present
 one does not is a real question and is not this milestone's: it changes the
-shape of the search and not one of its steps, and the measurement that would
-justify it is WP 4.
+shape of the search and not one of its steps.
+
+It is not what WP 7 does. WP 7 widens what a step may be at one map; going up
+changes which maps a search will stand on at all. WP 4 was named here as the
+measurement that would justify the change, and it has run, but what it measured
+was the offer at a step and not the shape of the walk.
 
 ## What is not planned
 
