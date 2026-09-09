@@ -674,6 +674,17 @@ def remaining_excess(source: PolynomialMap, base: int = EXCESS_BASE) -> int:
     by two, and the count rises from one to two while this measure falls from
     nine to six.
     """
+    counts(base=base)
+    if base < 3:
+        # ``counts`` admits zero, because most counts here may be zero, and it
+        # admits two, which ``remaining_weight`` is content with. Three is the
+        # bound this measure needs: a step puts at most two squaring terms in
+        # place of one, each with an excess at least one lower, so the measure
+        # falls only while ``base ** e > 2 * base ** (e - 1)``. Below three the
+        # sum is no longer zero exactly on a multi-affine map, which an audit
+        # of ``0.7.0rc1`` reached with ``base=0``.
+        raise ValueError(f"The excess base must be at least 3; got {base}.")
+
     return sum(base ** _excess(monomial) for _, monomial in squared_terms(source))
 
 
@@ -854,6 +865,15 @@ def reduce_to_multi_affine(
     that it arrives cheaply or that a shorter chain does not exist: the rule
     measured for milestone 0.7 buys two coordinates for most squares, and the
     dimensions it reaches are upper bounds.
+
+    It arrives inside the interpreter's recursion limit or not at all, as
+    ``reduce_to_degree3`` does and for the same reason: one frame per step, so
+    a source with more independent squares than the limit allows raises
+    ``RecursionError`` rather than reporting a cut-off outcome. A triangular
+    map with a thousand squares reaches it. Stated and not repaired, because
+    the longest chain this walk has produced is fourteen steps, for
+    ``spacerat11``; an audit of ``0.7.0rc1`` found that the sibling carried
+    this note and this function did not.
     """
     maps(source=source)
     counts(budget=budget)

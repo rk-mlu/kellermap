@@ -70,10 +70,15 @@ def squared_terms(
     The order is the ring's, made total by sorting, so that a walk over the
     result does not depend on which monomial a dictionary offered first.
     """
+    # Materialized once. ``set(exempt)`` inside the comprehension is rebuilt
+    # per generator, and a one-shot iterable is empty from the second onward:
+    # an audit of ``0.7.0rc1`` passed a generator and every variable counted.
+    # The signature promises ``Iterable`` and this is what honours it.
+    spared = set(exempt)
     positions = {
         index
         for index, variable in enumerate(polynomial_map.variables)
-        if variable in set(exempt)
+        if variable in spared
     }
 
     found = []

@@ -3132,6 +3132,11 @@ own when its slot is fresh. Only two of those five can square a variable, and
 each carries the excess of `Q`, which is at least one below the excess of `M`.
 So the measure falls whenever `base ** e > 2 * base ** (e - 1)`.
 
+A base below three is refused. `remaining_weight` refuses one below two for
+the same kind of reason, and until `0.7.0rc1` this function refused nothing:
+`base = 0` reported zero on a map that squares a variable, which is the one
+thing the measure claims never to do.
+
 **The walk arrives, and that is a consequence and not a hope.** For any
 monomial of excess `e` the split into its radical and the rest is among the
 candidates and lowers the measure, and a measure of positive integers cannot

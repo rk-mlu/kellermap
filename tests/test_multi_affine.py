@@ -95,6 +95,40 @@ def test_the_measure_is_zero_exactly_when_the_map_is_multi_affine() -> None:
     assert remaining_excess(square()) == EXCESS_BASE
 
 
+@pytest.mark.parametrize("base", [0, 1, 2])
+def test_a_base_below_three_is_refused(base: int) -> None:
+    """The measure is zero exactly on a multi-affine map only from three up.
+
+    A step puts at most two squaring terms in place of one, each with an excess
+    at least one lower, so the measure falls only while
+    ``base ** e > 2 * base ** (e - 1)``. An audit of ``0.7.0rc1`` reached zero
+    on a map that squares a variable by passing ``base=0``.
+    """
+    with pytest.raises(ValueError, match="at least 3"):
+        remaining_excess(cube(), base)
+
+
+@pytest.mark.parametrize("base", [True, 1.5])
+def test_a_base_that_is_not_an_integer_is_refused(base: object) -> None:
+    """The return type says ``int``, and ``1.5`` made it a float."""
+    with pytest.raises(TypeError):
+        remaining_excess(cube(), base)  # type: ignore[arg-type]
+
+
+def test_the_exempt_variables_may_be_any_iterable() -> None:
+    """A one-shot iterable is empty from the second generator onward.
+
+    ``set(exempt)`` stood inside the comprehension and was rebuilt per
+    generator, so an audit of ``0.7.0rc1`` passed a generator and every
+    variable counted. The signature promises ``Iterable``.
+    """
+    parameterised = PolynomialMap((x, y), (x + y**2, y))
+
+    assert squared_terms(parameterised, exempt=(y,)) == ()
+    assert squared_terms(parameterised, exempt=[y]) == ()
+    assert squared_terms(parameterised, exempt=(v for v in (y,))) == ()
+
+
 def test_the_count_of_squared_terms_would_not_serve_as_the_measure() -> None:
     """The first step on ``y**3`` replaces one squared monomial by two.
 
