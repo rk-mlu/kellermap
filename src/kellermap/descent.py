@@ -34,7 +34,7 @@ from sympy.polys.rings import PolyRing
 from .collision import Collision
 from .elementary import ElementaryAutomorphism
 from .errors import VerificationError
-from .polynomial_map import PolynomialMap
+from .polynomial_map import PolynomialMap, clone_ring, reindex
 from .reduction import Provenance
 
 
@@ -167,8 +167,19 @@ class DescentStep:
 
     @property
     def ring(self) -> PolyRing:
-        """Return the arithmetic context of the target."""
-        return self._source.ring.clone(symbols=self.variables)
+        """Return the arithmetic context of the target.
+
+        The source's domain and monomial order over the source's generators
+        without the deleted one, equal to ``target.ring`` and independent of
+        it.
+
+        Built with ``clone_ring`` and not with ``PolyRing.clone``, which is
+        what the first version called. That goes through SymPy's cache, so the
+        property handed the same mutable object back on every access, and an
+        audit of ``0.7.0rc1`` reached a caller's generator through it. The
+        docstring of ``clone_ring`` records the failure that decision prevents.
+        """
+        return clone_ring(self._source.ring, self.variables)
 
     @property
     def variables(self) -> tuple[sp.Symbol, ...]:
@@ -210,22 +221,37 @@ class DescentStep:
         their order. Derived on every access rather than stored, so that it
         cannot drift from the two automorphisms that determine it.
 
-        The second half of DSC-3 is checked here and not only in ``verify``.
-        ``PolynomialMap`` accepts a component that mentions a symbol outside
-        its generators, taking it into the coefficient domain, so a conjugate
-        that fails that half would otherwise yield a plausible map in which the
-        deleted coordinate had quietly become a parameter. A wrong claim raises
-        instead, naming the variable.
+        The second half of DSC-3 is checked here and not only in ``verify``,
+        and the components are carried over by ``reindex`` rather than read as
+        expressions. The first version built the target from expressions, which
+        re-infers a ring: an audit of ``0.7.0rc1`` found a source over ``QQ``
+        giving a target over ``ZZ``, and over a finite field that changes the
+        characteristic and with it the arithmetic of everything after the step.
+        Reading the exponent vectors keeps the domain and the order.
+
+        ``reindex`` drops the deleted generator, which is sound exactly when
+        its exponent is zero in every surviving term. That is the second half
+        of DSC-3, so the check above is what licenses the call rather than a
+        convenience. Without it ``PolynomialMap`` would take the deleted
+        coordinate into the coefficient domain and hand back a plausible map in
+        which it had quietly become a parameter.
         """
         self._verify_free()
         conjugate = self.conjugate()
-        components = tuple(
-            component
-            for position, component in enumerate(conjugate.components)
+        kept = tuple(
+            position
+            for position in range(self._source.dimension)
             if position != self._index
         )
+        reduced = clone_ring(
+            conjugate.ring, tuple(conjugate.variables[position] for position in kept)
+        )
+        polynomials = conjugate.to_polynomials()
 
-        return PolynomialMap(self.variables, components)
+        return PolynomialMap.from_ring(
+            reduced,
+            tuple(reindex(polynomials[position], reduced, kept) for position in kept),
+        )
 
     # ----------------------------------------------------------------------
     # Verification
@@ -244,14 +270,39 @@ class DescentStep:
         if self._verified:
             return
 
+        self._verify_changes()
         self._verify_tail()
         self._verify_free()
         self._verify_determinant()
 
         object.__setattr__(self, "_verified", True)
 
+    def _verify_changes(self) -> None:
+        """DSC-4, the half that is a statement about the arithmetic.
+
+        The two automorphisms have to be over the source's ring. Without this
+        the mismatch surfaced from inside ``ElementaryAutomorphism.apply_to``
+        as a bare ``ValueError`` naming neither the obligation nor the side it
+        came from, which an audit of ``0.7.0rc1`` reported.
+
+        An automorphism with no factors carries no ring and is admitted, as
+        DSC-4 says.
+        """
+        for automorphism, side in ((self._left, "left"), (self._right, "right")):
+            if not automorphism.factors:
+                continue
+            if automorphism.ring != self._source.ring:
+                raise VerificationError(
+                    "DSC-4",
+                    f"The {side} change is an automorphism over "
+                    f"{automorphism.ring.symbols} and the source is a map over "
+                    f"{self._source.ring.symbols}. A change is applied to the "
+                    "source and has to be over its ring.",
+                )
+
     def _verify_tail(self) -> None:
         """DSC-3, first half: the deleted component is triangular."""
+        self._verify_changes()
         conjugate = self.conjugate()
         variable = self._source.variables[self._index]
 
@@ -271,6 +322,7 @@ class DescentStep:
         surviving component that still mentions the coordinate would refer to
         a generator the target does not have.
         """
+        self._verify_changes()
         conjugate = self.conjugate()
         variable = self._source.variables[self._index]
 

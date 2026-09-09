@@ -1996,8 +1996,13 @@ because the deletion is what throws it away; the step keeps it, and DSC-6 is
 what it is kept for.
 
 **DSC-2 — Dimension and generators.** `target.dimension ==
-source.dimension - 1`, and the generators are the source's with the `k`-th
-removed, in order.
+source.dimension - 1`, the generators are the source's with the `k`-th removed,
+in order, and the coefficient domain and the monomial order are the source's.
+
+The last clause is not decoration. An audit of `0.7.0rc1` found the target
+being rebuilt from expressions, which re-infers a ring: a source over `QQ` gave
+a target over `ZZ`, and over a finite field that changes the characteristic and
+with it the arithmetic of every step after this one.
 
 The second step type that lowers a dimension, after `CompressionStep`. It
 lowers it by one where CHC-5 lowers it to the rank of a hull, and the two are
@@ -2024,6 +2029,11 @@ generator that the target does not have.
 `ElementaryAutomorphism`s over the source's ring, each stored as its ordered
 factorization, and each is applied on the side it is named for: `right` on the
 source's variables, `left` on the components.
+
+Being over the source's ring is checked and names this obligation. Until
+`0.7.0rc1` it was not, and the mismatch surfaced from inside
+`ElementaryAutomorphism.apply_to` as a bare `ValueError` naming neither the
+obligation nor the side it came from.
 
 Determinant one is not checked, because it is not a claim here. An
 `ElementaryFactor` is `X_j |-> X_j + P` with `P` free of `X_j`, so its Jacobian

@@ -16,6 +16,8 @@ import math
 
 import pytest
 import sympy as sp
+from sympy import GF, QQ
+from sympy.polys.rings import PolyRing
 
 from kellermap import (
     Collision,
@@ -131,6 +133,83 @@ def test_the_tail_is_what_the_deletion_throws_away() -> None:
     step = DescentStep(source, 2, left=change)
 
     assert step.tail() == x * y
+
+
+# ----------------------------------------------------------------------
+# The ring, DSC-2 and DSC-4
+# ----------------------------------------------------------------------
+
+
+@pytest.mark.parametrize(
+    ("domain", "order"), [(QQ, "lex"), (GF(5), "lex"), (QQ, "grlex")]
+)
+def test_the_target_keeps_the_domain_and_the_order(domain: object, order: str) -> None:
+    """The target is carried over and not re-read from expressions.
+
+    The first version built it with the expression constructor, which infers a
+    ring: an audit of ``0.7.0rc1`` found a source over ``QQ`` giving a target
+    over ``ZZ``, and over a finite field that changes the characteristic and
+    with it the arithmetic of every later step.
+    """
+    ring = PolyRing((x, y, z), domain, order)
+    source = PolynomialMap.from_ring(
+        ring,
+        (
+            ring.gens[0] + ring.gens[1] ** 2,
+            ring.gens[1],
+            ring.gens[2] + ring.gens[0] * ring.gens[1],
+        ),
+    )
+    step = DescentStep(source, 2)
+    step.verify()
+
+    assert step.target.ring.domain == domain
+    assert step.target.ring.order == ring.order
+    assert step.ring == step.target.ring
+
+
+def test_the_ring_is_a_fresh_object_on_every_access() -> None:
+    """``PolyRing.clone`` goes through SymPy's cache and hands one back.
+
+    ``clone_ring`` exists to avoid exactly that, and the first version of this
+    property did not use it, so a caller could reach the ring's generators
+    through a step. The docstring of ``clone_ring`` records the failure.
+    """
+    step = DescentStep(extension(), 2)
+
+    assert step.ring is not step.ring
+    assert step.ring == step.ring
+
+
+def test_an_automorphism_over_another_ring_fails_dsc_4() -> None:
+    """DSC-4, the half that is about arithmetic rather than about a type.
+
+    Without the check the mismatch surfaced from inside
+    ``ElementaryAutomorphism.apply_to`` as a bare ``ValueError`` naming neither
+    the obligation nor the side it came from.
+    """
+    elsewhere = PolynomialMap(sp.symbols("a b c"), sp.symbols("a b c"))
+    foreign = ElementaryAutomorphism(
+        (ElementaryFactor(elsewhere.ring, 0, -(elsewhere.variables[2] ** 2)),)
+    )
+
+    with pytest.raises(VerificationError, match=r"\[DSC-4\].*left change"):
+        DescentStep(extension(), 2, left=foreign).verify()
+
+    with pytest.raises(VerificationError, match=r"\[DSC-4\].*right change"):
+        DescentStep(extension(), 2, right=foreign).verify()
+
+
+def test_the_derived_parts_refuse_a_foreign_automorphism_too() -> None:
+    """A caller who reaches for the conjugate first gets the same message."""
+    elsewhere = PolynomialMap(sp.symbols("a b c"), sp.symbols("a b c"))
+    foreign = ElementaryAutomorphism(
+        (ElementaryFactor(elsewhere.ring, 0, -(elsewhere.variables[2] ** 2)),)
+    )
+    step = DescentStep(extension(), 2, left=foreign)
+
+    with pytest.raises(VerificationError, match=r"\[DSC-4\]"):
+        assert step.target
 
 
 # ----------------------------------------------------------------------
