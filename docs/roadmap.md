@@ -2835,20 +2835,97 @@ would only bring a step-at-a-time walk closer to imitating it. Section 10 of
 the same paper poses its own minimization in that spirit, over automorphisms
 rather than abbreviations.
 
-**Measurement first, as WP 1, WP 2 and WP 4 were.** Two figures decide the
-shape of everything after them.
+**Measurement first, as WP 1, WP 2 and WP 4 were. Run, and the answer is that
+no single lever pays.**
 
-Does a widened offer contain the six steps of the published chain? WP 4 says
-what each of the thirteen peeled steps misses, so the widening that would reach
-all of them is known on paper. What is not known is whether a rule general
-enough to offer them stays finite.
+*What each lever costs at the offer.* Counted at every map of the published
+chain; the columns are candidates, not states:
 
-And how much bigger does the space get? The present offer gives about nine
-states per coordinate of headroom. A widening that offers every sub-sum of a
-component multiplies that by two to the number of terms, and `spacerat11` step
-six acts on a component with eleven of them. A rule that cannot be enumerated
-is not a widening, and the measurement is what says which of the three levers
-can be pulled alone.
+| map | present offer | any anchor | any divisor degree | sub-sums add |
+| --- | ---: | ---: | ---: | ---: |
+| n=3, degree 7 | 22 | 54 | 32 | 109 |
+| n=5, degree 6 | 15 | 51 | 25 | 76 |
+| n=6, degree 6 | 15 | 47 | 25 | 76 |
+| n=7, degree 5 | 16 | 35 | 15 | 51 |
+| n=8, degree 5 | 15 | 23 | 12 | 48 |
+| n=10, degree 5 | 15 | 20 | 12 | 48 |
+
+At Alpoege's map the present offer is 22, of which 12 are leading splits and 10
+grouped. Widening the anchor to any monomial of degree four or more takes the
+first part from 12 to 54. Freeing the divisor degree takes the second from 10
+to 32. Offering sub-sums of the cofactors rather than all of them adds 109 on
+top of that. Pulled together the offer goes from 22 to about 195, which is a
+branching factor of nine, on a space that already grows by nine per coordinate
+of headroom.
+
+*What the cheapest lever buys.* The anchor is the one WP 4 gave the best reach
+for -- four of the thirteen peeled steps miss the offer on it alone -- and it
+is the cheapest to state. Searched exhaustively under the bound of eleven with
+only that lever pulled, and against the same rows without it:
+
+| from | coordinates to spend | present | with any anchor | degree three reachable |
+| --- | ---: | ---: | ---: | --- |
+| n=10 | 1 | 3 states | 3 | no, exhausted |
+| n=8 | 3 | 33 | 100 | no, exhausted |
+| n=7 | 4 | 299 | 2324 | no, exhausted |
+| n=6 | 5 | 2720 | 117718 | no, exhausted, 1212 s |
+
+All four are exhausted with the lever pulled as well as without it, so the
+anchor reaches nothing new from any map where the question is settled. It
+brings two of the six published steps into the offer -- `spacerat11` two and
+five, which WP 4 records as missing it on the anchor alone -- and the other
+four need the grouping changes, so no single lever makes the published chain
+reachable either.
+
+**What it costs is worse than the small maps suggested.** The factor is 1, 3,
+7.8 and 43 as the headroom goes from one coordinate to five, so it is not a
+constant multiplier on the space but one that compounds: the widened space
+grows by twenty to fifty per coordinate where the present one grows by nine.
+Six coordinates is therefore some six million states and eight is of the order
+of ten billion. The eleven-variable question from Alpoege's own map, which is
+about two million states under the present offer, is out of reach under the
+widened one and not by a little.
+
+*What that leaves.* The sub-sums are the lever with the reach and they are the
+one that cannot be afforded: two to the number of terms, on a component with
+eleven of them. A rule that cannot be enumerated is not a widening.
+
+**The second measurement was of the other formulation, and it closes the
+question the other way.**
+
+The idea was that choosing the abbreviations all at once against the original
+map might be a smaller space than choosing them one at a time against a
+residue, and that a set search saves the factorial of the number of steps
+against a sequence search. Two figures say it does not.
+
+*Order is not redundancy.* Of the 105 unordered pairs of the fifteen candidates
+at the six-variable map, not one reaches a common map at depth two, up to
+renaming the bought coordinates. Two steps in the other order do not give the
+same object, because the second acts on the residue the first left. So the
+sequence tree is not an inflated set tree and there is no factorial to save.
+
+*And the naive reading of rewriting does not preserve the Keller property.*
+Abbreviating `h = x^2` and `k = -x z` and replacing `-x^3 z` in Alpoege's third
+component by `h k` gives a component of degree two, which is better than the
+step produces. It also gives a map whose Jacobian determinant is a polynomial
+of degree fourteen rather than the constant `-2`. The three terms a `BCWStep`
+leaves -- `-h k - h x z + k x^2` -- are exactly what keeps the determinant, and
+they are the reason the construction is sequential in effect even where a paper
+presents it in one table.
+
+So the two formulations are not two search spaces. The published presentation
+is a chain's output written down at once, and `peel` recovers the chain. What
+WP 7 has established is a negative on both counts: widening the offer does not
+make the step-at-a-time search cheaper, and there is no all-at-once search to
+put in its place.
+
+**What is left open.** WP 4's three levers are measured and none pays alone;
+whether some pair pays is not measured, and the pair with the reach contains
+the sub-sums. Whether a search that may go up in dimension finds anything is
+the question the section below parks, and it is untouched by any of this. The
+milestone answers what it set out to ask and does not answer whether eleven is
+reachable; it now says what would have to change for that question to be
+askable at all, which is more than it had.
 
 **Two decisions the measurement of WP 6 already forces.** Expanding each
 published step against the component it acts on, steps two to five remove a
@@ -2873,6 +2950,27 @@ same reason holds here.
 
 Nor does it search. Whether a widened offer reaches eleven is a run, and a run
 belongs after the enumerator it runs over exists.
+
+## Where the milestone stands
+
+All seven packages are done. WP 1 measured the bottleneck of SYM-7; WP 2 and
+2.1 finished Theorem 2.1(b); WP 3 is withdrawn, milestone 0.6 having built it;
+WP 4 answered both of its questions; WP 5 and 5.1 added the descent; WP 6
+answered the milestone's own question in the negative with a reason; and WP 7
+measured the widening that reason suggested and found that none of it pays.
+
+`0.7.0rc1` is tagged from here. The `[0.7]` markers are gone from
+`docs/contracts.md` and the milestone paragraph there says which of the ten new
+obligations a reviewer should weigh differently.
+
+Two answers this milestone owes its readers are negative and neither was
+expected to be. Eleven variables are not reachable under the present offer from
+any map of the published chain where the question has been settled, and
+widening the offer does not make the question askable -- the cheapest lever
+multiplies a space that already grows by nine per coordinate by twenty to
+fifty more. The milestone set out to ask whether a search without a target
+finds what a backward search finds. It does not, and the reason is now measured
+rather than guessed.
 
 ## An open question this milestone raises and does not answer
 

@@ -36,10 +36,13 @@ machine-checkable certificate.
 
 ## Project Status
 
-Current version: **0.6.0**
+Current version: **0.7.0rc1**
 
 DOI: [10.5281/zenodo.22299353](https://doi.org/10.5281/zenodo.22299353). That
-is the DOI of this version, and the one `CITATION.cff` carries.
+is the DOI of `0.7.0rc1`, which does not have one: a release candidate is not
+deposited, so the number above belongs to `0.6.0`, the newest released version,
+and `CITATION.cff` carries the same one beside a version that has moved past
+it. Both change together when a DOI for `0.7.0` is reserved.
 
 Concept DOI: [10.5281/zenodo.22299351](https://doi.org/10.5281/zenodo.22299351).
 That one resolves to the newest version. Cite it for the software, and the
@@ -65,15 +68,19 @@ record holds.
   parameter; `reduce_to_multi_affine` is what reaches it, and HOM-11 and HOM-12
   are what say so at the end of the chain.
 - **Compression and the gradient form.** `CompressionStep` restricts a
-  homogeneous map to the subspace its collision generates, which is the one
-  step that *lowers* the dimension; `SymmetricLiftStep` turns the result into
-  the gradient of a quartic over `k(i)`, which is the object Zhao's Vanishing
-  Conjecture is about.
+  homogeneous map to the subspace its collision generates; `SymmetricLiftStep`
+  turns the result into the gradient of a quartic over `k(i)`, which is the
+  object Zhao's Vanishing Conjecture is about.
+- **The descent.** `DescentStep` deletes a coordinate that two elementary
+  changes of determinant one have made triangular. It is the second of the two
+  step types that *lower* a dimension, and the only one whose target may have a
+  higher degree than its source. It verifies a claim a caller supplies rather
+  than looking for the two changes itself.
 - **Chains.** `Reduction` joins steps and checks the adjacency;
   `ReductionContext` checks that a naming policy stays consistent along one.
 - **Collisions.** `Collision` is the evidence that a map is not injective, and
   it is transported across every step, so a reduction of a counterexample is
-  still a counterexample. Two of the seven step types may refuse a collision
+  still a counterexample. Two of the eight step types may refuse a collision
   rather than carry it, and say why.
 - **Four searches.** `search` walks from a source towards a target and is told
   what a fresh coordinate may carry; `peel` walks back from a target and is
@@ -87,41 +94,56 @@ record holds.
   makes is written in `docs/contracts.md` under a stable identifier, and the
   exception that fails cites it.
 
-### This milestone, 0.6
+### This milestone, 0.7
 
-The second and third stages of the Reduction Theorem, and the two constructions
-that carry the result to the form the literature compares. Everything before
-this milestone stopped at degree three, which is BCW's first stage; the
-published figures are cubic homogeneous, which is the third, so the two could
-not be set beside each other.
+What the Reduction Theorem still owed, and the first questions about the search
+that were worth asking.
 
-The whole pipeline, from the smallest degree-three map this project holds:
+**Theorem 2.1(b).** Milestone 0.6 produced the cubic homogeneous form, which is
+the corollary the literature usually quotes. The theorem asks for more: a form
+linear in every variable except the homogenizing parameter, and quadratic only
+in that parameter. `reduce_to_multi_affine` reaches the first, HOM-11 and
+HOM-12 say at the end of the chain that it arrived, and UNT-12 states the walk.
+The route, every step verified:
 
 | | | |
 | --- | ---: | --- |
-| `examples.spacerat11` | 11 | degree three |
-| `UnipotentStep` | 22 | Jacobian of the displacement nilpotent |
-| `HomogenizationStep` | 23 | cubic homogeneous |
-| `CompressionStep` | 19 | restricted to the collision hull |
-| `SymmetricLiftStep` | 38 | the gradient of a quartic over `Q(i)` |
+| `examples.alpoege13` | 13 | degree three |
+| `reduce_to_multi_affine` | 20 | no variable occurs squared |
+| `UnipotentStep` | 40 | Jacobian of the displacement nilpotent |
+| `HomogenizationStep` | 41 | the normal form of Theorem 2.1(b) |
 
-Every step verifies and the collision arrives at the far end.
-`scripts/measure_pipeline.py` recomputes the table, and does the same for the
-two larger maps.
+The refinement is a branch and not a stage. The symmetric lift does not carry
+the property, nothing between the gradient form and Zhao's Vanishing Conjecture
+asks for it, and carrying it there would cost about 130 variables against 38.
+`docs/architecture.md` says so under "Where the pipeline forks".
 
-Those are the smallest figures published at either stage, and they were
-published elsewhere first, by a different route and a month earlier. What that
-does and does not establish is in `docs/references.md`: the pipeline composes
-published constructions, it claims no minimality and no priority, and the forms
-it produces are denser than the published ones. `docs/errata.md` records that
-this project claimed otherwise for a week.
+**The descent.** `DescentStep` deletes a coordinate that two elementary changes
+have made triangular, DSC-1 to DSC-7. It is the fourth move of the two
+published derivations at degree three and the one this library had no step type
+for. It verifies a claim a caller supplies; searching for the two changes is a
+separate question and there is no `build` for it yet.
 
-### Next, 0.7
+**And the search does not reach eleven.** `reduce_to_degree3` arrives at
+dimension 13 from Alpoege's map without ever spending its budget, and started
+on the published eleven-variable chain's own maps it leaves them every time,
+including one step from the end. Searched exhaustively under a hard bound of
+eleven, the offer runs out with nothing to find from five of the six maps of
+that chain, and an external beam search reached the same answer from the sixth.
+Widening the offer was measured and does not pay: the cheapest of the three
+ways multiplies a space that already grows by nine per coordinate by twenty to
+fifty more, and reaches nothing new from any map where the answer is known.
 
-Performance, and two questions this milestone raised without answering: why the
-chains `peel` finds are not chains the untargeted search offers, and whether
-the dimension at degree three is the right thing for a search to minimize now
-that the number after four more stages can be computed.
+Two negative answers, and they are the result rather than a shortfall. What
+would have to change for the question to become askable is now measured instead
+of guessed, and `docs/roadmap.md` carries the figures.
+
+### Next, 0.8
+
+The last link of the chain: `Delta^m(P^m)` for the gradient form, which is what
+Zhao's Vanishing Conjecture is about, and a benchmark runner so that the
+timings this milestone collected can be compared across releases rather than
+read once.
 
 `docs/roadmap.md` carries the plan and the measurements behind it.
 `CHANGELOG.md` lists what each release changed, and the milestones before this

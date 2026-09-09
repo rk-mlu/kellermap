@@ -35,6 +35,23 @@ number maintained in one place and checked in none does. What it says now holds
 whenever it is read, and the milestone paragraphs below carry the history.
 `docs/errata.md` records the stale one.
 
+**Milestone `0.7`, closed.** The milestone finished Theorem 2.1(b), HOM-11 and
+HOM-12 for the property and UNT-12 for the walk that reaches it, and added the
+descent, DSC-1 to DSC-7. Their `[0.7]` markers are gone with the close.
+
+Two of the ten want a reviewer's attention. DSC-3 is the only obligation on
+this page whose failure says nothing about the map it was given: the source may
+be sound and the two automorphisms simply wrong, so it is a check on a claim
+rather than on data. And HOM-12 is the only one whose hypothesis is a property
+of the source that the source is not required to have, so it passes silently on
+every map this project carried before `0.7`; the paragraph under the HOM family
+says what its negative control therefore has to be and why there is none
+through `verify()`.
+
+UNT-12 was amended twice while it was implemented, and both amendments are
+visible in its wording. The first requirement it carried made the smallest case
+of the theorem unreachable rather than expensive.
+
 **Milestone `0.6`, closed.** The milestone added the second and third steps of
 the Reduction Theorem, UNI-1 to UNI-12 and HOM-1 to HOM-10; collision-hull
 compression, CHC-1 to CHC-10; and the symmetric lift, SYM-1 to SYM-12. Their
@@ -1355,7 +1372,7 @@ appended and the appended value is the same for all of them.
 
 **HOM-10 — Provenance is recorded, and not settable.** As BCW-9.
 
-**HOM-11 — The parameter occurs to degree at most two. [0.7]** In every
+**HOM-11 — The parameter occurs to degree at most two.** In every
 monomial of `target - X` the exponent of the fresh generator is at most two.
 
 This is the second half of Theorem 2.1(b), and HOM-1 already gives it: the
@@ -1364,7 +1381,7 @@ nothing else, so no target of this step can breach it. It is retained for the
 reason HOM-5 to HOM-8 are retained, and it turns the half of 2.1(b) this step
 is responsible for from an argument into a check.
 
-**HOM-12 — A multi-affine source gives a multi-affine target. [0.7]** If no
+**HOM-12 — A multi-affine source gives a multi-affine target.** If no
 variable occurs squared in any monomial of `source - X`, then no variable other
 than the fresh generator occurs squared in any monomial of `target - X`.
 
@@ -1942,8 +1959,12 @@ derivation reaches the same shape by a different route.
 
 **Where it sits.** At degree three, among the moves of the reduction, and not
 in the chain towards the gradient form. It stands last here because it is the
-newest and because none of it is implemented; the pipeline is the seven types
-above.
+newest and because it joins no chain this library builds; the pipeline is the
+seven types above.
+
+It is the second of the eight step types that lower a dimension, after
+`CompressionStep`, and the only one whose target may have a higher degree than
+its source.
 
 **Why the identifier is `DSC`.** The obvious three-letter abbreviation of
 "descent" spells a German article, which is on the word list of
@@ -1954,7 +1975,7 @@ would weaken the list for every page, and a prefix is the cheaper thing to
 change. A new family should be tried against that list before it is written
 out.
 
-**What this package does not do.** It does not look for the two changes. The
+**What this family does not do.** It does not look for the two changes. The
 step verifies a claim a caller supplies, and searching for the pair is a
 separate thing that comes after, on the division `BCWStep` and `peel` already
 stand on. So there is no `build()` in `0.7`, and DSC-7 says what follows from
@@ -1964,7 +1985,7 @@ The step keeps the source, the index of the coordinate to delete, and the two
 automorphisms. Everything else is derived: the conjugate `left . source .
 right`, the tail that the deleted component carries, and the target.
 
-**DSC-1 — The conjugate and the deletion. [0.7]** With
+**DSC-1 — The conjugate and the deletion.** With
 `C = left . source . right` and `k = index`, `target` has as its components the
 `C_j` for `j != k`, in their order, read in the ring of DSC-2.
 
@@ -1974,7 +1995,7 @@ things that can disagree. What cannot be derived is the tail, `C_k - X_k`,
 because the deletion is what throws it away; the step keeps it, and DSC-6 is
 what it is kept for.
 
-**DSC-2 — Dimension and generators. [0.7]** `target.dimension ==
+**DSC-2 — Dimension and generators.** `target.dimension ==
 source.dimension - 1`, and the generators are the source's with the `k`-th
 removed, in order.
 
@@ -1983,7 +2004,7 @@ lowers it by one where CHC-5 lowers it to the rank of a hull, and the two are
 otherwise unrelated: one deletes a coordinate that has become triangular, the
 other restricts to a subspace a collision lies in.
 
-**DSC-3 — The coordinate is triangular in the conjugate. [0.7]** In
+**DSC-3 — The coordinate is triangular in the conjugate.** In
 `C = left . source . right`,
 
     C_k - X_k   is free of X_k, and
@@ -1999,7 +2020,7 @@ The second half is what makes the deletion well defined rather than a
 truncation. Without it the components that survive would still refer to a
 generator that the target does not have.
 
-**DSC-4 — The two changes are exhibited. [0.7]** `left` and `right` are
+**DSC-4 — The two changes are exhibited.** `left` and `right` are
 `ElementaryAutomorphism`s over the source's ring, each stored as its ordered
 factorization, and each is applied on the side it is named for: `right` on the
 source's variables, `left` on the components.
@@ -2015,7 +2036,7 @@ An automorphism with no factors is admitted on either side. The move needs one
 change on each side in Macfarlane's derivation and the page does not know that
 every instance does.
 
-**DSC-5 — The determinant carries over. [0.7]** `target.determinant() ==
+**DSC-5 — The determinant carries over.** `target.determinant() ==
 source.determinant()`.
 
 A self-check of this library's own arithmetic. Under DSC-3 the Jacobian of `C`
@@ -2025,7 +2046,7 @@ is here because the descent is the only move in this library that could quietly
 lose the Keller property while lowering a dimension, and a caller should not
 have to recompute a determinant to find that it did not.
 
-**DSC-6 — A collision transports, and the transport is exhibited. [0.7]** For a
+**DSC-6 — A collision transports, and the transport is exhibited.** For a
 `Collision` of the source at points `p_1, ..., p_r`, the transported points are
 the `right.inverse()(p_i)` with their `k`-th coordinate deleted, and they are a
 `Collision` of the target.
@@ -2036,7 +2057,7 @@ argument. If two of them agreed, the two points they come from agreed outside
 `X_k + (C_k - X_k)` with the tail free of `X_k` by DSC-3, so their `k`-th
 coordinates agreed too and the points were one point.
 
-**DSC-7 — Provenance is recorded, and not settable. [0.7]** As BCW-9, with one
+**DSC-7 — Provenance is recorded, and not settable.** As BCW-9, with one
 difference: `0.7` gives this type no `build()`, so every instance is `SUPPLIED`
 and nothing in this milestone can produce a `CONSTRUCTED` one.
 
@@ -3065,7 +3086,7 @@ rather than slow. The two are separate packages so that a failure in the second
 cannot have its cause in the first.
 
 **UNT-12 — The multi-affine walk anchors on the squared monomial, and it is a
-second enumerator. [0.7]** At a map of degree at most three,
+second enumerator.** At a map of degree at most three,
 `reduce_to_multi_affine` offers one candidate per factorization `M = P Q` into
 two parts of positive degree, of every monomial `M` of the displacement in
 which some variable occurs squared. A candidate whose target does not lower

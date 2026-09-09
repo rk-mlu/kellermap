@@ -4,6 +4,76 @@ Notable changes per release. The milestone plan and its reasoning live in
 `docs/roadmap.md`, the binding obligations of the verification surface in
 `docs/contracts.md`.
 
+## 0.7.0rc1
+
+What the Reduction Theorem still owed, the obligation of the symmetric lift
+that was argued rather than checked, and the first questions about the search
+that were worth asking.
+
+### Theorem 2.1(b)
+
+`reduce_to_multi_affine` reaches the half of the theorem the homogenization
+cannot supply: a cubic map in which no variable occurs squared. HOM-11 and
+HOM-12 say at the end of the chain that the property arrived, over every
+variable except the homogenizing parameter and not only over the ones the
+source began with. `squared_terms` in `kellermap.bcw.grading` is what all three
+read.
+
+The walk is a second enumerator and not the degree reduction with another
+stopping rule, UNT-12. It measures itself by `remaining_excess`, and the count
+of squared monomials would not serve: the first step on `y^3` replaces one by
+two while the measure falls from nine to six.
+
+Measured, every step verified: `alpoege13` reaches the normal form at 41
+variables, `alpoege12` at 49, `spacerat11` at 53. The order inverts, and the
+cost of verifying the six chains follows neither the dimension nor the density.
+
+The refinement is a branch and not a stage. `docs/architecture.md` says why
+under "Where the pipeline forks": the symmetric lift does not carry the
+property, nothing between the gradient form and the Vanishing Conjecture asks
+for it, and carrying it there would cost about 130 variables against 38.
+
+### The descent
+
+`DescentStep` deletes a coordinate that two elementary changes have made
+triangular, DSC-1 to DSC-7. It is the fourth move of the two published
+derivations at degree three and the one this library had no step type for. It
+verifies a claim a caller supplies; there is no `build`, so every instance is
+`SUPPLIED`, and searching for the two changes is a separate question.
+
+### SYM-7
+
+The determinant of the gradient form was stopped after nineteen hours rather
+than eight, and the obligation now rests on what the run showed: the cost
+follows the carrier and not the dimension. Every stage before the lift leaves a
+four-by-four block; the lift leaves twenty-nine.
+
+### What the search does and does not reach
+
+`reduce_to_degree3` reaches dimension 13 from Alpoege's map in seven steps and
+never spends its budget, so what bounds it is the greedy rule and the offer.
+Started on the published eleven-variable chain's own maps it leaves for 13 or
+14 every time, including one step from the end.
+
+Searched exhaustively under a hard bound of eleven, the offer runs out with
+nothing of degree three to find from five of the six maps of that chain, and
+the external beam driver reached the same answer from the sixth. Both searches
+enumerate one offer, so the two negatives are one negative.
+
+Widening that offer was measured and does not pay. The three ways to widen it
+cost a branching factor of nine at Alpoege's map; the cheapest of them
+multiplies the searched space by a factor that compounds to twenty or fifty per
+coordinate and reaches nothing new from any map where the answer is known. No
+single one of them makes the published chain reachable.
+
+### Documentation
+
+`docs/errata.md` gains four entries. Theorem 2.1(b) had been stated for the
+original variables only; a work package planned a step a previous milestone had
+already built; a widening was assigned to a milestone that does not contain it;
+and a bought coordinate was said not to be able to carry a sum. All four were
+found by reading a page against the source it rests on rather than by a gate.
+
 ## 0.6.0
 
 The second and third stages of the Reduction Theorem, and the two constructions
