@@ -47,7 +47,17 @@ compression and to thirty-four with the symmetric lift. The audits of milestone
 0.6 added the rest: three with ``0.6.0rc1``, one with ``0.6.0rc2``, one with
 ``0.6.0rc3``, two with ``0.6.0rc4`` and one with ``0.6.0rc5``, which makes
 forty-two. That sentence had lost a conjunction and named two counts in a row
-without one until ``0.6.0rc6``.
+without one until ``0.6.0rc6``. The audit of ``0.7.0rc1`` added three for the
+descent, which makes forty-five.
+
+Milestone 0.7 added ten obligations and only three of them are here. HOM-11 and
+HOM-12 cannot fail after HOM-1, which the contract page argues where it says
+which of the HOM family can fail on supplied data, so a probe for either would
+report a miss for a reason that is not a missing control. UNT-12 is an
+enumerator and offers rather than certifies, as no UNT clause has a probe. What
+is left is DSC-3 in both halves and DSC-4 in the half that is about arithmetic,
+and those are exactly the clauses that page names as able to fail on data a
+caller supplies.
 
 They do **not** reproduce the ten misses of the first run, and until
 ``0.4.0rc14`` this file and ``CHANGELOG.md`` said they did. Two reasons. The
@@ -425,6 +435,27 @@ PROBES: tuple[Probe, ...] = (
         "src/kellermap/compression.py",
         "    elif domain.characteristic() != 0:",
         "    elif False:",
+    ),
+    Probe(
+        "DSC-3",
+        "the deleted component is triangular",
+        "src/kellermap/descent.py",
+        "        if tail.has(variable):",
+        "        if False:",
+    ),
+    Probe(
+        "DSC-3",
+        "no surviving component mentions the deleted coordinate",
+        "src/kellermap/descent.py",
+        "            if sp.expand(component).has(variable):",
+        "            if False:",
+    ),
+    Probe(
+        "DSC-4",
+        "the two changes are over the source's ring",
+        "src/kellermap/descent.py",
+        "            if automorphism.ring != self._source.ring:",
+        "            if False:",
     ),
 )
 

@@ -124,8 +124,8 @@ the Zenodo record and of `CITATION.cff` lists one person.
 
 **What was verified rather than trusted.** Every claim in this repository is
 under a gate that a person ran: the obligations of `docs/contracts.md` with a
-negative control each, forty-two mutation probes, eight reconstructions that do
-not import the library, two measurement scripts tied to the pages in both
+negative control each, forty-five mutation probes, eight reconstructions that
+do not import the library, two measurement scripts tied to the pages in both
 directions, and the audits. `docs/errata.md` lists what got through anyway,
 which is the honest measure of how much any of it is worth.
 

@@ -23,6 +23,12 @@ iterable was empty from the second generator onward and every variable counted.
 that squares a variable. `reduce_to_multi_affine` now carries the note about
 the interpreter's recursion limit that its sibling has.
 
+`scripts/mutation_probe.py` gains three probes, for both halves of DSC-3 and
+for the half of DSC-4 that is about arithmetic. Those are the clauses the
+contract page names as able to fail on data a caller supplies; HOM-11 and
+HOM-12 cannot fail after HOM-1 and UNT-12 is an enumerator, so neither takes
+one.
+
 The carrier map kept one coordinate per value where two can hold it, so the
 walk bought a coordinate it already had. `(x + y^3, y)` reaches the multi-affine
 form at dimension six again, which is the chain `docs/roadmap.md` writes out,

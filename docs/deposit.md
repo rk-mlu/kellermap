@@ -112,7 +112,7 @@ documentation in conversation with the maintainer, and a different model
 audited the release candidates. `docs/provenance.md` names the tools, says what
 each did, and records what the arrangement found -- six audits, of which the
 first five each turned up faults that the test suite, the coverage requirement
-and a forty-two-probe mutation sweep had all passed. Neither model is an
+and the mutation sweep, forty-two probes at the time, had all passed. Neither model is an
 author. The maintainer set the tasks, ran the gates, read the deliveries and
 decided what entered the repository.
 
