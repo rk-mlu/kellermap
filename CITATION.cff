@@ -33,9 +33,12 @@ abstract: >-
   transported across each step and re-verified, so a reduction of a
   counterexample is still a counterexample.
 
-  Milestone 0.6 implements the second and third stages of the Bass-Connell-
-  Wright Reduction Theorem, collision-hull compression, and the symmetric lift
-  to the gradient form of a quartic. The constructions are other people's; what
+  Milestone 0.7 completes the Bass-Connell-Wright Reduction Theorem, including
+  the multi-affine normal form of its part (b), and adds a descent that deletes
+  a coordinate two determinant-one changes have made triangular. Milestone 0.6
+  had implemented the second and third stages of that theorem, collision-hull
+  compression, and the symmetric lift to the gradient form of a quartic. The
+  constructions are other people's; what
   this project contributes is the composition of them, the certificates, and
   eight independent reconstruction scripts that recompute the published results
   without using the library. No minimality and no priority is claimed for any

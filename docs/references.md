@@ -607,15 +607,19 @@ Which stage costs what: the second, p. 306, is the one that doubles, where
 one variable, `L = (X + N(T), T)`. Together `2n + 1`, and Long's two figures
 are that arithmetic exactly, since `2 * 39 + 1 = 79`.
 
-What this project builds is those two stages and not the whole of Theorem 2.1.
-Part (b) of that theorem asks for a normal form that is in addition linear in
-every variable except `T` and quadratic only in `T`, which Proposition (3.1)
-delivers in a second half this library does not implement. Every variable and
-not only the ones the source began with: the coordinates the earlier stages
-buy fall under it too. The map a
-chain reaches here is cubic homogeneous with nilpotent Jacobian and need not be
-multi-affine: `(x + y^3, y)` homogenizes to a verified five-dimensional target
-that still carries a `y^3`.
+What this project builds is those two stages, and since `0.7.0` the whole of
+Theorem 2.1. Part (b) of that theorem asks for a normal form that is in
+addition linear in every variable except `T` and quadratic only in `T` -- every
+variable and not only the ones the source began with, so the coordinates the
+earlier stages buy fall under it too. `reduce_to_multi_affine` reaches the
+first half and HOM-11 and HOM-12 check both at the end of the chain.
+
+It is a branch and not a stage, so a chain that is not asked for it still ends
+cubic homogeneous with nilpotent Jacobian and need not be multi-affine:
+`(x + y^3, y)` homogenizes to a verified five-dimensional target that still
+carries a `y^3`, where the refinement takes the same map to a verified
+thirteen. `docs/architecture.md` says under "Where the pipeline forks" why the
+chain towards the gradient form does not take that branch.
 
 Nothing on this page rests on the refinement. The corollary the literature uses
 -- and every figure compared below -- needs the cubic homogeneous form and not
@@ -637,16 +641,19 @@ Two things about it belong here rather than in a comparison.
 It is cubic homogeneous, so it is at BCW's third stage and not the first. It is
 therefore comparable with Long's 79 and not with the 13 of `alpoege13`.
 
-The library carries out neither of the two stages that lead there, so it has no
-certified figure at that stage and claims none. What exists is a measurement
-made while milestone 0.6 was being cut, in plain SymPy and outside the library:
+Milestone 0.6 built both stages, so the figure at that stage is certified now.
 `alpoege13` normalized, made unipotent and homogenized is 27 variables, and
-compressed by Theorem 3 of arXiv:2608.12543v1 it is 22. Below 24 and above
-Macfarlane's 20. `docs/roadmap.md` states what that computation checks and what
-it does not, and the determinant is among the things it does not check as a
-polynomial. It is a target for the packages of 0.6 and not a figure this
-repository claims; until a certificate stands behind it, no comparison is drawn
-from it.
+compressed it is 22: below Thompson's 24 and above Macfarlane's 20. Every step
+verifies and `scripts/measure_pipeline.py` recomputes both numbers against this
+page.
+
+The figure was a measurement in plain SymPy and outside the library while 0.6
+was being cut, and this paragraph said so and drew no comparison from it,
+because the determinant was among the things that computation did not check as
+a polynomial. What the certificate adds is exactly that. What it does not add
+is priority or minimality: 22 is smaller than 24 by a different route, and
+`docs/errata.md` records that this project once read more into such a
+comparison than it establishes.
 
 The nilpotence index was corrected. Thompson reports `(JN)^17 = 0`; an
 independent verification, Zenodo record 21504303 of 23 July 2026, reports the

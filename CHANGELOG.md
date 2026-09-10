@@ -23,6 +23,15 @@ iterable was empty from the second generator onward and every variable counted.
 that squares a variable. `reduce_to_multi_affine` now carries the note about
 the interpreter's recursion limit that its sibling has.
 
+Documentation the audit found stale. `docs/references.md` still said the
+library does not implement the multi-affine half of Theorem 2.1(b), which
+stopped being true in this milestone, and a second paragraph still said it
+carries out neither of the two stages that lead to the cubic homogeneous form,
+which stopped being true in 0.6: the 27 and the 22 for `alpoege13` are
+certified now and `scripts/measure_pipeline.py` recomputes both. The abstract of
+`CITATION.cff` described milestone 0.6 and the description in `pyproject.toml`
+still said the project was working towards the reduction.
+
 `scripts/mutation_probe.py` gains three probes, for both halves of DSC-3 and
 for the half of DSC-4 that is about arithmetic. Those are the clauses the
 contract page names as able to fail on data a caller supplies; HOM-11 and
