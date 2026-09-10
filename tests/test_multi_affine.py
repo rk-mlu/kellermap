@@ -201,6 +201,28 @@ def test_two_equal_factors_take_two_coordinates() -> None:
     assert squared_terms(step.target) == ()
 
 
+def test_a_second_carrier_of_a_value_is_offered_when_the_first_will_not_do() -> None:
+    """Two coordinates can hold one value and the split decides which serves.
+
+    After two steps on ``(x + y**3, y)`` the coordinates two and four both
+    hold ``y``. The third step needs one of them against a factor containing
+    the other, so exactly one of the two works. Keeping only the first made
+    the walk buy a coordinate it already had.
+    """
+    outcome = reduce_to_multi_affine(cube())
+    assert outcome.reduction is not None
+
+    middle = outcome.reduction.steps[1].target
+    holding = [
+        index
+        for index in middle.carrier_indices
+        if sp.expand(middle.components[index] - middle.variables[index]) == y
+    ]
+
+    assert len(holding) == 2
+    assert outcome.reduction.steps[2].target.dimension == middle.dimension + 1
+
+
 def test_a_carrier_is_used_where_one_is_safe() -> None:
     """UNT-9's saving, in this walk: a factor a coordinate holds costs nothing.
 
@@ -238,13 +260,21 @@ def test_a_carrier_inside_the_other_factor_is_passed_over() -> None:
 
 
 def test_the_smallest_case_arrives_and_verifies() -> None:
-    """``(x + y**3, y)`` is the case Theorem 2.1(b) is smallest on."""
+    """``(x + y**3, y)`` is the case Theorem 2.1(b) is smallest on.
+
+    Three steps to dimension six, which is the chain ``docs/roadmap.md``
+    writes out. Until the carrier selector was corrected the walk took the
+    same three steps to dimension seven, because it kept one coordinate per
+    value and the one it kept was unusable at the third.
+    """
     outcome = reduce_to_multi_affine(cube())
     assert outcome.reduction is not None
 
     outcome.reduction.verify()
     target = outcome.reduction.target
 
+    assert len(outcome.reduction.steps) == 3
+    assert target.dimension == 6
     assert squared_terms(target) == ()
     assert target.degree() == 3
     assert target.determinant() == 1
@@ -428,7 +458,7 @@ def test_the_walk_reaches_the_three_maps_of_the_milestone() -> None:
         assert squared_terms(outcome.reduction.target) == ()
         assert outcome.reduction.target.degree() == 3
 
-    assert reached == {"alpoege13": 20, "alpoege12": 24, "spacerat11": 26}
+    assert reached == {"alpoege13": 19, "alpoege12": 23, "spacerat11": 24}
 
 
 def test_a_bcw_step_that_squares_a_carrier_is_still_buildable() -> None:

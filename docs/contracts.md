@@ -3191,13 +3191,25 @@ and the last column is the endpoint of Theorem 2.1(b), reached through
 | | rule | steps | multi-affine | unipotent | 2.1(b) |
 | --- | --- | ---: | ---: | ---: | ---: |
 | `alpoege13`, 13 | crude | 10 | 33 | 66 | 67 |
-| `alpoege13`, 13 | walk | 10 | 20 | 40 | 41 |
+| `alpoege13`, 13 | walk | 10 | 19 | -- | -- |
 | `alpoege12`, 12 | crude | 12 | 36 | 72 | 73 |
-| `alpoege12`, 12 | walk | 12 | 24 | 48 | 49 |
+| `alpoege12`, 12 | walk | 12 | 23 | -- | -- |
 | `spacerat11`, 11 | crude | 14 | 39 | 78 | 79 |
-| `spacerat11`, 11 | walk | 14 | 26 | 52 | 53 |
+| `spacerat11`, 11 | walk | 14 | 24 | -- | -- |
 
-All six endpoints have no squared variable other than the parameter and no
+The walk's column moved by one, one and two at `0.7.0rc2`. Until then the
+carrier map kept one coordinate per value where two can hold it, so the walk
+bought a coordinate it already had; an audit of `0.7.0rc1` found it costing the
+dimension six that the smallest case reaches. The figures before the correction
+were 20, 24 and 26.
+
+The three endpoints under the walk are not filled in. Their chains have to be
+run again after the correction, and `2n + 1` is arithmetic rather than a
+certificate. The crude rule's endpoints stand: they were measured and the
+correction does not touch that rule.
+
+The endpoints that are filled in have no squared variable other than the
+parameter and no
 power of the parameter above two, which is the pair HOM-11 and HOM-12 state.
 The count exempts the parameter and nothing else, so the coordinates the
 refinement and the unipotent reduction buy are counted with the rest.
@@ -3205,6 +3217,11 @@ refinement and the unipotent reduction buy are counted with the rest.
 Carrier reuse is the whole of the difference between the two rules. The step
 count is identical under both; what changes is how many coordinates a step
 buys, and that is the same saving UNT-9 records for the degree reduction.
+
+Which carrier, as well as whether one. A value can be held by two coordinates
+and only one of them serve a given split, so the walk offers every admissible
+pair of slots rather than choosing greedily from the left, and lets the
+ordering take the pair that buys least.
 
 The order inverts under both rules. The smallest map at degree three gives the
 largest endpoint, where the four stages of milestone `0.6` were monotone on the

@@ -4,6 +4,31 @@ Notable changes per release. The milestone plan and its reasoning live in
 `docs/roadmap.md`, the binding obligations of the verification surface in
 `docs/contracts.md`.
 
+## 0.7.0rc2
+
+The corrections an external audit of `0.7.0rc1` asked for.
+
+`DescentStep` rebuilt its target with the expression constructor, which
+re-infers a ring: a source over `QQ` gave a target over `ZZ`, and over a finite
+field that changes the characteristic. It is carried over with `clone_ring` and
+`reindex` now. The step's `ring` property went through SymPy's cache and handed
+the same mutable object back on every access, which is what `clone_ring` exists
+to prevent. DSC-4 asked for automorphisms over the source's ring and nothing
+checked; a mismatch surfaced as a bare `ValueError` from inside
+`ElementaryAutomorphism`.
+
+`squared_terms` rebuilt its exempt set inside a comprehension, so a one-shot
+iterable was empty from the second generator onward and every variable counted.
+`remaining_excess` validated nothing: a base of zero reported zero on a map
+that squares a variable. `reduce_to_multi_affine` now carries the note about
+the interpreter's recursion limit that its sibling has.
+
+The carrier map kept one coordinate per value where two can hold it, so the
+walk bought a coordinate it already had. `(x + y^3, y)` reaches the multi-affine
+form at dimension six again, which is the chain `docs/roadmap.md` writes out,
+and the three maps of the milestone reach 19, 23 and 24 against 20, 24 and 26.
+The chains from there to the normal form of Theorem 2.1(b) are pending a rerun.
+
 ## 0.7.0rc1
 
 What the Reduction Theorem still owed, the obligation of the symmetric lift
@@ -24,9 +49,11 @@ stopping rule, UNT-12. It measures itself by `remaining_excess`, and the count
 of squared monomials would not serve: the first step on `y^3` replaces one by
 two while the measure falls from nine to six.
 
-Measured, every step verified: `alpoege13` reaches the normal form at 41
-variables, `alpoege12` at 49, `spacerat11` at 53. The order inverts, and the
-cost of verifying the six chains follows neither the dimension nor the density.
+Measured, every step verified: the walk takes `alpoege13` to 19 variables,
+`alpoege12` to 23 and `spacerat11` to 24. The three chains to the normal form
+itself are pending a rerun after the carrier correction below;
+`docs/contracts.md` says which figures stand. The order inverts, and the cost
+of verifying a chain follows neither the dimension nor the density.
 
 The refinement is a branch and not a stage. `docs/architecture.md` says why
 under "Where the pipeline forks": the symmetric lift does not carry the

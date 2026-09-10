@@ -716,12 +716,45 @@ def _factor_splits(
         yield left, right
 
 
+def _multi_affine_holders(source: PolynomialMap) -> dict[sp.Expr, tuple[int, ...]]:
+    """Map a value to every coordinate of ``carrier_indices`` that holds it.
+
+    Every one, where ``_carried_values`` keeps the first. Two coordinates can
+    hold one value -- after two steps on ``(x + y**3, y)`` two of them hold
+    ``y`` -- and which of them a split can use depends on the split. Keeping
+    one made the other unreachable, so the walk bought a coordinate it already
+    had: an audit of ``0.7.0rc1`` found it costing the dimension six that
+    ``docs/roadmap.md`` claims for that map.
+
+    ``carrier_indices`` is what holding a value means here, and it is
+    deliberately not maximal: it drops every coordinate on a dependency cycle,
+    so a coordinate BCW-10 would admit as a factor can be absent from it. That
+    is a property of the unipotent block it establishes rather than of this
+    walk, and widening it is a change to ``PolynomialMap``.
+    """
+    holders: dict[sp.Expr, list[int]] = {}
+    for index in source.carrier_indices:
+        value = sp.expand(source.components[index] - source.variables[index])
+        if value != 0:
+            holders.setdefault(value, []).append(index)
+
+    return {value: tuple(indices) for value, indices in holders.items()}
+
+
+def _mark(slot: Slot) -> tuple[str, object]:
+    """A hashable stand-in for a slot, for deduplication."""
+    if isinstance(slot, Carried):
+        return ("carried", slot.index)
+
+    return ("bought", slot)
+
+
 def _multi_affine_slots(
     source: PolynomialMap,
     parts: tuple[tuple[int, ...], tuple[int, ...]],
-    carried: dict[sp.Expr, int],
-) -> tuple[Slot, Slot]:
-    """Return the two slots for a split, taking a carrier where one is safe.
+    holders: dict[sp.Expr, tuple[int, ...]],
+) -> list[tuple[Slot, Slot]]:
+    """Return every admissible pair of slots for a split.
 
     Component ``i`` of the target is ``(F_i - c P Q) - X_u Q - P X_v -
     X_u X_v``. The product cancels and the three terms that replace it are
@@ -729,9 +762,15 @@ def _multi_affine_slots(
     occur in ``P``, and ``u`` and ``v`` are two coordinates rather than one.
 
     A carrier that breaks any of those is not refused, it is passed over: the
-    factor is offered fresh instead, which costs a dimension and keeps the
-    step. Refusing would leave a map with no candidate at all where one exists,
-    and UNT-12 is a walk that has to arrive.
+    factor can be bought instead, which costs a dimension and keeps the step.
+    Refusing would leave a map with no candidate at all where one exists, and
+    UNT-12 is a walk that has to arrive.
+
+    Every admissible pair, and not one, because choosing greedily from the left
+    can cost a coordinate. Where the first factor may take either of two
+    carriers and the second only one of them, taking that one first forces the
+    second to be bought. ``multi_affine_steps`` orders by coordinates bought,
+    so offering the alternatives is what lets the cheaper pair win.
 
     A slot on the component the step acts on is what ``BCWStep`` rejects, and
     there is no branch against it here for the reason ``_slot`` gives for the
@@ -743,18 +782,43 @@ def _multi_affine_slots(
     variables = source.variables
     values = tuple(_monomial(part, variables) for part in parts)
 
-    chosen: list[Slot] = []
-    taken: set[int] = set()
+    options: list[list[Slot]] = []
     for position in (0, 1):
-        holder = carried.get(values[position])
         other = parts[1 - position]
-        if holder is not None and holder not in taken and other[holder] == 0:
-            chosen.append(Carried(holder))
-            taken.add(holder)
-            continue
-        chosen.append(values[position])
+        options.append(
+            [
+                *(
+                    Carried(index)
+                    for index in holders.get(values[position], ())
+                    if other[index] == 0
+                ),
+                values[position],
+            ]
+        )
 
-    return chosen[0], chosen[1]
+    pairs: list[tuple[Slot, Slot]] = []
+    seen: set[tuple[tuple[str, object], ...]] = set()
+    for left in options[0]:
+        for right in options[1]:
+            if (
+                isinstance(left, Carried)
+                and isinstance(right, Carried)
+                and left.index == right.index
+            ):
+                continue
+
+            marks = (_mark(left), _mark(right))
+            if parts[0] == parts[1]:
+                # One monomial twice, so the two orders name one step. SEA-2
+                # gives the reason ``_splits`` deduplicates the same way.
+                marks = tuple(sorted(marks, key=repr))  # type: ignore[assignment]
+            if marks in seen:
+                continue
+
+            seen.add(marks)
+            pairs.append((left, right))
+
+    return pairs
 
 
 def _multi_affine_level(
@@ -795,7 +859,7 @@ def multi_affine_steps(
     """
     built: list[tuple[tuple[int, int], BCWStep]] = []
     before = remaining_excess(source)
-    carried = _carried_values(source)
+    holders = _multi_affine_holders(source)
     displacement = source.displacement().to_polynomials()
 
     for index, monomial in squared_terms(source):
@@ -803,31 +867,34 @@ def multi_affine_steps(
             displacement[index].to_dict()[monomial]
         )
         for parts in _factor_splits(monomial):
-            slots = _multi_affine_slots(source, parts, carried)
-            supply = iter(
-                naming.variables(
-                    source.ring, sum(not isinstance(slot, Carried) for slot in slots)
+            for slots in _multi_affine_slots(source, parts, holders):
+                supply = iter(
+                    naming.variables(
+                        source.ring,
+                        sum(not isinstance(slot, Carried) for slot in slots),
+                    )
                 )
-            )
-            factors = tuple(
-                slot if isinstance(slot, Carried) else Fresh(slot, next(supply))
-                for slot in slots
-            )
-            step = BCWStep.build(
-                source,
-                index,
-                *cast(tuple[Factor, Factor], factors),
-                _multi_affine_level(slots, parts),
-                coefficient,
-            )
-            removed = before - remaining_excess(step.target)
-            if removed <= 0:
-                # A split that leaves as much behind as it removes. It happens:
-                # at ``x**2 y`` the split ``y * x**2`` moves the square into a
-                # fresh component and into the residue, where the split
-                # ``x * x y`` clears it. UNT-12 is what leaves this one out.
-                continue
-            built.append(((-removed, step.target.dimension - source.dimension), step))
+                factors = tuple(
+                    slot if isinstance(slot, Carried) else Fresh(slot, next(supply))
+                    for slot in slots
+                )
+                step = BCWStep.build(
+                    source,
+                    index,
+                    *cast(tuple[Factor, Factor], factors),
+                    _multi_affine_level(slots, parts),
+                    coefficient,
+                )
+                removed = before - remaining_excess(step.target)
+                if removed <= 0:
+                    # A split that leaves as much behind as it removes. It happens:
+                    # at ``x**2 y`` the split ``y * x**2`` moves the square into a
+                    # fresh component and into the residue, where the split
+                    # ``x * x y`` clears it. UNT-12 is what leaves this one out.
+                    continue
+                built.append(
+                    ((-removed, step.target.dimension - source.dimension), step)
+                )
 
     return tuple(step for _, step in sorted(built, key=lambda pair: pair[0]))
 

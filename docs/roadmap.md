@@ -2232,12 +2232,13 @@ correction of WP 2 was about: multi-affine in the variables a source began with
 and squaring a coordinate an earlier stage bought.
 
 **The figures improve by a third, and the improvement is carrier reuse.** The
-walk reaches 20, 24 and 26 where the rule measured in WP 2 reached 33, 36 and
-39, in the same number of steps. Both chains were then carried to the endpoint
-of Theorem 2.1(b) by the maintainer, six runs in all: 41, 49 and 53 under the
-walk against 67, 73 and 79 under the crude rule, every step verified, every
-endpoint with no squared variable besides the parameter and no power of the
-parameter above two. `docs/contracts.md` carries the table under UNT-12.
+walk reaches 19, 23 and 24 where the rule measured in WP 2 reached 33, 36 and
+39, in the same number of steps. Both chains were carried to the endpoint of
+Theorem 2.1(b) under the crude rule -- 67, 73 and 79, every step verified, no
+squared variable besides the parameter and no power of the parameter above two.
+The walk's endpoints stood at 41, 49 and 53 until WP 10 corrected the carrier
+map, and they are pending a rerun; `docs/contracts.md` says which figures stand
+and which are blank.
 
 **The timings say less than they look like saying, and the page says so.**
 The cheapest of the six determinants is the largest map and the dearest is the
