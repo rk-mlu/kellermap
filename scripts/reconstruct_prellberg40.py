@@ -1,5 +1,13 @@
 """Reconstruction of the collision-hull compression of arXiv:2608.12543v1.
 
+The version is v1 and stays v1: the map, the restriction, the collision and
+``rho`` below are transcribed from its ancillary file, and a transcription is
+from the bytes it was made from. Version 2 of 31 August 2026 keeps Theorem 3
+with its number and its statement, and keeps both figures this script checks --
+the hull sequence 2, 4, 11, 20, 20 and the 350 monomials of the
+forty-variable lift -- so the reconstruction is a reconstruction of the current
+paper as well. ``docs/references.md`` records what version 2 adds.
+
 This file does not depend on ``kellermap``. It stands to Prellberg's result as
 ``reconstruct_alpoege19.py`` stands to the published nineteen-dimensional map:
 the mathematics is somebody else's, and it is recomputed here so that what

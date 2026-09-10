@@ -1449,7 +1449,7 @@ carried until `0.7` and not the theorem, and the predicate reports it.
 
 ## CompressionStep
 
-Collision-hull compression, Theorem 3 of arXiv:2608.12543v1. It restricts a
+Collision-hull compression, Theorem 3 of arXiv:2608.12543v2. It restricts a
 homogeneous Keller map to the smallest invariant subspace containing a
 collision, and it is the first step in this library that *lowers* the
 dimension.
@@ -1668,7 +1668,7 @@ BCW-1 already says for the degree.
 
 ## SymmetricLiftStep
 
-The symmetric lift, part 3 of Theorem 3 of arXiv:2608.12543v1. It turns a
+The symmetric lift, part 3 of Theorem 3 of arXiv:2608.12543v2. It turns a
 homogeneous Keller map into the gradient form of a quartic, over `k(i)`.
 
 ```python

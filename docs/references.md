@@ -319,12 +319,23 @@ witness for.
 
 ## Collision-hull compression, and the fortieth variable
 
-**Thomas Prellberg**, *Collision-Hull Compression for Homogeneous Keller Maps
-and a Forty-Variable Counterexample to Zhao's Vanishing Conjecture*,
-arXiv:2608.12543v1, 12 August 2026, School of Mathematical Sciences, Queen Mary
-University of London. The submission is licensed CC BY 4.0,
-<https://creativecommons.org/licenses/by/4.0/>, which covers the ancillary file
-`anc/check_quartic_40.py` as part of it.
+**Thomas Prellberg**, *Collision-Generated Compression for Homogeneous Keller
+Maps*, arXiv:2608.12543v2, 31 August 2026, School of Mathematical Sciences,
+Queen Mary University of London. The submission is licensed CC BY 4.0,
+<https://creativecommons.org/licenses/by/4.0/>, which covers its ancillary
+file as part of it.
+
+Version 1, 12 August 2026, carried the title *Collision-Hull Compression for
+Homogeneous Keller Maps and a Forty-Variable Counterexample to Zhao's Vanishing
+Conjecture* and the ancillary file `anc/check_quartic_40.py`. Both names are
+kept here because the provenance of fixed data in this repository points at
+that file and at that version: `examples.thompson24_homogeneous` and
+`scripts/reconstruct_prellberg40.py` were transcribed from it, and a
+transcription is from the bytes it was made from. Version 2 renames the
+ancillary file to `anc/check_collision_hulls.py` and gives a hash of it.
+
+Lemma 2 and Theorem 3 keep their numbers and their statements in version 2, so
+the citations in `kellermap.compression` and `kellermap.lift` name it.
 
 This is the most directly relevant reference this page carries after Alpöge's
 own, and it settles two questions that stood open here.
@@ -362,6 +373,45 @@ The paper claims no global minimality. Corollary 7 states a route-specific one:
 forty is minimal among examples obtained by restricting Thompson's map to an
 invariant subspace containing the collision and then applying the lift
 unchanged.
+
+### What version 2 adds
+
+A second application, and it is at the dimension this project's own pipeline
+reaches. Van Rijn's twelve-variable degree-three map, rank-compressed and
+homogenized, is a nineteen-variable cubic homogeneous Keller map; its
+collision-generated sequence runs `2, 4, 11, 19, 19`, so the hull is the whole
+space. Proposition 8 draws the consequence: no proper invariant linear
+restriction retaining that collision can lower the thirty-eight-variable lift,
+in any codimension. The lift itself is written out, with 340 monomials against
+the 350 of the forty-variable one, and with its own explicit collision over
+`Q(i)`.
+
+The two route-specific minimality statements are the paper's, and neither is a
+claim of global minimality; the paper says so and this page repeats it because
+the distinction is the one this project keeps getting wrong.
+
+Two five-variable examples are named and set aside as answering different
+questions: a degree-fourteen polynomial with constant non-zero Hessian
+determinant and non-injective gradient, which is not a homogeneous
+Hessian-nilpotent quartic, and a counterexample to the generalized conjecture
+that uses a third-order operator rather than the Laplacian. Their variable
+counts are not comparable with the quartic problem, and nothing on this page
+should be read against them.
+
+### That version cites this project
+
+Version 2 names `kellermap` in its introduction, as an independent
+computational uptake of the construction: that this repository's documentation
+reconstructs the twenty-dimensional closure calculation on its own and adopts
+collision-generated compression in the design of the stage after the
+homogenization.
+
+That is a citation and not a validation, and the difference matters here. It
+records that the construction was used, not that anything in this repository
+was checked by its author. What was checked is what `docs/provenance.md` and
+this page list: the gates a person ran and six external audits of the
+candidates for milestone 0.6. A reader who takes the sentence for a second
+opinion on this repository would be taking it for more than it says.
 
 ### What was recomputed here
 
@@ -487,7 +537,8 @@ descriptions of one another.
 | --- | --- | --- |
 | <https://github.com/royvanrijn/jacobian-research> | 38 | no |
 | this project, from `spacerat11` | 38 | derived, not stored |
-| arXiv:2608.12543v1 | 40 | derived, not stored |
+| arXiv:2608.12543v2 | 40 | derived, not stored |
+| arXiv:2608.12543v2 | 38 | no |
 | Zenodo 21504303 | 48 | no |
 
 \* The nineteen-dimensional map at degree three is in the suite from a checkout
@@ -807,14 +858,23 @@ built: 11, then 22 after the unipotent reduction, 23 after the homogenization,
 19 after collision-hull compression. Every step is verified by the library and
 the three points arrive.
 
-That is one below the smallest cubic homogeneous figure this page records,
-Macfarlane's 20, which is also what Prellberg's hull makes of Thompson's 24.
-The literature was checked again before this paragraph was written and nothing
-smaller was found.
+That equals the smallest cubic homogeneous figure this page records, and it did
+not when the paragraph was written. Version 1 of Prellberg's paper recorded
+Macfarlane's 20, which is also what its hull makes of Thompson's 24, and the
+literature was checked again and nothing smaller was found. Version 2, of 31
+August 2026, records a published nineteen: van Rijn's twelve-variable
+degree-three map, rank-compressed and homogenized, and its Proposition 8 proves
+that the collision hull of that nineteen is the whole space, so no proper
+invariant linear restriction retaining that collision improves it.
+
+Whether that nineteen is the one this pipeline reaches is not established here.
+The two arrive by different routes and this page does not compare maps it has
+not compared. What is established is narrower: nineteen is no longer below
+anything published, and the paragraph said it was.
 
 What it is not is new mathematics. It composes two published constructions,
 the eleven-variable reduction and the two stages of Section 4 with Theorem 3 of
-arXiv:2608.12543v1. What this project contributed is the composition and the
+arXiv:2608.12543v2. What this project contributed is the composition and the
 certificates. No minimality is claimed, here or anywhere.
 
 The number needs its stage attached wherever it is used. `alpoege19` is

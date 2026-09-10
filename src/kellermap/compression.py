@@ -1,4 +1,4 @@
-"""Collision-hull compression, Theorem 3 of arXiv:2608.12543v1.
+"""Collision-hull compression, Theorem 3 of arXiv:2608.12543v2.
 
 For ``F = id + h`` with ``h`` homogeneous of degree ``d`` and a collision
 ``F(p) = F(q)``, the subspace
@@ -149,7 +149,7 @@ def _field(source: PolynomialMap, obligation: str | None) -> Domain:
     Over ``ZZ[T]`` it raises whatever the domain raises. Neither is an answer,
     and neither was refused until an audit of ``0.6.0rc1`` said so.
 
-    The requirement is the paper's: Theorem 3 of arXiv:2608.12543v1 works over
+    The requirement is the paper's: Theorem 3 of arXiv:2608.12543v2 works over
     a field of characteristic zero throughout.
     """
     domain = source.ring.domain

@@ -1,4 +1,4 @@
-"""The symmetric lift, part 3 of Theorem 3 of arXiv:2608.12543v1.
+"""The symmetric lift, part 3 of Theorem 3 of arXiv:2608.12543v2.
 
 For ``F = id + h`` with ``h`` homogeneous of degree ``d``, over ``K = k(i)``,
 
@@ -65,7 +65,7 @@ from .variables import VariableFactory, reserved_names
 def _field(source: PolynomialMap) -> None:
     """Raise unless the coefficient domain is one this construction works over.
 
-    Theorem 3 of arXiv:2608.12543v1 works over a subfield of the complex
+    Theorem 3 of arXiv:2608.12543v2 works over a subfield of the complex
     numbers of characteristic zero, and so does the compression, where CHC-2
     and CHC-8 draw the same boundary. CHC-4 is about the source being a Keller
     map and not about its domain; this docstring cited it wrongly until an

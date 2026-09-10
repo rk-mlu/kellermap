@@ -5,7 +5,7 @@
 The goal of **kellermap** is to construct and verify reductions of polynomial
 maps with constant Jacobian determinant: the three stages of Bass, Connell and
 Wright, and since milestone 0.6 the two constructions of Theorem 3 of
-arXiv:2608.12543v1 that carry a cubic homogeneous map to the gradient form of a
+arXiv:2608.12543v2 that carry a cubic homogeneous map to the gradient form of a
 quartic.
 
 The central design principle is that every reduction step produces a
@@ -159,7 +159,7 @@ is nilpotent through one determinant.
 
 Everything else is at the top level, and the rule there is *not* that nothing
 is specific to a reduction method. It was until milestone 0.6.
-`compression.py` and `lift.py` are Theorem 3 of arXiv:2608.12543v1, which is as
+`compression.py` and `lift.py` are Theorem 3 of arXiv:2608.12543v2, which is as
 specific as `BCWStep` is and belongs to somebody else again. They are at the
 top level because `bcw/` names one paper, and putting a second author's
 construction inside it would say it was theirs — the same misnomer the

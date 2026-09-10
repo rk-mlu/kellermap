@@ -23,6 +23,17 @@ iterable was empty from the second generator onward and every variable counted.
 that squares a variable. `reduce_to_multi_affine` now carries the note about
 the interpreter's recursion limit that its sibling has.
 
+Version 2 of arXiv:2608.12543, of 31 August 2026, is recorded. It renames the
+paper, keeps Theorem 3 with its number and its statement, and adds a second
+application at nineteen variables whose collision hull is the whole space, so
+its thirty-eight-variable lift cannot be lowered by any invariant linear
+restriction retaining that collision. `docs/references.md` also withdraws a
+comparison the new version falsifies: nineteen cubic homogeneous variables was
+described here as one below anything published, and a published nineteen now
+exists. The citations that name a theorem move to version 2; those that record
+where fixed data was transcribed from stay at version 1, because a
+transcription is from the bytes it was made from.
+
 Documentation the audit found stale. `docs/references.md` still said the
 library does not implement the multi-affine half of Theorem 2.1(b), which
 stopped being true in this milestone, and a second paragraph still said it

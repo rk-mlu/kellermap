@@ -1110,7 +1110,7 @@ through:
 
 ```
 
-Those are the figures Theorem 1 of arXiv:2608.12543v1 states for this map. The
+Those are the figures Theorem 1 of arXiv:2608.12543v2 states for this map. The
 basis comes back in reduced row echelon form, which is not a formality: an
 unreduced basis spans the same subspace and gives a much denser restriction.
 

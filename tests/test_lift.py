@@ -2,7 +2,7 @@
 
 The control is external and is the same file the compression is checked
 against: lifting Thompson's compressed twenty has to give a form of 350
-monomials, which is the figure Theorem 3 of arXiv:2608.12543v1 reports.
+monomials, which is the figure Theorem 3 of arXiv:2608.12543v2 reports.
 
 SYM-7 is the one obligation this library states and does not check, so the
 determinant appears here twice: once at dimension six, where it is an
