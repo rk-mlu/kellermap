@@ -27,7 +27,8 @@ The carrier map kept one coordinate per value where two can hold it, so the
 walk bought a coordinate it already had. `(x + y^3, y)` reaches the multi-affine
 form at dimension six again, which is the chain `docs/roadmap.md` writes out,
 and the three maps of the milestone reach 19, 23 and 24 against 20, 24 and 26.
-The chains from there to the normal form of Theorem 2.1(b) are pending a rerun.
+Their chains to the normal form of Theorem 2.1(b) were rerun and reach 39, 47
+and 49.
 
 ## 0.7.0rc1
 
@@ -49,11 +50,11 @@ stopping rule, UNT-12. It measures itself by `remaining_excess`, and the count
 of squared monomials would not serve: the first step on `y^3` replaces one by
 two while the measure falls from nine to six.
 
-Measured, every step verified: the walk takes `alpoege13` to 19 variables,
-`alpoege12` to 23 and `spacerat11` to 24. The three chains to the normal form
-itself are pending a rerun after the carrier correction below;
-`docs/contracts.md` says which figures stand. The order inverts, and the cost
-of verifying a chain follows neither the dimension nor the density.
+Measured, every step verified: `alpoege13` reaches the normal form at 39
+variables, `alpoege12` at 47, `spacerat11` at 49. The order inverts, and the
+cost of verifying a chain follows neither the dimension nor the density -- of
+six chains on one machine the cheapest determinant is the largest map and the
+dearest is the smallest.
 
 The refinement is a branch and not a stage. `docs/architecture.md` says why
 under "Where the pipeline forks": the symmetric lift does not carry the

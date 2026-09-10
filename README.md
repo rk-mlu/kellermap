@@ -110,12 +110,8 @@ The route, every step verified:
 | --- | ---: | --- |
 | `examples.alpoege13` | 13 | degree three |
 | `reduce_to_multi_affine` | 19 | no variable occurs squared |
-| `UnipotentStep` and `HomogenizationStep` | | the normal form of Theorem 2.1(b) |
-
-The last row carries no number. The two stages double a dimension and add one,
-but that is arithmetic and this project states measured figures: the chains
-have to be run again after the carrier correction of `0.7.0rc2`, and
-`docs/contracts.md` says which figures stand and which are pending.
+| `UnipotentStep` | 38 | Jacobian of the displacement nilpotent |
+| `HomogenizationStep` | 39 | the normal form of Theorem 2.1(b) |
 
 The refinement is a branch and not a stage. The symmetric lift does not carry
 the property, nothing between the gradient form and Zhao's Vanishing Conjecture

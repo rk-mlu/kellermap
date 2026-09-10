@@ -3191,11 +3191,11 @@ and the last column is the endpoint of Theorem 2.1(b), reached through
 | | rule | steps | multi-affine | unipotent | 2.1(b) |
 | --- | --- | ---: | ---: | ---: | ---: |
 | `alpoege13`, 13 | crude | 10 | 33 | 66 | 67 |
-| `alpoege13`, 13 | walk | 10 | 19 | -- | -- |
+| `alpoege13`, 13 | walk | 10 | 19 | 38 | 39 |
 | `alpoege12`, 12 | crude | 12 | 36 | 72 | 73 |
-| `alpoege12`, 12 | walk | 12 | 23 | -- | -- |
+| `alpoege12`, 12 | walk | 12 | 23 | 46 | 47 |
 | `spacerat11`, 11 | crude | 14 | 39 | 78 | 79 |
-| `spacerat11`, 11 | walk | 14 | 24 | -- | -- |
+| `spacerat11`, 11 | walk | 14 | 24 | 48 | 49 |
 
 The walk's column moved by one, one and two at `0.7.0rc2`. Until then the
 carrier map kept one coordinate per value where two can hold it, so the walk
@@ -3203,12 +3203,11 @@ bought a coordinate it already had; an audit of `0.7.0rc1` found it costing the
 dimension six that the smallest case reaches. The figures before the correction
 were 20, 24 and 26.
 
-The three endpoints under the walk are not filled in. Their chains have to be
-run again after the correction, and `2n + 1` is arithmetic rather than a
-certificate. The crude rule's endpoints stand: they were measured and the
-correction does not touch that rule.
+The walk's three chains were run again after the correction and are what the
+table carries; they were blank in `0.7.0rc2` rather than filled in with
+`2n + 1`, which is arithmetic and not a certificate.
 
-The endpoints that are filled in have no squared variable other than the
+All six endpoints have no squared variable other than the
 parameter and no
 power of the parameter above two, which is the pair HOM-11 and HOM-12 state.
 The count exempts the parameter and nothing else, so the coordinates the
@@ -3229,19 +3228,21 @@ same three maps.
 
 ### What verifying these six chains cost
 
-The determinant of UNI-9, in seconds, beside the dimension it ran at:
+The determinant of UNI-9, in seconds, beside the dimension it ran at. All six
+on one machine, which the figures of `0.7.0rc1` were not:
 
 | | crude | walk |
 | --- | --- | --- |
-| `alpoege13` | 108 at 66 | 182 at 40 |
-| `alpoege12` | 168 at 72 | 35 at 48 |
-| `spacerat11` | 22 at 78 | 41 at 52 |
+| `alpoege13` | 168 at 66 | 279 at 38 |
+| `alpoege12` | 225 at 72 | 58 at 46 |
+| `spacerat11` | 28 at 78 | 60 at 48 |
 
-The cheapest of the six is the largest and the dearest is the smallest. Nothing
-here is monotone in the dimension, and the direction is not even constant
-between the two rules on one map: the walk costs `alpoege13` two thirds more
-than the crude rule at 26 coordinates fewer, costs `alpoege12` a fifth of it,
-and costs `spacerat11` about twice.
+The cheapest of the six is the largest and the dearest is the smallest: 28
+seconds on 78 coordinates against 279 on 38. Nothing here is monotone in the
+dimension, and the direction is not even constant between the two rules on one
+map: the walk costs `alpoege13` two thirds more than the crude rule at 28
+coordinates fewer, costs `alpoege12` a quarter of it, and costs `spacerat11`
+about twice.
 
 So a timing taken on one of these maps says nothing about the others, and this
 page states none of them as a cost of the stage. It is consistent with what
@@ -3251,11 +3252,11 @@ would test it is a run that varies the carrier and holds the dimension, and
 that has not been done.
 
 One regularity is worth recording because it makes the figures readable. HOM-7
-costs what UNI-9 costs, to within three per cent, in every one of the six: 109
-against 108, 177 against 182, 162 against 168, 37 against 35, 21 against 22, 41
-against 41. The two obligations compute the same kind of determinant at one
-extra coordinate, so the agreement is expected, and its absence would have said
-that one of the numbers was noise.
+costs about what UNI-9 costs in every one of the six: 166 against 168, 249
+against 279, 213 against 225, 64 against 58, 28 against 28, 69 against 60. The
+two obligations compute the same kind of determinant at one extra coordinate,
+so the agreement is expected, and its absence would have said that one of the
+numbers was noise.
 
 The cost of verifying the chain follows neither the dimension nor the density.
 The unipotent target of `spacerat11` is the widest of the three at 78
