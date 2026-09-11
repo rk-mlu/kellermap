@@ -223,6 +223,23 @@ def test_a_second_carrier_of_a_value_is_offered_when_the_first_will_not_do() -> 
     assert outcome.reduction.steps[2].target.dimension == middle.dimension + 1
 
 
+def test_one_factorization_can_yield_two_candidates() -> None:
+    """UNT-12 counts a candidate per factorization *and* slot assignment.
+
+    It said per factorization until ``0.7.0rc3``, which was the count before
+    the walk stopped choosing a slot assignment greedily. Here ``y**2`` has one
+    factorization and two admissible assignments: the carrier for one slot and
+    a purchase for the other, either way round.
+    """
+    source = over_field(PolynomialMap((x, y, z), (x + y**2, y, z + y)))
+    offered = multi_affine_steps(source, ReductionContext())
+
+    assert len(squared_terms(source)) == 1
+    assert len(offered) == 2
+    for step in offered:
+        assert remaining_excess(step.target) < remaining_excess(source)
+
+
 def test_a_carrier_on_a_dependency_cycle_is_offered() -> None:
     """BCW-10 is the condition, and ``carrier_indices`` asks for more.
 

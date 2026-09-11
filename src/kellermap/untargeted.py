@@ -676,13 +676,17 @@ def remaining_excess(source: PolynomialMap, base: int = EXCESS_BASE) -> int:
     """
     counts(base=base)
     if base < 3:
-        # ``counts`` admits zero, because most counts here may be zero, and it
-        # admits two, which ``remaining_weight`` is content with. Three is the
-        # bound this measure needs: a step puts at most two squaring terms in
-        # place of one, each with an excess at least one lower, so the measure
-        # falls only while ``base ** e > 2 * base ** (e - 1)``. Below three the
-        # sum is no longer zero exactly on a multi-affine map, which an audit
-        # of ``0.7.0rc1`` reached with ``base=0``.
+        # ``counts`` admits zero, and ``remaining_weight`` is content with
+        # two. Three is what this measure needs, and for one reason: a step
+        # puts at most two squaring terms in place of one, each with an excess
+        # at least one lower, so the measure falls only while
+        # ``base ** e > 2 * base ** (e - 1)``, which is ``base > 2``.
+        #
+        # Not because the sum would otherwise stop being zero exactly on a
+        # multi-affine map. That fails at zero alone, where every term is zero;
+        # at one and at two every term is positive and the equivalence holds.
+        # An audit of ``0.7.0rc2`` found this comment giving the second reason
+        # as if it justified the bound, and it justifies only refusing zero.
         raise ValueError(f"The excess base must be at least 3; got {base}.")
 
     return sum(base ** _excess(monomial) for _, monomial in squared_terms(source))

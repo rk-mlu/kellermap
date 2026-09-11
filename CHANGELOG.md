@@ -6,6 +6,21 @@ Notable changes per release. The milestone plan and its reasoning live in
 
 ## 0.7.0rc3
 
+UNT-12 says one candidate per factorization *and* slot assignment. It said per
+factorization, which was the count before the walk stopped choosing an
+assignment greedily; on `(x + y^2, y, z + y)` one factorization yields two. The
+obligation is widened rather than the walk deduplicated, because the
+alternatives are what let the pair that buys least win.
+
+The justification for a base of at least three loses its second half. Being
+zero exactly on a multi-affine map fails at base zero alone and holds at one
+and at two, so it is a reason for refusing zero and not for asking three. The
+falling measure is the whole reason and was always the first half.
+
+The README no longer names the candidate its DOI sentence was written for. It
+said the number is the DOI of `0.7.0rc1` and went stale at the next candidate;
+it says the number is not the DOI of the version above, which stays true.
+
 The multi-affine walk asks BCW-10's own condition for what holds a factor, not
 `carrier_indices`. That set is deliberately not maximal -- it drops every
 coordinate on a dependency cycle, which is what makes the block it picks out

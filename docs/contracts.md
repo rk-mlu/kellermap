@@ -3100,11 +3100,21 @@ cannot have its cause in the first.
 
 **UNT-12 — The multi-affine walk anchors on the squared monomial, and it is a
 second enumerator.** At a map of degree at most three,
-`reduce_to_multi_affine` offers one candidate per factorization `M = P Q` into
-two parts of positive degree, of every monomial `M` of the displacement in
-which some variable occurs squared. A candidate whose target does not lower
-`remaining_excess` is left out. A source above degree three is refused by
-name, since the normal form of Theorem 2.1(b) is cubic as well.
+`reduce_to_multi_affine` offers one candidate per pair of a factorization
+`M = P Q` into two parts of positive degree and an admissible assignment of the
+two slots, over every monomial `M` of the displacement in which some variable
+occurs squared. A candidate whose target does not lower `remaining_excess` is
+left out. A source above degree three is refused by name, since the normal
+form of Theorem 2.1(b) is cubic as well.
+
+*Amended at `0.7.0rc3`, in the words "and an admissible assignment of the two
+slots".* It said one candidate per factorization, which is what the walk did
+until it stopped choosing a slot assignment greedily; on
+`(x + y^2, y, z + y)` one factorization now yields two candidates. An audit of
+`0.7.0rc2` found the count. The obligation is widened rather than the walk
+deduplicated: the alternatives are what let the pair that buys least win, and
+"Which slot a factor gets" below says why choosing greedily costs a
+coordinate.
 
 *Amended when the walk was implemented, and the amendment is the first two
 sentences.* This obligation required `P` and `Q` each to be free of a square,
@@ -3135,10 +3145,14 @@ own when its slot is fresh. Only two of those five can square a variable, and
 each carries the excess of `Q`, which is at least one below the excess of `M`.
 So the measure falls whenever `base ** e > 2 * base ** (e - 1)`.
 
-A base below three is refused. `remaining_weight` refuses one below two for
-the same kind of reason, and until `0.7.0rc1` this function refused nothing:
-`base = 0` reported zero on a map that squares a variable, which is the one
-thing the measure claims never to do.
+A base below three is refused, and the falling measure is the whole reason.
+Being zero exactly on a multi-affine map is not: that fails at zero alone,
+where every term is zero, and holds at one and at two where every term is
+positive. Until `0.7.0rc1` this function refused nothing at all, and
+`base = 0` reported zero on a map that squares a variable; the amendment that
+added the guard gave that as a second reason for the bound, and an audit of
+`0.7.0rc2` found that it is a reason for refusing zero and not for asking
+three.
 
 **The walk arrives, and that is a consequence and not a hope.** For any
 monomial of excess `e` the split into its radical and the rest is among the
