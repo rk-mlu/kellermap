@@ -4,6 +4,15 @@ Notable changes per release. The milestone plan and its reasoning live in
 `docs/roadmap.md`, the binding obligations of the verification surface in
 `docs/contracts.md`.
 
+## 0.7.0rc3
+
+DSC-4 is checked at every public route into a `DescentStep`. `0.7.0rc2`
+checked it in `verify` and in `target`, and an audit found `conjugate` and
+`tail` still letting a bare `ValueError` out of
+`ElementaryAutomorphism.apply_to`. The test that was meant to cover those two
+called `target`, which is why it went unnoticed; it is three tests now, one per
+method, and each calls the method it names.
+
 ## 0.7.0rc2
 
 The corrections an external audit of `0.7.0rc1` asked for.

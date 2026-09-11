@@ -36,7 +36,7 @@ machine-checkable certificate.
 
 ## Project Status
 
-Current version: **0.7.0rc2**
+Current version: **0.7.0rc3**
 
 DOI: [10.5281/zenodo.22299353](https://doi.org/10.5281/zenodo.22299353). That
 is the DOI of `0.7.0rc1`, which does not have one: a release candidate is not

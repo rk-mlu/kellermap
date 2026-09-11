@@ -196,7 +196,17 @@ class DescentStep:
         )
 
     def conjugate(self) -> PolynomialMap:
-        """Return ``left o source o right``, the map the deletion acts on."""
+        """Return ``left o source o right``, the map the deletion acts on.
+
+        DSC-4 is checked here and not only in ``verify``, because this is where
+        the two automorphisms first meet the source. An audit of ``0.7.0rc2``
+        found that ``verify`` and ``target`` named the obligation while this
+        method and ``tail`` let a bare ``ValueError`` out of
+        ``ElementaryAutomorphism.apply_to``. Every public route into the step
+        raises the same named exception now.
+        """
+        self._verify_changes()
+
         return self._left.apply_to(
             self._source.compose(self._right.to_polynomial_map(self._source.ring))
         )
@@ -207,6 +217,8 @@ class DescentStep:
         The one thing the deletion throws away that cannot be recovered from
         the target, which is why the step offers it. Under DSC-3 it is free of
         the deleted variable, and DSC-6 is what it is for.
+
+        DSC-4 is checked through ``conjugate``.
         """
         conjugate = self.conjugate()
         variable = self._source.variables[self._index]
@@ -302,7 +314,6 @@ class DescentStep:
 
     def _verify_tail(self) -> None:
         """DSC-3, first half: the deleted component is triangular."""
-        self._verify_changes()
         conjugate = self.conjugate()
         variable = self._source.variables[self._index]
 
@@ -322,7 +333,6 @@ class DescentStep:
         surviving component that still mentions the coordinate would refer to
         a generator the target does not have.
         """
-        self._verify_changes()
         conjugate = self.conjugate()
         variable = self._source.variables[self._index]
 

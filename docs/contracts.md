@@ -2030,10 +2030,13 @@ generator that the target does not have.
 factorization, and each is applied on the side it is named for: `right` on the
 source's variables, `left` on the components.
 
-Being over the source's ring is checked and names this obligation. Until
-`0.7.0rc1` it was not, and the mismatch surfaced from inside
+Being over the source's ring is checked and names this obligation, at every
+public route into the step: `verify`, `target`, `conjugate` and `tail`. Until
+`0.7.0rc1` it was not checked at all, and the mismatch surfaced from inside
 `ElementaryAutomorphism.apply_to` as a bare `ValueError` naming neither the
-obligation nor the side it came from.
+obligation nor the side it came from. `0.7.0rc2` checked it on the first two
+and an audit found the other two still leaking, together with the test that was
+meant to cover them and called `target`.
 
 Determinant one is not checked, because it is not a claim here. An
 `ElementaryFactor` is `X_j |-> X_j + P` with `P` free of `X_j`, so its Jacobian

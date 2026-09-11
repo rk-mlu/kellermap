@@ -200,16 +200,38 @@ def test_an_automorphism_over_another_ring_fails_dsc_4() -> None:
         DescentStep(extension(), 2, right=foreign).verify()
 
 
-def test_the_derived_parts_refuse_a_foreign_automorphism_too() -> None:
-    """A caller who reaches for the conjugate first gets the same message."""
+def foreign_step() -> DescentStep:
+    """A step whose left change is an automorphism over another ring."""
     elsewhere = PolynomialMap(sp.symbols("a b c"), sp.symbols("a b c"))
     foreign = ElementaryAutomorphism(
         (ElementaryFactor(elsewhere.ring, 0, -(elsewhere.variables[2] ** 2)),)
     )
-    step = DescentStep(extension(), 2, left=foreign)
 
+    return DescentStep(extension(), 2, left=foreign)
+
+
+def test_the_conjugate_refuses_a_foreign_automorphism() -> None:
+    """Every public route into the step raises the same named exception.
+
+    ``verify`` and ``target`` named DSC-4 while this method and ``tail`` let a
+    bare ``ValueError`` out of ``ElementaryAutomorphism.apply_to``. An audit of
+    ``0.7.0rc2`` found it, and found that the test meant to cover this called
+    ``target`` instead.
+    """
     with pytest.raises(VerificationError, match=r"\[DSC-4\]"):
-        assert step.target
+        foreign_step().conjugate()
+
+
+def test_the_tail_refuses_a_foreign_automorphism() -> None:
+    """``tail`` reaches the two changes through ``conjugate``."""
+    with pytest.raises(VerificationError, match=r"\[DSC-4\]"):
+        foreign_step().tail()
+
+
+def test_the_target_refuses_a_foreign_automorphism() -> None:
+    """The route the mis-described test actually took."""
+    with pytest.raises(VerificationError, match=r"\[DSC-4\]"):
+        assert foreign_step().target
 
 
 # ----------------------------------------------------------------------
