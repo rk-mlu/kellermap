@@ -2605,6 +2605,28 @@ nothing of degree three to find. The maintainer then ran the external beam
 driver under the same bound of eleven, from Alpoege's map, and it traversed its
 search space without finding an eleven-variable reduction either.
 
+### The figures were rerun when the offer widened
+
+Everything in this section and the next is an exhaustiveness claim over
+`untargeted_candidates`, and `0.7.0rc4` widened that offer: a carried factor
+is asked BCW-10's own condition now and not the unipotent block of
+`carrier_indices`. A negative claim over a space that has since grown is the
+same error the pruning rule of `peel` was making, so the measurements were made
+again.
+
+Nothing moved. The candidate counts at all six maps of the published chain are
+what they were; the exhaustive searches under the bound of eleven give 2, 33,
+299 and 2720 states again, with no step failing the weight rule; the reach and
+the rejoining table are identical; and the counts and searches of WP 7 below
+are unchanged in every row that was rerun. The five shards at `n = 5` and the
+anchor-widened row at `n = 6` are long and were not rerun.
+
+There is a reason it does not move, and it is worth having. The two sets differ
+only on a dependency cycle, and a chain of `BCWStep`s does not make one: a
+bought coordinate is `X_u + P` with `P` over the coordinates that were already
+there, so the carriers a reduction produces never depend on each other. The
+widening bites on a map somebody hands in, not on one this library builds.
+
 ### What that negative is about, and what it is not about
 
 It is about `untargeted_candidates` and nothing else. Both searches enumerate

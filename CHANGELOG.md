@@ -19,9 +19,19 @@ depend on each other in a cycle although every one of them satisfies BCW-10. A
 peel on such a source reported an exhausted space with a verified two-step
 chain inside its bounds. An exhausted space is a claim.
 
-The figures do not move. `reduce_to_degree3` reaches the same thirteen from
-Alpoege's map in the same seven steps and the same map, and the multi-affine
-walk reaches the same 19, 23 and 24.
+The figures do not move, and the exhaustiveness claims of work packages 6 and 7
+were made again rather than assumed to hold: a negative claim over a space that
+has since grown is the error the pruning rule was making. `reduce_to_degree3`
+reaches the same thirteen from Alpoege's map in the same seven steps and the
+same map, the multi-affine walk reaches the same 19, 23 and 24, the candidate
+counts at all six maps of the published chain are unchanged, and the exhaustive
+searches under the bound of eleven give the same 2, 33, 299 and 2720 states.
+
+The reason they do not move is worth recording. The two sets differ only on a
+dependency cycle, and a chain of `BCWStep`s does not make one: a bought
+coordinate is `X_u + P` with `P` over the coordinates already there, so the
+carriers a reduction produces never depend on each other. The widening bites on
+a map somebody hands in, not on one this library builds.
 
 The targeted search still asks the narrower question, and that is measured
 rather than left. Swapping the condition in there does not widen the space:
