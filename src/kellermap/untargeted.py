@@ -382,11 +382,19 @@ def _cofactor_sum(
 
 
 def _carried_values(source: PolynomialMap) -> dict[sp.Expr, int]:
-    """Return the value each carrier coordinate holds, by value."""
+    """Return the value each coordinate BCW-10 admits as a factor holds.
+
+    ``carrier_indices_for_factors`` and not ``carrier_indices``. An audit of
+    ``0.7.0rc3`` found this enumerator asking for the unipotent block where the
+    third clause of BCW-10 is what a step needs, so a coordinate on a
+    dependency cycle was passed over although a step using it builds and
+    verifies.
+    """
     held: dict[sp.Expr, int] = {}
-    for index in source.carrier_indices:
+    for index in source.carrier_indices_for_factors:
         value = sp.expand(source.components[index] - source.variables[index])
-        held.setdefault(value, index)
+        if value != 0:
+            held.setdefault(value, index)
 
     return held
 
@@ -745,9 +753,9 @@ def _multi_affine_holders(source: PolynomialMap) -> dict[sp.Expr, tuple[int, ...
     that ``docs/roadmap.md`` claims for that map.
     """
     holders: dict[sp.Expr, list[int]] = {}
-    for index in range(source.dimension):
+    for index in source.carrier_indices_for_factors:
         value = sp.expand(source.components[index] - source.variables[index])
-        if value != 0 and not value.has(source.variables[index]):
+        if value != 0:
             holders.setdefault(value, []).append(index)
 
     return {value: tuple(indices) for value, indices in holders.items()}

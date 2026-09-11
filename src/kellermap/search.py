@@ -290,6 +290,12 @@ def anchors(source: PolynomialMap, pool: Iterable[sp.Expr]) -> tuple[Slot, ...]:
         and converted
         and _order(converted) >= 1
     ]
+    # Not ``carrier_indices_for_factors``. Swapping it in here does not widen
+    # the space: ``_partner`` lets a carrier take a slot a pool name would
+    # otherwise fill, and ``found.setdefault`` keeps whichever came first, so a
+    # chain the search used to find drops out. Measured at ``0.7.0rc4``: the
+    # unweighted control of SEA-14 exhausts at 2667 states with nothing.
+    # Offering both forms is the correction and it is its own package.
     available.extend(Carried(index) for index in source.carrier_indices)
 
     return tuple(available)

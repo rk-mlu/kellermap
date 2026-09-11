@@ -20,15 +20,18 @@ import sympy as sp
 from kellermap import (
     LinearStep,
     PolynomialMap,
+    Reduction,
     examples,
     over_field,
+    peel,
+    reduce_to_degree3,
     reduce_to_multi_affine,
     remaining_excess,
 )
 from kellermap.bcw import BCWStep
 from kellermap.bcw.grading import squared_terms
 from kellermap.bcw.homogenization import HomogenizationStep
-from kellermap.bcw.step import Fresh
+from kellermap.bcw.step import Carried, Fresh
 from kellermap.bcw.unipotent import UnipotentStep
 from kellermap.context import ReductionContext
 from kellermap.untargeted import EXCESS_BASE, multi_affine_steps
@@ -238,6 +241,82 @@ def test_one_factorization_can_yield_two_candidates() -> None:
     assert len(offered) == 2
     for step in offered:
         assert remaining_excess(step.target) < remaining_excess(source)
+
+
+def test_the_untargeted_walk_sees_a_carrier_on_a_cycle() -> None:
+    """``reduce_to_degree3`` asked for the unipotent block until ``0.7.0rc4``.
+
+    On this map all four coordinates satisfy BCW-10 and two of them lie on a
+    dependency cycle, so ``carrier_indices`` holds two. A single step using the
+    first coordinate twice drops the degree from four to three without buying
+    anything; the walk bought a coordinate instead. An audit of ``0.7.0rc3``
+    found it.
+    """
+    source = over_field(
+        PolynomialMap(
+            (x, y, z, w),
+            (x + y**2, y + x + z, z + 2 * x + y**2, w + y**4),
+        )
+    )
+
+    assert source.carrier_indices == (2, 3)
+    assert source.carrier_indices_for_factors == (0, 1, 2, 3)
+
+    outcome = reduce_to_degree3(source)
+    assert outcome.reduction is not None
+    outcome.reduction.verify()
+
+    assert outcome.reduction.target.dimension == source.dimension
+    assert outcome.reduction.target.degree() == 3
+
+
+def test_a_peel_does_not_call_a_space_exhausted_over_a_cycle() -> None:
+    """The pruning rule of ``peel`` turned the narrower set into a wrong claim.
+
+    ``_stranded`` prunes a branch that stands one coordinate above the source
+    when the source has no carrier, because a further step could then only buy.
+    On a linear map whose coordinates depend on each other in a cycle,
+    ``carrier_indices`` is empty and every coordinate satisfies BCW-10, so the
+    premise was false and the peel reported an exhausted space with a verified
+    chain inside its bounds. An audit of ``0.7.0rc3`` found it.
+    """
+    generators = sp.symbols("x0:4")
+    source = over_field(
+        PolynomialMap(
+            generators,
+            (
+                generators[0] - 2 * generators[1] - generators[3],
+                generators[0] + generators[1] - generators[2] + generators[3],
+                -2 * generators[0] + generators[2] - 2 * generators[3],
+                -2 * generators[0] + 2 * generators[1] + generators[2] + generators[3],
+            ),
+        )
+    )
+
+    assert source.determinant() == 1
+    assert source.carrier_indices == ()
+    assert source.carrier_indices_for_factors == (0, 1, 2, 3)
+
+    first = BCWStep.build(
+        source,
+        0,
+        Carried(1),
+        Fresh(generators[2] * generators[3], sp.Symbol("u")),
+        filtration_level=0,
+    )
+    second = BCWStep.build(
+        first.target,
+        1,
+        Carried(2),
+        Fresh(generators[0] * generators[1], sp.Symbol("v")),
+        filtration_level=0,
+    )
+    Reduction((first, second)).verify()
+
+    outcome = peel(source, second.target, budget=1000, rising=2, pairs=0)
+
+    assert outcome.reduction is not None
+    assert outcome.exhausted is False
 
 
 def test_a_carrier_on_a_dependency_cycle_is_offered() -> None:

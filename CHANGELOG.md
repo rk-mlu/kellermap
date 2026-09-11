@@ -4,6 +4,33 @@ Notable changes per release. The milestone plan and its reasoning live in
 `docs/roadmap.md`, the binding obligations of the verification surface in
 `docs/contracts.md`.
 
+## 0.7.0rc4
+
+`PolynomialMap.carrier_indices_for_factors` is what a carried factor is asked
+for now: BCW-10's own condition, `dF_j/dX_j == 1`, and not the unipotent block
+of `carrier_indices`, which drops every coordinate on a dependency cycle and
+says of itself that it is not maximal. The untargeted enumerator and the
+pruning rule of `peel` ask it.
+
+The pruning rule is why this is a release blocker rather than a lost dimension.
+It prunes a branch standing one coordinate above the source when the source has
+no carrier, and `carrier_indices` is empty on a linear map whose coordinates
+depend on each other in a cycle although every one of them satisfies BCW-10. A
+peel on such a source reported an exhausted space with a verified two-step
+chain inside its bounds. An exhausted space is a claim.
+
+The figures do not move. `reduce_to_degree3` reaches the same thirteen from
+Alpoege's map in the same seven steps and the same map, and the multi-affine
+walk reaches the same 19, 23 and 24.
+
+The targeted search still asks the narrower question, and that is measured
+rather than left. Swapping the condition in there does not widen the space:
+a carrier takes a slot a pool name would otherwise fill, and the first
+candidate to reach the deduplication wins, so a chain the search used to find
+drops out -- the unweighted control of SEA-14 then exhausts at 2667 states with
+nothing. Offering both forms is the correction, and it is the same one the
+multi-affine walk needed; it is its own package.
+
 ## 0.7.0rc3
 
 UNT-12 says one candidate per factorization *and* slot assignment. It said per

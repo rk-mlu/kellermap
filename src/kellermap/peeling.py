@@ -643,8 +643,19 @@ def _stranded(source: PolynomialMap, reached: PolynomialMap) -> bool:
     Alpoege's map has no carriers, so this prunes every branch that spends its
     last removal on a single coordinate. It is a statement about the source
     that was handed in, not a rule about Keller maps.
+
+    Which carriers matters here more than anywhere else, because the rule turns
+    the answer into a claim. ``carrier_indices`` is a unipotent block and is
+    empty on a linear map whose coordinates depend on each other in a cycle,
+    although every one of them satisfies BCW-10 and a step using it builds. An
+    audit of ``0.7.0rc3`` found ``peel`` reporting an exhausted space on such a
+    source with a verified two-step chain inside its bounds. The condition is
+    BCW-10's own now.
     """
-    return reached.dimension == source.dimension + 1 and not source.carrier_indices
+    return (
+        reached.dimension == source.dimension + 1
+        and not source.carrier_indices_for_factors
+    )
 
 
 def _rebuild(

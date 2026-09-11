@@ -2818,6 +2818,16 @@ where to look and not a fact about Keller maps, so a chain outside it is
 unreachable rather than absent -- the same reading "No completeness of the
 enumerator either" already asks for.
 
+That reading makes the pruning a place to be careful, because a wrong premise
+there does not narrow a decision, it falsifies a report. The rule that prunes a
+branch standing one coordinate above the source does so when the source has no
+carrier, since a further step could then only buy. A carrier there is
+`carrier_indices_for_factors` since `0.7.0rc4`. It was `carrier_indices`, which
+is a unipotent block and is empty on a linear map whose coordinates depend on
+each other in a cycle, although every one of them satisfies BCW-10. An audit of
+`0.7.0rc3` found the peel reporting an exhausted space on such a source with a
+verified two-step chain inside its bounds.
+
 ### Which of these can fail on supplied data
 
 REV-3, whose second half is a real check on the map being peeled, and REV-5,
@@ -3048,6 +3058,14 @@ it, buying two coordinates for the first three steps and one for each of the
 last four. The search finds that pattern without being told that carriers
 exist.
 
+A carrier here is `carrier_indices_for_factors`, BCW-10's own condition. Until
+`0.7.0rc4` this enumerator asked `carrier_indices`, which is a unipotent block
+and drops every coordinate on a dependency cycle, so a coordinate a step can
+use was passed over: on `(x + y^2, y + x + z, z + 2x + y^2, w + y^4)` it bought
+a coordinate where one step drops the degree to three and buys nothing. The
+figures above are unchanged by the correction, which was measured before it was
+made.
+
 **UNT-10 — The steps are ordered, by what one removes and then by what it
 buys.** `ordered_steps` returns them sorted: first by how much of `Phi`
 the step removes, largest first, and among equals by how many coordinates it
@@ -3177,8 +3195,8 @@ one. A coordinate that already holds a factor supplies it and costs nothing,
 UNT-9; a coordinate that would break one of the three conditions is passed
 over and the factor is bought.
 
-Holding a factor is BCW-10's third clause and nothing stronger: `j` holds
-`components[j] - X_j` when that displacement is free of `X_j`. It is not
+Holding a factor is BCW-10's third clause and nothing stronger, which is what
+`PolynomialMap.carrier_indices_for_factors` returns. It is not
 `carrier_indices`, which asks for more. That set is a set of coordinates whose
 dependencies are acyclic, which is what makes the block it picks out unipotent,
 and its docstring says it is deliberately not maximal. That is the right

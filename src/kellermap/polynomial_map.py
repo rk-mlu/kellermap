@@ -545,6 +545,40 @@ class PolynomialMap:
 
         return tuple(sorted(candidates))
 
+    @property
+    def carrier_indices_for_factors(self) -> tuple[int, ...]:
+        """Return every coordinate BCW-10 admits as a carried factor.
+
+        An index ``j`` qualifies when ``dF_j/dX_j == 1``, which is to say that
+        ``F_j - X_j`` is free of ``X_j``. That is the third clause of BCW-10
+        and the whole of what a step asks of a carried slot.
+
+        A coordinate whose displacement is zero qualifies, as it does for
+        ``carrier_indices``, and this property is that one without the
+        acyclicity: it always contains it. A caller that needs a factor of
+        positive order filters for one, which is where that belongs.
+
+        Not ``carrier_indices``, which asks for more. That property picks out a
+        unipotent block, so it drops every coordinate on a dependency cycle and
+        says of itself that it is not maximal. A step does not need the block.
+        On ``(x + y^2, y + x + z, z + 2x + y^2, w + y^4)`` all four coordinates
+        qualify here and two of them there; on a linear Keller map whose
+        coordinates depend on each other in a cycle, all of them qualify here
+        and none there.
+
+        Audits of ``0.7.0rc2`` and ``0.7.0rc3`` found four places asking the
+        stronger question: the untargeted enumerator, the targeted one, the
+        multi-affine walk and one pruning rule in ``peel``. The last turned it
+        into a wrong claim rather than a missed step, reporting an exhausted
+        space where a verified chain existed.
+        """
+        rows = self._jacobian_polynomials
+        one = self._ring.one
+
+        return tuple(
+            index for index in range(self.dimension) if rows[index][index] == one
+        )
+
     def _dependency_graph(self, indices: Iterable[int]) -> dict[int, set[int]]:
         """Return, for each of ``indices``, the others it differentiates against."""
         rows = self._jacobian_polynomials
