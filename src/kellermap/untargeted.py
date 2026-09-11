@@ -717,25 +717,33 @@ def _factor_splits(
 
 
 def _multi_affine_holders(source: PolynomialMap) -> dict[sp.Expr, tuple[int, ...]]:
-    """Map a value to every coordinate of ``carrier_indices`` that holds it.
+    """Map a value to every coordinate that holds it under BCW-10.
 
-    Every one, where ``_carried_values`` keeps the first. Two coordinates can
-    hold one value -- after two steps on ``(x + y**3, y)`` two of them hold
-    ``y`` -- and which of them a split can use depends on the split. Keeping
-    one made the other unreachable, so the walk bought a coordinate it already
-    had: an audit of ``0.7.0rc1`` found it costing the dimension six that
-    ``docs/roadmap.md`` claims for that map.
+    Every coordinate and every carrier of a value, where the first version of
+    this walk asked ``carrier_indices`` and kept one index per value. Both
+    narrowings cost dimensions and both were found by audits of ``0.7``.
 
-    ``carrier_indices`` is what holding a value means here, and it is
-    deliberately not maximal: it drops every coordinate on a dependency cycle,
-    so a coordinate BCW-10 would admit as a factor can be absent from it. That
-    is a property of the unipotent block it establishes rather than of this
-    walk, and widening it is a change to ``PolynomialMap``.
+    The condition here is BCW-10's own, and nothing stronger: a coordinate
+    ``j`` holds ``components[j] - X_j`` when that displacement is free of
+    ``X_j``. ``carrier_indices`` asks for more. It is a set of coordinates
+    whose dependencies are acyclic, which is what makes the block it picks out
+    unipotent, and its docstring says it is deliberately not maximal -- it
+    drops every coordinate on a cycle. That is the right question for the block
+    and the wrong one for a factor: a step does not need the block, it needs
+    the third clause of BCW-10. On the map
+    ``(x + y, y + x + z, z + 2x + y, w + y^2)`` the first coordinate holds
+    ``y`` and lies on a cycle, so asking the stronger question bought a
+    coordinate the map already had and reached six where five is enough.
+
+    Two coordinates can hold one value, and which of them a split can use
+    depends on the split: after two steps on ``(x + y**3, y)`` two of them hold
+    ``y``. Keeping one made the other unreachable, which cost the dimension six
+    that ``docs/roadmap.md`` claims for that map.
     """
     holders: dict[sp.Expr, list[int]] = {}
-    for index in source.carrier_indices:
+    for index in range(source.dimension):
         value = sp.expand(source.components[index] - source.variables[index])
-        if value != 0:
+        if value != 0 and not value.has(source.variables[index]):
             holders.setdefault(value, []).append(index)
 
     return {value: tuple(indices) for value, indices in holders.items()}

@@ -6,6 +6,14 @@ Notable changes per release. The milestone plan and its reasoning live in
 
 ## 0.7.0rc3
 
+The multi-affine walk asks BCW-10's own condition for what holds a factor, not
+`carrier_indices`. That set is deliberately not maximal -- it drops every
+coordinate on a dependency cycle, which is what makes the block it picks out
+unipotent -- and that is the right question for the block and the wrong one for
+a factor. On `(x + y, y + x + z, z + 2x + y, w + y^2)` the walk reached six
+where five is enough. The three maps of this milestone are unchanged at 19, 23
+and 24, so no figure on any page moves.
+
 DSC-4 is checked at every public route into a `DescentStep`. `0.7.0rc2`
 checked it in `verify` and in `target`, and an audit found `conjugate` and
 `tail` still letting a bare `ValueError` out of

@@ -2231,6 +2231,13 @@ controlled instead is `squared_terms`, and its control is the map the
 correction of WP 2 was about: multi-affine in the variables a source began with
 and squaring a coordinate an earlier stage bought.
 
+Two audits then narrowed the carrier rule twice more, and neither narrowing was
+deliberate. The first kept one coordinate per value where two can hold it; the
+second asked `carrier_indices` where BCW-10 is what governs a step. The first
+cost the dimension six on `(x + y^3, y)`; the second costs a dimension on a map
+whose carriers lie on a dependency cycle and none on the three of this
+milestone.
+
 **The figures improve by a third, and the improvement is carrier reuse.** The
 walk reaches 19, 23 and 24 where the rule measured in WP 2 reached 33, 36 and
 39, in the same number of steps. Both were carried to the endpoint of Theorem

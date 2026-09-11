@@ -33,7 +33,7 @@ from kellermap.bcw.unipotent import UnipotentStep
 from kellermap.context import ReductionContext
 from kellermap.untargeted import EXCESS_BASE, multi_affine_steps
 
-x, y, z = sp.symbols("x y z")
+x, y, z, w = sp.symbols("x y z w")
 
 
 def cube() -> PolynomialMap:
@@ -221,6 +221,30 @@ def test_a_second_carrier_of_a_value_is_offered_when_the_first_will_not_do() -> 
 
     assert len(holding) == 2
     assert outcome.reduction.steps[2].target.dimension == middle.dimension + 1
+
+
+def test_a_carrier_on_a_dependency_cycle_is_offered() -> None:
+    """BCW-10 is the condition, and ``carrier_indices`` asks for more.
+
+    That set is deliberately not maximal: it drops every coordinate on a
+    dependency cycle, which is what makes the block it picks out unipotent.
+    Here the first coordinate holds ``y`` and lies on a cycle, so asking the
+    stronger question bought a coordinate the map already had. An audit of
+    ``0.7.0rc2`` found it reaching six where five is enough.
+    """
+    source = over_field(
+        PolynomialMap((x, y, z, w), (x + y, y + x + z, z + 2 * x + y, w + y**2))
+    )
+
+    assert source.determinant() == 1
+    assert source.carrier_indices == (2, 3)
+
+    outcome = reduce_to_multi_affine(source)
+    assert outcome.reduction is not None
+    outcome.reduction.verify()
+
+    assert outcome.reduction.target.dimension == 5
+    assert squared_terms(outcome.reduction.target) == ()
 
 
 def test_a_carrier_is_used_where_one_is_safe() -> None:

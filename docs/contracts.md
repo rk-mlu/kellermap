@@ -3163,6 +3163,19 @@ one. A coordinate that already holds a factor supplies it and costs nothing,
 UNT-9; a coordinate that would break one of the three conditions is passed
 over and the factor is bought.
 
+Holding a factor is BCW-10's third clause and nothing stronger: `j` holds
+`components[j] - X_j` when that displacement is free of `X_j`. It is not
+`carrier_indices`, which asks for more. That set is a set of coordinates whose
+dependencies are acyclic, which is what makes the block it picks out unipotent,
+and its docstring says it is deliberately not maximal. That is the right
+question for the block and the wrong one for a factor. Until `0.7.0rc3` this
+walk asked it, and on `(x + y, y + x + z, z + 2x + y, w + y^2)` the first
+coordinate holds `y` and lies on a cycle, so the walk bought a coordinate the
+map already had and reached six where five is enough.
+
+Every coordinate that holds a value, and not the first of them. Two can hold
+one, and which serves depends on the split.
+
 A slot on the component the step acts on cannot arise, and there is no branch
 against it, for the reason `_slot` gives for the two enumerators above. A
 carrier's value is its whole displacement, the acting component's displacement
