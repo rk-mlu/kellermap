@@ -337,6 +337,16 @@ ancillary file to `anc/check_collision_hulls.py` and gives a hash of it.
 Lemma 2 and Theorem 3 keep their numbers and their statements in version 2, so
 the citations in `kellermap.compression` and `kellermap.lift` name it.
 
+Version 2 states a cryptographic digest for its ancillary file. The copy read
+while this page was written has that digest, so the file described and the file
+read are the same file. Nothing from it is vendored here, for the reason this
+project gives for fixed data generally: what it holds that this repository
+needs is already held in this repository's own idiom, and a second copy in the
+source's format would add a closed loop rather than a check. It also carries
+van Rijn's twelve-variable map and the nineteen-variable one, which are third
+party twice over -- copied into that file from a repository note -- and neither
+is transcribed here.
+
 This is the most directly relevant reference this page carries after Alpöge's
 own, and it settles two questions that stood open here.
 
@@ -376,15 +386,19 @@ unchanged.
 
 ### What version 2 adds
 
-A second application, and it is at the dimension this project's own pipeline
-reaches. Van Rijn's twelve-variable degree-three map, rank-compressed and
-homogenized, is a nineteen-variable cubic homogeneous Keller map; its
-collision-generated sequence runs `2, 4, 11, 19, 19`, so the hull is the whole
-space. Proposition 8 draws the consequence: no proper invariant linear
-restriction retaining that collision can lower the thirty-eight-variable lift,
-in any codimension. The lift itself is written out, with 340 monomials against
-the 350 of the forty-variable one, and with its own explicit collision over
-`Q(i)`.
+A published treatment of a route this page already records. Van Rijn's
+nineteen and thirty-eight are on this page under "Against the published
+figures" and have been since a week after they were stated; what version 2 adds
+is not those two numbers.
+
+What it adds is what a paper adds to a repository note. The
+collision-generated sequence of that nineteen runs `2, 4, 11, 19, 19`, so the
+hull is the whole space, and Proposition 8 draws the consequence: no proper
+invariant linear restriction retaining that collision can lower the
+thirty-eight-variable lift, in any codimension. The lift is written out with
+340 monomials against the 350 of the forty-variable one, and with its own
+explicit collision over `Q(i)`. The monomial count is the figure this page had
+no way to compare against before.
 
 The two route-specific minimality statements are the paper's, and neither is a
 claim of global minimality; the paper says so and this page repeats it because
@@ -858,19 +872,23 @@ built: 11, then 22 after the unipotent reduction, 23 after the homogenization,
 19 after collision-hull compression. Every step is verified by the library and
 the three points arrive.
 
-That equals the smallest cubic homogeneous figure this page records, and it did
-not when the paragraph was written. Version 1 of Prellberg's paper recorded
-Macfarlane's 20, which is also what its hull makes of Thompson's 24, and the
-literature was checked again and nothing smaller was found. Version 2, of 31
-August 2026, records a published nineteen: van Rijn's twelve-variable
-degree-three map, rank-compressed and homogenized, and its Proposition 8 proves
-that the collision hull of that nineteen is the whole space, so no proper
-invariant linear restriction retaining that collision improves it.
+That equals the smallest cubic homogeneous figure this page records, and it is
+not below it. The paragraph used to say it was one below Macfarlane's 20, with
+the note that the literature had been checked and nothing smaller found. That
+was wrong when it was written, and not because of anything published since:
+"Against the published figures" above states on this same page that 19 and 38
+are van Rijn's figures as well as this project's, by a different route and a
+month earlier. Two sections of one page disagreed, and the one that was checked
+against the literature is the one that was right.
 
-Whether that nineteen is the one this pipeline reaches is not established here.
-The two arrive by different routes and this page does not compare maps it has
-not compared. What is established is narrower: nineteen is no longer below
-anything published, and the paragraph said it was.
+Whether van Rijn's nineteen is the one this pipeline reaches is not established
+here, and one figure says the two are at least not written the same way. The
+quartic this pipeline lifts from its nineteen has 386 monomials, which
+`scripts/measure_pipeline.py` checks against this page; the one Prellberg's
+version 2 displays for van Rijn's has 340. A monomial count is not invariant
+under a linear change of coordinates, so that rules out equality as written and
+not linear equivalence. It fits what this page already says about density: the
+forms this composition produces are denser than the published ones.
 
 What it is not is new mathematics. It composes two published constructions,
 the eleven-variable reduction and the two stages of Section 4 with Theorem 3 of

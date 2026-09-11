@@ -586,3 +586,34 @@ worked example.
 The lesson is narrow and worth keeping: the claim was about a shape the library
 does support, and one call would have settled it. It was made from the shape of
 the published components rather than from the type of a slot.
+
+## Two sections of the references page disagreed about the nineteen
+
+**Said, in "What the pipeline of milestone 0.6 makes of it":** that the
+nineteen cubic homogeneous variables the pipeline reaches are one below the
+smallest figure the page records, Macfarlane's 20, and that the literature had
+been checked again and nothing smaller found.
+
+**Said, in "Against the published figures" on the same page:** that 19 and 38
+are van Rijn's figures as well as this project's, by a different route and a
+month earlier, and that what was new here is neither number.
+
+**True:** the second. The first was wrong when it was written, and nothing
+published since made it so.
+
+**Found** by the maintainer, on a delivery that had just rewritten the first
+sentence and attributed its falsity to version 2 of arXiv:2608.12543. That
+version was read, the sentence was compared against it, and the other section
+of the same page was not.
+
+**Now:** the paragraph says the nineteen equals the smallest figure the page
+records and is not below it, and names the section that had it right. The
+entry for version 2 no longer presents van Rijn's two numbers as something it
+adds; what it adds is the published treatment, the hull sequence, the
+route-specific minimality of Proposition 8, and a monomial count this page had
+no way to compare against before.
+
+**Worth keeping:** a page long enough to contradict itself will, and the check
+that catches it is reading it against itself rather than against a source. Both
+sections were checked against the literature. Only one was checked against the
+other.

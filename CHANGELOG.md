@@ -27,12 +27,21 @@ Version 2 of arXiv:2608.12543, of 31 August 2026, is recorded. It renames the
 paper, keeps Theorem 3 with its number and its statement, and adds a second
 application at nineteen variables whose collision hull is the whole space, so
 its thirty-eight-variable lift cannot be lowered by any invariant linear
-restriction retaining that collision. `docs/references.md` also withdraws a
-comparison the new version falsifies: nineteen cubic homogeneous variables was
-described here as one below anything published, and a published nineteen now
-exists. The citations that name a theorem move to version 2; those that record
-where fixed data was transcribed from stay at version 1, because a
-transcription is from the bytes it was made from.
+restriction retaining that collision. Van Rijn's nineteen and thirty-eight were
+already on `docs/references.md` and are not what the new version adds. Its
+ancillary file was read and has the digest that version states, and nothing
+from it is vendored: what this repository needs from it is already held in its
+own idiom, and the maps it carries are third party twice over.
+
+`docs/references.md` also withdraws a claim two of its own sections disagreed
+about. One said the nineteen this pipeline reaches is one below anything
+published; another said on the same page that nineteen and thirty-eight are van
+Rijn's figures too, a month earlier. The second was right and the first was
+wrong when it was written. `docs/errata.md` records it.
+
+The citations that name a theorem move to version 2; those that record where
+fixed data was transcribed from stay at version 1, because a transcription is
+from the bytes it was made from.
 
 Documentation the audit found stale. `docs/references.md` still said the
 library does not implement the multi-affine half of Theorem 2.1(b), which
