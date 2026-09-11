@@ -100,12 +100,18 @@ def test_the_measure_is_zero_exactly_when_the_map_is_multi_affine() -> None:
 
 @pytest.mark.parametrize("base", [0, 1, 2])
 def test_a_base_below_three_is_refused(base: int) -> None:
-    """The measure is zero exactly on a multi-affine map only from three up.
+    """The measure has to fall at every step, and that is the whole reason.
 
     A step puts at most two squaring terms in place of one, each with an excess
     at least one lower, so the measure falls only while
-    ``base ** e > 2 * base ** (e - 1)``. An audit of ``0.7.0rc1`` reached zero
-    on a map that squares a variable by passing ``base=0``.
+    ``base ** e > 2 * base ** (e - 1)``, which is ``base > 2``.
+
+    Being zero exactly on a multi-affine map is not the reason, and this
+    docstring said it was. That holds at one and at two, where every term is
+    positive, and fails only at zero, which is the case an audit of
+    ``0.7.0rc1`` reached. An audit of ``0.7.0rc3`` found the wrong reason still
+    standing here and in ``docs/api.md`` after the code and the contract page
+    had been corrected.
     """
     with pytest.raises(ValueError, match="at least 3"):
         remaining_excess(cube(), base)
@@ -564,8 +570,12 @@ def test_a_step_built_by_hand_still_verifies_the_new_obligations() -> None:
 def test_the_walk_reaches_the_three_maps_of_the_milestone() -> None:
     """The figures UNT-12 reports, recomputed.
 
-    Marked slow: the three chains together are the most expensive thing this
-    module does, and the smallest case above already exercises every branch.
+    The most expensive thing this module does, at some seconds for the three
+    chains together, and it stays in the fast suite. The docstring used to call
+    it marked slow and it carries no marker; an audit of ``0.7.0rc3`` found the
+    two disagreeing. The marker is not added, because deselecting this would
+    leave the figures on three pages with nothing checking them; the sentence
+    that claimed it goes instead.
     """
     reached = {}
     for name in ("alpoege13", "alpoege12", "spacerat11"):

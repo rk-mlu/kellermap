@@ -1441,9 +1441,10 @@ homogenization together supply, and UNT-12 states it.
 `remaining_excess` is its measure: the sum of `3 ** excess(M)` over the
 monomials of the displacement that square a variable, where the excess is the
 total degree less the number of variables in the monomial. It is zero exactly
-when the map is multi-affine, and the base has to be at least three for that
-to hold: a step puts at most two squaring terms in place of one, each with an
-excess one lower.
+when the map is multi-affine, which holds at any base above zero. A base below
+three is refused for the other reason: a step puts at most two squaring terms
+in place of one, each with an excess one lower, so the measure falls only while
+`base ** e > 2 * base ** (e - 1)`.
 
 ```python
 >>> from kellermap import reduce_to_multi_affine, remaining_excess

@@ -33,6 +33,23 @@ coordinate is `X_u + P` with `P` over the coordinates already there, so the
 carriers a reduction produces never depend on each other. The widening bites on
 a map somebody hands in, not on one this library builds.
 
+Four statements that an audit found disagreeing with their own page or with
+their source. `docs/references.md` credited Prellberg with the symmetric lift,
+where his version 2 credits de Bondt and van den Essen and claims the
+collision-generated subspace instead, and where the same page says so a hundred
+lines down. Its density paragraph set his forty-variable quartic against this
+project's thirty-eight, which is not a comparison, and left out his
+thirty-eight with 340 monomials. `docs/contracts.md` named Corollary 7's
+route-specific minimality and not Proposition 8's. And `docs/api.md` and one
+test docstring still gave the justification for a base of at least three that
+`0.7.0rc3` removed from the code and the contract page.
+
+The entry for version 2 of arXiv:2608.12543 moves to `0.7.0rc3`, where the work
+was done; it was written while `0.7.0rc2` was the open heading. One test
+docstring called itself marked slow and carries no marker: the sentence goes
+rather than the marker being added, because deselecting it would leave the
+figures on three pages with nothing checking them.
+
 The targeted search still asks the narrower question, and that is measured
 rather than left. Swapping the condition in there does not widen the space:
 a carrier takes a slot a pool name would otherwise fill, and the first
@@ -42,6 +59,26 @@ nothing. Offering both forms is the correction, and it is the same one the
 multi-affine walk needed; it is its own package.
 
 ## 0.7.0rc3
+
+Version 2 of arXiv:2608.12543, of 31 August 2026, is recorded. It renames the
+paper, keeps Theorem 3 with its number and its statement, and adds a second
+application at nineteen variables whose collision hull is the whole space, so
+its thirty-eight-variable lift cannot be lowered by any invariant linear
+restriction retaining that collision. Van Rijn's nineteen and thirty-eight were
+already on `docs/references.md` and are not what the new version adds. Its
+ancillary file was read and has the digest that version states, and nothing
+from it is vendored: what this repository needs from it is already held in its
+own idiom, and the maps it carries are third party twice over.
+
+`docs/references.md` also withdraws a claim two of its own sections disagreed
+about. One said the nineteen this pipeline reaches is one below anything
+published; another said on the same page that nineteen and thirty-eight are van
+Rijn's figures too, a month earlier. The second was right and the first was
+wrong when it was written. `docs/errata.md` records it.
+
+The citations that name a theorem move to version 2; those that record where
+fixed data was transcribed from stay at version 1, because a transcription is
+from the bytes it was made from.
 
 UNT-12 says one candidate per factorization *and* slot assignment. It said per
 factorization, which was the count before the walk stopped choosing an
@@ -91,26 +128,6 @@ iterable was empty from the second generator onward and every variable counted.
 `remaining_excess` validated nothing: a base of zero reported zero on a map
 that squares a variable. `reduce_to_multi_affine` now carries the note about
 the interpreter's recursion limit that its sibling has.
-
-Version 2 of arXiv:2608.12543, of 31 August 2026, is recorded. It renames the
-paper, keeps Theorem 3 with its number and its statement, and adds a second
-application at nineteen variables whose collision hull is the whole space, so
-its thirty-eight-variable lift cannot be lowered by any invariant linear
-restriction retaining that collision. Van Rijn's nineteen and thirty-eight were
-already on `docs/references.md` and are not what the new version adds. Its
-ancillary file was read and has the digest that version states, and nothing
-from it is vendored: what this repository needs from it is already held in its
-own idiom, and the maps it carries are third party twice over.
-
-`docs/references.md` also withdraws a claim two of its own sections disagreed
-about. One said the nineteen this pipeline reaches is one below anything
-published; another said on the same page that nineteen and thirty-eight are van
-Rijn's figures too, a month earlier. The second was right and the first was
-wrong when it was written. `docs/errata.md` records it.
-
-The citations that name a theorem move to version 2; those that record where
-fixed data was transcribed from stay at version 1, because a transcription is
-from the bytes it was made from.
 
 Documentation the audit found stale. `docs/references.md` still said the
 library does not implement the multi-affine half of Theorem 2.1(b), which

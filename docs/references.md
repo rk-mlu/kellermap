@@ -303,17 +303,24 @@ right thing to minimize; three data points say it is monotone and three data
 points are not a theorem.
 
 It establishes no new mathematics. The eleven-variable map is Spacerat's, the
-two stages are Bass, Connell and Wright's, the compression and the lift are
-Prellberg's. What this project contributed is the composition and the
-certificates. It once said it had also contributed the observation that nobody
+two stages are Bass, Connell and Wright's, the compression is Prellberg's, and
+the lift is de Bondt and van den Essen's. The last two are one sentence on this
+page elsewhere and were one sentence here, which credited Prellberg with both.
+His version 2 says otherwise about his own paper: the symmetric lift is de
+Bondt and van den Essen's construction, the polarization subalgebra it goes
+through is known, and what is his is the collision-generated non-injective
+Keller subspace and the control it gives over that lift, left unchanged. What
+this project contributed is the composition and the certificates. It once said it had also contributed the observation that nobody
 had put these five pieces in a row; somebody had reached the same two numbers
 by a different route a month earlier.
 
-The density goes the other way and the table says so. Prellberg's `P` at 40
-variables has 350 monomials; this project's at 38 has 386, and at 40 -- the
-same dimension by a different route -- 398. Smaller in dimension is not smaller
-in every sense, and which of the two matters depends on what a reader wants the
-witness for.
+The density goes the other way and the table says so. At 38 variables, which is
+the comparison to make, Prellberg's `P` has 340 monomials and this project's
+386; at 40 his has 350 and this project's, reached by a different route, 398.
+The 38 against 38 was missing here until `0.7.0rc4` and the paragraph compared
+his 40 with this project's 38, which is not a comparison. Smaller in dimension
+is not smaller in every sense, and which of the two matters depends on what a
+reader wants the witness for.
 
 ---
 

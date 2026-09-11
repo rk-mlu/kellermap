@@ -1656,8 +1656,9 @@ target while the fault is in the basis. The exception says both.
 invariant subspace containing the points, and does not need to: any invariant
 subspace containing them gives a restriction that is Keller and keeps the
 collision. Minimality is a property of `collision_hull`, which is a
-construction rather than an obligation, and Corollary 7 of that paper claims
-only a route-specific minimality for the number forty.
+construction rather than an obligation, and that paper claims only
+route-specific minimality: Corollary 7 for the number forty and Proposition 8
+of its version 2 for the number thirty-eight.
 
 **No claim that compression helps.** Nothing requires `m < n`. A collision
 whose hull is the whole space compresses to itself, which is a correct step and
@@ -1927,11 +1928,15 @@ and the section above says what was measured before it was put there.
 
 ### Deliberate non-obligations of this type
 
-**No minimality.** Corollary 7 of that paper states a route-specific one: forty
+**No minimality.** That paper states two route-specific ones. Corollary 7: forty
 is minimal among examples obtained by restricting Thompson's map to an
 invariant subspace containing the collision and then applying this lift
-unchanged. That is a statement about one route, it is the paper's and not this
-project's, and nothing here claims it for any other route.
+unchanged. Proposition 8 of its version 2, for the other route: the collision
+hull of van Rijn's nineteen-variable map is the whole space, so no proper
+invariant linear restriction retaining that collision lowers the
+thirty-eight-variable lift, in any codimension. Both are statements about one
+route each, both are the paper's and not this project's, and nothing here
+claims either for any other route.
 
 **No claim about Zhao's Vanishing Conjecture beyond the construction.** The
 quartic form is a counterexample to it when the source is one. That is a
