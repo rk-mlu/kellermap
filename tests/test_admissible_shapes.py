@@ -287,6 +287,13 @@ def test_the_forward_search_reports_no_result_for_a_weighted_chain(
     A weighted step lies outside the forward space, because a division has no
     place for a weight. That is not a deferred case but a searched space
     without the chain, so not a defect but a result. The peel finds it.
+
+    The budget is the control's and not the weighted cases'. Offering both
+    forms of a co-factor to every carrier widened the forward space at
+    ``0.7.0rc5``, and the control needs 3189 maps where 200 sufficed before;
+    nothing is lost, the chain is the same one and the search finds it again. A
+    weighted chain is absent from the space, so a large budget there buys only
+    two minutes of exhausting it, and the assertion is the same either way.
     """
     step = two_fresh(SOURCE, coefficient)
     pool = {
@@ -297,7 +304,8 @@ def test_the_forward_search_reports_no_result_for_a_weighted_chain(
         if step.target.variables[index] not in SOURCE.variables
     }
 
-    forwards = search(SOURCE, step.target, pool, budget=200)
+    budget = 4000 if coefficient == 1 else 200
+    forwards = search(SOURCE, step.target, pool, budget=budget)
 
     assert (forwards.reduction is not None) == (coefficient == 1)
     assert peel(SOURCE, step.target, spare=1).reduction is not None

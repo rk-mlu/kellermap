@@ -2515,6 +2515,24 @@ measure". Searching without this assumption means giving up the pool and
 enumerating factorizations of subsums, which is what SEA-8 exists to avoid. That
 is 0.5's problem, where the target is not known either.
 
+**A co-factor that a coordinate holds is offered both ways.** As that carrier,
+which costs no dimension, and bought from the pool, which costs one. Both,
+since `0.7.0rc5`, and only the carried form before it.
+
+Which coordinates count as holding it is BCW-10's own condition,
+`carrier_indices_for_factors`, and every coordinate that holds the value rather
+than the first of them. That is the correction `0.7.0rc4` made in the
+untargeted walk and in the pruning rule of `peel`, and it could not be made
+here on its own. The carried form displaced the bought one in the
+deduplication, and the bought form is what a pool name fills, so widening the
+carrier condition alone removed a chain the search used to find: the unweighted
+control of SEA-14 then exhausted at 2667 maps with nothing. Offering both is
+what makes the widening a widening.
+
+It costs branching, and the figure is worth having. That control examines 3189
+maps where it needed 200, about sixteen times as many, and finds the same
+chain.
+
 **SEA-9 — An anchor is used verbatim, and the scalar goes to the co-factor.**
 `(P, Q)` and `(cP, c^-1 Q)` remove the same product for any unit `c` of the
 coefficient domain, so without a rule the enumerator would emit one candidate

@@ -290,13 +290,7 @@ def anchors(source: PolynomialMap, pool: Iterable[sp.Expr]) -> tuple[Slot, ...]:
         and converted
         and _order(converted) >= 1
     ]
-    # Not ``carrier_indices_for_factors``. Swapping it in here does not widen
-    # the space: ``_partner`` lets a carrier take a slot a pool name would
-    # otherwise fill, and ``found.setdefault`` keeps whichever came first, so a
-    # chain the search used to find drops out. Measured at ``0.7.0rc4``: the
-    # unweighted control of SEA-14 exhausts at 2667 states with nothing.
-    # Offering both forms is the correction and it is its own package.
-    available.extend(Carried(index) for index in source.carrier_indices)
+    available.extend(Carried(index) for index in source.carrier_indices_for_factors)
 
     return tuple(available)
 
@@ -335,9 +329,7 @@ def enumerate_candidates(
     counts(selection_limit=selection_limit)
     polynomials_over(source.ring, values)
 
-    carriers = {
-        _value(source, Carried(index)): index for index in source.carrier_indices
-    }
+    carriers = _holders(source)
 
     found: dict[tuple[int, str, str], Candidate] = {}
 
@@ -361,38 +353,56 @@ def enumerate_candidates(
                 if not _is_subsum(divisor * selection, component):
                     continue
 
-                partner = _partner(selection, carriers, index)
-                if partner is None:  # pragma: no cover - see _partner
-                    continue
-
-                candidate = _canonical(index, anchor, partner)
-                found.setdefault(_key(candidate), candidate)
+                for partner in _partners(selection, carriers, index):
+                    candidate = _canonical(index, anchor, partner)
+                    found.setdefault(_key(candidate), candidate)
 
     return tuple(found.values())
 
 
-def _partner(
+def _holders(source: PolynomialMap) -> dict[PolyElement, tuple[int, ...]]:
+    """Return every coordinate holding each value, under BCW-10.
+
+    ``carrier_indices_for_factors`` and every index, where this was
+    ``carrier_indices`` and one index until ``0.7.0rc5``. The first asked for a
+    unipotent block where BCW-10's third clause is what a step needs; the
+    second made a second carrier of one value unreachable. Both narrowings were
+    found by audits, in the untargeted walk first and here after it.
+    """
+    held: dict[PolyElement, list[int]] = {}
+    for index in source.carrier_indices_for_factors:
+        value = source.to_polynomials()[index] - source.ring.gens[index]
+        if value:
+            held.setdefault(value, []).append(index)
+
+    return {value: tuple(indices) for value, indices in held.items()}
+
+
+def _partners(
     selection: PolyElement,
-    carriers: dict[PolyElement, int],
+    carriers: dict[PolyElement, tuple[int, ...]],
     index: int,
-) -> Slot | None:
-    """Return the co-factor as a slot, or ``None`` if it cannot be one.
+) -> list[Slot]:
+    """Return every slot the co-factor can take, carried forms first.
 
     A co-factor equal to the value of a carrier is offered as that carrier: it
-    is the same factor and it costs no dimension. The target component is not
-    available as a carrier, since the constructor of ``BCWStep`` refuses a slot
-    on the component the step acts on.
-    """
-    carried = carriers.get(selection)
-    if carried is not None:
-        # Not reachable: this would require the displacement of coordinate
-        # ``index`` to be a multiple of itself, that is a constant anchor.
-        # Constants are excluded as anchors.
-        if carried == index:  # pragma: no cover - needs a constant anchor
-            return None
-        return Carried(carried)
+    is the same factor and it costs no dimension. It is also offered bought,
+    and that is the part ``0.7.0rc5`` adds. Until then a carrier displaced the
+    bought form, and the bought form is what a pool name fills, so widening the
+    carrier condition alone removed a chain the search used to find: the
+    unweighted control of SEA-14 exhausted at 2667 states with nothing. Both
+    forms are different candidates under ``_key``, so neither displaces the
+    other in the deduplication.
 
-    return cast("sp.Expr", selection.as_expr())
+    The target component is not offered, since the constructor of ``BCWStep``
+    refuses a slot on the component the step acts on.
+    """
+    slots: list[Slot] = [
+        Carried(carried) for carried in carriers.get(selection, ()) if carried != index
+    ]
+    slots.append(cast("sp.Expr", selection.as_expr()))
+
+    return slots
 
 
 def _canonical(index: int, anchor: Slot, partner: Slot) -> Candidate:

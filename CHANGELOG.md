@@ -4,6 +4,26 @@ Notable changes per release. The milestone plan and its reasoning live in
 `docs/roadmap.md`, the binding obligations of the verification surface in
 `docs/contracts.md`.
 
+## 0.7.0rc5
+
+The targeted enumerator asks BCW-10's condition for a carried factor, like the
+untargeted one since `0.7.0rc4`, and offers a co-factor a coordinate holds both
+as that carrier and bought. The second half is what makes the first safe. Until
+now the carried form displaced the bought one in the deduplication, and the
+bought form is what a pool name fills, so widening the carrier condition alone
+removed a chain the search used to find rather than adding any.
+
+On the four-variable map an audit of `0.7.0rc3` reported against, `anchors`
+offered two of four coordinates and `search` called its space exhausted after
+one map although the target was one verified step away. It offers all four now
+and finds the step after two.
+
+The cost is branching and it is measured: the unweighted control of SEA-14
+examines 3189 maps where 200 sufficed, about sixteen times as many, and finds
+the same chain. Its budget in the tests moves for that case and not for the
+weighted ones, where the chain is absent and a larger budget buys only the time
+to exhaust the space.
+
 ## 0.7.0rc4
 
 `PolynomialMap.carrier_indices_for_factors` is what a carried factor is asked

@@ -13,7 +13,7 @@ authors:
     country: DE
 license: MIT
 repository-code: "https://github.com/rk-mlu/kellermap"
-version: 0.7.0rc4
+version: 0.7.0rc5
 # The DOI of 0.6.0. A release candidate is not deposited and has no DOI of its
 # own, so this stands beside a version that has moved past it until one for
 # 0.7.0 is reserved. The README says the same in prose.

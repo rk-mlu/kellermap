@@ -264,12 +264,21 @@ def test_a_constant_is_no_anchor_and_no_cofactor() -> None:
 
 
 def test_a_carried_cofactor_moves_to_the_first_slot() -> None:
-    """Carriers first, the order in which the reference chains stand."""
+    """Carriers first, the order in which the reference chains stand.
+
+    Both forms of the co-factor are offered since ``0.7.0rc5`` and the carried
+    one is still first. Until then the carrier displaced the purchase, which is
+    what a pool name fills, so widening which coordinates count as carriers
+    removed a chain the search used to find.
+    """
     source = PolynomialMap((x, y), (x + x**3 * y, y + x**2))
 
     found = enumerate_candidates(source, [x * y])
 
-    assert [(c.index, c.left, c.right) for c in found] == [(0, Carried(1), x * y)]
+    assert [(c.index, c.left, c.right) for c in found] == [
+        (0, Carried(1), x * y),
+        (0, x * y, x**2),
+    ]
 
 
 # --------------------------------------------------------------------------
