@@ -1081,3 +1081,99 @@ def test_the_outcome_reports_its_ring_when_printed() -> None:
     assert printed.startswith("SearchOutcome(reduction=")
     assert "domain=ZZ" in printed
     assert "_domain" not in printed
+
+
+# --------------------------------------------------------------------------
+# Equal factor values against a shared generator, SEA-14 and BCW-12
+# --------------------------------------------------------------------------
+
+
+def equal_values() -> tuple[PolynomialMap, sp.Symbol, sp.Symbol]:
+    """A map whose leading monomial divides into two equal square factors."""
+    first, second = sp.symbols("u v")
+    source = over_field(PolynomialMap((x, y, z), (x + z**4, y + z**2, z)))
+
+    return source, first, second
+
+
+def test_two_equal_values_are_two_coordinates_in_the_forward_space() -> None:
+    """SEA-14 says distinct fresh generators, so equal values cost two.
+
+    The candidate reported ``m = 1`` until ``0.7.0rc6``, because sharing was
+    inferred from the two polynomials being equal rather than asked for. The
+    step below verifies, uses two coordinates and exactly the pool's names and
+    values, and was unreachable: the search called its space exhausted after
+    thirty maps.
+    """
+    source, first, second = equal_values()
+    step = BCWStep.build(source, 0, Fresh(z**2, first), Fresh(z**2, second), 1)
+    step.verify()
+
+    assert step.m == 2
+
+    found = [
+        candidate
+        for candidate in enumerate_candidates(source, [z**2])
+        if candidate.m == 2
+    ]
+
+    assert len(found) == 1
+    assert found[0].shares_one_generator is False
+
+    outcome = search(source, step.target, {first: z**2, second: z**2}, budget=100)
+
+    assert outcome.reduction is not None
+
+
+def test_a_shared_generator_stays_outside_the_forward_space() -> None:
+    """The other direction, and the one that had the search overreaching.
+
+    BCW-12's saving is a step the constructor admits and ``peel`` finds. SEA-14
+    excludes it from the forward space, and the search built it anyway, naming
+    two coordinates and consuming one. It reports a non-answer now.
+    """
+    source, first, second = equal_values()
+    shared = BCWStep.build(source, 0, Fresh(z**2, first), Fresh(z**2, first), 1)
+    shared.verify()
+
+    assert shared.m == 1
+
+    outcome = search(source, shared.target, {first: z**2, second: z**2}, budget=100)
+
+    assert outcome.reduction is None
+    assert outcome.exhausted is True
+
+
+def test_sharing_is_asked_for_and_not_inferred() -> None:
+    """``shared`` is the field that separates the two, and it defaults to off."""
+    candidate = Candidate(0, z**2, z**2)
+
+    assert candidate.shared is False
+    assert candidate.shares_one_generator is False
+    assert candidate.m == 2
+
+    asked = Candidate(0, z**2, z**2, shared=True)
+
+    assert asked.shares_one_generator is True
+    assert asked.m == 1
+
+
+def test_a_name_is_never_consumed_silently() -> None:
+    """Exactly ``m`` names, and a surplus raises rather than being dropped.
+
+    This is the invariant that failed while ``m`` was inferred: two names were
+    offered for two coordinates and one was used without a word.
+    """
+    candidate = Candidate(0, z**2, z**2)
+    first, second = sp.symbols("u v")
+
+    with pytest.raises(ValueError, match="more names"):
+        candidate.factors([first, second, sp.Symbol("w")])
+
+    with pytest.raises(ValueError, match="fewer names"):
+        candidate.factors([first])
+
+    assert candidate.factors([first, second]) == (
+        Fresh(z**2, first),
+        Fresh(z**2, second),
+    )

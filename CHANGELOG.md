@@ -6,6 +6,23 @@ Notable changes per release. The milestone plan and its reasoning live in
 
 ## 0.7.0rc6
 
+`Candidate` has a `shared` field, and two fresh slots carrying one value are
+two coordinates unless a candidate asks for one. Sharing was inferred from the
+two polynomials being equal, so the two could not be told apart, and an audit
+of `0.7.0rc5` found both directions. The targeted search could not express a
+verified step with two distinct coordinates of one value -- it reported its
+space exhausted after thirty maps -- and it did build a shared one, which
+SEA-14 excludes, naming two coordinates and consuming one. Neither was a false
+certificate; both were the search disagreeing with its own statement of where
+it looks. `untargeted_candidates` asks for the sharing where UNT-1 wants
+BCW-12's saving.
+
+`Candidate.factors` refuses a surplus of names as well as a shortage, which is
+the invariant that failed silently. One caller relied on that silence --
+`scripts/untargeted_space.py` handed two names over whatever the candidate
+needed -- and `make measure` failed the moment the guard went in, which is the
+evidence the silence was worth ending.
+
 The fast suite was profiled and one test marked slow. It had grown to 139
 seconds, of which the unweighted control of SEA-14 was 44: it examines 3189
 maps since `0.7.0rc5` widened the forward space, and it is now a test of its

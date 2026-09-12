@@ -2348,6 +2348,23 @@ plausible chain or silently reporting no result. A case it handles and does not
 solve reports no result, which is a different outcome and is spelled
 differently.
 
+**Two fresh slots of one value are two coordinates here.** Sharing one is
+BCW-12's saving, a `Candidate` asks for it with `shared`, and
+`enumerate_candidates` never does: SEA-14 gives the forward space distinct
+fresh coordinates, so equal values cost two and the step is `m = 2`.
+
+Asked for and not inferred from the two polynomials being equal, which is how
+`Candidate` decided it until `0.7.0rc6`. An audit of `0.7.0rc5` found both
+directions of that conflation. The forward search could not express a verified
+step with two distinct coordinates of one value and called its space exhausted
+after thirty maps instead; and it did build a shared one, naming two
+coordinates and consuming one, which is a chain outside the space SEA-14
+describes. Neither was a false certificate -- the step holds under BCW-12 --
+and both were the search disagreeing with its own statement of where it looks.
+
+`Candidate.factors` refuses a surplus of names as well as a shortage since
+then. That is the invariant which failed silently while `m` was inferred.
+
 **SEA-14 — The forward search builds unweighted steps with distinct fresh
 coordinates, and says so.** It reaches a proper subset of the chains
 `BCWStep` admits, and the two omissions are structural rather than incidental.

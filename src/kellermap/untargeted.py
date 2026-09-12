@@ -327,6 +327,11 @@ def untargeted_candidates(source: PolynomialMap) -> tuple[Candidate, ...]:
                 left=left,
                 right=right,
                 coefficient=split.coefficient,
+                # UNT-1 takes BCW-12's saving where the anchor is a square:
+                # two fresh slots of one value share a coordinate. Asked for
+                # here, where it was inferred from the two values being equal
+                # until ``0.7.0rc6``.
+                shared=True,
             )
         )
 
@@ -342,6 +347,10 @@ def untargeted_candidates(source: PolynomialMap) -> tuple[Candidate, ...]:
                 left=_slot(divisor, carried),
                 right=_slot(cofactors, carried),
                 coefficient=sp.Integer(1),
+                # A divisor and the sum of its cofactors are equal only if the
+                # component is a square of that divisor, which UNT-6 cannot
+                # produce, so this is BCW-12's saving where it never applies.
+                shared=True,
             )
         )
 

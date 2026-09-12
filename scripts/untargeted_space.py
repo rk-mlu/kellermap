@@ -219,7 +219,10 @@ def main() -> int:
             else:
                 ends.append(len(candidates))
             for candidate in candidates:
-                names = sp.symbols("untargeted_0 untargeted_1")
+                # As many as the candidate introduces and no more. Two were
+                # handed over regardless until ``0.7.0rc6``, and a surplus was
+                # dropped in silence; ``Candidate.factors`` refuses one now.
+                names = sp.symbols("untargeted_0 untargeted_1")[: candidate.m]
                 step = BCWStep.build(
                     source,
                     candidate.index,

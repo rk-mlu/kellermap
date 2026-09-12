@@ -78,6 +78,21 @@ class Candidate:
     left: Slot
     right: Slot
     coefficient: sp.Expr = sp.Integer(1)
+    shared: bool = False
+    """Whether two fresh slots of one value are to share a generator, BCW-12.
+
+    A decision by whoever builds the candidate, and not a consequence of the
+    two polynomials being equal. Those are two different things and this field
+    is what separates them: two fresh slots carrying one value may take one
+    coordinate between them or two, and which of the two a step is depends on
+    what is wanted, not on the values.
+
+    It was inferred from equality until ``0.7.0rc6``, so the two could not be
+    told apart. An audit of ``0.7.0rc5`` found both directions of that: the
+    targeted enumerator could not express a verified step with two distinct
+    coordinates of one value, reporting its space exhausted instead, and it did
+    express a shared one, which SEA-14 excludes.
+    """
 
     @property
     def slots(self) -> tuple[Slot, Slot]:
@@ -86,21 +101,22 @@ class Candidate:
 
     @property
     def shares_one_generator(self) -> bool:
-        """Return whether both slots are fresh and carry the same value, BCW-12.
+        """Return whether one coordinate serves both slots, BCW-12.
 
-        Then one coordinate serves both. Two would carry the same value and
-        cost a dimension for nothing, which is the same saving that puts
-        ``alpoege15`` two dimensions below ``bcw17``.
+        ``shared`` and both slots fresh carrying one value. Then two would
+        carry the same value and cost a dimension for nothing, which is the
+        same saving that puts ``alpoege15`` two dimensions below ``bcw17``.
 
-        It arises when the leading monomial is a square. The untargeted
-        enumerator produces it; ``enumerate_candidates`` never has, measured
-        over 2690 candidates along both long chains, because its two slots come
-        from a pool value and from dividing by it.
+        It arises when the leading monomial is a square, and the untargeted
+        enumerator asks for it there. ``enumerate_candidates`` never asks for
+        it: SEA-14 says the forward space has distinct fresh generators, so
+        equal values there are two coordinates and the step is ``m = 2``.
         """
         left, right = self.slots
 
         return (
-            not isinstance(left, Carried)
+            self.shared
+            and not isinstance(left, Carried)
             and not isinstance(right, Carried)
             and bool(left == right)
         )
@@ -117,9 +133,16 @@ class Candidate:
         """Return the slots as ``BCWStep`` factors, taking names in slot order.
 
         The names come from outside, by SEA-3. Exactly ``m`` of them are
-        consumed, and a shorter supply raises rather than inventing one.
+        consumed: a shorter supply raises rather than inventing one, and a
+        longer one raises rather than dropping a name. The second half is
+        checked since ``0.7.0rc6``. It was the invariant that failed silently
+        while ``m`` was inferred from the two values being equal -- the caller
+        offered two names for two distinct coordinates and one was consumed
+        without a word, which an audit of ``0.7.0rc5`` found from the other
+        side.
 
-        Two fresh slots carrying one value take one name between them, BCW-12.
+        Two fresh slots carrying one value take one name between them when the
+        candidate asks for that, BCW-12, and two otherwise.
         """
         supply = iter(names)
         built: list[Factor] = []
@@ -142,6 +165,12 @@ class Candidate:
             if self.shares_one_generator:
                 shared = name
             built.append(Fresh(slot, name))
+
+        if next(supply, None) is not None:
+            raise ValueError(
+                f"The candidate introduces {self.m} generators, "
+                "and more names were supplied."
+            )
 
         return (built[0], built[1])
 
