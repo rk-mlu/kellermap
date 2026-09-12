@@ -4,6 +4,32 @@ Notable changes per release. The milestone plan and its reasoning live in
 `docs/roadmap.md`, the binding obligations of the verification surface in
 `docs/contracts.md`.
 
+## 0.7.0rc6
+
+A Keller map over `GF(2)` broke four public operations at once, and all four
+had one cause. `PolyElement.diff` leaves a term with a zero coefficient in the
+sparse dictionary in positive characteristic, and such a polynomial compares
+unequal to the same polynomial without it, so the Jacobian entries this library
+stores were not in the ring's normal form. `carrier_indices` was empty on a map
+whose Jacobian is the identity, and `determinant`, `search` and
+`BCWStep.verify` let a raw `ExactQuotientFailed` out. The entries are
+normalized where they are computed.
+
+`carrier_indices_for_factors` asks BCW-10's condition on the monomial support
+of `F_j - X_j` and not on `dF_j/dX_j`. The two are the same question in
+characteristic zero only, and the property claimed they were the same: over
+`GF(2)` the map `(x + x^2, y + y^2, z + z^2)` has the identity for its Jacobian
+and no displacement free of its own variable, so the block is the whole map and
+no coordinate is a carried factor. Neither set contains the other there, where
+one contained the other before. The old test came out right by accident,
+because the unnormalized derivative compared unequal to one, so correcting the
+storage would have made the wrong condition bite.
+
+`tests/test_positive_characteristic.py` holds the audit's map against the
+Jacobian, both carrier notions, the determinant, a search from the map to
+itself and a step that builds and verifies, with a control that characteristic
+zero is unchanged.
+
 ## 0.7.0rc5
 
 The targeted enumerator asks BCW-10's condition for a carried factor, like the

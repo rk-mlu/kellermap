@@ -3219,8 +3219,13 @@ UNT-9; a coordinate that would break one of the three conditions is passed
 over and the factor is bought.
 
 Holding a factor is BCW-10's third clause and nothing stronger, which is what
-`PolynomialMap.carrier_indices_for_factors` returns. It is not
-`carrier_indices`, which asks for more. That set is a set of coordinates whose
+`PolynomialMap.carrier_indices_for_factors` returns: `F_j - X_j` free of `X_j`,
+decided on the monomial support. It is not `carrier_indices`, which asks a
+different question and not merely more of the same. The two agree in
+characteristic zero up to the acyclicity; over `GF(2)` the map
+`(x + x^2, y + y^2, z + z^2)` has the identity for its Jacobian and no
+displacement free of its own variable, so the block is the whole map and no
+coordinate is a carried factor. Neither set contains the other there. That set is a set of coordinates whose
 dependencies are acyclic, which is what makes the block it picks out unipotent,
 and its docstring says it is deliberately not maximal. That is the right
 question for the block and the wrong one for a factor. Until `0.7.0rc3` this

@@ -233,6 +233,21 @@ def clone_domain(domain: Any) -> Any:
     return clone_domain(domain.dom).poly_ring(*domain.symbols, order=sparse_ring.order)
 
 
+def _normalized(element: PolyElement) -> PolyElement:
+    """Return ``element`` with any zero-coefficient term dropped.
+
+    ``PolyElement.diff`` leaves them behind in positive characteristic, and a
+    sparse polynomial carrying one compares unequal to the same polynomial
+    without it. ``strip_zero`` mutates in place, so this copies first: the
+    argument may be a component of a map and those are not the caller's to
+    change.
+    """
+    stripped = element.copy()
+    stripped.strip_zero()
+
+    return stripped
+
+
 def clone_ring(
     polynomial_ring: PolyRing, symbols: tuple[sp.Symbol, ...] | None = None
 ) -> PolyRing:
@@ -494,8 +509,20 @@ class PolynomialMap:
 
     @cached_property
     def _jacobian_polynomials(self) -> tuple[tuple[PolyElement, ...], ...]:
+        """Return the Jacobian entries, each in the ring's normal form.
+
+        ``PolyElement.diff`` can leave a term with a zero coefficient in the
+        sparse dictionary, and in positive characteristic it does: over
+        ``GF(2)`` the derivative of ``x + x**2`` is stored as ``0*x + 1`` and
+        compares unequal to the ring's one. An audit of ``0.7.0rc5`` found the
+        consequences reaching four public operations -- ``carrier_indices``
+        empty on a map whose Jacobian is the identity, and a raw
+        ``ExactQuotientFailed`` out of ``determinant``, ``search`` and
+        ``BCWStep.verify``. Everything downstream compares these entries, so
+        they are normalized here and once.
+        """
         return tuple(
-            tuple(component.diff(variable) for variable in self._ring.gens)
+            tuple(_normalized(component.diff(variable)) for variable in self._ring.gens)
             for component in self._poly_components
         )
 
@@ -549,14 +576,25 @@ class PolynomialMap:
     def carrier_indices_for_factors(self) -> tuple[int, ...]:
         """Return every coordinate BCW-10 admits as a carried factor.
 
-        An index ``j`` qualifies when ``dF_j/dX_j == 1``, which is to say that
-        ``F_j - X_j`` is free of ``X_j``. That is the third clause of BCW-10
-        and the whole of what a step asks of a carried slot.
+        An index ``j`` qualifies when ``F_j - X_j`` is free of ``X_j``. That is
+        the third clause of BCW-10, word for word, and the whole of what a step
+        asks of a carried slot. It is decided on the monomial support of the
+        displacement and not on ``dF_j/dX_j``.
+
+        The two are the same question in characteristic zero and not otherwise,
+        and this property claimed they were the same until ``0.7.0rc6``. Over
+        ``GF(2)`` the map ``(x + x^2, y + y^2, z + z^2)`` has the identity for
+        its Jacobian, so every diagonal entry is one, while no displacement is
+        free of its own variable: the block is the whole map and no coordinate
+        is a carried factor. An audit of ``0.7.0rc5`` found the claim, and
+        found that it came out right only because the unnormalized derivative
+        compared unequal to one.
 
         A coordinate whose displacement is zero qualifies, as it does for
-        ``carrier_indices``, and this property is that one without the
-        acyclicity: it always contains it. A caller that needs a factor of
-        positive order filters for one, which is where that belongs.
+        ``carrier_indices``. A caller that needs a factor of positive order
+        filters for one, which is where that belongs. This property no longer
+        contains ``carrier_indices`` in general: in positive characteristic
+        neither contains the other.
 
         Not ``carrier_indices``, which asks for more. That property picks out a
         unipotent block, so it drops every coordinate on a dependency cycle and
@@ -572,11 +610,17 @@ class PolynomialMap:
         into a wrong claim rather than a missed step, reporting an exhausted
         space where a verified chain existed.
         """
-        rows = self._jacobian_polynomials
-        one = self._ring.one
+        generators = self._ring.gens
 
         return tuple(
-            index for index in range(self.dimension) if rows[index][index] == one
+            index
+            for index in range(self.dimension)
+            if not any(
+                exponents[index]
+                for exponents in (
+                    self._poly_components[index] - generators[index]
+                ).itermonoms()
+            )
         )
 
     def _dependency_graph(self, indices: Iterable[int]) -> dict[int, set[int]]:
