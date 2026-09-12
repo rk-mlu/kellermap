@@ -1177,3 +1177,50 @@ def test_a_name_is_never_consumed_silently() -> None:
         Fresh(z**2, first),
         Fresh(z**2, second),
     )
+
+
+def test_a_carrier_on_a_cycle_is_an_anchor_and_a_target_is_reached() -> None:
+    """The targeted half of the audit's four-variable case.
+
+    ``anchors`` offered two of four coordinates and ``enumerate_candidates``
+    nothing at all, so ``search`` called its space exhausted after one map
+    although the target was one verified step away. The cause was
+    ``carrier_indices``, which drops every coordinate on a dependency cycle
+    because it picks out a unipotent block; BCW-10 asks only that ``F_j - X_j``
+    be free of ``X_j``, which all four satisfy here.
+
+    ``0.7.0rc4`` corrected this and ``0.7.0rc5`` the co-factor with it, and the
+    case reached the changelog with no test of its own. The untargeted walk and
+    ``peel`` have theirs in ``tests/test_multi_affine.py``; this is the third.
+    """
+    generators = sp.symbols("w0:4")
+    first, second, third, fourth = generators
+    source = over_field(
+        PolynomialMap(
+            generators,
+            (
+                first + second**2,
+                second + first + third,
+                third + 2 * first + second**2,
+                fourth + second**4,
+            ),
+        )
+    )
+
+    assert source.carrier_indices == (2, 3)
+    assert source.carrier_indices_for_factors == (0, 1, 2, 3)
+
+    step = BCWStep.build(source, 3, Carried(0), Carried(0), 1)
+    step.verify()
+
+    assert step.m == 0
+    assert step.target.dimension == source.dimension
+    assert step.target.degree() == 3
+
+    assert Carried(0) in anchors(source, ())
+    assert enumerate_candidates(source, ())
+
+    outcome = search(source, step.target, {}, budget=100)
+
+    assert outcome.reduction is not None
+    assert outcome.exhausted is False

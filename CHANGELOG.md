@@ -23,6 +23,13 @@ the invariant that failed silently. One caller relied on that silence --
 needed -- and `make measure` failed the moment the guard went in, which is the
 evidence the silence was worth ending.
 
+The four-variable case with a carrier on a dependency cycle has a test for the
+targeted search too. The untargeted walk and `peel` got theirs when they were
+corrected; this one reached the changelog of `0.7.0rc4` without one, and an
+audit noted the gap rather than finding a fault. It holds `anchors`,
+`enumerate_candidates` and `search` against the step that verifies and drops
+the degree to three without buying a coordinate.
+
 The fast suite was profiled and one test marked slow. It had grown to 139
 seconds, of which the unweighted control of SEA-14 was 44: it examines 3189
 maps since `0.7.0rc5` widened the forward space, and it is now a test of its
