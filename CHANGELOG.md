@@ -6,6 +6,14 @@ Notable changes per release. The milestone plan and its reasoning live in
 
 ## 0.7.0rc6
 
+The fast suite was profiled and one test marked slow. It had grown to 139
+seconds, of which the unweighted control of SEA-14 was 44: it examines 3189
+maps since `0.7.0rc5` widened the forward space, and it is now a test of its
+own rather than one case of a parametrization, so the two weighted cases keep
+their small budget and stay fast. The suite is 84 seconds and the coverage run
+over it 208. `docs/roadmap.md` carries the rest of the profile and why nothing
+else moves.
+
 A Keller map over `GF(2)` broke four public operations at once, and all four
 had one cause. `PolyElement.diff` leaves a term with a zero coefficient in the
 sparse dictionary in positive characteristic, and such a polynomial compares

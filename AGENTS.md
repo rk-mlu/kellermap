@@ -154,22 +154,32 @@ at the end of milestone 0.5:
 | gate | seconds |
 | --- | --- |
 | `ruff format --check`, `ruff check`, both `mypy` runs | 9 |
-| `pytest --cov` | 97 |
+| `pytest --cov` | 208 |
 | `make reconstruct` | 3 |
 | `make measure` | 19 |
 | `uv build` and `twine check` | 6 |
-| `pytest -m ""` | 259 |
+| `pytest -m ""` | 303 |
 | `scripts/mutation_probe.py` | 187 |
 
 The first five are the assistant's, every delivery, about 135 seconds. The last
 two are the maintainer's.
 
 `pytest` and `pytest --cov` are not both run. The second is a superset of the
-first and costs 97 seconds against 54, so running both spends 151 seconds to
-learn what 97 already say.
+first and costs 208 seconds against 84, so running both spends 292 seconds to
+learn what 208 already say.
+
+Those two numbers were 97 and 54 until `0.7.0rc6`, and the coverage run had
+grown past what the assistant's tool budget allows. `docs/roadmap.md` carries
+the profile that followed under "What the fast suite costs": one test was a
+third of the suite and is marked slow, and the page says of every other
+candidate why it stays. The rule that came out of it -- a test earns the marker
+when the fast suite would otherwise lose more than it keeps, and a marked test
+has to be worth running in `pytest -m ""` rather than parked there -- is the
+one to apply the next time a second is wanted.
 
 `pytest -m ""` moves because the slow markers are most of it: three tests take
-181 of the 259 seconds. The assistant runs the fast suite through `--cov` and
+181 of the 259 seconds, and a fourth was added at `0.7.0rc6` at 44 seconds
+more. The assistant runs the fast suite through `--cov` and
 says so; a claim about the slow markers that was not run does not go into a
 commit message.
 

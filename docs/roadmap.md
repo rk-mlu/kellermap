@@ -2981,6 +2981,38 @@ same reason holds here.
 Nor does it search. Whether a widened offer reaches eleven is a run, and a run
 belongs after the enumerator it runs over exists.
 
+## What the fast suite costs
+
+Profiled at `0.7.0rc6`, because it had grown to 139 seconds and the coverage
+run over it no longer fitted the assistant's tool budget. One test was a third
+of it: the unweighted control of SEA-14, at 44 seconds, examining 3189 maps
+since `0.7.0rc5` widened the forward space. It is now its own test and marked
+slow, and the fast suite is 84 seconds with the coverage run at 208.
+
+The rest of the profile is worth writing down, because the next person to want
+a second is going to look at the same list and the answer is no for each of
+them.
+
+| | seconds | why it stays |
+| --- | ---: | --- |
+| the three multi-affine chains | 8.4 | the only check on figures that stand on three pages |
+| the doctests of `docs/api.md` | 7.5 | every public feature has an example and each is executed |
+| the two weighted cases of SEA-14 | 9.1 | the negative claim itself, and their budget is already 200 |
+| the lift of Thompson's twenty | 3.7 | the published form, against `docs/references.md` |
+| the hull of Thompson's map | 6.3 | the sequence 2, 4, 11, 20, 20, half of it in the fixture |
+| the order under another hash seed | 2.8 | UNT-11 is a determinism claim and this is what checks it |
+| the corpus checks of `scripts/` | 9.5 | four files scanned against the whole tree |
+
+Nothing below a second is worth moving: some 1900 tests share the remaining 30
+seconds.
+
+The rule the one marking follows: a test earns the marker when the fast suite
+would otherwise lose more than it keeps, and a marked test has to be worth
+running in `pytest -m ""` rather than parked there. The control is the only one
+here on the wrong side of that, and its docstring says what the marking costs a
+delivery -- it is the test that says the widening of `0.7.0rc5` added a step
+without removing one, so any run that touches the targeted enumerator wants it.
+
 ## Where the milestone stands
 
 All seven packages are done. WP 1 measured the bottleneck of SYM-7; WP 2 and

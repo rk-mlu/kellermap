@@ -278,7 +278,18 @@ def test_a_fresh_slot_contributes_nothing_to_the_image(
     assert moved.verify(step.target) is None
 
 
-@pytest.mark.parametrize("coefficient", COEFFICIENTS)
+def pool_for(step: BCWStep) -> dict[sp.Symbol, sp.Expr]:
+    """The names and values a forward search may spend on that step."""
+    return {
+        step.target.variables[index]: sp.expand(
+            step.target.components[index] - step.target.variables[index]
+        )
+        for index in step.target.carrier_indices
+        if step.target.variables[index] not in SOURCE.variables
+    }
+
+
+@pytest.mark.parametrize("coefficient", [sp.Integer(-3), sp.Rational(1, 2)])
 def test_the_forward_search_reports_no_result_for_a_weighted_chain(
     coefficient: sp.Expr,
 ) -> None:
@@ -288,26 +299,39 @@ def test_the_forward_search_reports_no_result_for_a_weighted_chain(
     place for a weight. That is not a deferred case but a searched space
     without the chain, so not a defect but a result. The peel finds it.
 
-    The budget is the control's and not the weighted cases'. Offering both
-    forms of a co-factor to every carrier widened the forward space at
-    ``0.7.0rc5``, and the control needs 3189 maps where 200 sufficed before;
-    nothing is lost, the chain is the same one and the search finds it again. A
-    weighted chain is absent from the space, so a large budget there buys only
-    two minutes of exhausting it, and the assertion is the same either way.
+    The budget is small and stays small. A weighted chain is absent from the
+    space, so a larger one buys only the time to exhaust it and the assertion
+    is the same either way. The unweighted control is the test below, which
+    needs a budget and is marked slow for it.
     """
     step = two_fresh(SOURCE, coefficient)
-    pool = {
-        step.target.variables[index]: sp.expand(
-            step.target.components[index] - step.target.variables[index]
-        )
-        for index in step.target.carrier_indices
-        if step.target.variables[index] not in SOURCE.variables
-    }
 
-    budget = 4000 if coefficient == 1 else 200
-    forwards = search(SOURCE, step.target, pool, budget=budget)
+    forwards = search(SOURCE, step.target, pool_for(step), budget=200)
 
-    assert (forwards.reduction is not None) == (coefficient == 1)
+    assert forwards.reduction is None
+    assert peel(SOURCE, step.target, spare=1).reduction is not None
+
+
+@pytest.mark.slow
+def test_the_forward_search_finds_the_unweighted_chain() -> None:
+    """The control for the test above, and for what ``0.7.0rc5`` widened.
+
+    Without it the test above shows only that a weighted chain is absent, which
+    a search that finds nothing at all would also show. This is what says the
+    space still contains the unweighted one.
+
+    Marked slow, and it is the one place in this suite where that costs
+    something a delivery would want to know. It examines 3189 maps where 200
+    sufficed before ``0.7.0rc5`` offered both forms of a co-factor to every
+    carrier, which took it to 44 seconds -- a third of the fast suite for one
+    assertion. It runs under ``pytest -m ""`` and belongs in any run that
+    touches the targeted enumerator.
+    """
+    step = two_fresh(SOURCE, sp.Integer(1))
+
+    forwards = search(SOURCE, step.target, pool_for(step), budget=4000)
+
+    assert forwards.reduction is not None
     assert peel(SOURCE, step.target, spare=1).reduction is not None
 
 
