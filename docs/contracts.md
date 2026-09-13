@@ -233,12 +233,32 @@ order is the same certificate.
 first in `verify()`, before COL-1, so that a map outside the scope of this type
 is answered as such rather than by a dimension or an image that also differs.
 
-A collision certifies that a Keller map is not injective, and that is worth
-certifying because the Jacobian conjecture is open in characteristic zero. Above
-it the conjecture is false and has been for decades: over a field of
-characteristic `p` the Artin–Schreier map `X + X^p` has Jacobian one and
-identifies the `p` elements of the prime field. A certificate there records a
-textbook fact rather than evidence.
+The reason is this type's own semantics rather than the state of any
+conjecture. COL-5 keeps the map out of a `Collision`, so the points are held as
+expressions and COL-4 decides their distinctness with `kellermap.canonical`,
+whose normal form is built for rational functions and radicals and carries no
+characteristic. Deciding COL-3 in the coefficient domain while COL-4 stays in
+that normal form would admit `0` and `2` over `GF(2)` as two distinct points
+with one image — a false certificate rather than a missing one. COL-7 removes
+the case instead of giving the type a second notion of equality, which is the
+boundary `lift.py` draws at SYM-4 and `compression.py` at CHC-8.
+
+What a collision in positive characteristic would be worth is worth naming, so
+that the boundary is not read as a larger claim. Non-injective Keller maps are
+cheap there and have been known since long before the characteristic-zero
+question was settled: over a field of characteristic `p` the Artin–Schreier map
+`X + X^p` has Jacobian one and identifies the `p` elements of the prime field.
+The maps this library is built around are the characteristic-zero
+counterexamples; `README.md` states what became of the conjecture there and
+when.
+
+This paragraph said the Jacobian conjecture is open in characteristic zero
+until `0.7.0rc8`, and that was simply wrong — the first page of `README.md`
+says it fell in July 2026 and that the counterexamples are the subject of this
+library. An audit of `0.7.0rc7` found the claim here, in `collision.py` and in
+the `VerificationError` a caller sees. The obligation is unchanged; only its
+justification was wrong, and the justification above does not depend on the
+conjecture at all.
 
 Checked in `verify()` and not in the constructor, because COL-5 keeps the map
 out of the object. The points remain a legitimate `Collision`; what is refused

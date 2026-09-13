@@ -262,16 +262,28 @@ class Collision:
 def _characteristic_zero(F: PolynomialMap) -> None:  # noqa: N803
     """Check COL-7: the map's coefficient domain has characteristic zero.
 
-    A collision certifies that a Keller map is not injective, and that is a
-    statement worth certifying because the Jacobian conjecture is open in
-    characteristic zero. Above it the conjecture is false and has been for
-    decades: over a field of characteristic ``p`` the Artin-Schreier map
-    ``X + X**p`` has Jacobian one and identifies the ``p`` elements of the
-    prime field. The map ``X + X**2`` over ``GF(2)`` that an audit of
-    ``0.7.0rc6`` used to expose the evaluation defect is exactly that
-    instance. A certificate there records a textbook fact rather than
-    evidence, so the type declines to hold one instead of extending its
-    equality notion to reach it.
+    The reason is this type's own semantics and not the state of any
+    conjecture. COL-5 keeps the map out of a ``Collision``, so the points are
+    held as expressions and their distinctness under COL-4 is decided by
+    ``kellermap.canonical``, whose normal form is built for rational functions
+    and radicals and carries no characteristic. Deciding COL-3 in the
+    coefficient domain while COL-4 stays in that normal form would admit
+    ``0`` and ``2`` over ``GF(2)`` as two distinct points with one image,
+    which is a false certificate rather than a missing one. The boundary
+    removes the case instead of giving the type a second notion of equality,
+    and it is the same boundary ``lift.py`` draws at SYM-4 and
+    ``compression.py`` at CHC-8.
+
+    What positive characteristic would buy is worth naming, so that the
+    boundary is not mistaken for a larger claim. Non-injective Keller maps are
+    cheap there and have been known since long before the characteristic-zero
+    question was settled: over a field of characteristic ``p`` the
+    Artin-Schreier map ``X + X**p`` has Jacobian one and identifies the ``p``
+    elements of the prime field. The map ``X + X**2`` over ``GF(2)`` that an
+    audit of ``0.7.0rc6`` used to expose the evaluation defect is exactly that
+    instance. The maps this library is built around are the
+    characteristic-zero counterexamples; ``README.md`` says what became of the
+    conjecture there and when.
 
     Declined here and not in the constructor, because COL-5 keeps the map out
     of the object: the points remain a legitimate ``Collision``, and it is
@@ -293,9 +305,10 @@ def _characteristic_zero(F: PolynomialMap) -> None:  # noqa: N803
         raise VerificationError(
             "COL-7",
             f"The coefficient domain is {domain}, of characteristic "
-            f"{characteristic}. A collision is evidence about the Jacobian "
-            "conjecture, which is open in characteristic zero and false "
-            "above it, so this type is stated over characteristic zero only.",
+            f"{characteristic}. A collision holds its points as expressions "
+            "and decides their distinctness there, which is a "
+            "characteristic-zero notion, so this type is stated over "
+            "characteristic zero only.",
         )
 
 

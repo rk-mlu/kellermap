@@ -58,9 +58,12 @@ not hold, and a field into which `QQ` embeds has characteristic zero.
 COL-3 domain-aware alone would have opened a worse hole than it closed, since
 with distinctness still decided as expressions `0` and `2` over `GF(2)` would
 have passed as a collision of distinct points. The reason to decline rather
-than to extend the equality is mathematical: the Jacobian conjecture is open in
-characteristic zero and false above it, and the `GF(2)` map the audit used is
-the Artin-Schreier map `X + X^p`, a textbook counterexample. Checked in
+than to extend the equality is this type's own semantics: COL-5 keeps the map
+out of a `Collision`, so COL-4 decides distinctness with `kellermap.canonical`,
+which has no characteristic. It is the boundary `lift.py` draws at SYM-4 and
+`compression.py` at CHC-8. Nothing is lost with it that the library is for:
+non-injective Keller maps in characteristic `p` are cheap and long known, the
+`GF(2)` map the audit used being the Artin-Schreier map `X + X^p`. Checked in
 `verify()` and not in the constructor, because COL-5 keeps the map out of the
 object; what is refused is stating the points against that map. Two
 consequences: a chain over positive characteristic carries no collision at any

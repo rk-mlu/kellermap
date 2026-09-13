@@ -686,6 +686,38 @@ True
 
 ```
 
+A collision is stated over characteristic zero only, COL-7, and that is checked
+against the map rather than against the points. Over `GF(2)` the map `X + X^2`
+really does send `0` and `1` to the same place, and `verify` declines to
+certify it:
+
+```python
+>>> binary, u = sp.ring("u", sp.GF(2))
+>>> artin_schreier = PolynomialMap.from_ring(binary, (u + u**2,))
+>>> artin_schreier(sp.Integer(0)) == artin_schreier(sp.Integer(1))
+True
+>>> Collision.at(artin_schreier, ((0,), (1,)))
+Traceback (most recent call last):
+    ...
+kellermap.errors.VerificationError: [COL-7] The coefficient domain is GF(2), of characteristic 2. A collision holds its points as expressions and decides their distinctness there, which is a characteristic-zero notion, so this type is stated over characteristic zero only.
+
+```
+
+The points themselves stay a legitimate `Collision`, because the map is not
+part of one. It is stating them against *that* map that COL-7 refuses:
+
+```python
+>>> over_the_rationals = PolynomialMap((x, y), (x**2, y))
+>>> Collision(((1, 0), (-1, 0)), (1, 0)).verify(over_the_rationals) is None
+True
+
+```
+
+`docs/contracts.md` gives the reason under COL-7: distinctness is decided in
+the normal form of `kellermap.canonical`, which carries no characteristic, so
+deciding the image in the coefficient domain and the points outside it would
+let two spellings of one point pass as two points.
+
 ---
 
 ## Steps and reductions
