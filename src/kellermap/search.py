@@ -28,7 +28,7 @@ from typing import Any, TypeAlias, cast
 
 import sympy as sp
 from sympy.polys.domains import Domain
-from sympy.polys.polyerrors import CoercionFailed
+from sympy.polys.polyerrors import CoercionFailed, ExactQuotientFailed
 from sympy.polys.rings import PolyElement
 
 from .bcw import BCWStep, Carried, Fresh
@@ -557,22 +557,34 @@ def conjugate(source: PolynomialMap, signs: Sequence[sp.Expr]) -> PolynomialMap:
     scale: list[Any] | None
     try:
         scale = [domain.from_sympy(entry) for entry in entries]
-    except CoercionFailed:
+    except (CoercionFailed, NotImplementedError, ValueError, TypeError):
         scale = None
 
-    if scale is not None and any(value == domain.zero for value in scale):
+    if scale is None:
+        raise ValueError(f"The entries {entries} do not lie in {domain}.")
+
+    if any(value == domain.zero for value in scale):
         raise ValueError(
             f"Expected {source.dimension} non-zero entries, got {entries}."
         )
 
-    if not domain.is_Field and any(entry not in (1, -1) for entry in entries):
-        raise ValueError(
-            f"Conjugating by {entries} over {domain} needs the inverse of an "
-            "entry that is not a unit. Use over_field first."
-        )
-
-    if scale is None:
-        raise ValueError(f"The entries {entries} do not lie in {domain}.")
+    # Asked of the domain, since ``0.7.0rc8``, and not by testing the entry
+    # against ``1`` and ``-1``. Those are the units of ``ZZ`` and of nothing
+    # else here: ``2`` is a unit of ``QQ[T]``, ``i`` is a unit of ``ZZ[i]``,
+    # and both were refused with advice to call ``over_field`` -- which for
+    # ``QQ[T]`` widens to ``QQ(T)`` in order to obtain a reciprocal the domain
+    # already had. ``Dilation`` had this right and this check disagreed with
+    # it. An audit of ``0.7.0rc7`` built both cases.
+    if not domain.is_Field:
+        for entry, value in zip(entries, scale, strict=True):
+            try:
+                domain.exquo(domain.one, value)
+            except (ExactQuotientFailed, CoercionFailed, NotImplementedError):
+                raise ValueError(
+                    f"Conjugating by {entries} over {domain} needs the "
+                    f"inverse of {entry}, which is not a unit there. Use "
+                    "over_field first."
+                ) from None
 
     def scaled(monomial: tuple[int, ...], coefficient: Any, position: int) -> Any:
         value = coefficient * scale[position]

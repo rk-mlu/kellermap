@@ -4,6 +4,81 @@ Notable changes per release. The milestone plan and its reasoning live in
 `docs/roadmap.md`, the binding obligations of the verification surface in
 `docs/contracts.md`.
 
+## 0.7.0rc8
+
+An audit of `0.7.0rc7` found one release blocker and five smaller defects. Four
+of the six are in `0.7.0rc7`'s own repairs rather than in anything older, which
+is the pattern this release takes its lesson from: a repair is a change and
+earns the same scrutiny as the thing it repaired.
+
+**The blocker.** `PolynomialMap.__call__` falls back to substitution when a
+point does not lie in the coefficient domain, and the fallback caught only
+`CoercionFailed`. That is what the atomic domains raise. Measured across the
+domains this package supports, `from_sympy` raises three different things:
+`CoercionFailed` over `ZZ`, `QQ`, `GF(p)`, `QQ_I` and an algebraic field, a
+bare `ValueError` over every polynomial and fraction domain, and
+`NotImplementedError` over a fraction field for an argument that is not an
+expression. So over `QQ[T]`, `QQ(T)`, `ZZ[T]`, `GF(p)[T]` and `GF(p)(T)` the
+fallback crashed instead of falling back: `F(s)` for a free symbol returned
+`s**2` in `0.7.0rc6` and raised in `0.7.0rc7`, and so did a legitimate
+characteristic-zero collision at `±sqrt(2)`. `Collision.at`, `Collision.verify`
+and every transport path with a point outside the domain went with it.
+
+The test that covered the fallback used `QQ`, which raises the one exception
+that was caught, so a suite at 100 per cent statement coverage reached the
+branch and never exercised what reaches it. The regression is parametrized over
+five composite domains and has a control that a point *inside* the domain still
+evaluates there.
+
+**COL-7's justification was wrong, and the obligation is unchanged.** It read
+that the Jacobian conjecture is open in characteristic zero. The first page of
+`README.md` says it fell in July 2026 and that the counterexamples are this
+library's subject. The claim stood in `collision.py`, in `docs/contracts.md`,
+in this changelog and in the `VerificationError` a caller sees.
+
+The boundary itself is sound and rests on this type's own semantics: COL-5
+keeps the map out of a `Collision`, so COL-4 decides distinctness in the normal
+form of `kellermap.canonical`, which carries no characteristic, and deciding
+COL-3 in the coefficient domain while COL-4 stays outside it would let `0` and
+`2` over `GF(2)` pass as two distinct points with one image. It is the boundary
+`lift.py` draws at SYM-4 and `compression.py` at CHC-8. The justification now
+says that and does not mention the conjecture's status at all. COL-7 also
+reached `docs/api.md`, which `AGENTS.md` requires for new public behaviour and
+which `0.7.0rc7` skipped.
+
+**`conjugate` refused units.** Over a domain that is not a field it admitted
+`1` and `-1`, which are the units of `ZZ` and of nothing else here. `2` is a
+unit of `QQ[T]` and `i` of `ZZ[i]`, and both were refused with advice to call
+`over_field` — which for `QQ[T]` widens to `QQ(T)` to obtain a reciprocal the
+domain already had. `Dilation` had this right and the check disagreed with it.
+The question is now asked of the domain with `exquo`.
+
+**`LinearAutomorphism.matrix` came back congruent rather than normalized.** The
+product of the factor matrices was formed in ordinary SymPy arithmetic, so over
+`GF(2)` the factorization of `[[1, 1], [1, 0]]` returned `[[1, 1], [1, 2]]`. No
+certificate was wrong, because LIN-6 converts into the ring before it compares,
+but a public method answered with a matrix that is not the one it was given.
+Of the 2550 invertible `2x2` matrices over `GF(2)`, `GF(3)`, `GF(5)` and
+`GF(7)`, 1297 came back differing syntactically from their own normalized
+input; none do now. The product is formed as a `DomainMatrix`.
+
+**Evaluation is no longer linear in the exponent.** `_evaluate_at` multiplied
+once per unit of exponent, where the public API sets no bound on the degree. It
+exponentiates, and skips a zero exponent rather than raising to it — which is
+also what keeps it correct, since `domain.zero ** 0` raises `ValueError` over
+every polynomial and fraction domain here.
+
+**Gate documentation.** The `Makefile` described one slow test where the marker
+carries seventeen, `.github/workflows/ci.yml` described three reconstructions
+where `make reconstruct` runs eight, and a docstring in
+`tests/test_positive_characteristic.py` said the `GF(7)` enumeration belongs to
+the slow suite, where nothing had put it there.
+
+Two mutation probes, which makes fifty-four: the fallback the evaluation takes
+for a point outside the domain, and the unit test in `conjugate`. Both sit on
+repairs that had themselves gone wrong, which is the argument for probing a
+repair and not only the thing it repaired.
+
 ## 0.7.0rc7
 
 An audit of `0.7.0rc6` found four release blockers with one cause between them:

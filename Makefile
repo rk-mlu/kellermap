@@ -26,8 +26,10 @@ typecheck:
 test:
 	uv run pytest
 
-# Only the slow tests, at present the exact determinant proof in dimension 17,
-# about one minute.
+# Only the slow tests. The marker carries seventeen of them; AGENTS.md states
+# the rule a test earns it under, and docs/roadmap.md the profile behind the
+# rule. The count stood at one in this comment until 0.7.0rc8 and had not been
+# revised as the marker was applied.
 test-slow:
 	uv run pytest -m slow
 

@@ -20,6 +20,7 @@ import sympy as sp
 
 from kellermap import (
     Collision,
+    LinearAutomorphism,
     LinearStep,
     PolynomialMap,
     VerificationError,
@@ -244,8 +245,15 @@ def test_LIN3_and_LIN6_hold_over_every_invertible_two_by_two() -> None:  # noqa:
 
     Over ``GF(5)`` 392 of the 480 invertible matrices failed to normalize,
     because the elimination formed ``1/2`` as a rational and the determinant
-    bookkeeping compared ``-1`` against ``1``. Two fields here rather than
-    four: ``GF(7)`` alone is 2016 matrices and belongs in the slow suite.
+    bookkeeping compared ``-1`` against ``1``.
+
+    Two fields and not four: ``GF(7)`` alone is 2016 matrices, and the two
+    here reach every shape the elimination has -- a pivot needing a swap, a
+    pivot needing a reciprocal, and a determinant a transposition accounts
+    for with the wrong sign. ``GF(3)`` and ``GF(7)`` are in neither suite,
+    which is a choice and not an omission; this docstring said ``GF(7)``
+    belongs in the slow suite until ``0.7.0rc8``, where nothing had put it
+    there.
     """
     for modulus in (2, 5):
         ring = sp.ring("x,y", sp.GF(modulus))[0]
@@ -417,3 +425,70 @@ def test_a_zero_exponent_is_skipped_rather_than_raised_to() -> None:
     source = PolynomialMap.from_ring(ring, (x + y**2, y))
 
     assert source(sp.Integer(0), sp.Integer(0)) == sp.ImmutableMatrix([[0], [0]])
+
+
+def test_conjugate_accepts_a_unit_of_a_domain_that_is_not_a_field() -> None:
+    """``2`` is a unit of ``QQ[T]`` and ``i`` is a unit of ``ZZ[i]``.
+
+    `0.7.0rc7` tested the entry against ``1`` and ``-1``, which are the units
+    of ``ZZ`` and of nothing else here, and told a caller over ``QQ[T]`` to
+    call ``over_field`` in order to obtain a reciprocal that domain already
+    had.
+    """
+    parameter = sp.Symbol("T")
+    over_polynomials, x = sp.ring("x", sp.QQ.poly_ring(parameter))
+    first = PolynomialMap.from_ring(over_polynomials, (x + x**2,))
+
+    assert conjugate(first, (2,)).components == (x.as_expr() ** 2 / 2 + x.as_expr(),)
+
+    gaussian, y = sp.ring("y", sp.ZZ_I)
+    second = PolynomialMap.from_ring(gaussian, (y + y**2,))
+
+    assert not gaussian.domain.is_Field
+    assert conjugate(second, (sp.I,)).components[0].has(sp.I)
+
+
+def test_conjugate_still_refuses_a_non_unit() -> None:
+    """The negative control, on both halves of what changed.
+
+    ``2`` is not a unit of ``ZZ`` and ``T`` is not a unit of ``QQ[T]``, so
+    widening the test must not have widened it to everything.
+    """
+    over_integers, x = sp.ring("x", sp.ZZ)
+    with pytest.raises(ValueError, match="not a unit"):
+        conjugate(PolynomialMap.from_ring(over_integers, (x + x**2,)), (2,))
+
+    parameter = sp.Symbol("T")
+    over_polynomials, y = sp.ring("y", sp.QQ.poly_ring(parameter))
+    with pytest.raises(ValueError, match="not a unit"):
+        conjugate(PolynomialMap.from_ring(over_polynomials, (y + y**2,)), (parameter,))
+
+
+def test_the_factor_product_comes_back_normalized_over_a_finite_field() -> None:
+    """``matrix()`` answers with the matrix it was given, not a congruent one.
+
+    Over ``GF(2)`` the factorization of ``[[1, 1], [1, 0]]`` returned
+    ``[[1, 1], [1, 2]]`` in `0.7.0rc7`. No certificate was wrong, since LIN-6
+    converts before it compares, but a public method answered with entries
+    outside the domain's normal form.
+    """
+    for modulus in (2, 5):
+        ring = sp.ring("a,b", sp.GF(modulus))[0]
+        domain = ring.domain
+        for entries in product(range(modulus), repeat=4):
+            given = sp.Matrix(2, 2, list(entries))
+            if given.det() % modulus == 0:
+                continue
+            normalized = sp.Matrix(
+                2,
+                2,
+                [
+                    domain.to_sympy(domain.from_sympy(given[row, column]))
+                    for row in range(2)
+                    for column in range(2)
+                ],
+            )
+
+            factored = LinearAutomorphism.factorize(ring, given)
+
+            assert sp.Matrix(factored.matrix(ring)) == normalized

@@ -40,6 +40,7 @@ from dataclasses import dataclass
 from typing import Any, cast
 
 import sympy as sp
+from sympy.polys.matrices import DomainMatrix
 from sympy.polys.polyerrors import (
     CoercionFailed,
     ExactQuotientFailed,
@@ -616,17 +617,40 @@ class LinearAutomorphism:
 
         ``ring`` is required only for the identity, which carries no
         dimension of its own.
+
+        The product is formed in the coefficient domain, so the entries come
+        back in its normal form. Until ``0.7.0rc7`` it was formed in ordinary
+        SymPy arithmetic, which is correct up to congruence and not in normal
+        form: over ``GF(2)`` the factorization of ``[[1, 1], [1, 0]]`` returned
+        ``[[1, 1], [1, 2]]``. No certificate was wrong, because LIN-6 converts
+        into the ring before it compares, but a public method answered with a
+        matrix that is not the one it was given. An audit of ``0.7.0rc7``
+        enumerated it: 1297 of the 2550 invertible ``2x2`` matrices over
+        ``GF(2)``, ``GF(3)``, ``GF(5)`` and ``GF(7)`` came back differing
+        syntactically from their own normalized input.
         """
         if not self.factors:
             if ring is None:
                 raise ValueError("The identity needs a ring to become a matrix.")
             return sp.ImmutableMatrix(sp.eye(ring.ngens))
 
-        product = sp.eye(self.dimension)
+        domain = self.factors[0]._ring.domain
+        size = self.dimension
+        product = DomainMatrix.eye(size, domain)
         for factor in self.factors:
-            product = product * sp.Matrix(factor.matrix())
+            entries = sp.Matrix(factor.matrix())
+            product = product * DomainMatrix(
+                [
+                    [domain.from_sympy(entries[row, column]) for column in range(size)]
+                    for row in range(size)
+                ],
+                (size, size),
+                domain,
+            )
 
-        return sp.ImmutableMatrix(product)
+        return sp.ImmutableMatrix(
+            [[domain.to_sympy(entry) for entry in row] for row in product.to_list()]
+        )
 
     def compose(self, other: LinearAutomorphism) -> LinearAutomorphism:
         """Return ``self o other``, by concatenating the factorizations."""

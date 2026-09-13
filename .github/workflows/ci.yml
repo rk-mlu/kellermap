@@ -82,8 +82,9 @@ jobs:
       # Both run in the matrix and not in a job of their own. The coverage
       # figure can differ between interpreters as soon as a branch depends on
       # the version, and then the version on which it falls should be named.
-      # Measured: 100 per cent on 3.10 and on 3.14, and the three
-      # reconstructions together under ten seconds.
+      # Measured: 100 per cent on 3.10 and on 3.14. `make reconstruct` runs
+      # eight reconstructions; this comment said three until 0.7.0rc8, having
+      # been written when there were.
       - name: Coverage gate (fail_under = 100)
         run: make coverage
         env:
