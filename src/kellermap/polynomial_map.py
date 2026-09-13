@@ -103,18 +103,24 @@ def _copy_coefficient(coefficient: Any, domain: Any) -> Any:
 def _evaluate_at(polynomial: PolyElement, point: list[Any], domain: Any) -> Any:
     """Return the value of a polynomial at a point of the coefficient domain.
 
-    Term by term, with repeated multiplication rather than ``**``. Over a
-    composite domain a coordinate is itself a ``PolyElement`` or a
-    ``FracElement``, and ``PolyElement.evaluate`` does not carry those through
-    its exponentiation. The exponents here are the degrees of a Keller map, so
-    the loop costs nothing worth an edge case.
+    Term by term, and by exponentiation rather than by repeated
+    multiplication, which is what ``0.7.0rc7`` did: an audit of it observed
+    that a sparse ``x**N`` cost ``N`` multiplications where the public API sets
+    no bound on the degree.
+
+    A zero exponent is skipped rather than raised to. That is the same saving
+    read the other way -- a variable absent from a monomial contributes
+    nothing -- and it is also what keeps this correct: over every polynomial
+    and fraction domain here, ``domain.zero ** 0`` raises ``ValueError``
+    instead of returning one, which is why ``PolyElement.evaluate`` could not
+    be used for this in the first place.
     """
     total = domain.zero
     for monomial, coefficient in polynomial.iterterms():
         term = coefficient
         for value, exponent in zip(point, monomial, strict=True):
-            for _ in range(exponent):
-                term = term * value
+            if exponent:
+                term = term * value**exponent
         total = total + term
 
     return total
@@ -1023,13 +1029,37 @@ class PolynomialMap:
         nothing, and not coordinate by coordinate: a mixed evaluation would
         reduce part of a sum modulo the characteristic and leave the rest,
         which is neither of the two answers.
+
+        The exception list is measured and not guessed, and ``0.7.0rc7``
+        guessed it. ``from_sympy`` raises three different things across the
+        domains this package supports: ``CoercionFailed`` over ``ZZ``, ``QQ``,
+        ``GF(p)``, ``QQ_I`` and an algebraic field; a bare ``ValueError`` over
+        every polynomial and fraction domain, ``QQ[T]`` and ``GF(p)(T)``
+        among them; and ``NotImplementedError`` over a fraction field when the
+        argument is not an expression at all. Catching only the first turned
+        the fallback into a crash on every composite domain, which an audit of
+        ``0.7.0rc7`` found on ``QQ(T)``: ``F(s)`` for a free symbol ``s``
+        returned ``s**2`` in ``0.7.0rc6`` and raised in ``0.7.0rc7``, and so
+        did a legitimate characteristic-zero collision at ``+-sqrt(2)``.
+
+        Broad, because the question this asks is a yes or no. Everything
+        inside the loop is one conversion of one argument, and any way for it
+        to fail is the same answer: this coordinate does not lie in the domain,
+        so evaluate by substitution instead.
         """
         domain = self._ring.domain
         point = []
         for argument in args:
             try:
                 point.append(domain.from_sympy(sp.sympify(argument)))
-            except (CoercionFailed, sp.SympifyError, AttributeError, TypeError):
+            except (
+                CoercionFailed,
+                NotImplementedError,
+                ValueError,
+                TypeError,
+                AttributeError,
+                sp.SympifyError,
+            ):
                 return None
 
         return sp.ImmutableMatrix(

@@ -50,13 +50,17 @@ compression and to thirty-four with the symmetric lift. The audits of milestone
 ``0.6.0rc3``, two with ``0.6.0rc4`` and one with ``0.6.0rc5``, which makes
 forty-two. That sentence had lost a conjunction and named two counts in a row
 without one until ``0.6.0rc6``. The audit of ``0.7.0rc1`` added three for the
-descent, which makes forty-five. The audit of ``0.7.0rc6`` added seven, which
-makes fifty-two: one each for COL-7, BCW-12, LIN-6, SEA-13, SEA-14, UNT-1 and
-the evaluation under DOM-4. Those are the promises the four ring-semantics
-blockers of that audit turned out to rest on, and none of the five files they
-live in had a selector before -- ``search.py``, ``untargeted.py`` and
-``polynomial_map.py`` had none at all, which is why the audit could not run the
-selection this project's rules ask for after a change like that one.
+descent, which makes forty-five. The audit of ``0.7.0rc6`` added seven and the
+audit of ``0.7.0rc7`` one more, which makes fifty-three. The seven: one each for
+COL-7, BCW-12, LIN-6, SEA-13, SEA-14, UNT-1 and the evaluation under DOM-4.
+Those are the promises the four ring-semantics blockers of that audit turned
+out to rest on, and none of the five files they live in had a selector before
+-- ``search.py``, ``untargeted.py`` and ``polynomial_map.py`` had none at all,
+which is why the audit could not run the selection this project's rules ask for
+after a change like that one. The one: the fallback the evaluation takes when a
+point lies outside the domain, a place where the repair of the previous audit
+had itself gone wrong, which is the argument for probing a repair and not only
+the thing it repaired.
 
 Milestone 0.7 added ten obligations and only three of them are here. HOM-11 and
 HOM-12 cannot fail after HOM-1, which the contract page argues where it says
@@ -532,6 +536,16 @@ PROBES: tuple[Probe, ...] = (
         "src/kellermap/polynomial_map.py",
         "        evaluated = self._evaluate_in_domain(args)",
         "        evaluated = None",
+    ),
+    Probe(
+        "DOM-4",
+        "a point outside the domain falls back over every domain",
+        "src/kellermap/polynomial_map.py",
+        "            except (\n"
+        "                CoercionFailed,\n"
+        "                NotImplementedError,\n"
+        "                ValueError,",
+        "            except (\n                CoercionFailed,",
     ),
 )
 

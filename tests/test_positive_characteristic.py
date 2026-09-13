@@ -329,3 +329,91 @@ def test_a_step_on_the_adversarial_map_builds_and_verifies() -> None:
 
     assert step.m == 2
     assert step.target.dimension == 4
+
+
+# --------------------------------------------------------------------------
+# The audit of ``0.7.0rc7``: the fallback over composite domains
+# --------------------------------------------------------------------------
+
+COMPOSITE_DOMAINS = [
+    sp.QQ.poly_ring(sp.Symbol("T")),
+    sp.QQ.frac_field(sp.Symbol("T")),
+    sp.ZZ.poly_ring(sp.Symbol("T")),
+    sp.GF(3).poly_ring(sp.Symbol("T")),
+    sp.GF(3).frac_field(sp.Symbol("T")),
+]
+
+
+@pytest.mark.parametrize("domain", COMPOSITE_DOMAINS, ids=str)
+def test_evaluation_falls_back_over_a_composite_domain(domain: object) -> None:
+    """A point outside the domain substitutes, whatever the domain is made of.
+
+    The regression `0.7.0rc7` shipped. Its fallback caught ``CoercionFailed``,
+    which is what the atomic domains raise; every polynomial and fraction
+    domain raises a bare ``ValueError`` instead, and a fraction field raises
+    ``NotImplementedError`` for an argument that is not an expression. So the
+    fallback became a crash exactly where it was needed, and the test that
+    covered it used ``QQ``, which raises the one exception that was caught.
+    """
+    ring, x = sp.ring("x", domain)
+    source = PolynomialMap.from_ring(ring, (x**2,))
+    free = sp.Symbol("s")
+
+    assert source(free) == sp.ImmutableMatrix([[free**2]])
+    assert source(sp.sqrt(2)) == sp.ImmutableMatrix([[2]])
+
+
+@pytest.mark.parametrize("domain", COMPOSITE_DOMAINS, ids=str)
+def test_a_point_inside_a_composite_domain_still_evaluates_there(
+    domain: object,
+) -> None:
+    """The control. A widened fallback must not swallow the domain path.
+
+    The domain's own parameter is a point of it, so this is the case that has
+    to keep going through the domain rather than through substitution.
+    """
+    parameter = sp.Symbol("T")
+    ring, x = sp.ring("x", domain)
+    source = PolynomialMap.from_ring(ring, (x**2,))
+
+    assert source(parameter) == sp.ImmutableMatrix([[parameter**2]])
+
+
+def test_a_collision_over_a_fraction_field_verifies() -> None:
+    """COL-7 admits `QQ(T)`, and `0.7.0rc7` crashed before reaching it.
+
+    Characteristic zero, points carrying a radical the domain does not hold,
+    and a coefficient domain that is not atomic: the three conditions the
+    fallback exists for, together.
+    """
+    ring, x = sp.ring("x", sp.QQ.frac_field(sp.Symbol("T")))
+    source = PolynomialMap.from_ring(ring, (x**2,))
+
+    collision = Collision.at(source, ((sp.sqrt(2),), (-sp.sqrt(2),)))
+
+    assert collision.image == (2,)
+    collision.verify(source)
+
+
+def test_evaluation_does_not_cost_one_multiplication_per_degree() -> None:
+    """A sparse high power evaluates by exponentiation.
+
+    Not a timing: the value is what is asserted. `0.7.0rc7` multiplied once
+    per unit of exponent, which the public API sets no bound on.
+    """
+    ring, x = sp.ring("x", sp.QQ)
+    source = PolynomialMap.from_ring(ring, (x**64,))
+
+    assert source(sp.Integer(2)) == sp.ImmutableMatrix([[2**64]])
+
+
+def test_a_zero_exponent_is_skipped_rather_than_raised_to() -> None:
+    """``domain.zero ** 0`` raises over every composite domain here.
+
+    So a monomial that omits a variable must skip it, and a point with a zero
+    coordinate is the case that finds out.
+    """
+    ring, x, y = sp.ring("x,y", sp.QQ.poly_ring(sp.Symbol("T")))
+    source = PolynomialMap.from_ring(ring, (x + y**2, y))
+
+    assert source(sp.Integer(0), sp.Integer(0)) == sp.ImmutableMatrix([[0], [0]])
