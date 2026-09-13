@@ -910,32 +910,49 @@ neither.
 
 ### What the eleven-variable construction does that this library cannot
 
-Worth separating from the count, because it is the part that bears on the
-roadmap. The gist lists four moves. Three of them this library has: reducing
-shared factors simultaneously, reusing an already introduced coordinate
-(BCW-10), and cancelling `x^2 y^2` against the square of an existing one
-(BCW-12). Its own intermediate map has twelve variables, which is where
-`alpoege12` also is.
+The heading is older than the answer, and the section under it is kept because
+the question it asks is still the right one. The gist lists four moves. The
+first three this library has had for longer: reducing shared factors
+simultaneously, reusing an already introduced coordinate (BCW-10), and
+cancelling `x^2 y^2` against the square of an existing one (BCW-12). Its own
+intermediate map has twelve variables, which is where `alpoege12` also is.
 
-The fourth is a move this library has no form for. Two coordinates `f` and `g`
-occur in the other components only through `f + g`; after the
-determinant-one change `f = t`, `g = s - t` on the source and
-`(Y_s, Y_t) = (Phi_f + Phi_g, Phi_f)` on the target, the coordinate `t`
-survives only in its own component, as `t + A(rest)`. A triangular coordinate
-of that shape can be deleted: the determinant does not change, and two
-colliding points cannot differ in `t` alone, so the collision survives with all
-its points.
+The fourth is the descent. Two coordinates `f` and `g` occur in the other
+components only through `f + g`; after the determinant-one change `f = t`,
+`g = s - t` on the source and `(Y_s, Y_t) = (Phi_f + Phi_g, Phi_f)` on the
+target, the coordinate `t` survives only in its own component, as
+`t + A(rest)`. A triangular coordinate of that shape can be deleted: the
+determinant does not change, and two colliding points cannot differ in `t`
+alone, so the collision survives with all its points.
 
-That is a step which *lowers* the dimension, and every step type here raises it
-or leaves it alone. Whether it belongs in this library is a question for the
-roadmap and not for this page.
+**Milestone 0.7 gave it a step type, and this page said otherwise until
+`0.7.0rc7`.** It said the library has no form for the move, that a step which
+lowers the dimension is something every step type here raises or leaves alone,
+and that whether such a step belongs is a question for the roadmap. All three
+are now wrong. `DescentStep` is exactly this move -- `docs/roadmap.md` carries
+work package 4, which measured that it was missing rather than assuming it from
+a reading of two derivations, and work package 5, which added `DSC-1` to
+`DSC-7`. And the dimension claim does not hold for a second, independent
+reason: `CompressionStep` lowers a dimension to the rank of a hull. Two step
+types lower one, and the sentence was a blanket statement where the page had
+only ever checked the BCW family.
 
-`alpoege12` does not admit it, in either of the two forms that are cheap to
-test. No coordinate is deletable on its own — the untargeted search buys a
+What is still true, and is the distinction the heading was reaching for:
+`DescentStep` certifies such a move and does not propose one. DSC-7 gives it no
+`build`, and neither search constructs one, so the fourth move remains outside
+every search here. A derivation that passes through it has to be supplied, not
+found. That is a narrower gap than "no form for it" and it is the one that
+bears on the roadmap.
+
+`alpoege12` does not admit the move, in either of the two forms that are cheap
+to test. No coordinate is deletable on its own — the untargeted search buys a
 coordinate in order to use it, so each occurs in some other component — and no
-pair of coordinates occurs elsewhere only through its sum. Both checks are
-narrow and both come out empty; a linear change that creates such a pair from
-something else is not ruled out by either.
+pair of coordinates occurs elsewhere only through its sum. Both checks were
+re-run at `0.7.0rc7` and both still come out empty; the first is now a library
+check rather than a hand computation, since `DescentStep(alpoege12(), k)` with
+the identity for both changes is exactly the question, and it fails for every
+`k`. Both checks are narrow: a linear change that creates such a pair from
+something else is ruled out by neither.
 
 ### A chain reaches it, and it is not an untargeted chain
 
