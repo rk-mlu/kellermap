@@ -45,20 +45,21 @@ Everything below has to pass.
 make check          # ruff, mypy --strict, the fast suite
 make check-full     # the above, with the slow markers instead of the fast suite
 make coverage       # the suite again, with fail_under = 100
-make reconstruct    # the six independent reconstructions
+make reconstruct    # the eight independent reconstructions
 make measure        # the figures the untargeted obligations rest on
 ```
 
 `make check` does not run coverage and `make check-full` does not either.
 Coverage is a target of its own, and so is `make reconstruct`. `make release`
 runs all of them before a tag, together with `lock-check`, `build-test`,
-`dist-check` and `test-minimum`.
+`sdist-test`, `dist-complete`, `dist-check` and `test-minimum`.
 
 `make coverage` is a superset of `make check`'s test run, so there is no reason
-to run both. On a slow machine, `make check-full` and
-`scripts/mutation_probe.py` are the two that dominate: 259 and 187 seconds
-against 135 for everything else together. `AGENTS.md` records how that is
-divided when the assistant and the maintainer work on one change.
+to run both. `make check-full` and `scripts/mutation_probe.py` are the two that
+dominate, and each of them costs more than every other gate together.
+`AGENTS.md` records how that is divided when the assistant and the maintainer
+work on one change, and why the division is stated by order of magnitude rather
+than in seconds.
 
 Or the individual gates:
 
@@ -74,10 +75,17 @@ python scripts/reconstruct_bcw17.py
 python scripts/reconstruct_alpoege15.py
 python scripts/reconstruct_alpoege19.py
 python scripts/reconstruct_alpoege13.py
+python scripts/reconstruct_alpoege12.py
+python scripts/reconstruct_spacerat11.py
 python scripts/reconstruct_macfarlane13.py
 python scripts/reconstruct_prellberg40.py
 python scripts/untargeted_space.py
+python scripts/measure_pipeline.py
 ```
+
+The eight reconstructions and the two measurement scripts are exactly what
+`make reconstruct` and `make measure` run. This list stood at six and one until
+`0.7.0rc7`; keeping it in step with the `Makefile` is part of changing either.
 
 Setup is `uv sync`. Python 3.10 to 3.14 are supported and the CI runs both
 ends.

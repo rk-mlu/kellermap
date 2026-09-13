@@ -275,6 +275,12 @@ def test_a_source_of_positive_characteristic_is_refused() -> None:
     here and the map read from it. That is the only way to reach this branch,
     and it is worth reaching: a field of characteristic 2 or 3 passes the first
     half of the check and divides by a factorial that is zero.
+
+    Through the constructor and not through ``collision_hull`` since
+    ``0.7.0rc7``. COL-7 refuses to state a collision against a map of positive
+    characteristic at all, so the function refuses one turn earlier; the
+    complaint about ``d!`` is what remains for a caller who builds a step
+    without one. The test below records that order.
     """
     ring = sp.ring("x1,x2", sp.GF(7))[0]
     first, second = ring.gens
@@ -282,7 +288,25 @@ def test_a_source_of_positive_characteristic_is_refused() -> None:
 
     assert source.ring.domain.is_Field
 
-    with pytest.raises(VerificationError, match=r"\[CHC-8\]") as failure:
+    with pytest.raises(ValueError, match="characteristic") as failure:
+        CompressionStep(source, source, ((1, 0),), (w1,))
+
+    assert "7" in str(failure.value)
+
+
+def test_a_hull_over_positive_characteristic_is_refused_by_COL7() -> None:  # noqa: N802
+    """The collision is refused before the factorial is.
+
+    A collision is evidence about a conjecture that is open in characteristic
+    zero and false above it, so it cannot be stated against this map. That
+    answer is more informative than the one about ``d!``, and it is the reason
+    ``collision_hull`` no longer reaches the ``CHC-8`` half above.
+    """
+    ring = sp.ring("x1,x2", sp.GF(7))[0]
+    first, second = ring.gens
+    source = PolynomialMap.from_ring(ring, (first + first**2, second))
+
+    with pytest.raises(VerificationError, match=r"\[COL-7\]") as failure:
         collision_hull(source, Collision(((0, 0), (-1, 0)), (0, 0)))
 
     assert "characteristic" in failure.value.message

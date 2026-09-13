@@ -129,6 +129,7 @@ class Collision:
 
         Obligations, in the numbering of ``docs/contracts.md``:
 
+        - ``COL-7`` the coefficient domain of ``F`` has characteristic zero,
         - ``COL-1`` the dimensions agree,
         - ``COL-2`` no coordinate involves a variable of ``F``,
         - ``COL-3`` ``F`` sends every point to the recorded image.
@@ -136,7 +137,13 @@ class Collision:
         ``COL-2`` is not pedantry. A coordinate carrying one of the map's own
         variables would be substituted into itself by the evaluation, and the
         resulting identity would say nothing about any point at all.
+
+        ``COL-7`` runs first, so that a map outside the scope of this type is
+        answered as such rather than by a dimension or an image that happens
+        to differ as well.
         """
+        _characteristic_zero(F)
+
         if self.dimension != F.dimension:
             raise VerificationError(
                 "COL-1",
@@ -250,6 +257,46 @@ class Collision:
 
     def __repr__(self) -> str:
         return f"Collision(points={self._points}, image={self._image})"
+
+
+def _characteristic_zero(F: PolynomialMap) -> None:  # noqa: N803
+    """Check COL-7: the map's coefficient domain has characteristic zero.
+
+    A collision certifies that a Keller map is not injective, and that is a
+    statement worth certifying because the Jacobian conjecture is open in
+    characteristic zero. Above it the conjecture is false and has been for
+    decades: over a field of characteristic ``p`` the Artin-Schreier map
+    ``X + X**p`` has Jacobian one and identifies the ``p`` elements of the
+    prime field. The map ``X + X**2`` over ``GF(2)`` that an audit of
+    ``0.7.0rc6`` used to expose the evaluation defect is exactly that
+    instance. A certificate there records a textbook fact rather than
+    evidence, so the type declines to hold one instead of extending its
+    equality notion to reach it.
+
+    Declined here and not in the constructor, because COL-5 keeps the map out
+    of the object: the points remain a legitimate ``Collision``, and it is
+    stating them against *this* map that is refused. Positive characteristic
+    is therefore not a property a collision can have.
+
+    No advice to call ``over_field()``, for the reason ``lift.py`` gives at
+    SYM-4: the field of fractions of a finite field is itself, so the
+    suggestion would send a caller in a circle.
+
+    A consequence worth naming, since every ``Step.transport`` verifies:
+    a reduction chain over a domain of positive characteristic carries no
+    collision, at any step type.
+    """
+    domain = F.ring.domain
+    characteristic = domain.characteristic()
+
+    if characteristic != 0:
+        raise VerificationError(
+            "COL-7",
+            f"The coefficient domain is {domain}, of characteristic "
+            f"{characteristic}. A collision is evidence about the Jacobian "
+            "conjecture, which is open in characteristic zero and false "
+            "above it, so this type is stated over characteristic zero only.",
+        )
 
 
 def _coerce_point(point: Iterable[sp.Expr]) -> Point:

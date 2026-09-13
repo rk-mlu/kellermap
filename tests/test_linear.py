@@ -269,6 +269,37 @@ def test_factorize_needs_a_field() -> None:
         LinearAutomorphism.factorize(QUADRATIC.ring, sp.diag(2, 1, 1))
 
 
+def test_a_coefficient_outside_the_domain_is_rejected() -> None:
+    """The conversion every factor puts its coefficient through.
+
+    Reached from a factor and no longer from ``factorize``, which since
+    ``0.7.0rc7`` hands the elimination's own domain elements back through
+    ``to_sympy`` and so cannot produce one that fails to convert. The check
+    still belongs to the factors: a coefficient outside the domain is a
+    statement about the caller's data and is reported as one.
+    """
+    with pytest.raises(ValueError, match="does not lie in"):
+        Dilation(QUADRATIC.ring, 0, sp.sqrt(2))
+
+    with pytest.raises(ValueError, match="does not lie in"):
+        Transvection(QUADRATIC.ring, 0, 1, sp.sqrt(2))
+
+
+def test_factorize_works_over_a_finite_field() -> None:
+    """The elimination runs in the domain, so ``GF(5)`` needs no widening.
+
+    ``0.7.0rc6`` formed ``1/2`` as a rational here and refused the matrix as
+    needing ``over_field()``, which cannot help: ``GF(5)`` already is a field.
+    """
+    finite = sp.ring("a,b", sp.GF(5))[0]
+    factored = LinearAutomorphism.factorize(finite, sp.Matrix([[0, 1], [2, 0]]))
+
+    assert sp.Matrix(factored.matrix(finite)) == sp.Matrix([[0, 1], [2, 0]])
+    assert factored.determinant() == finite.domain.to_sympy(
+        finite.domain.from_sympy(sp.Integer(-2))
+    )
+
+
 def test_the_identity_factors_into_nothing(ring: object) -> None:
     factored = LinearAutomorphism.factorize(ring, sp.eye(3))
 

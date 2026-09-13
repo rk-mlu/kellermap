@@ -330,8 +330,11 @@ def untargeted_candidates(source: PolynomialMap) -> tuple[Candidate, ...]:
                 # UNT-1 takes BCW-12's saving where the anchor is a square:
                 # two fresh slots of one value share a coordinate. Asked for
                 # here, where it was inferred from the two values being equal
-                # until ``0.7.0rc6``.
-                shared=True,
+                # until ``0.7.0rc6`` -- and asked for only where the saving
+                # applies, since ``0.7.0rc7``. ``0.7.0rc6`` set the flag on
+                # every candidate, so the public field said "shared" beside
+                # ``m == 2`` and described nothing.
+                shared=_agree_in_ring(source, left, right),
             )
         )
 
@@ -341,16 +344,19 @@ def untargeted_candidates(source: PolynomialMap) -> tuple[Candidate, ...]:
     for split in grouped_splits(source):
         divisor = _monomial(split.left, variables)
         cofactors = _cofactor_sum(source, split.index, split.left)
+        left, right = _slot(divisor, carried), _slot(cofactors, carried)
         found.append(
             Candidate(
                 index=split.index,
-                left=_slot(divisor, carried),
-                right=_slot(cofactors, carried),
+                left=left,
+                right=right,
                 coefficient=sp.Integer(1),
                 # A divisor and the sum of its cofactors are equal only if the
                 # component is a square of that divisor, which UNT-6 cannot
                 # produce, so this is BCW-12's saving where it never applies.
-                shared=True,
+                # Computed all the same rather than asserted: the same test as
+                # above, and it answers no here.
+                shared=_agree_in_ring(source, left, right),
             )
         )
 
@@ -406,6 +412,22 @@ def _carried_values(source: PolynomialMap) -> dict[sp.Expr, int]:
             held.setdefault(value, index)
 
     return held
+
+
+def _agree_in_ring(source: PolynomialMap, left: Slot, right: Slot) -> bool:
+    """Return whether both slots are fresh and carry one element of the ring.
+
+    The condition BCW-12's saving needs, decided where it can be decided: in
+    ``source.ring``, whose domain has already put both values in normal form.
+    A ``Carried`` slot is not offered for sharing -- it names a coordinate that
+    exists, and BCW-12 is about a coordinate the step would introduce.
+    """
+    if isinstance(left, Carried) or isinstance(right, Carried):
+        return False
+
+    ring = source.ring
+
+    return bool(ring.from_expr(left) == ring.from_expr(right))
 
 
 def _slot(value: sp.Expr, carried: dict[sp.Expr, int]) -> Slot:

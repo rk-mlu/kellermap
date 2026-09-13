@@ -28,11 +28,13 @@ the tree is not worth running whatever the mechanism turns out to be.
 Restoring is now one file written back from the text it held, so there is no
 directory removal anywhere in this script.
 
-It is not a gate. It copies the project once and takes about ten seconds per
-probe, which is too slow for a pre-commit loop and too blunt for a release
-chain: a ``MISSED`` is not always a defect. Some clauses cannot fail on
-supplied data, and for those the right answer is to say so on the contract
-page rather than to write a test that forces an unreachable state.
+It is not a gate. It copies the project once and then runs the fast suite once
+per probe, under ``-x``: a caught probe stops at the first failure and a missed
+one pays for the whole suite. That is too slow for a pre-commit loop and too
+blunt for a release chain anyway, since a ``MISSED`` is not always a defect.
+Some clauses cannot fail on supplied data, and for those the right answer is
+to say so on the contract page rather than to write a test that forces an
+unreachable state.
 
 What these probes do and do not reproduce
 -----------------------------------------
@@ -48,7 +50,13 @@ compression and to thirty-four with the symmetric lift. The audits of milestone
 ``0.6.0rc3``, two with ``0.6.0rc4`` and one with ``0.6.0rc5``, which makes
 forty-two. That sentence had lost a conjunction and named two counts in a row
 without one until ``0.6.0rc6``. The audit of ``0.7.0rc1`` added three for the
-descent, which makes forty-five.
+descent, which makes forty-five. The audit of ``0.7.0rc6`` added seven, which
+makes fifty-two: one each for COL-7, BCW-12, LIN-6, SEA-13, SEA-14, UNT-1 and
+the evaluation under DOM-4. Those are the promises the four ring-semantics
+blockers of that audit turned out to rest on, and none of the five files they
+live in had a selector before -- ``search.py``, ``untargeted.py`` and
+``polynomial_map.py`` had none at all, which is why the audit could not run the
+selection this project's rules ask for after a change like that one.
 
 Milestone 0.7 added ten obligations and only three of them are here. HOM-11 and
 HOM-12 cannot fail after HOM-1, which the contract page argues where it says
@@ -456,6 +464,74 @@ PROBES: tuple[Probe, ...] = (
         "src/kellermap/descent.py",
         "            if automorphism.ring != self._source.ring:",
         "            if False:",
+    ),
+    Probe(
+        "COL-7",
+        "a collision is refused against positive characteristic",
+        "src/kellermap/collision.py",
+        "    if characteristic != 0:",
+        "    if False:",
+    ),
+    Probe(
+        "BCW-12",
+        "two fresh slots of one name carry one value",
+        "src/kellermap/bcw/step.py",
+        "        if len({symbol.name for symbol in fresh}) != len(fresh) and (\n"
+        "            values[0] != values[1]\n"
+        "        ):",
+        "        if False:",
+    ),
+    Probe(
+        "LIN-6",
+        "the transformation is the inverse of the linear part",
+        "src/kellermap/reduction.py",
+        "        if not all(\n            _same_in_domain(",
+        "        if False and all(\n            _same_in_domain(",
+    ),
+    Probe(
+        "SEA-13",
+        "an exact pool match is compared in the ring of the reached map",
+        "src/kellermap/search.py",
+        "            and (available := converted[name]) is not None\n"
+        "            and wanted in (available, -available)",
+        "            and (available := converted[name]) is not None\n"
+        "            and wanted in (available.as_expr(), -available.as_expr())",
+    ),
+    Probe(
+        "SEA-14",
+        "the forward enumerator asks for no shared generator",
+        "src/kellermap/search.py",
+        "                    candidate = _canonical(index, anchor, partner)",
+        "                    candidate = _canonical(index, anchor, partner)\n"
+        "                    candidate = Candidate(\n"
+        "                        candidate.index,\n"
+        "                        candidate.left,\n"
+        "                        candidate.right,\n"
+        "                        candidate.coefficient,\n"
+        "                        shared=True,\n"
+        "                    )",
+    ),
+    Probe(
+        "UNT-1",
+        "sharing is asked for only where the two slots agree",
+        "src/kellermap/untargeted.py",
+        "                shared=_agree_in_ring(source, left, right),\n"
+        "            )\n"
+        "        )\n"
+        "\n"
+        "    # UNT-6 after UNT-1",
+        "                shared=True,\n"
+        "            )\n"
+        "        )\n"
+        "\n"
+        "    # UNT-6 after UNT-1",
+    ),
+    Probe(
+        "DOM-4",
+        "evaluation happens in the coefficient domain",
+        "src/kellermap/polynomial_map.py",
+        "        evaluated = self._evaluate_in_domain(args)",
+        "        evaluated = None",
     ),
 )
 

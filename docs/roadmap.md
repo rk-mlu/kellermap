@@ -2409,7 +2409,8 @@ of one walk and not of the certificate surface, which is what the obligation
 says, and the third move is the concrete thing it forgoes.
 
 **The fourth move has no step type, and now for a stated reason rather than an
-expectation.** Of the seven step types, six cannot lower a dimension at all:
+expectation.** Of the seven step types this library had when work package 4
+asked the question, six cannot lower a dimension at all:
 BCW-2 adds `m` in `{0, 1, 2}`, UNI-5 doubles, HOM-4 adds one, SYM doubles, and
 the linear and the translation steps leave it alone. The only one that lowers
 it is `CompressionStep`, and it cannot express this move for two independent
@@ -2988,6 +2989,14 @@ run over it no longer fitted the assistant's tool budget. One test was a third
 of it: the unweighted control of SEA-14, at 44 seconds, examining 3189 maps
 since `0.7.0rc5` widened the forward space. It is now its own test and marked
 slow, and the fast suite is 84 seconds with the coverage run at 208.
+
+Every second on this page is from that one profile on the assistant's machine
+and is a record of a run rather than a statement about the present. `AGENTS.md`
+says under "Timings are not figures" why this is the only page that carries
+them: a runtime cannot be checked by the reader who finds it, and repeating one
+into prose elsewhere is how `AGENTS.md` and `CONTRIBUTING.md` came to state a
+total that was off by most of a run. What the profile is for is the decision
+below, not the numbers themselves.
 
 The rest of the profile is worth writing down, because the next person to want
 a second is going to look at the same list and the answer is no for each of

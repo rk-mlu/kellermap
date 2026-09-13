@@ -227,6 +227,7 @@ PolynomialMap  ←──uses──  VariableFactory  ←──holds──  Reduc
                                                   │       │
                                             LinearStep  BCWStep
                                             TranslationStep
+                                            DescentStep
                                                   │       │
                                                   └───┬───┘
                                                       │
@@ -239,10 +240,15 @@ PolynomialMap  ←──uses──  VariableFactory  ←──holds──  Reduc
                               Reduction  ←──carries──  Collision
 ```
 
+Eight step types, and `DescentStep` is the one milestone 0.7 added; the diagram
+omitted it until `0.7.0rc7`, which is what an audit of `0.7.0rc6` found against
+this page and the head of `linear.py` at once.
+
 The four types on the lower branch satisfy the protocol and are built from
-nothing on the upper one. Three of them are not compositions of automorphisms
-at all, which is why the diagram forks: `LinearStep` and `BCWStep` are made of
-the factors above them, and the others are made of a formula.
+nothing on the upper one. They are not compositions of automorphisms at all,
+which is why the diagram forks: `LinearStep`, `BCWStep` and `DescentStep` are
+made of the factors above them -- `DescentStep` conjugates by two
+`ElementaryAutomorphism` -- and the others are made of a formula.
 
 `VariableFactory` stands beside this hierarchy rather than in it. It is a
 naming policy, not a mathematical object, and every level that extends a map

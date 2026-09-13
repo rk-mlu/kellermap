@@ -26,9 +26,10 @@ is easier to read against a hand computation.
 
 This is why the linear part gets its own type rather than a scaling parameter
 on ``ElementaryFactor``, and why ``LinearStep`` is the only kind of step
-permitted to change the Jacobian determinant. Seven step types exist now and
+permitted to change the Jacobian determinant. Eight step types exist now and
 the claim has survived all of them: every other one carries a determinant of
-one from its source to its target.
+one from its source to its target. Seven until milestone 0.7 added
+``DescentStep``, and the count was not updated with it.
 """
 
 from __future__ import annotations
@@ -518,42 +519,67 @@ class LinearAutomorphism:
         A singular matrix raises ``ValueError``. So does a matrix needing a
         reciprocal the coefficient domain does not have -- ``over_field``
         first, in that case.
+
+        The elimination runs in ``ring.domain`` and not in SymPy expressions,
+        since ``0.7.0rc7``. "Is this entry zero", "is this entry one" and "what
+        is its reciprocal" are three questions about the coefficient ring, and
+        answering them with ``sp.simplify`` and ``1 / entry`` answers them for
+        characteristic zero whatever the ring is. Over ``GF(5)`` the pivot
+        ``2`` produced the rational ``1/2``, which does not lie in ``GF(5)``,
+        and the matrix was refused as needing ``over_field()`` -- advice that
+        cannot help, because the domain already is a field. An audit of
+        ``0.7.0rc6`` enumerated the damage: 392 of the 480 invertible ``2x2``
+        matrices over ``GF(5)`` were refused.
         """
         validate_ring(ring)
-        working = sp.Matrix(matrix)
+        given = sp.Matrix(matrix)
 
-        if working.shape != (ring.ngens, ring.ngens):
+        if given.shape != (ring.ngens, ring.ngens):
             raise ValueError(
                 f"Expected a {ring.ngens}x{ring.ngens} matrix, "
-                f"got {working.shape[0]}x{working.shape[1]}."
+                f"got {given.shape[0]}x{given.shape[1]}."
             )
 
         owned = clone_ring(ring)
+        domain = owned.domain
+        working = [
+            [_convert(owned, given[row, column]) for column in range(owned.ngens)]
+            for row in range(owned.ngens)
+        ]
         operations: list[LinearFactor] = []
 
         for column in range(owned.ngens):
-            pivot = _pivot_row(working, column)
+            pivot = _pivot_row(working, column, domain)
             if pivot is None:
                 raise ValueError("The matrix is singular and does not lie in GL_n(k).")
 
             if pivot != column:
                 operations.append(Transposition(owned, column, pivot))
-                working.row_swap(column, pivot)
+                working[column], working[pivot] = working[pivot], working[column]
 
-            entry = sp.simplify(working[column, column])
-            if entry != 1:
-                scaling = Dilation(owned, column, 1 / entry)
-                operations.append(scaling)
-                working = sp.Matrix(scaling.matrix()) * working
+            entry = working[column][column]
+            if entry != domain.one:
+                # Dilation forms the reciprocal in the domain and refuses a
+                # non-unit by name, which is the check this used to do itself
+                # and did in the wrong arithmetic.
+                scaling = Dilation(owned, column, domain.to_sympy(entry))
+                inverse = domain.exquo(domain.one, entry)
+                operations.append(scaling.inverse())
+                working[column] = [inverse * value for value in working[column]]
 
             for row in range(owned.ngens):
-                if row == column or sp.simplify(working[row, column]) == 0:
+                factor = working[row][column]
+                if row == column or factor == domain.zero:
                     continue
-                shear = Transvection(
-                    owned, row, column, -sp.simplify(working[row, column])
+                operations.append(
+                    Transvection(owned, row, column, domain.to_sympy(-factor))
                 )
-                operations.append(shear)
-                working = sp.Matrix(shear.matrix()) * working
+                working[row] = [
+                    value - factor * pivot_value
+                    for value, pivot_value in zip(
+                        working[row], working[column], strict=True
+                    )
+                ]
 
         return cls(operation.inverse() for operation in operations)
 
@@ -619,12 +645,26 @@ class LinearAutomorphism:
         Unlike in ``EA_n(k)`` this is not one in general, and a reduction has
         to say by what factor a linear step changes it. Structural all the
         same: no matrix is formed.
-        """
-        product = sp.Integer(1)
-        for factor in self.factors:
-            product = product * factor.determinant()
 
-        return cast(sp.Expr, sp.simplify(product))
+        The product is formed in the coefficient domain, since ``0.7.0rc7``.
+        A transposition contributes ``-1``, and over ``GF(2)`` that is ``1``;
+        ``sp.simplify`` left it at ``-1``, and LIN-3 then reported a step whose
+        bookkeeping is correct as one that does not add up.
+        """
+        if not self.factors:
+            return sp.Integer(1)
+
+        ring = self._first_ring()
+        domain = ring.domain
+        product = domain.one
+        for factor in self.factors:
+            product = product * _convert(ring, factor.determinant())
+
+        return cast(sp.Expr, domain.to_sympy(product))
+
+    def _first_ring(self) -> PolyRing:
+        """Return the ring of the factorization, without cloning it again."""
+        return self.factors[0]._ring
 
     def apply_to(self, other: PolynomialMap) -> PolynomialMap:
         """Return ``self o other``, one factor at a time, right to left."""
@@ -660,10 +700,15 @@ class LinearAutomorphism:
         return f"LinearAutomorphism(factors={self.factors})"
 
 
-def _pivot_row(matrix: sp.MutableDenseMatrix, column: int) -> int | None:
-    """Return the first row at or below ``column`` with a nonzero entry."""
-    for row in range(column, matrix.rows):
-        if sp.simplify(matrix[row, column]) != 0:
+def _pivot_row(matrix: Sequence[Sequence[Any]], column: int, domain: Any) -> int | None:
+    """Return the first row at or below ``column`` with a nonzero entry.
+
+    Nonzero in ``domain``. Over ``GF(2)`` the entry ``2`` is zero and
+    ``sp.simplify(2) != 0`` said otherwise, which is how the elimination used
+    to pick a pivot it could not divide by.
+    """
+    for row in range(column, len(matrix)):
+        if matrix[row][column] != domain.zero:
             return row
 
     return None

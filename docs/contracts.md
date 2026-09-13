@@ -207,7 +207,9 @@ are permitted: a collision over `k(T)` is a collision.
 by evaluation and compared as values rather than as syntax. "As values" means
 in the normal form of `kellermap.canonical`: over `k(T)` a correct image
 coordinate may arrive written as `(T^2 - 1)/(T - 1)`, and rejecting it would be
-a false negative.
+a false negative. The evaluation itself happens in the coefficient domain
+wherever the point lies in it, and by substitution otherwise; COL-7 confines
+the two to the case where they agree.
 
 **COL-4 — Distinctness is a constructor invariant, not an obligation.** A
 `Collision` whose points coincide cannot be built; the constructor raises
@@ -226,6 +228,42 @@ takes the map as an argument.
 **COL-6 — Value semantics.** Immutable; `extended()` and `with_image()` return
 new objects. Equality treats the points as a set, since listing them in another
 order is the same certificate.
+
+**COL-7 — Characteristic zero.** `F.ring.domain.characteristic() == 0`. Checked
+first in `verify()`, before COL-1, so that a map outside the scope of this type
+is answered as such rather than by a dimension or an image that also differs.
+
+A collision certifies that a Keller map is not injective, and that is worth
+certifying because the Jacobian conjecture is open in characteristic zero. Above
+it the conjecture is false and has been for decades: over a field of
+characteristic `p` the Artin–Schreier map `X + X^p` has Jacobian one and
+identifies the `p` elements of the prime field. A certificate there records a
+textbook fact rather than evidence.
+
+Checked in `verify()` and not in the constructor, because COL-5 keeps the map
+out of the object. The points remain a legitimate `Collision`; what is refused
+is stating them *against this map*. Positive characteristic is therefore not a
+property a collision can have, and asking whether one "is" in characteristic p
+is not a question this type answers.
+
+No advice to call `over_field()`, for the reason `lift.py` gives at SYM-4: the
+field of fractions of a finite field is itself.
+
+Two consequences, named here rather than left to be discovered. Every
+`Step.transport` verifies, so a reduction chain over a domain of positive
+characteristic carries no collision, at any step type. And `collision_hull`
+verifies its argument before it reaches the field check, so over `GF(p)` it now
+answers COL-7 where it answered the `d!` half of CHC-8 until `0.7.0rc6`; that
+half is still reached through the `CompressionStep` constructor, which needs no
+collision.
+
+The boundary this draws is the same one `kellermap.canonical` already assumed
+without saying so. Its normal form decides equality for rational functions and
+square roots, both of which live in characteristic zero, and it has no notion
+of a characteristic to carry. Deciding COL-3 in the coefficient domain while
+leaving COL-4 to that normal form would have let two spellings of one point
+over `GF(2)` — `0` and `2` — pass as a collision of distinct points. COL-7
+removes the case rather than giving the type a second equality.
 
 Coordinates are put into normal form as they enter, so `__eq__` decides
 soundly by `==` and agrees with `__hash__`. That order matters: canonicalizing
@@ -767,6 +805,15 @@ identity written at length.
 may name the same variable, and then they must carry the same polynomial. `G`
 subtracts `coefficient * X_u^2`, and `H` displaces `X_u` once.
 
+"The same polynomial" means the same element of `source.ring`, and the check
+runs after both slots have been converted into it. Until `0.7.0rc6` it ran
+before, on the expressions as they arrived, and decided with
+`kellermap.canonical`, which has no characteristic. Over `GF(2)` that read `y`
+and `-y` as two values and refused a step whose two slots are one element of
+the ring; over any domain it would have refused `x^2 - y^2` beside
+`(x - y)·(x + y)`. Whether one coordinate can hold both values is a question
+about the coefficient ring and not about how the caller spelled them.
+
 Also an extension, and the one the published chain forced. Its fifteenth step
 is `F_x -> F_x - 3 (w3 + x y^2)^2`, which removes `3 x^2 y^4` and leaves the
 terms in `w3^2`. Until 0.4 the constructor refused it, and correctly under the
@@ -844,6 +891,14 @@ by LIN-1 and retained anyway: two multiplications on maps a reduction produces,
 which catch an error in a factor's determinant before it propagates through a
 chain.
 
+The equality is decided in `source.ring` and the product of the factor
+determinants is formed in its domain. Both sides come out of a `PolyRing`
+already, so the conversion normalizes rather than computes; what the ring adds
+is the characteristic. A transposition accounts for `-1`, and over `GF(2)` that
+is `1`. Deciding it with `kellermap.canonical` reported the identity of `GF(2)`
+as a step whose bookkeeping does not add up, and an exhaustive enumeration put
+5 of the 6 invertible `2x2` matrices over that field on this path.
+
 **LIN-4 — Not elementary.** `transformation` is not required to lie in
 `EA_n(k)`, and generally does not: every element of `EA_n(k)` has determinant
 one. The normalization of Alpöge's map has determinant `-1/2`.
@@ -855,6 +910,12 @@ one. The normalization of Alpöge's map has determinant `-1/2`.
 itself the normalization, `source` lies in `MA^0`, `transformation` equals the
 inverse of `J(source)(0)`, and `target` lies in `MA^1`. A `LinearStep` that is
 not so declared carries no such obligation.
+
+`J(source)(0)` is inverted in the field of fractions of the coefficient domain,
+its singularity is decided there, and the comparison against `transformation`
+runs entry by entry in `source.ring`. `sp.Matrix.inv()` inverts in
+characteristic zero whatever the entries mean, and `sp.Matrix.det()` calls the
+`GF(2)` entry `2` nonzero.
 
 The `MA^0` clause is not decoration. Proposition (1.1) splits `F` as
 `(X + F(0)) ∘ F_(1) ∘ F'`, so the linear normalization is the *second* factor
@@ -2354,7 +2415,16 @@ BCW-12's saving, a `Candidate` asks for it with `shared`, and
 fresh coordinates, so equal values cost two and the step is `m = 2`.
 
 Asked for and not inferred from the two polynomials being equal, which is how
-`Candidate` decided it until `0.7.0rc6`. An audit of `0.7.0rc5` found both
+`Candidate` decided it until `0.7.0rc6`. `shared` is the whole of the intent
+since `0.7.0rc7`: `shares_one_generator` is `shared` and both slots fresh, with
+no equality test of its own. A `Candidate` carries expressions and no ring, so
+the only equality available to it is SymPy's structural one, which is not the
+equality the step is built under; `0.7.0rc6` kept that test and so reported
+`shared=True` beside `m == 2`, describing nothing. Whether the two values
+really do agree is decided where a ring exists to decide it, in `BCWStep` under
+BCW-12. For the same reason `untargeted_candidates` sets `shared` only where
+both slots are fresh and equal in `source.ring`, rather than on every candidate
+it emits. An audit of `0.7.0rc5` found both
 directions of that conflation. The forward search could not express a verified
 step with two distinct coordinates of one value and called its space exhausted
 after thirty maps instead; and it did build a shared one, naming two
@@ -2397,6 +2467,18 @@ did not finish looking.
 counted.** A fresh slot whose factor is a pool value, up to sign, takes
 that name. A fresh slot whose factor is *not* a pool value may take any unused
 name, and at most `rewrites` slots in a chain may do so.
+
+"Is a pool value" is decided in the ring of the map the walk has reached, with
+both sides as `PolyElement` and the sign included. A pool value is a spelling
+of a polynomial and which spelling it is says nothing: over `GF(2)` the value
+`3z^2` and the factor `z^2` are one element, and over `QQ(T)` so are
+`(T+1)z^2` and `((T^2-1)/(T-1))z^2`. Until `0.7.0rc6` the comparison ran on
+expanded expressions, so an exact match written differently missed, the slot
+was named at the cost of a rewrite, and with no rewrites left the chain was
+dropped and the space reported as exhausted — a claim this obligation makes
+about the space, and it was false. A pool value that does not convert into the
+ring of the reached map names a generator that map does not have yet; it is an
+exact match for nothing and stays available for a rewrite, as before.
 
 The rule exists because SEA-8 bounds the anchor and leaves the co-factor free,
 while a fresh co-factor still needs a name, and the only names on offer are the
@@ -3242,7 +3324,12 @@ different question and not merely more of the same. The two agree in
 characteristic zero up to the acyclicity; over `GF(2)` the map
 `(x + x^2, y + y^2, z + z^2)` has the identity for its Jacobian and no
 displacement free of its own variable, so the block is the whole map and no
-coordinate is a carried factor. Neither set contains the other there. That set is a set of coordinates whose
+coordinate is a carried factor. There the two are `(0, 1, 2)` and `()`, so one
+does contain the other; in general neither contains the other, and the wording
+here claimed the concrete example showed that until `0.7.0rc7`. What the
+example shows is that they differ, which is the point being made.
+
+`carrier_indices` is a set of coordinates whose
 dependencies are acyclic, which is what makes the block it picks out unipotent,
 and its docstring says it is deliberately not maximal. That is the right
 question for the block and the wrong one for a factor. Until `0.7.0rc3` this

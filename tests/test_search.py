@@ -337,6 +337,22 @@ def test_a_diagonal_must_be_invertible_and_the_right_length(
         conjugate(flat, wrong)
 
 
+def test_an_entry_outside_the_domain_is_rejected() -> None:
+    """Over a field the unit check passes and the conversion is what refuses.
+
+    The branch carried ``# pragma: no cover - the field check first`` until
+    ``0.7.0rc7``, and that claim was wrong: over ``QQ`` the field check has
+    nothing to say about ``sqrt(2)`` and the conversion is reached. The
+    pragma is gone and this is the case it hid.
+    """
+    over_the_rationals = PolynomialMap((x, y), (x + sp.Rational(1, 2) * y**2, y))
+
+    assert over_the_rationals.ring.domain.is_Field
+
+    with pytest.raises(ValueError, match="do not lie in"):
+        conjugate(over_the_rationals, (sp.sqrt(2), 1))
+
+
 def test_an_entry_other_than_a_sign_is_admitted(flat: PolynomialMap) -> None:
     """Until 0.4 ``D`` was restricted to ``+-1``, and that was too narrow.
 

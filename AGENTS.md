@@ -148,48 +148,67 @@ reconstructions for a whole milestone before those tests existed.
 
 ### Who runs which
 
-The suite has outgrown the assistant's machine. Measured there, one delivery
-at the end of milestone 0.5:
+The suite has outgrown the assistant's machine. The division below is by order
+of magnitude and not by a stopwatch, for the reason in "Timings are not
+figures" further down.
 
-| gate | seconds |
-| --- | --- |
-| `ruff format --check`, `ruff check`, both `mypy` runs | 9 |
-| `pytest --cov` | 208 |
-| `make reconstruct` | 3 |
-| `make measure` | 19 |
-| `uv build` and `twine check` | 6 |
-| `pytest -m ""` | 303 |
-| `scripts/mutation_probe.py` | 187 |
+Every delivery, and the assistant's: the two `ruff` checks and both `mypy`
+runs, `pytest --cov`, `make reconstruct`, `make measure`, and `uv build` with
+`twine check`. Of those the coverage run dominates and everything else together
+is a small fraction of it.
 
-The first five are the assistant's, every delivery, about 135 seconds. The last
-two are the maintainer's.
+The maintainer's: `pytest -m ""` and a whole sweep of
+`scripts/mutation_probe.py`. Each of those two costs more than all of the
+assistant's gates together.
 
 `pytest` and `pytest --cov` are not both run. The second is a superset of the
-first and costs 208 seconds against 84, so running both spends 292 seconds to
-learn what 208 already say.
+first and costs a multiple of it, so running both spends the larger of the two
+again to learn what it already said.
 
-Those two numbers were 97 and 54 until `0.7.0rc6`, and the coverage run had
-grown past what the assistant's tool budget allows. `docs/roadmap.md` carries
-the profile that followed under "What the fast suite costs": one test was a
-third of the suite and is marked slow, and the page says of every other
-candidate why it stays. The rule that came out of it -- a test earns the marker
-when the fast suite would otherwise lose more than it keeps, and a marked test
-has to be worth running in `pytest -m ""` rather than parked there -- is the
-one to apply the next time a second is wanted.
+The coverage run grew past what the assistant's tool budget allows at
+`0.7.0rc6`. `docs/roadmap.md` carries the profile that followed under "What the
+fast suite costs": one test was a third of the suite and is marked slow, and
+the page says of every other candidate why it stays. The rule that came out of
+it -- a test earns the marker when the fast suite would otherwise lose more
+than it keeps, and a marked test has to be worth running in `pytest -m ""`
+rather than parked there -- is the one to apply the next time a marker is
+wanted.
 
-`pytest -m ""` moves because the slow markers are most of it: three tests take
-181 of the 259 seconds, and a fourth was added at `0.7.0rc6` at 44 seconds
-more. The assistant runs the fast suite through `--cov` and
-says so; a claim about the slow markers that was not run does not go into a
-commit message.
+`pytest -m ""` moves because the slow markers are most of it: three tests were
+the bulk of it before `0.7.0rc6` and a fourth was added there. The assistant
+runs the fast suite through `--cov` and says so; a claim about the slow markers
+that was not run does not go into a commit message.
 
 **A whole sweep of `scripts/mutation_probe.py` is the maintainer's.** It
-re-runs the suite once per probe, so it grows with both. At forty-two probes
-and a suite of a hundred seconds it is past what the assistant's tool budget
-reliably allows, and a sweep cut off in the middle reports nothing about the
-probes after the cut. Milestone 0.6 has the case: a sweep was reaped after
-twenty-two of forty-one and the remaining nineteen had to be run again
-separately.
+re-runs the fast suite once per probe, so its cost grows with the probe set and
+with the suite at once, and it is past what the assistant's tool budget
+reliably allows. A sweep cut off in the middle reports nothing about the probes
+after the cut. Milestone 0.6 has the case: a sweep was reaped after twenty-two
+of forty-one and the remaining nineteen had to be run again separately.
+
+### Timings are not figures
+
+A runtime is not the kind of number this repository documents. Every other
+figure here is a property of the mathematics or of the code and is reproducible
+anywhere; a runtime is a property of one machine on one day, and the maintainer
+works across two machines. Such a number cannot be checked by the reader who
+finds it, goes stale without anything failing, and gets repeated onto other
+pages where it goes stale again.
+
+So: say which gate dominates, who runs it, and why it is divided that way. Do
+not write seconds into prose, and do not derive a sum from a column of them.
+Where an exact profile is genuinely the point -- deciding which test earns the
+slow marker, or whether a strategy is worth its complexity -- it goes in
+`docs/roadmap.md` as a dated measurement naming the machine, which is a record
+of a run rather than a claim about the present.
+
+The rule was written at `0.7.0rc7`. What prompted it: `AGENTS.md` had summed a
+column of gate timings to "about 135 seconds" and kept that sum after one entry
+of the column had grown, so the stated total was off by most of a run.
+`CONTRIBUTING.md` had copied the same number and a second one beside it. An
+audit of `0.7.0rc6` added the column up and found the disagreement. Correcting
+the arithmetic would have produced a figure that is stale on the next machine,
+which is why the numbers are gone instead.
 
 The assistant runs a **selection**, and runs it whenever a change adds or
 alters an obligation, a check, or a negative control:

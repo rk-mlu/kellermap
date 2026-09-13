@@ -204,6 +204,33 @@ An empty tuple means no such block was found and the general path was used:
 
 This is a performance property only; both paths return the same polynomial.
 
+`carrier_indices_for_factors` answers a different question and is the one a
+step asks. It reports every coordinate whose displacement is free of its own
+variable, BCW-10's third clause, with no acyclicity condition and without
+picking a block:
+
+```python
+>>> F.carrier_indices_for_factors
+(0, 1)
+
+```
+
+The two agree here and need not. Over `GF(2)` they come apart completely:
+
+```python
+>>> binary, a, b, c = sp.ring("a,b,c", sp.GF(2))
+>>> squares = PolynomialMap.from_ring(binary, (a + a**2, b + b**2, c + c**2))
+>>> squares.carrier_indices
+(0, 1, 2)
+>>> squares.carrier_indices_for_factors
+()
+
+```
+
+Every displacement there is a square of its own variable, so the Jacobian is
+the identity and the block is the whole map, while no coordinate holds a factor
+a step could reuse.
+
 ### The identity
 
 `PolynomialMap.identity(variables)` builds the identity on those variables.
@@ -1286,7 +1313,7 @@ carry, and one factor of every candidate comes from it; the other is obtained
 by dividing the component and is free.
 
 ```python
->>> from kellermap import enumerate_candidates
+>>> from kellermap import Candidate, enumerate_candidates
 >>> from kellermap.bcw import Carried
 >>> flat = PolynomialMap((x, y), (x + x**2 * y**3, y))
 >>> found = enumerate_candidates(flat, [x * y])
@@ -1328,6 +1355,34 @@ preferred to a fresh one supplying the same factor:
 (1,)
 >>> [(c.index, c.left, c.right, c.m) for c in enumerate_candidates(carried, [])]
 [(0, Carried(index=1), y**3, 1)]
+
+```
+
+`Candidate.shared` asks for BCW-12's saving: two fresh slots that are to take
+one coordinate between them rather than two. It is an intent and not a
+consequence of the two values being equal, so `enumerate_candidates` leaves it
+off — SEA-14 gives the forward space distinct fresh coordinates:
+
+```python
+>>> square = PolynomialMap((x, y), (x + x**2 * y**2, y))
+>>> separate = Candidate(0, x*y, x*y)
+>>> separate.shared, separate.shares_one_generator, separate.m
+(False, False, 2)
+>>> asked = Candidate(0, x*y, x*y, shared=True)
+>>> asked.shares_one_generator, asked.m
+(True, 1)
+
+```
+
+Whether the two slots really do carry one value is decided in the ring, by
+`BCWStep` under BCW-12, and a candidate that asks to share slots which do not
+agree is refused there. `untargeted_candidates` sets the flag exactly where the
+saving applies, which is where the leading monomial is a square:
+
+```python
+>>> from kellermap import untargeted_candidates
+>>> [(c.shared, c.m) for c in untargeted_candidates(square)]
+[(False, 2), (True, 1)]
 
 ```
 

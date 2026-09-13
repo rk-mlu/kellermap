@@ -36,6 +36,7 @@ from enum import Enum
 from typing import Any, Protocol, overload, runtime_checkable
 
 import sympy as sp
+from sympy.polys.matrices import DomainMatrix
 from sympy.polys.polyerrors import CoercionFailed
 from sympy.polys.rings import PolyRing
 
@@ -59,6 +60,62 @@ class Provenance(Enum):
 
     SUPPLIED = "supplied"
     CONSTRUCTED = "constructed"
+
+
+def _linear_part(source: PolynomialMap) -> DomainMatrix:
+    """Return ``J(F)(0)`` as a matrix over the coefficient domain."""
+    ring = source.ring
+    domain = ring.domain
+    entries = sp.Matrix(
+        source.jacobian().xreplace(
+            {variable: sp.Integer(0) for variable in source.variables}
+        )
+    )
+    size = source.dimension
+
+    return DomainMatrix(
+        [
+            [domain.from_sympy(entries[row, column]) for column in range(size)]
+            for row in range(size)
+        ],
+        (size, size),
+        domain,
+    )
+
+
+def _inverted_linear_part(source: PolynomialMap) -> sp.Matrix | None:
+    """Return the inverse of ``J(F)(0)``, or ``None`` where it is singular.
+
+    Inverted in the field of fractions of the coefficient domain, which for a
+    finite field is that field. Singularity is decided there too: over
+    ``GF(2)`` the determinant ``2`` is zero and ``sp.Matrix.det()`` said it was
+    not.
+
+    The result comes back as a SymPy matrix, because ``factorize`` is where
+    membership in the domain is decided, and it has the message for an entry
+    that is not in it.
+    """
+    domain = source.ring.domain
+    field = domain.get_field()
+    matrix = _linear_part(source).convert_to(field)
+
+    if matrix.det() == field.zero:
+        return None
+
+    inverse = matrix.inv().to_list()
+
+    return sp.Matrix([[field.to_sympy(entry) for entry in row] for row in inverse])
+
+
+def _same_in_domain(ring: PolyRing, left: sp.Expr, right: sp.Expr) -> bool:
+    """Return whether two expressions are one element of ``ring``.
+
+    The comparison the obligations of a linear step need. Both sides come out
+    of a ``PolyRing`` already, so the conversion normalizes rather than
+    computes; what it adds is the characteristic, which ``canonical`` does not
+    carry and cannot.
+    """
+    return bool(ring.from_expr(left) == ring.from_expr(right))
 
 
 @runtime_checkable
@@ -200,6 +257,15 @@ class LinearStep:
 
         The coefficient domain has to be a field for the inverse to exist;
         ``over_field`` first, otherwise.
+
+        The inverse is formed in the coefficient domain, since ``0.7.0rc7``.
+        ``sp.Matrix.inv()`` inverts in characteristic zero whatever the
+        entries mean, so over ``GF(5)`` it produced rationals that
+        ``factorize`` then refused as not lying in the domain. Over a domain
+        that is not a field the inverse is formed in its field of fractions
+        and handed to ``factorize`` all the same, which refuses an entry
+        outside the domain by name and says to call ``over_field`` -- the
+        behaviour a caller over ``ZZ`` had before and still has.
         """
         if not source.is_in_MA(0):
             raise ValueError(
@@ -210,13 +276,8 @@ class LinearStep:
                 "and normalize its target."
             )
 
-        linear_part = sp.Matrix(
-            source.jacobian().xreplace(
-                {variable: sp.Integer(0) for variable in source.variables}
-            )
-        )
-
-        if linear_part.det() == 0:
+        inverse = _inverted_linear_part(source)
+        if inverse is None:
             raise ValueError(
                 "The linear part at the origin is singular; the map is not "
                 "invertible there and Proposition (1.1) does not apply."
@@ -224,7 +285,7 @@ class LinearStep:
 
         return cls.build(
             source,
-            LinearAutomorphism.factorize(source.ring, linear_part.inv()),
+            LinearAutomorphism.factorize(source.ring, inverse),
             normalizing=True,
         )
 
@@ -343,16 +404,20 @@ class LinearStep:
         maps a reduction produces, and it catches an error in a factor's
         determinant before that error propagates through a whole chain.
 
-        The canonical comparison is defensive here rather than load-bearing.
-        Both determinants come out of a ``PolyRing``, where the domain has
-        already normalized them; no non-canonical value could reach this
-        point. It is used anyway so that the package has one answer to what
-        equality of values means.
+        The comparison happens in ``source.ring`` and not in
+        ``kellermap.canonical``, since ``0.7.0rc7``. Both determinants come out
+        of a ``PolyRing``, so nothing here is non-canonical; what the ring adds
+        is the characteristic. Over ``GF(2)`` a transposition accounts for
+        ``-1`` and the target has ``1``, and those are one element: ``agree``
+        decides in characteristic zero and reported a correct step as one whose
+        bookkeeping does not add up. An audit of ``0.7.0rc6`` found it on the
+        identity of ``GF(2)``, and its enumeration put 5 of the 6 invertible
+        ``2x2`` matrices over that field on this path.
         """
         expected = self._transformation.determinant() * self._source.determinant()
 
-        if not agree(  # pragma: no cover - implied by LIN-1
-            self._target.determinant(), expected
+        if not _same_in_domain(  # pragma: no cover - implied by LIN-1
+            self._source.ring, self._target.determinant(), expected
         ):
             raise VerificationError(
                 "LIN-3",
@@ -369,21 +434,20 @@ class LinearStep:
                 "linear part.",
             )
 
-        linear_part = sp.Matrix(
-            self._source.jacobian().xreplace(
-                {variable: sp.Integer(0) for variable in self._source.variables}
-            )
-        )
-
-        if linear_part.det() == 0:
+        inverse = _inverted_linear_part(self._source)
+        if inverse is None:
             raise VerificationError(
                 "LIN-6",
                 "The linear part of the source at the origin is singular.",
             )
 
-        declared = sp.Matrix(self._transformation.matrix(self._source.ring))
-        deviation = declared - linear_part.inv()
-        if not all(is_zero(entry) for entry in deviation):
+        ring = self._source.ring
+        declared = sp.Matrix(self._transformation.matrix(ring))
+        if not all(
+            _same_in_domain(ring, declared[row, column], inverse[row, column])
+            for row in range(self._source.dimension)
+            for column in range(self._source.dimension)
+        ):
             raise VerificationError(
                 "LIN-6",
                 "The step claims to normalize, but the transformation is not "

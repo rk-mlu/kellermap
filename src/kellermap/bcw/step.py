@@ -282,20 +282,6 @@ class BCWStep:
 
         fresh = tuple(slot.variable for slot in slots if isinstance(slot, Fresh))
 
-        # BCW-12. Two Fresh slots may name the same variable, in which case G
-        # subtracts a square, but they must carry the same factor: one
-        # coordinate holds one value and not two. Compared by name and not by
-        # Symbol.__eq__. Symbol("v") and Symbol("v", positive=True) are
-        # different for SymPy and are the same generator for a PolyRing.
-        if len({symbol.name for symbol in fresh}) != len(fresh) and not agree(
-            slots[0].polynomial,  # type: ignore[union-attr]
-            slots[1].polynomial,  # type: ignore[union-attr]
-        ):
-            raise ValueError(
-                "Two fresh slots naming one variable must carry the same "
-                "polynomial; a coordinate holds one value."
-            )
-
         scalar = _coerce_coefficient(source, coefficient)
 
         # Early and not first in verify(). A colliding name can no longer be
@@ -313,6 +299,28 @@ class BCWStep:
             _slot_value(source, name, slot)
             for name, slot in (("P", slots[0]), ("Q", slots[1]))
         )
+
+        # BCW-12. Two Fresh slots may name the same variable, in which case G
+        # subtracts a square, but they must carry the same factor: one
+        # coordinate holds one value and not two. Compared by name and not by
+        # Symbol.__eq__. Symbol("v") and Symbol("v", positive=True) are
+        # different for SymPy and are the same generator for a PolyRing.
+        #
+        # After ``_slot_value`` and not before it, since ``0.7.0rc7``, and the
+        # comparison is between two ``PolyElement`` of the source's ring. The
+        # question BCW-12 asks is whether one coordinate can hold both values,
+        # and that is a question about the coefficient ring, not about how the
+        # caller spelled them. ``0.7.0rc6`` asked ``agree``, which decides in
+        # characteristic zero: over ``GF(2)`` it read ``y`` and ``-y`` as two
+        # values and refused a step whose two slots are one element of the
+        # ring. An audit of that candidate built it.
+        if len({symbol.name for symbol in fresh}) != len(fresh) and (
+            values[0] != values[1]
+        ):
+            raise ValueError(
+                "Two fresh slots naming one variable must carry the same "
+                "polynomial; a coordinate holds one value."
+            )
 
         object.__setattr__(self, "_source", source)
         object.__setattr__(self, "_target", target)

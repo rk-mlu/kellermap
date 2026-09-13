@@ -38,7 +38,7 @@ from typing import Any, cast, overload
 import sympy as sp
 from sympy.polys.fields import FracElement
 from sympy.polys.matrices import DomainMatrix
-from sympy.polys.polyerrors import PolynomialError
+from sympy.polys.polyerrors import CoercionFailed, PolynomialError
 from sympy.polys.rings import PolyElement, PolyRing, sring
 
 from .variables import (
@@ -98,6 +98,26 @@ def _copy_coefficient(coefficient: Any, domain: Any) -> Any:
         )
 
     return coefficient
+
+
+def _evaluate_at(polynomial: PolyElement, point: list[Any], domain: Any) -> Any:
+    """Return the value of a polynomial at a point of the coefficient domain.
+
+    Term by term, with repeated multiplication rather than ``**``. Over a
+    composite domain a coordinate is itself a ``PolyElement`` or a
+    ``FracElement``, and ``PolyElement.evaluate`` does not carry those through
+    its exponentiation. The exponents here are the degrees of a Keller map, so
+    the loop costs nothing worth an edge case.
+    """
+    total = domain.zero
+    for monomial, coefficient in polynomial.iterterms():
+        term = coefficient
+        for value, exponent in zip(point, monomial, strict=True):
+            for _ in range(exponent):
+                term = term * value
+        total = total + term
+
+    return total
 
 
 def reindex(
@@ -962,12 +982,62 @@ class PolynomialMap:
         )
 
     def __call__(self, *args: sp.Expr) -> sp.ImmutableMatrix:
-        """Evaluate the map, allowing arbitrary symbolic arguments."""
+        """Evaluate the map, allowing arbitrary symbolic arguments.
+
+        In the coefficient domain wherever the arguments lie in it, and by
+        substitution into the expressions otherwise. The two agree in
+        characteristic zero and do not agree above it: over ``GF(2)`` the map
+        ``X + X**2`` sends the point ``1`` to ``0``, while substituting into
+        ``x**2 + x`` yields ``2``. Until ``0.7.0rc7`` only the substitution
+        existed, and the wrong answer reached ``Collision`` through COL-3,
+        which then discarded a true collision. An audit of ``0.7.0rc6`` built
+        exactly that map.
+
+        The fallback is not a lapse but the case the domain cannot take. A
+        point may legitimately lie outside the coefficient domain: Gao's map
+        has a collision over ``Q(sqrt(-23))`` whose coordinates carry a radical
+        the domain ``QQ`` does not hold, and ``kellermap.canonical`` exists to
+        decide equality for those. Substitution is right for them, because a
+        field into which ``QQ`` embeds has characteristic zero as well.
+
+        An argument that is a polynomial in the map's own variables takes the
+        fallback too, and that is what ``COL-2`` refuses on behalf of a
+        collision.
+        """
         if len(args) != self.dimension:
             raise ValueError(f"Expected {self.dimension} arguments, got {len(args)}.")
 
+        evaluated = self._evaluate_in_domain(args)
+        if evaluated is not None:
+            return evaluated
+
         substitutions = dict(zip(self.variables, args, strict=True))
         return self.matrix.xreplace(substitutions)
+
+    def _evaluate_in_domain(
+        self, args: tuple[sp.Expr, ...]
+    ) -> sp.ImmutableMatrix | None:
+        """Return the value in the coefficient domain, or ``None``.
+
+        ``None`` where any coordinate does not lie in the domain. All or
+        nothing, and not coordinate by coordinate: a mixed evaluation would
+        reduce part of a sum modulo the characteristic and leave the rest,
+        which is neither of the two answers.
+        """
+        domain = self._ring.domain
+        point = []
+        for argument in args:
+            try:
+                point.append(domain.from_sympy(sp.sympify(argument)))
+            except (CoercionFailed, sp.SympifyError, AttributeError, TypeError):
+                return None
+
+        return sp.ImmutableMatrix(
+            [
+                [domain.to_sympy(_evaluate_at(component, point, domain))]
+                for component in self._poly_components
+            ]
+        )
 
     def __eq__(self, other: object) -> bool:
         if not isinstance(other, PolynomialMap):

@@ -103,14 +103,27 @@ class Candidate:
     def shares_one_generator(self) -> bool:
         """Return whether one coordinate serves both slots, BCW-12.
 
-        ``shared`` and both slots fresh carrying one value. Then two would
-        carry the same value and cost a dimension for nothing, which is the
-        same saving that puts ``alpoege15`` two dimensions below ``bcw17``.
+        ``shared`` and both slots fresh. Then one coordinate carries the value
+        both slots supply and costs a dimension once, which is the same saving
+        that puts ``alpoege15`` two dimensions below ``bcw17``.
 
         It arises when the leading monomial is a square, and the untargeted
         enumerator asks for it there. ``enumerate_candidates`` never asks for
         it: SEA-14 says the forward space has distinct fresh generators, so
         equal values there are two coordinates and the step is ``m = 2``.
+
+        No equality test on the two slots, and this is the part ``0.7.0rc7``
+        changes. A ``Candidate`` carries expressions and no ring, so the only
+        equality available here is SymPy's structural one, and that is not the
+        equality the step is built under: ``x**2 - y**2`` and ``(x-y)*(x+y)``
+        are one element of every coefficient ring this package uses and two
+        expressions for ``==``. Reading ``shared`` off that test made the
+        public field of ``0.7.0rc6`` describe something other than what it
+        promised -- an audit of that candidate found ``shared=True`` beside
+        ``m == 2``. Whether the two values really do agree is decided where a
+        ring exists to decide it, in ``BCWStep.__init__`` under BCW-12, and a
+        candidate asking to share slots that do not agree is refused there by
+        name.
         """
         left, right = self.slots
 
@@ -118,7 +131,6 @@ class Candidate:
             self.shared
             and not isinstance(left, Carried)
             and not isinstance(right, Carried)
-            and bool(left == right)
         )
 
     @property
@@ -514,7 +526,11 @@ def conjugate(source: PolynomialMap, signs: Sequence[sp.Expr]) -> PolynomialMap:
     determinant is not constant the two are equal only up to the sign flips.
 
     A zero entry raises: ``D`` has to be invertible, and this is the group
-    SEA-5 admits, not an arbitrary linear change.
+    SEA-5 admits, not an arbitrary linear change. Zero *in the coefficient
+    domain*, since ``0.7.0rc7``. Over ``GF(2)`` the entry ``2`` is zero and
+    ``entry == 0`` said it was not, so the division below reached SymPy's raw
+    ``NotInvertible: zero divisor`` instead of the refusal this function owes
+    its caller. An audit of ``0.7.0rc6`` built ``conjugate(F, (1, 2))``.
 
     The entries were ones and minus ones until 0.4. That was too narrow, and
     the measurement that showed it is in ``roadmap.md``: the backward search
@@ -526,23 +542,37 @@ def conjugate(source: PolynomialMap, signs: Sequence[sp.Expr]) -> PolynomialMap:
     material rather than the exception.
     """
     entries = tuple(sp.sympify(entry) for entry in signs)
-    if len(entries) != source.dimension or any(entry == 0 for entry in entries):
+    if len(entries) != source.dimension:
         raise ValueError(
             f"Expected {source.dimension} non-zero entries, got {entries}."
         )
 
     ring = source.ring
     domain = ring.domain
+
+    # Converted before either check, so that "is this entry zero" is asked of
+    # the domain. An entry that does not convert leaves ``scale`` unset and
+    # falls through to the two checks below, which is what keeps the
+    # ``over_field`` advice for a caller over ``ZZ`` who passes ``1/2``.
+    scale: list[Any] | None
+    try:
+        scale = [domain.from_sympy(entry) for entry in entries]
+    except CoercionFailed:
+        scale = None
+
+    if scale is not None and any(value == domain.zero for value in scale):
+        raise ValueError(
+            f"Expected {source.dimension} non-zero entries, got {entries}."
+        )
+
     if not domain.is_Field and any(entry not in (1, -1) for entry in entries):
         raise ValueError(
             f"Conjugating by {entries} over {domain} needs the inverse of an "
             "entry that is not a unit. Use over_field first."
         )
 
-    try:
-        scale = [domain.from_sympy(entry) for entry in entries]
-    except CoercionFailed as error:  # pragma: no cover - the field check first
-        raise ValueError(f"The entries {entries} do not lie in {domain}.") from error
+    if scale is None:
+        raise ValueError(f"The entries {entries} do not lie in {domain}.")
 
     def scaled(monomial: tuple[int, ...], coefficient: Any, position: int) -> Any:
         value = coefficient * scale[position]
@@ -849,12 +879,28 @@ def _assignments(
     left the slot has no name and the candidate is dropped.
 
     Two slots of one step never claim the same name.
+
+    In the ring of ``current`` and not in expressions, since ``0.7.0rc7``.
+    A pool value is a spelling of a polynomial, and which spelling it is says
+    nothing: over ``GF(2)`` the pool value ``3 z**2`` and the factor ``z**2``
+    are one element, and over ``QQ(T)`` so are ``(T+1) z**2`` and
+    ``((T**2-1)/(T-1)) z**2``. ``0.7.0rc6`` compared the two as expanded
+    expressions, so an exact match written differently missed, the slot was
+    named at the cost of a rewrite, and with ``rewrites=0`` left the whole
+    chain was dropped -- reported as ``exhausted=True``, which is the claim
+    SEA-13 makes about the space and was false. An audit of that candidate
+    built both cases.
+
+    A pool value that does not convert into the ring of ``current`` names a
+    generator the map does not have yet, and is no exact match for anything
+    here; it stays available for a rewrite, exactly as before.
     """
     fresh = [
-        sp.expand(value)
-        for slot, value in zip(candidate.slots, candidate.values(current), strict=True)
+        _value(current, slot)
+        for slot in candidate.slots
         if not isinstance(slot, Carried)
     ]
+    converted = {name: _expressible(current, value) for name, value in values.items()}
 
     def extend(
         position: int, chosen: list[sp.Symbol], left: int
@@ -869,7 +915,8 @@ def _assignments(
             for name in values
             if name not in used
             and name not in chosen
-            and wanted in (values[name], sp.expand(-values[name]))
+            and (available := converted[name]) is not None
+            and wanted in (available, -available)
         ]
         if exact:
             for name in exact:
