@@ -4,6 +4,111 @@ Notable changes per release. The milestone plan and its reasoning live in
 `docs/roadmap.md`, the binding obligations of the verification surface in
 `docs/contracts.md`.
 
+## 0.7.0rc7
+
+An audit of `0.7.0rc6` found four release blockers with one cause between them:
+several paths decided equality, nullity and inversion in ordinary SymPy
+expressions rather than in the ring the map lives over. Every one is closed
+here, and each was reproduced against `0.7.0rc6` before anything was changed.
+
+The targeted search compares a pool value against a slot factor in the ring of
+the map the walk has reached, as `PolyElement` and with the sign, where it
+compared expanded expressions. A spelling says nothing: over `GF(2)` the pool
+value `3z^2` and the factor `z^2` are one element, and over `QQ(T)` so are
+`(T+1)z^2` and `((T^2-1)/(T-1))z^2`. An exact match written differently was
+charged a rewrite, and with the default of one rewrite left the chain was
+dropped and the space reported as exhausted -- a claim SEA-13 makes and it was
+false. The `GF(2)` case went from eleven maps and `exhausted=True` to a chain
+found in ninety-two.
+
+BCW-12 compares two `PolyElement` of the source's ring and runs after the slots
+are converted into it. It ran before, on the expressions as they arrived, and
+decided with `kellermap.canonical`, which has no characteristic: over `GF(2)`
+it read `y` and `-y` as two values and refused a step whose two slots are one
+element.
+
+`Candidate.shared` is the whole of the intent. `shares_one_generator` kept a
+structural equality test beside it, so the switch `0.7.0rc6` introduced could
+not express what it promised -- `x^2 - y^2` beside `(x-y)(x+y)` gave
+`shared=True` with `m == 2`. A `Candidate` carries expressions and no ring, so
+whether the two values agree is decided where a ring exists to decide it.
+`untargeted_candidates` sets the flag only where both slots are fresh and equal
+in the source's ring, where it set it on every candidate it emitted.
+
+The linear step does its arithmetic in the coefficient domain. The Gauss-Jordan
+elimination formed `1/entry` as a rational and decided nullity with
+`sp.simplify`, the determinant bookkeeping multiplied in characteristic zero,
+and the normalization inverted the linear part with `sp.Matrix.inv()`. Over
+`GF(5)` the pivot `2` produced `1/2` and the matrix was refused as needing
+`over_field()`, which cannot help there. Of the invertible `2x2` matrices,
+`LinearStep.normalize` failed on 5 of 6 over `GF(2)`, 8 of 48 over `GF(3)`, 392
+of 480 over `GF(5)` and 1864 of 2016 over `GF(7)`; it now succeeds on all of
+them. The inverse is formed over the domain's field of fractions and handed to
+`factorize`, which still decides domain membership and still names
+`over_field` for a caller over `ZZ`.
+
+`PolynomialMap.__call__` evaluates in the coefficient domain wherever the
+arguments lie in it, and substitutes otherwise. It was a bare `xreplace`, so
+over `GF(2)` it answered `F(1) = 2` for `F = X + X^2` and COL-3 discarded a
+true collision on the strength of it. The fallback is what a point outside the
+domain needs: Gao's collision over `Q(sqrt(-23))` carries a radical `QQ` does
+not hold, and a field into which `QQ` embeds has characteristic zero.
+
+**COL-7 is new: a collision is stated over characteristic zero only.** Making
+COL-3 domain-aware alone would have opened a worse hole than it closed, since
+with distinctness still decided as expressions `0` and `2` over `GF(2)` would
+have passed as a collision of distinct points. The reason to decline rather
+than to extend the equality is mathematical: the Jacobian conjecture is open in
+characteristic zero and false above it, and the `GF(2)` map the audit used is
+the Artin-Schreier map `X + X^p`, a textbook counterexample. Checked in
+`verify()` and not in the constructor, because COL-5 keeps the map out of the
+object; what is refused is stating the points against that map. Two
+consequences: a chain over positive characteristic carries no collision at any
+step type, and `collision_hull` answers COL-7 where it answered the `d!` half
+of CHC-8, which is still reached through the `CompressionStep` constructor.
+
+`conjugate` decides in the domain whether a diagonal entry is zero.
+`conjugate(F, (1, 2))` over `GF(2)` reached SymPy's raw `NotInvertible` instead
+of the refusal the function owes its caller. A `# pragma: no cover` beside the
+coercion branch there claimed the field check answers first; over `QQ` it does
+not, and the branch has a test rather than the pragma.
+
+Seven mutation probes, which makes fifty-two: COL-7, BCW-12, LIN-6, SEA-13,
+SEA-14, UNT-1 and the evaluation under DOM-4. `search.py`, `untargeted.py` and
+`polynomial_map.py` had no selector at all, which is why the audit could not
+run the selection this project's rules ask for after a change of that kind.
+
+**Timings are no longer written into prose.** `AGENTS.md` had summed a column of
+gate timings and kept the sum after one entry of the column had grown, so the
+stated total was off by most of a run, and `CONTRIBUTING.md` had copied the
+number. A runtime is the one figure here that the reader who finds it cannot
+check: it is a property of one machine on one day, where every other figure is
+a property of the mathematics or the code. Both pages now state the division of
+labour by which gate dominates and who runs it. `docs/roadmap.md` keeps the one
+exact profile, under "What the fast suite costs", where the numbers are the
+subject rather than an aside, and says on its face that they are a record of
+one run on one machine. `AGENTS.md` carries the rule under "Timings are not
+figures".
+
+Documentation defects from the same audit. `CONTRIBUTING.md` said six
+reconstructions where the `Makefile` runs eight, left out two reconstruction
+scripts and `measure_pipeline.py`, and listed `make release` without
+`sdist-test` and `dist-complete`. `linear.py` and the diagram in
+`docs/architecture.md` named seven step types and the diagram omitted
+`DescentStep`; there are eight. `docs/contracts.md` claimed the concrete
+`GF(2)` example shows that neither carrier set contains the other, where they
+are `(0,1,2)` and `()`. `docs/api.md` gained
+`carrier_indices_for_factors` and `Candidate.shared`.
+`docs/references.md` said the library has no form for the fourth move of the
+eleven-variable derivation, which `DescentStep` has been since 0.7; what
+remains true is that DSC-7 gives it no `build` and neither search constructs
+one, so the move can be certified and not found.
+
+`tests/test_positive_characteristic.py` holds the four blockers as regressions
+over `GF(2)`, `GF(5)` and `QQ(T)`, and gained the adversarial map
+`(x + y^2, y + x^2)` over `GF(2)`, which worked in `0.7.0rc6` with nothing
+holding it there.
+
 ## 0.7.0rc6
 
 `Candidate` has a `shared` field, and two fresh slots carrying one value are

@@ -2138,20 +2138,46 @@ move above, and the restriction to the level set is the fourth.
 
 The first two moves are carrier reuse, which this library has had since 0.3 and
 which `AGENTS.md` marks as an extension beyond the paper. The third is an
-elementary automorphism on the target and may already be expressible; that is a
-question for a work package and not something to assume here. The fourth has no
-step type.
+elementary automorphism on the target and may already be expressible; the
+fourth has no step type. Both of those sentences were written as expectations
+before work package 4 measured them, and this section is kept in that form
+because the packages below answer it and an answer read backwards into its own
+question is not a record of anything.
+
+**How it came out**, for a reader who arrives here first. WP 4 found the third
+move expressible and not hypothetically so: both slots `Carried` on one
+coordinate makes `H` the identity, and the shape is already in use at step
+three of `scripts/reconstruct_alpoege12.py`. The fourth move was missing, and
+missing as a property of the step-type surface rather than as a reading of two
+derivations, which is what WP 5 was conditional on; WP 5.1 added `DescentStep`
+under `DSC-1` to `DSC-7`. The table in WP 4 that answers this section's four
+moves with "none" in its last row records what held when it was run.
 
 **What that does not mean.** It does not mean the library cannot reach these
 maps. `examples.spacerat11` is reached from `alpoege()` by six `BCWStep`s,
 which `scripts/reconstruct_spacerat11.py` replays, and none of the six is a
-descent. So the fourth move is a route this library cannot express and not a
-map it cannot produce. Whether the twelve-variable map is also reachable
-without it is open, and is one of the things WP 4 should settle.
+descent. So the fourth move was a route this library could not express and not
+a map it could not produce.
+
+Since 0.7 it can express it, and the distinction that survives is a narrower
+one: `DescentStep` certifies a descent and does not propose one. DSC-7 gives it
+no `build` and neither search constructs one, so the move is outside every
+search here. A derivation that passes through it has to be supplied.
+
+Whether the twelve-variable map is reachable without a descent is no longer
+open in the direction this paragraph asked.
+`exploration/measure_untargeted_reach.py` ran it and the answer is no, and not
+for the reason the plan expected: the
+greedy walk does not fail at one of the four moves, it never rejoins the
+published chain at all, leaving for 13 or 14 from every one of that chain's own
+maps. The package below carries the table and the correction it went through
+afterwards, since the first conclusion drawn from it was too fast.
 
 The reason to care is the search rather than the certificates. Both published
 derivations pass through a dimension they then leave, and a search that only
-ever goes down cannot follow either.
+ever goes down cannot follow either. That sentence was the plan's; after WP 5.1
+it is the exact remaining gap rather than a motivation, because the certificate
+surface now holds the move and no search offers it.
 
 ## The packages
 
@@ -2391,6 +2417,10 @@ third has the answer the plan hoped for:
 | a coordinate reused rather than a factor introduced twice | the same |
 | `x^2 y^2` against the square of a coordinate already an output | `BCWStep` with both slots `Carried`, `m = 0` |
 | deleting a triangular coordinate after a determinant-one change | none |
+
+The last row is what held when WP 4 ran, and it is the measurement WP 5 was
+conditional on. `DescentStep` fills it at WP 5.1 below; the row is left as it
+was measured.
 
 **The third move is expressible, and it is not hypothetical.** Both slots
 `Carried` on one coordinate makes `H` the identity and `G` the elementary
