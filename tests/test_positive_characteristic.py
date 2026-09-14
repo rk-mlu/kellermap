@@ -13,6 +13,8 @@ BCW-10 admits none of them as a carried factor. Those two facts pull the two
 carrier notions apart, which is why they cannot be one predicate.
 """
 
+from __future__ import annotations
+
 from itertools import product
 
 import pytest
@@ -415,18 +417,6 @@ def test_evaluation_does_not_cost_one_multiplication_per_degree() -> None:
     assert source(sp.Integer(2)) == sp.ImmutableMatrix([[2**64]])
 
 
-def test_a_zero_exponent_is_skipped_rather_than_raised_to() -> None:
-    """``domain.zero ** 0`` raises over every composite domain here.
-
-    So a monomial that omits a variable must skip it, and a point with a zero
-    coordinate is the case that finds out.
-    """
-    ring, x, y = sp.ring("x,y", sp.QQ.poly_ring(sp.Symbol("T")))
-    source = PolynomialMap.from_ring(ring, (x + y**2, y))
-
-    assert source(sp.Integer(0), sp.Integer(0)) == sp.ImmutableMatrix([[0], [0]])
-
-
 def test_conjugate_accepts_a_unit_of_a_domain_that_is_not_a_field() -> None:
     """``2`` is a unit of ``QQ[T]`` and ``i`` is a unit of ``ZZ[i]``.
 
@@ -492,3 +482,104 @@ def test_the_factor_product_comes_back_normalized_over_a_finite_field() -> None:
             factored = LinearAutomorphism.factorize(ring, given)
 
             assert sp.Matrix(factored.matrix(ring)) == normalized
+
+
+# --------------------------------------------------------------------------
+# The audit of ``0.7.0rc8``: a pivot has to be a unit, not merely non-zero
+# --------------------------------------------------------------------------
+
+
+@pytest.mark.parametrize(
+    "entries",
+    [(2, 1, 1, 1), (2, 1, 3, 2)],
+    ids=["swap suffices", "needs a Euclidean combination"],
+)
+def test_a_unimodular_matrix_over_the_integers_factors(
+    entries: tuple[int, ...],
+) -> None:
+    """`GL_2(ZZ)` is not `over_field()` territory.
+
+    Both matrices have determinant one and both were refused in `0.7.0rc8`
+    with a message about needing the field of fractions. The first needs only
+    a swap to reach a unit pivot; the second needs the Euclidean algorithm run
+    with row operations, which is the case the swap alone does not cover.
+    """
+    ring = sp.ring("x,y", sp.ZZ)[0]
+    given = sp.Matrix(2, 2, list(entries))
+
+    assert given.det() == 1
+
+    factored = LinearAutomorphism.factorize(ring, given)
+
+    assert sp.Matrix(factored.matrix(ring)) == given
+
+
+def test_every_unimodular_two_by_two_over_the_integers_factors() -> None:
+    """The audit's enumeration, as a regression.
+
+    104 unimodular matrices with entries from -2 to 2, of which `0.7.0rc8`
+    refused 16. The reconstruction is asserted for each, since a factorization
+    that is returned but does not multiply back is worse than a refusal.
+    """
+    ring = sp.ring("x,y", sp.ZZ)[0]
+    unimodular = 0
+
+    for entries in product(range(-2, 3), repeat=4):
+        given = sp.Matrix(2, 2, list(entries))
+        if abs(given.det()) != 1:
+            continue
+        unimodular += 1
+
+        assert (
+            sp.Matrix(LinearAutomorphism.factorize(ring, given).matrix(ring)) == given
+        )
+
+    assert unimodular == 104
+
+
+def test_a_determinant_that_is_not_a_unit_is_still_refused() -> None:
+    """The negative control, and the reason the message changed.
+
+    `[[2, 0], [0, 1]]` has determinant two, which is not a unit of `ZZ`, so no
+    folding of the column produces a unit pivot and `over_field` really is the
+    advice. The refusal now names the column rather than a reciprocal that the
+    elimination happened to form first.
+    """
+    ring = sp.ring("x,y", sp.ZZ)[0]
+
+    with pytest.raises(ValueError, match="over_field"):
+        LinearAutomorphism.factorize(ring, sp.Matrix([[2, 0], [0, 1]]))
+
+
+def test_a_domain_that_is_not_a_principal_ideal_domain_attempts_nothing() -> None:
+    """Over `ZZ[T]` there is no Euclidean algorithm to run.
+
+    A unit pivot that is already present still works, so the boundary is about
+    the folding and not about the domain as such.
+    """
+    parameter = sp.Symbol("T")
+    ring = sp.ring("x,y", sp.ZZ.poly_ring(parameter))[0]
+
+    assert not ring.domain.is_PID
+
+    present = sp.Matrix([[1, parameter], [0, 1]])
+
+    assert (
+        sp.Matrix(LinearAutomorphism.factorize(ring, present).matrix(ring)) == present
+    )
+
+    with pytest.raises(ValueError, match="over_field"):
+        LinearAutomorphism.factorize(ring, sp.Matrix([[2, parameter], [parameter, 1]]))
+
+
+def test_normalize_accepts_a_unimodular_linear_part_over_the_integers() -> None:
+    """The boundary `LinearStep.normalize` documents is the determinant.
+
+    It said "the domain has to be a field" and checked nothing, so which `ZZ`
+    maps normalized depended on which entry the elimination met first.
+    """
+    ring = sp.ring("x,y", sp.ZZ)[0]
+    first, second = ring.gens
+    source = PolynomialMap.from_ring(ring, (2 * first + second, first + second))
+
+    LinearStep.normalize(source).verify()

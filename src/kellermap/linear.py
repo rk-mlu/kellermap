@@ -517,9 +517,30 @@ class LinearAutomorphism:
         result is easier to read against a hand computation, and the
         arithmetic is the same.
 
-        A singular matrix raises ``ValueError``. So does a matrix needing a
-        reciprocal the coefficient domain does not have -- ``over_field``
-        first, in that case.
+        A singular matrix raises ``ValueError``, and so does one whose column
+        cannot be brought to a unit pivot in the coefficient domain --
+        ``over_field`` first, in that case.
+
+        Over a domain that is not a field the pivot has to be a *unit* and not
+        merely non-zero, and where no entry of the column is one it is made
+        one, since ``0.7.0rc9``. Until then the elimination took the first
+        non-zero entry and divided by it, which is right over a field and
+        wrong over a ring: ``[[2, 1], [1, 1]]`` lies in ``GL_2(ZZ)`` with
+        determinant ``1``, and a swap with the second row would have given a
+        unit pivot straight away. ``[[2, 1], [3, 2]]`` needs a real Euclidean
+        combination. Both were refused as needing ``over_field``, and an audit
+        of ``0.7.0rc8`` enumerated 16 such false refusals among the 104
+        unimodular matrices with entries from ``-2`` to ``2``.
+
+        The combination is the Euclidean algorithm run with row operations,
+        and it is available exactly where the domain says it has one: on a
+        principal ideal domain. The determinant lies in the ideal the column
+        generates, so a unit determinant forces the greatest common divisor of
+        the column to be a unit, and folding the rows pairwise brings it into
+        one row. Over a domain that is not a principal ideal domain -- over
+        ``ZZ[T]``, say -- nothing is attempted and the refusal stands, now for
+        the reason that is actually true of the domain rather than as an
+        accident of which entry came first.
 
         The elimination runs in ``ring.domain`` and not in SymPy expressions,
         since ``0.7.0rc7``. "Is this entry zero", "is this entry one" and "what
@@ -550,13 +571,7 @@ class LinearAutomorphism:
         operations: list[LinearFactor] = []
 
         for column in range(owned.ngens):
-            pivot = _pivot_row(working, column, domain)
-            if pivot is None:
-                raise ValueError("The matrix is singular and does not lie in GL_n(k).")
-
-            if pivot != column:
-                operations.append(Transposition(owned, column, pivot))
-                working[column], working[pivot] = working[pivot], working[column]
+            _bring_unit_pivot(working, column, owned, operations)
 
             entry = working[column][column]
             if entry != domain.one:
@@ -724,15 +739,112 @@ class LinearAutomorphism:
         return f"LinearAutomorphism(factors={self.factors})"
 
 
-def _pivot_row(matrix: Sequence[Sequence[Any]], column: int, domain: Any) -> int | None:
-    """Return the first row at or below ``column`` with a nonzero entry.
+def _is_unit(domain: Any, value: Any) -> bool:
+    """Return whether ``value`` has a reciprocal in ``domain``.
 
-    Nonzero in ``domain``. Over ``GF(2)`` the entry ``2`` is zero and
-    ``sp.simplify(2) != 0`` said otherwise, which is how the elimination used
-    to pick a pivot it could not divide by.
+    Asked of the domain and not of a list of known units. Over a field every
+    non-zero element answers yes, so this is the same question the elimination
+    always asked there; over a ring it is the stronger one it has to ask.
     """
+    if value == domain.zero:
+        return False
+
+    try:
+        domain.exquo(domain.one, value)
+    except (ExactQuotientFailed, CoercionFailed, NotInvertible, ZeroDivisionError):
+        return False
+
+    return True
+
+
+def _unit_pivot_row(
+    matrix: Sequence[Sequence[Any]], column: int, domain: Any
+) -> int | None:
+    """Return the first row at or below ``column`` whose entry is a unit."""
     for row in range(column, len(matrix)):
-        if matrix[row][column] != domain.zero:
+        if _is_unit(domain, matrix[row][column]):
             return row
 
     return None
+
+
+def _fold_rows(
+    matrix: list[list[Any]],
+    target: int,
+    other: int,
+    column: int,
+    owned: PolyRing,
+    operations: list[LinearFactor],
+) -> None:
+    """Replace the two column entries by their gcd and zero, by row operations.
+
+    The Euclidean algorithm, with each division carried out on the whole row
+    so that the record stays a product of Gauss generators: a division step is
+    a ``Transvection`` and the exchange that follows it a ``Transposition``.
+    On termination ``target`` holds the greatest common divisor of the two
+    entries and ``other`` holds zero.
+    """
+    domain = owned.domain
+    while matrix[other][column] != domain.zero:
+        quotient, remainder = domain.div(matrix[target][column], matrix[other][column])
+        if quotient != domain.zero:
+            operations.append(
+                Transvection(owned, target, other, domain.to_sympy(-quotient))
+            )
+            matrix[target] = [
+                value - quotient * subtrahend
+                for value, subtrahend in zip(matrix[target], matrix[other], strict=True)
+            ]
+        if matrix[target][column] != remainder:  # pragma: no cover - div contract
+            raise ValueError(
+                f"The division of {domain.to_sympy(matrix[target][column])} in "
+                f"{domain} did not leave the remainder it reported."
+            )
+        operations.append(Transposition(owned, target, other))
+        matrix[target], matrix[other] = matrix[other], matrix[target]
+
+
+def _bring_unit_pivot(
+    matrix: list[list[Any]],
+    column: int,
+    owned: PolyRing,
+    operations: list[LinearFactor],
+) -> None:
+    """Put a unit into ``matrix[column][column]``, or raise.
+
+    A unit and not merely a non-zero entry, which is the whole of what
+    ``0.7.0rc9`` changes here. Over a field the two coincide and the first
+    branch answers. Over a principal ideal domain the column is folded
+    pairwise by the Euclidean algorithm until one entry is the greatest common
+    divisor of them all; the determinant lies in the ideal that column
+    generates, so a matrix of unit determinant leaves a unit there. Anywhere
+    else nothing is attempted, because nothing general is available.
+    """
+    domain = owned.domain
+    pivot = _unit_pivot_row(matrix, column, domain)
+
+    if pivot is None and domain.is_PID:
+        rows = [
+            row
+            for row in range(column, len(matrix))
+            if matrix[row][column] != domain.zero
+        ]
+        for other in rows[1:]:
+            _fold_rows(matrix, rows[0], other, column, owned, operations)
+        pivot = _unit_pivot_row(matrix, column, domain)
+
+    if pivot is None:
+        if any(
+            matrix[row][column] != domain.zero for row in range(column, len(matrix))
+        ):
+            raise ValueError(
+                f"No unit pivot is available in column {column} over {domain}, "
+                "so the matrix does not factor into Gauss generators there. "
+                "A matrix whose determinant is not a unit needs the field of "
+                "fractions; see over_field()."
+            )
+        raise ValueError("The matrix is singular and does not lie in GL_n(k).")
+
+    if pivot != column:
+        operations.append(Transposition(owned, column, pivot))
+        matrix[column], matrix[pivot] = matrix[pivot], matrix[column]

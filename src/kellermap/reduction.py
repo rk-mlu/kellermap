@@ -93,7 +93,9 @@ def _inverted_linear_part(source: PolynomialMap) -> sp.Matrix | None:
 
     The result comes back as a SymPy matrix, because ``factorize`` is where
     membership in the domain is decided, and it has the message for an entry
-    that is not in it.
+    that is not in it. Over ``ZZ`` that division of labour is what lets a
+    unimodular linear part through: the inverse is formed over ``QQ``, comes
+    back integral, and ``factorize`` finds every entry in ``ZZ``.
     """
     domain = source.ring.domain
     field = domain.get_field()
@@ -255,8 +257,19 @@ class LinearStep:
         ``Reduction`` shows all three rather than folding two of them into one
         step whose name mentions only one.
 
-        The coefficient domain has to be a field for the inverse to exist;
-        ``over_field`` first, otherwise.
+        The inverse has to exist *in the coefficient domain*, which over a
+        field means the linear part is non-singular and over a ring means its
+        determinant is a unit. A map over ``ZZ`` whose linear part is
+        unimodular normalizes without widening; one whose determinant is ``2``
+        needs ``over_field`` first, and ``factorize`` says so by name.
+
+        The boundary was stated as "the domain has to be a field" until
+        ``0.7.0rc9`` and was not checked anywhere, so which ``ZZ`` maps worked
+        depended on which entry the elimination met first. An audit of
+        ``0.7.0rc8`` found the documentation and the behaviour disagreeing in
+        both directions. Nothing validates ``is_Field`` here now, because the
+        condition was never that: the question belongs to ``factorize``, which
+        asks it of the matrix it is given.
 
         The inverse is formed in the coefficient domain, since ``0.7.0rc7``.
         ``sp.Matrix.inv()`` inverts in characteristic zero whatever the
