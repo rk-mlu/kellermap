@@ -578,9 +578,10 @@ def test_each_script_and_its_example_denote_one_map(script: str, example: str) -
     coordinate that no figure sees.
 
     Work package 2 of milestone 0.6 closed this for ``alpoege12`` alone and
-    named the rest as open. They cost 0.2 seconds together, measured before
-    this test was written, so there was no reason to leave them behind a slow
-    marker.
+    named the rest as open. They cost a fraction of a second together, so
+    there was no reason to leave them behind a slow marker. No figure, because
+    none is needed: nothing here turns on how small it is beyond its being far
+    under anything a marker is for.
 
     Two scripts are not here and need not be. ``reconstruct_alpoege19.py`` and
     ``reconstruct_macfarlane13.py`` read their target from ``tests/data.py``

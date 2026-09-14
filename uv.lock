@@ -502,7 +502,7 @@ wheels = [
 
 [[package]]
 name = "kellermap"
-version = "0.7.0rc8"
+version = "0.7.0rc9"
 source = { editable = "." }
 dependencies = [
     { name = "sympy" },

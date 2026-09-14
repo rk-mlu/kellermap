@@ -570,6 +570,13 @@ PROBES: tuple[Probe, ...] = (
         "    if pivot is None and domain.is_PID:",
         "    if False:",
     ),
+    Probe(
+        "DOM-4",
+        "the evaluator exponentiates instead of multiplying per unit",
+        "src/kellermap/polynomial_map.py",
+        "            if exponent:\n                term = term * value**exponent",
+        "            for _ in range(exponent):\n                term = term * value",
+    ),
 )
 
 

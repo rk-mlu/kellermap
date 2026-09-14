@@ -22,9 +22,9 @@ The build really runs, and it runs in full. ``uv build --sdist`` alone would
 not have shown the reported error: it arises when the archive is unpacked for
 the wheel build and not when it is packed.
 
-Two builds together cost about one and a half seconds, so none of this sits
-behind a slow marker. A packaging defect should surface on the day it is
-introduced and not in the nightly chain.
+Two builds together cost a fraction of the suite, so none of this sits behind a
+slow marker. A packaging defect should surface on the day it is introduced and
+not in the nightly chain.
 """
 
 import shutil

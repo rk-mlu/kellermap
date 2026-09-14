@@ -195,12 +195,27 @@ works across two machines. Such a number cannot be checked by the reader who
 finds it, goes stale without anything failing, and gets repeated onto other
 pages where it goes stale again.
 
-So: say which gate dominates, who runs it, and why it is divided that way. Do
-not write seconds into prose, and do not derive a sum from a column of them.
-Where an exact profile is genuinely the point -- deciding which test earns the
-slow marker, or whether a strategy is worth its complexity -- it goes in
-`docs/roadmap.md` as a dated measurement naming the machine, which is a record
-of a run rather than a claim about the present.
+So: say which gate dominates, who runs it, and why it is divided that way.
+
+Precisely what is and is not allowed, because the first wording of this rule
+was read two ways and an audit of `0.7.0rc8` found the page breaking it under
+the wider reading. Two things are allowed and everything else is not.
+
+A rough order of magnitude, where it carries an argument about who runs
+something: "about twenty minutes" for `make release`, "about one minute" for a
+marked test. Such a figure survives a change of machine, because the argument
+it serves does not turn on the number.
+
+A figure that is itself the subject of the sentence, where the measurement is
+the point rather than an aside: why one test earns the slow marker, or whether
+a strategy is worth its complexity. Those say when they were taken, and the
+profile they come from lives in `docs/roadmap.md` under "What the fast suite
+costs", dated and naming the machine.
+
+Not allowed: a runtime mentioned in passing, a figure precise enough to go
+stale where nothing turns on its precision, and any sum derived from a column
+of them. That is the shape the rule was written for -- a number copied from
+page to page, going stale on each, with no argument depending on it.
 
 The rule was written at `0.7.0rc7`. What prompted it: `AGENTS.md` had summed a
 column of gate timings to "about 135 seconds" and kept that sum after one entry

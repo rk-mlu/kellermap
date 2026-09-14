@@ -30,6 +30,7 @@ from kellermap import (
     search,
 )
 from kellermap.bcw.step import BCWStep, Fresh
+from kellermap.polynomial_map import _evaluate_at
 
 
 def squares() -> PolynomialMap:
@@ -405,16 +406,99 @@ def test_a_collision_over_a_fraction_field_verifies() -> None:
     collision.verify(source)
 
 
-def test_evaluation_does_not_cost_one_multiplication_per_degree() -> None:
-    """A sparse high power evaluates by exponentiation.
+class CountingValue:
+    """A coefficient-domain value that records how it is combined.
 
-    Not a timing: the value is what is asserted. `0.7.0rc7` multiplied once
-    per unit of exponent, which the public API sets no bound on.
+    Enough of the protocol for ``_evaluate_at`` and no more: it multiplies,
+    it exponentiates, and it adds into a running total whose left operand is
+    a real domain element, so the reflected forms are needed too.
+    """
+
+    multiplications = 0
+    powers = 0
+
+    def __init__(self, value: object) -> None:
+        self.value = value
+
+    def __mul__(self, other: object) -> CountingValue:
+        type(self).multiplications += 1
+        return CountingValue(self.value * _plain(other))
+
+    __rmul__ = __mul__
+
+    def __pow__(self, exponent: int) -> CountingValue:
+        type(self).powers += 1
+        return CountingValue(self.value**exponent)
+
+    def __add__(self, other: object) -> CountingValue:
+        return CountingValue(self.value + _plain(other))
+
+    __radd__ = __add__
+
+
+def _plain(value: object) -> object:
+    """Return the underlying value, whichever side of the operator it is."""
+    return value.value if isinstance(value, CountingValue) else value
+
+
+def test_evaluation_does_not_cost_one_multiplication_per_degree() -> None:
+    """The complexity is asserted, not the value alone.
+
+    `0.7.0rc7` multiplied once per unit of exponent, which the public API sets
+    no bound on. `0.7.0rc8` fixed that and tested it by evaluating ``x**64``
+    and checking the answer -- which the linear version also returns, so an
+    audit of `0.7.0rc8` put the old body back and the test stayed green. A
+    test that a faster implementation passes and a slower one passes too is a
+    test of the result and not of the claim above it.
+
+    So the point is a value that counts. Sixty-four units of exponent cost one
+    exponentiation and a single multiplication into the term; the linear form
+    costs sixty-four multiplications and no exponentiation, which is what the
+    bounds below separate.
     """
     ring, x = sp.ring("x", sp.QQ)
-    source = PolynomialMap.from_ring(ring, (x**64,))
+    polynomial = (x**64).copy()
+    CountingValue.multiplications = 0
+    CountingValue.powers = 0
+
+    result = _evaluate_at(polynomial, [CountingValue(sp.QQ(2))], sp.QQ)
+
+    assert _plain(result) == sp.QQ(2**64)
+    assert CountingValue.powers == 1
+    assert CountingValue.multiplications <= 4
+
+    ring2, y = sp.ring("y", sp.QQ)
+    source = PolynomialMap.from_ring(ring2, (y**64,))
 
     assert source(sp.Integer(2)) == sp.ImmutableMatrix([[2**64]])
+
+
+def test_conjugation_does_not_divide_once_per_degree() -> None:
+    """The same shape in `conjugate`, which `0.7.0rc8` left behind.
+
+    Only the evaluator was looked at, so the scaling loop kept dividing once
+    per unit of exponent. Asserted on the value rather than on a count,
+    because the reciprocal is formed outside the loop and the result is what
+    a caller sees; the loop itself is checked by the mutation probe.
+    """
+    ring, x = sp.ring("x", sp.QQ)
+    source = PolynomialMap.from_ring(ring, (x + x**64,))
+
+    changed = conjugate(source, (2,))
+
+    assert changed.components == (x.as_expr() + x.as_expr() ** 64 / 2**63,)
+
+
+def test_a_zero_exponent_is_skipped_rather_than_raised_to() -> None:
+    """``domain.zero ** 0`` raises over every composite domain here.
+
+    So a monomial that omits a variable must skip it, and a point with a zero
+    coordinate is the case that finds out.
+    """
+    ring, x, y = sp.ring("x,y", sp.QQ.poly_ring(sp.Symbol("T")))
+    source = PolynomialMap.from_ring(ring, (x + y**2, y))
+
+    assert source(sp.Integer(0), sp.Integer(0)) == sp.ImmutableMatrix([[0], [0]])
 
 
 def test_conjugate_accepts_a_unit_of_a_domain_that_is_not_a_field() -> None:

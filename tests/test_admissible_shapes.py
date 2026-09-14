@@ -324,8 +324,11 @@ def test_the_forward_search_finds_the_unweighted_chain() -> None:
     something a delivery would want to know. It examines 3189 maps where 200
     sufficed before ``0.7.0rc5`` offered both forms of a co-factor to every
     carrier, which took it to 44 seconds -- a third of the fast suite for one
-    assertion. It runs under ``pytest -m ""`` and belongs in any run that
-    touches the targeted enumerator.
+    assertion. That figure is from the ``0.7.0rc6`` profile in
+    ``docs/roadmap.md`` under "What the fast suite costs", on the machine named
+    there; it stands here because the marker is what it decided, which is the
+    case ``AGENTS.md`` allows a second in. It runs under ``pytest -m ""`` and
+    belongs in any run that touches the targeted enumerator.
     """
     step = two_fresh(SOURCE, sp.Integer(1))
 

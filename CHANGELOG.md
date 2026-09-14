@@ -4,6 +4,77 @@ Notable changes per release. The milestone plan and its reasoning live in
 `docs/roadmap.md`, the binding obligations of the verification surface in
 `docs/contracts.md`.
 
+## 0.7.0rc9
+
+An audit of `0.7.0rc8` found two release blockers and four smaller defects, all
+of them in public behaviour at an edge nothing had tested.
+
+**`LinearAutomorphism.factorize` refused matrices it should factor.** Over a
+domain that is not a field a pivot has to be a *unit* and not merely non-zero.
+The elimination took the first non-zero entry and divided by it, which is right
+over a field and wrong over a ring: `[[2, 1], [1, 1]]` lies in `GL_2(ZZ)` with
+determinant one and a swap with the second row gives a unit pivot straight
+away, while `[[2, 1], [3, 2]]` needs a real Euclidean combination. Both were
+refused with advice to call `over_field()`, and of the 104 unimodular matrices
+with entries from `-2` to `2`, 16 were refused. All 104 factor now, each
+reconstructing to the matrix it was given.
+
+Where no entry of a column is a unit, one is made: the determinant lies in the
+ideal the column generates, so a unit determinant forces the column's greatest
+common divisor to be a unit, and the rows are folded pairwise by the Euclidean
+algorithm run with row operations — a division is a `Transvection` and the
+exchange after it a `Transposition`, so the record stays a product of Gauss
+generators. The folding runs exactly where the domain says it has a Euclidean
+structure, on a principal ideal domain. Over `ZZ[T]` nothing is attempted and
+the refusal stands, now for a reason that is true of the domain rather than an
+accident of which entry came first.
+
+`LinearStep.normalize` documented a field and checked nothing, so which `ZZ`
+maps normalized depended on the same accident. The condition was never that the
+domain is a field: it is that the linear part's determinant is a unit, which is
+`factorize`'s question and is asked of the matrix. A unimodular linear part over
+`ZZ` now normalizes without widening; a determinant of `2` still needs
+`over_field`, and says so.
+
+**`conjugate` let a raw SymPy exception escape.** `sp.GF(4)` is `Z/4Z` and not a
+field, so `2` is a non-zero non-unit, and the unit check caught
+`ExactQuotientFailed` but not `NotInvertible`. Every non-zero zero divisor
+modulo 4, 6, 8, 9, 10 and 12 is now refused as a `ValueError` naming the entry,
+and every unit of those rings is still accepted.
+
+**CNJ is a new obligation family**, for `conjugate`. The diagonal was part of
+SEA-5 until work package 10 and unnamed from then on, while the docstring went
+on attributing it there. That cost something rather than merely reading oddly: a
+mutation probe for the unit rule had been filed under `SEA-5`, so one selector
+stood for two unrelated promises and a green run said less than it looked like.
+CNJ-1 is the admissible diagonal — every entry lies in the domain, is non-zero
+there and is a unit there, each decided in the domain — and CNJ-2 is what
+conjugation preserves. SEA-5 is untouched.
+
+**A test claimed a complexity and tested a value.** `0.7.0rc8` replaced a
+multiplication per unit of exponent with exponentiation and covered it by
+evaluating `x**64` and checking the answer, which the linear version also
+returns; the audit put the old body back and the test stayed green. It now
+evaluates against a value that counts how it is combined, and asserts one
+exponentiation and at most four multiplications. Re-running the audit's own
+experiment fails it.
+
+The same shape was still in `conjugate`, which divided once per unit of
+exponent, because only the evaluator had been looked at when that was fixed.
+
+**Gate documentation.** The rule that runtimes are not written into prose was
+itself ambiguous — its framing forbade every runtime and its prohibition named
+only seconds — and `AGENTS.md` broke it under the wider reading. The rule now
+says exactly what it permits: an order of magnitude carrying an argument about
+who runs something, and a figure that is the subject of its own sentence, which
+says when it was taken. Everything mentioned in passing goes. A sweep found
+seven places beyond the three the audit named; four were corrected and three
+were already magnitudes.
+
+Three mutation probes, which makes fifty-seven: the unit rule's refusal, the
+unit pivot, and the evaluator's exponentiation. Two of the three sit on claims
+that a test was asserting without checking.
+
 ## 0.7.0rc8
 
 An audit of `0.7.0rc7` found one release blocker and five smaller defects. Four

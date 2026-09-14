@@ -297,10 +297,19 @@ def test_a_source_of_positive_characteristic_is_refused() -> None:
 def test_a_hull_over_positive_characteristic_is_refused_by_COL7() -> None:  # noqa: N802
     """The collision is refused before the factorial is.
 
-    A collision is evidence about a conjecture that is open in characteristic
-    zero and false above it, so it cannot be stated against this map. That
-    answer is more informative than the one about ``d!``, and it is the reason
+    COL-7 states a collision over characteristic zero only, because COL-5
+    keeps the map out of the object and COL-4 therefore decides the points'
+    distinctness in a normal form that carries no characteristic. So the
+    collision cannot be stated against this map at all, which is a more
+    informative answer than the one about ``d!`` and is the reason
     ``collision_hull`` no longer reaches the ``CHC-8`` half above.
+
+    This docstring justified COL-7 by calling the Jacobian conjecture open in
+    characteristic zero until ``0.7.0rc9``. That claim was wrong -- see the
+    first page of ``README.md`` -- and it was corrected in the user-facing
+    texts at ``0.7.0rc8`` while this copy was missed. An audit of
+    ``0.7.0rc8`` found it. A test is an executable specification and a wrong
+    statement in one is as wrong as in the contract page.
     """
     ring = sp.ring("x1,x2", sp.GF(7))[0]
     first, second = ring.gens

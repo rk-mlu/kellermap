@@ -399,8 +399,11 @@ def test_the_second_source_map_reaches_degree_three_too() -> None:
     86 before the offer was widened and ordered, so the two packages are worth
     six times the length here and three times on Alpoege's.
 
-    Marked slow: about twenty seconds. Work packages 12 and 13 measure against
-    this number, so it has to be a number and not a recollection.
+    Marked slow: about twenty seconds, measured at work package 12 on the
+    assistant's machine, the one ``docs/roadmap.md`` names. Work packages 12
+    and 13 measure against this number, so here it has to be a number and not
+    a recollection -- the case ``AGENTS.md`` allows a second in, where the
+    figure is the subject rather than an aside.
     """
     source = normalized(examples.gao_quartic())
     outcome = reduce_to_degree3(source, budget=3000)
@@ -869,7 +872,9 @@ def test_the_outcome_hands_out_a_copy_of_its_domain() -> None:
     The accessor handed the same object out every time, so a caller could
     reach into a frozen outcome through ``domain.gens``. An audit of
     ``0.5.0rc1`` pointed that out. It costs a clone per read: 0.1 microseconds
-    for ``QQ``, 55 for ``QQ[X3][S]``.
+    for ``QQ``, 55 for ``QQ[X3][S]``, measured at ``0.5.0rc2`` on the
+    assistant's machine. The figures are the subject here -- they are why a
+    clone per read is affordable -- which is the case ``AGENTS.md`` allows.
     """
     parameter = sp.Symbol("T")
     ring = sp.polys.rings.ring([x, y], sp.ZZ[parameter])[0]
