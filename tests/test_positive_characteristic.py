@@ -583,3 +583,22 @@ def test_normalize_accepts_a_unimodular_linear_part_over_the_integers() -> None:
     source = PolynomialMap.from_ring(ring, (2 * first + second, first + second))
 
     LinearStep.normalize(source).verify()
+
+
+@pytest.mark.parametrize("modulus", [4, 6, 8, 9, 10, 12])
+def test_conjugate_refuses_every_zero_divisor_as_a_value_error(modulus: int) -> None:
+    """CNJ-1. `sp.GF(4)` is `Z/4Z` and not a field.
+
+    A non-zero non-unit reached SymPy's raw `NotInvertible` in `0.7.0rc8`. The
+    units of the same ring are the control: they have to keep working, or the
+    refusal has merely been widened to everything.
+    """
+    ring, x = sp.ring("x", sp.GF(modulus))
+    source = PolynomialMap.from_ring(ring, (x + x**3,))
+
+    for entry in range(2, modulus):
+        if sp.gcd(entry, modulus) == 1:
+            conjugate(source, (entry,))
+            continue
+        with pytest.raises(ValueError):
+            conjugate(source, (entry,))

@@ -2372,9 +2372,15 @@ peel *solves* for the constant rather than searching it, and the forward search
 takes its values from the pool verbatim. Keeping `D` would leave two ways to
 say the same thing, one of them weaker.
 
-`conjugate` and `diagonal_matching` remain and carry no obligation. They answer
-a question still worth asking -- in what respect two chains that are the same
-reduction differ -- and nothing that `verify()` or this clause asks.
+`conjugate` and `diagonal_matching` remain and carry no *SEA* obligation. They
+answer a question still worth asking -- in what respect two chains that are the
+same reduction differ -- and nothing that `verify()` or this clause asks. What
+`conjugate` does owe its caller is its own family, `CNJ`, below: the withdrawal
+of the diagonal from SEA-5 left the function in place and left its promises
+unnamed, and until `0.7.0rc9` its docstring still attributed them here. An audit
+of `0.7.0rc8` found that, and found it costing something rather than merely
+reading oddly: a mutation probe for the unit rule had been filed under `SEA-5`,
+so one selector stood for two unrelated promises.
 
 The clause went through two widenings before it was withdrawn, and both stay on
 the page because each was a measurement. `D` was restricted to ones and minus
@@ -2416,6 +2422,44 @@ The transported collision is a second such fact. `Reduction.transport()` carries
 Alpöge's three points to `k^19` by RED-5, and the result, reordered, is compared
 against the published table. The two facts are independent: one is about the
 map, the other about three points of it.
+
+## Conjugation by a diagonal
+
+`conjugate(source, entries)` rewrites a map in the coordinates `X_i -> d_i X_i`.
+It is not a step, certifies nothing, and appears in no chain. It is public, it
+is used by `diagonal_matching` and by the comparisons around a published map,
+and what it refuses it should refuse for a stated reason. These are those
+reasons. They were part of SEA-5 until work package 10 and unnamed from then
+until `0.7.0rc9`.
+
+**CNJ-1 — The diagonal is invertible over the coefficient domain.** Every entry
+lies in `ring.domain`, is non-zero there, and is a unit there. All three are
+decided in the domain and not against a list of values.
+
+Non-zero in the domain and not as an expression: over `GF(2)` the entry `2` is
+zero, and comparing it to `0` as a SymPy expression said otherwise, so the
+division below reached SymPy's raw `NotInvertible` instead of this refusal.
+
+A unit in the domain and not "`1` or `-1`": those are the units of `ZZ` and of
+nothing else the package supports. `2` is a unit of `QQ[T]` and `i` is a unit of
+`ZZ[i]`, and both were refused with advice to call `over_field()` -- which for
+`QQ[T]` widens to `QQ(T)` to obtain a reciprocal the domain already had. The
+question is asked with `exquo`, which is what `Dilation` had always asked and
+what this check disagreed with.
+
+The refusal is a `ValueError` and never a raw SymPy exception. Over `sp.GF(4)`,
+which is `Z/4Z` and not a field, `2` is a non-zero non-unit and the zero-divisor
+error escaped. Each of the three refusals says which entry it is about.
+
+**CNJ-2 — Conjugation preserves what a comparison is about.** Degree, order,
+filtration degree and the constant Jacobian determinant of a Keller map survive,
+and a collision carries over with its points and image scaled. Two conjugate
+maps are the same map in different coordinates, which is what makes the question
+`diagonal_matching` asks a diagnostic one rather than a claim.
+
+The Jacobian determinant survives as a *function*: it becomes `det J(F)`
+composed with the diagonal. For a Keller map that is the same constant; for a
+map whose determinant is not constant the two agree only up to the entries.
 
 **SEA-6 — A failure to find is not a proof of absence.** Reporting no chain
 means this search did not find one with these arguments. It is not a statement

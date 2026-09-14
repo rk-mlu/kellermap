@@ -28,7 +28,11 @@ from typing import Any, TypeAlias, cast
 
 import sympy as sp
 from sympy.polys.domains import Domain
-from sympy.polys.polyerrors import CoercionFailed, ExactQuotientFailed
+from sympy.polys.polyerrors import (
+    CoercionFailed,
+    ExactQuotientFailed,
+    NotInvertible,
+)
 from sympy.polys.rings import PolyElement
 
 from .bcw import BCWStep, Carried, Fresh
@@ -522,11 +526,20 @@ def conjugate(source: PolynomialMap, signs: Sequence[sp.Expr]) -> PolynomialMap:
 
     The Jacobian determinant survives as a *function*, in the new coordinates:
     it becomes ``det J(F)`` composed with ``D``. For a Keller map that is the
-    same constant, which is the case SEA-5 is about; for a map whose
-    determinant is not constant the two are equal only up to the sign flips.
+    same constant; for a map whose determinant is not constant the two are
+    equal only up to the sign flips.
 
-    A zero entry raises: ``D`` has to be invertible, and this is the group
-    SEA-5 admits, not an arbitrary linear change. Zero *in the coefficient
+    The admissible diagonal is CNJ-1, and it has been its own obligation since
+    ``0.7.0rc9``. It was read as part of SEA-5 here until then, and had not
+    been since work package 10: SEA-5 is the endpoint comparison, and the
+    diagonal was withdrawn from it when BCW-11 gave a step somewhere to put a
+    constant. An audit of ``0.7.0rc8`` found the stale attribution, and found
+    it mattering: a mutation probe had been filed under ``SEA-5`` for the unit
+    rule below, so one selector stood for two unrelated promises and a green
+    run said less than it appeared to.
+
+    A zero entry raises: ``D`` has to be invertible, which is CNJ-1 and not an
+    arbitrary linear change. Zero *in the coefficient
     domain*, since ``0.7.0rc7``. Over ``GF(2)`` the entry ``2`` is zero and
     ``entry == 0`` said it was not, so the division below reached SymPy's raw
     ``NotInvertible: zero divisor`` instead of the refusal this function owes
@@ -550,10 +563,14 @@ def conjugate(source: PolynomialMap, signs: Sequence[sp.Expr]) -> PolynomialMap:
     ring = source.ring
     domain = ring.domain
 
-    # Converted before either check, so that "is this entry zero" is asked of
-    # the domain. An entry that does not convert leaves ``scale`` unset and
-    # falls through to the two checks below, which is what keeps the
-    # ``over_field`` advice for a caller over ``ZZ`` who passes ``1/2``.
+    # Converted first, so that "is this entry zero" and "is this entry a unit"
+    # are both asked of the domain. An entry that does not convert is answered
+    # as such and does not reach either question: ``1/2`` over ``ZZ`` is told
+    # it does not lie in ``ZZ``, which is the accurate answer for a value the
+    # domain has no element for. This comment described the opposite control
+    # flow until ``0.7.0rc9``, having survived the reordering in ``0.7.0rc6``
+    # that made the ``over_field`` advice belong to the unit check below
+    # instead; an audit of ``0.7.0rc8`` read the comment against the code.
     scale: list[Any] | None
     try:
         scale = [domain.from_sympy(entry) for entry in entries]
@@ -579,18 +596,30 @@ def conjugate(source: PolynomialMap, signs: Sequence[sp.Expr]) -> PolynomialMap:
         for entry, value in zip(entries, scale, strict=True):
             try:
                 domain.exquo(domain.one, value)
-            except (ExactQuotientFailed, CoercionFailed, NotImplementedError):
+            except (
+                ExactQuotientFailed,
+                CoercionFailed,
+                NotImplementedError,
+                NotInvertible,
+                ZeroDivisionError,
+            ):
                 raise ValueError(
                     f"Conjugating by {entries} over {domain} needs the "
                     f"inverse of {entry}, which is not a unit there. Use "
                     "over_field first."
                 ) from None
 
+    reciprocal = [domain.exquo(domain.one, value) for value in scale]
+
     def scaled(monomial: tuple[int, ...], coefficient: Any, position: int) -> Any:
+        # By exponentiation, and against reciprocals formed once. Until
+        # ``0.7.0rc9`` this divided once per unit of exponent, which is the
+        # same shape an audit of ``0.7.0rc7`` found in the evaluator and which
+        # survived here because only the evaluator was looked at.
         value = coefficient * scale[position]
         for index, exponent in enumerate(monomial):
-            for _ in range(exponent):
-                value = value / scale[index]
+            if exponent:
+                value = value * reciprocal[index] ** exponent
         return value
 
     return PolynomialMap.from_ring(
