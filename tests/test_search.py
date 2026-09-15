@@ -296,8 +296,10 @@ def test_conjugation_is_an_involution(flat: PolynomialMap) -> None:
 def test_conjugation_preserves_what_a_certificate_claims() -> None:
     """Degree, order, filtration degree and the Keller determinant survive.
 
-    That is why SEA-5 with a reported ``D`` is still a statement about the same
-    map and not about a different one.
+    CNJ-2. That is why conjugating a chain's endpoint leaves a statement about
+    the same map and not about a different one -- which mattered to SEA-5
+    while the diagonal stood in it, and is now a property of ``conjugate``
+    alone.
     """
     source = over_field(examples.cubic_shear())
 
@@ -313,8 +315,8 @@ def test_conjugation_preserves_what_a_certificate_claims() -> None:
 def test_a_non_constant_determinant_moves_with_the_coordinates() -> None:
     """It survives as a function and not as a polynomial.
 
-    For a Keller map that is the same constant, which is the case SEA-5 is
-    about. Otherwise the two differ by the signs.
+    For a Keller map that is the same constant, which is the case CNJ-2 is
+    about. Otherwise the two differ by the entries.
     """
     source = PolynomialMap((x, y), (x + x**2 * y**3, y))
 
@@ -328,12 +330,26 @@ def test_the_identity_diagonal_changes_nothing(flat: PolynomialMap) -> None:
     assert conjugate(flat, (1, 1)) == flat
 
 
-@pytest.mark.parametrize("wrong", [(1,), (1, 1, 1), (0, 1), (1, 0)])
-def test_a_diagonal_must_be_invertible_and_the_right_length(
+@pytest.mark.parametrize("wrong", [(1,), (1, 1, 1)])
+def test_a_diagonal_must_have_one_entry_per_coordinate(
     flat: PolynomialMap, wrong: tuple[int, ...]
 ) -> None:
-    """A zero is not a change of coordinates."""
+    """A diagonal of the wrong length is not a diagonal of this map."""
     with pytest.raises(ValueError, match="non-zero entries"):
+        conjugate(flat, wrong)
+
+
+@pytest.mark.parametrize("wrong", [(0, 1), (1, 0)])
+def test_a_zero_entry_is_refused_and_named(
+    flat: PolynomialMap, wrong: tuple[int, ...]
+) -> None:
+    """A zero is not a change of coordinates, and CNJ-1 says which entry.
+
+    Naming the entry rather than the tuple since ``0.7.0rc10``: the clause
+    promised it and only the non-unit path did it, which an audit of
+    ``0.7.0rc9`` pointed out.
+    """
+    with pytest.raises(ValueError, match="is zero in"):
         conjugate(flat, wrong)
 
 

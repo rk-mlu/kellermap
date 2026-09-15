@@ -2541,9 +2541,16 @@ and a collision carries over with its points and image scaled. Two conjugate
 maps are the same map in different coordinates, which is what makes the question
 `diagonal_matching` asks a diagnostic one rather than a claim.
 
-The Jacobian determinant survives as a *function*: it becomes `det J(F)`
-composed with the diagonal. For a Keller map that is the same constant; for a
-map whose determinant is not constant the two agree only up to the entries.
+The Jacobian determinant survives as a *function*: `conjugate` computes
+`G(X) = D F(D^-1 X)`, so `det J(G)` is `det J(F)` composed with `D^-1`. For a
+Keller map that is the same constant; for a map whose determinant is not
+constant the two agree only up to the entries.
+
+`D^-1` and not `D`, which this clause said until `0.7.0rc10`. Over the entries
+`(2, 3)` the two read `1 + x y^3 / 27` and `1 + 108 x y^3`. The implementation
+was right and the clause was wrong, and the test covering it used a diagonal of
+signs, where the two coincide, so nothing could have found it short of reading
+the clause against the code — which is what an audit of `0.7.0rc9` did.
 
 **SEA-6 — A failure to find is not a proof of absence.** Reporting no chain
 means this search did not find one with these arguments. It is not a statement

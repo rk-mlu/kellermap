@@ -607,10 +607,12 @@ transpositions multiply to the identity, which lies in `EA_n(k)` although
 neither factor does. The property reports on the factorization that was
 supplied. A certificate can check that without forming any matrix.
 
-Dilations need their coefficient to be a unit, so a map read off a paper over
-`ZZ` passes through `over_field()` first. That stays a visible step: two maps
-over different coefficient domains are different objects here, and the
-arithmetic must not widen one quietly.
+Dilations need their coefficient to be a unit. A map read off a paper over `ZZ`
+passes through `over_field()` where its linear part has a determinant that is
+not a unit, and not otherwise: a unimodular linear part factors over `ZZ`
+itself, which is FAC-1. Where the widening is needed it stays a visible step,
+because two maps over different coefficient domains are different objects here
+and the arithmetic must not widen one quietly.
 
 ---
 

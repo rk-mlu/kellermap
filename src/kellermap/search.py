@@ -514,20 +514,63 @@ class SearchOutcome:
     domain: Domain = CopiedDomain()
 
 
+def _in_domain(domain: Any, entry: sp.Expr) -> Any | None:
+    """Return the entry as a domain element, or ``None`` if it is not one."""
+    try:
+        return domain.from_sympy(entry)
+    except (CoercionFailed, NotImplementedError, ValueError, TypeError):
+        return None
+
+
+def _scaled_terms(
+    monomial: tuple[int, ...],
+    coefficient: Any,
+    scale: Any,
+    reciprocal: Sequence[Any],
+) -> Any:
+    """Return one term of a conjugated component.
+
+    By exponentiation, and against reciprocals formed once by the caller.
+    Until ``0.7.0rc9`` this divided once per unit of exponent, the same shape
+    an audit of ``0.7.0rc7`` found in the evaluator and which survived here
+    because only the evaluator was looked at.
+
+    Module level and not a closure, since ``0.7.0rc10``, so that a test can
+    call it with a value that counts how it is combined. The version that
+    covered it before asserted the result, which the loop it replaced produces
+    just as well: an audit of ``0.7.0rc9`` put the old loop back and the test
+    stayed green.
+    """
+    value = coefficient * scale
+    for index, exponent in enumerate(monomial):
+        if exponent:
+            value = value * reciprocal[index] ** exponent
+
+    return value
+
+
 def conjugate(source: PolynomialMap, signs: Sequence[sp.Expr]) -> PolynomialMap:
     """Return ``D F D^-1`` for a diagonal ``D`` of non-zero constants.
 
     A change of coordinates and not a presentation change: it rewrites the
     polynomials. Degree, order and filtration degree survive, and a collision
-    carries over with its points and image sign-flipped, so two conjugate maps
-    are the same map in different coordinates. A diagonal of ones and minus
-    ones is its own inverse; a general one is not, which is why the
-    inverse is taken and not reused.
+    carries over with its points and image scaled by the entries, so two
+    conjugate maps are the same map in different coordinates. A diagonal of
+    ones and minus ones is its own inverse; a general one is not, which is why
+    the inverse is taken and not reused.
 
     The Jacobian determinant survives as a *function*, in the new coordinates:
-    it becomes ``det J(F)`` composed with ``D``. For a Keller map that is the
-    same constant; for a map whose determinant is not constant the two are
-    equal only up to the sign flips.
+    ``G(X) = D F(D^-1 X)`` gives ``det J(G) = det J(F)`` composed with
+    ``D^-1``. For a Keller map that is the same constant; for a map whose
+    determinant is not constant the two are equal only up to the entries.
+
+    Composed with ``D^-1`` and not with ``D``, which is what this said, and
+    CNJ-2 with it, until ``0.7.0rc10``. Over the entries ``(2, 3)`` the two
+    read ``1 + x y**3 / 27`` and ``1 + 108 x y**3``, so the difference is not
+    a matter of phrasing. The test that should have caught it used a diagonal
+    of signs, where ``D`` and ``D^-1`` coincide, so it could not: an audit of
+    ``0.7.0rc9`` found the error by using a diagonal that is not an
+    involution.
 
     The admissible diagonal is CNJ-1, and it has been its own obligation since
     ``0.7.0rc9``. It was read as part of SEA-5 here until then, and had not
@@ -578,12 +621,18 @@ def conjugate(source: PolynomialMap, signs: Sequence[sp.Expr]) -> PolynomialMap:
         scale = None
 
     if scale is None:
-        raise ValueError(f"The entries {entries} do not lie in {domain}.")
-
-    if any(value == domain.zero for value in scale):
+        outside = [entry for entry in entries if _in_domain(domain, entry) is None]
         raise ValueError(
-            f"Expected {source.dimension} non-zero entries, got {entries}."
+            f"The entries {tuple(outside)} do not lie in {domain}; "
+            f"conjugating by {entries} needs every entry to."
         )
+
+    for entry, value in zip(entries, scale, strict=True):
+        if value == domain.zero:
+            raise ValueError(
+                f"The entry {entry} is zero in {domain}, so the diagonal "
+                f"{entries} is not invertible there."
+            )
 
     # Asked of the domain, since ``0.7.0rc8``, and not by testing the entry
     # against ``1`` and ``-1``. Those are the units of ``ZZ`` and of nothing
@@ -612,15 +661,7 @@ def conjugate(source: PolynomialMap, signs: Sequence[sp.Expr]) -> PolynomialMap:
     reciprocal = [domain.exquo(domain.one, value) for value in scale]
 
     def scaled(monomial: tuple[int, ...], coefficient: Any, position: int) -> Any:
-        # By exponentiation, and against reciprocals formed once. Until
-        # ``0.7.0rc9`` this divided once per unit of exponent, which is the
-        # same shape an audit of ``0.7.0rc7`` found in the evaluator and which
-        # survived here because only the evaluator was looked at.
-        value = coefficient * scale[position]
-        for index, exponent in enumerate(monomial):
-            if exponent:
-                value = value * reciprocal[index] ** exponent
-        return value
+        return _scaled_terms(monomial, coefficient, scale[position], reciprocal)
 
     return PolynomialMap.from_ring(
         ring,
@@ -647,7 +688,10 @@ def diagonal_matching(
     ``d_i * prod(d_k ^ e_k)``, so each monomial of each component is one
     equation. It is heavily overdetermined -- nineteen components against
     nineteen unknowns for the milestone target -- so ``D`` is read off rather
-    than fitted, which is what makes the comparison of SEA-5 evidence.
+    than fitted. That mattered while the diagonal stood in SEA-5; since work
+    package 10 it does not, and this function carries no obligation at all. It
+    answers the diagnostic question of how two chains that are the same
+    reduction differ, and nothing ``verify()`` asks.
 
     Both maps must already list their generators in the same order. Use
     ``PolynomialMap.reordered`` first, per SEA-4.

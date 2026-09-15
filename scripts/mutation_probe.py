@@ -578,6 +578,15 @@ PROBES: tuple[Probe, ...] = (
         "        pivot = None",
     ),
     Probe(
+        "MAP-3",
+        "conjugation exponentiates instead of dividing per unit",
+        "src/kellermap/search.py",
+        "        if exponent:\n"
+        "            value = value * reciprocal[index] ** exponent",
+        "        for _ in range(exponent):\n"
+        "            value = value * reciprocal[index]",
+    ),
+    Probe(
         "FAC-1",
         "the fold is not run over a domain with zero divisors",
         "src/kellermap/linear.py",

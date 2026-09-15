@@ -341,8 +341,10 @@ the way they are precisely for that reason.
 ```
 
 They are functions, so importing `kellermap` builds nothing, and each returns
-its map over the domain its coefficients imply. Use `over_field` where a field
-is needed:
+its map over the domain its coefficients imply. Use `over_field` where the
+domain a map is read over does not hold the reciprocals an operation needs --
+a dilation by a non-unit, most often. It is not needed merely because a domain
+is not a field: a unimodular linear part over `ZZ` normalizes over `ZZ`.
 
 ```python
 >>> examples.parametric_shear().ring.domain

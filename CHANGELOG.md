@@ -4,6 +4,78 @@ Notable changes per release. The milestone plan and its reasoning live in
 `docs/roadmap.md`, the binding obligations of the verification surface in
 `docs/contracts.md`.
 
+## 0.7.0rc10
+
+An audit of `0.7.0rc9` found two release blockers and five smaller defects.
+Both blockers are in the ring-general factorization `0.7.0rc9` introduced, and
+the first of them is a domain predicate that was trusted instead of checked.
+
+**The Euclidean fold ran over rings with zero divisors.** It was gated on
+`domain.is_PID`, and SymPy reports that for `Z/6Z`, which is not an integral
+domain at all. The fold then divided by a zero divisor and SymPy's
+`NotInvertible` escaped as a raw exception: 48 invertible matrices over `Z/6Z`
+were refused that way, 320 over `Z/10Z` and 768 over `Z/12Z`. All 13296
+invertible `2x2` matrices over `Z/4`, `Z/6`, `Z/8`, `Z/9`, `Z/10` and `Z/12`
+factor now, each reconstructing to the matrix it was given.
+
+The gate is a measured predicate rather than a reported one: SymPy calls
+`Z/nZ` a finite field for every `n` and sets `is_Field` only when `n` is
+prime, so a finite-field domain that is not a field is a residue ring with a
+composite modulus. Both attempts at a unit pivot also work on a copy and
+commit only on success, and the fold reports failure rather than raising, so a
+domain predicate that is wrong again costs a refusal and not a crash.
+
+**A unit determinant was not enough over `ZZ[T]`.** The same gate excluded
+every domain that is not a principal ideal domain, so `[[T, T+1], [T-1, T]]`,
+of determinant one, was refused although `R1 <- R1 - R2` gives a unit pivot
+immediately. A bounded search over row combinations now runs on every domain,
+after the fold and before the refusal. It is incomplete at any bound and FAC-2
+says so; the refusal reports that no unit pivot was reached and names the two
+readings, rather than asserting that the determinant is not a unit, which is
+what `0.7.0rc9` asserted of every refusal including of matrices in `GL_2(ZZ)`.
+
+**`LinearStep.normalize` inverts a factorization, not a matrix.** It went
+through `domain.get_field()` and `DomainMatrix.inv()`, and for `Z/4Z` the
+field of fractions is that ring again, so a shear of unit determinant raised
+`DMNotAField` -- with `over_field()` unable to help, since the widening is not
+one. Every `LinearFactor` exhibits its own inverse, so the inverse of the
+linear part is the reversed product of the inverses of its factors. Nothing
+inverts a matrix, no adjugate is needed and no dimension bound with it, and
+the supported boundary is exactly `factorize`'s, stated once.
+
+**Two new obligation families.** Four mutation probes carried clauses that do
+not cover them: three about `PolynomialMap` arithmetic under `DOM-4`, which
+says a `SearchOutcome` carries the ring it searched, and one about what
+`factorize` can build under `LIN-2`, which says an exhibited inverse undoes
+its transformation. A full sweep still caught every mutation, but a targeted
+run of either selector meant less than its name. `MAP-1` to `MAP-3` cover
+evaluation in the coefficient domain, the substitution fallback outside it,
+and that neither is linear in the exponent; `FAC-1` and `FAC-2` cover the unit
+pivot and the bounded search. All 61 probe identifiers were then read against
+the clauses they name; the other 55 hold.
+
+**CNJ-2 had the coordinate change backwards.** `conjugate` computes
+`G(X) = D F(D^-1 X)`, so the determinant composes with `D^-1`; the clause and
+the docstring said `D`. Over the entries `(2, 3)` the two read
+`1 + x y^3 / 27` and `1 + 108 x y^3`. The implementation was right throughout.
+The test covering it used a diagonal of signs, where `D` and `D^-1` coincide,
+so it could not have found the error.
+
+**A second test asserted a value where the claim was a complexity.** The
+scaling loop in `conjugate` was covered by its result, which the loop it
+replaced produces just as well, and the docstring said a mutation probe
+covered the loop where none existed. The loop is now a module-level
+`_scaled_terms` exercised with a value that counts how it is combined, and it
+has a probe.
+
+**Documentation.** `docs/contracts.md`, `docs/architecture.md` and
+`docs/api.md` all still required `over_field()` for every map over `ZZ`, which
+`0.7.0rc9` had made false and tested false. `diagonal_matching` and two tests
+still spoke of SEA-5 in the present tense. The `CNJ` section was missing from
+the contract page's table of contents. And CNJ-1 promised that every refusal
+names the entry, where only the non-unit path did; the conversion and zero
+paths named the whole tuple.
+
 ## 0.7.0rc9
 
 An audit of `0.7.0rc8` found two release blockers and four smaller defects, all

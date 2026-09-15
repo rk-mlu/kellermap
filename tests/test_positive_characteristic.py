@@ -27,10 +27,12 @@ from kellermap import (
     PolynomialMap,
     VerificationError,
     conjugate,
+    over_field,
     search,
 )
 from kellermap.bcw.step import BCWStep, Fresh
 from kellermap.polynomial_map import _evaluate_at
+from kellermap.search import _scaled_terms
 
 
 def squares() -> PolynomialMap:
@@ -293,7 +295,7 @@ def test_conjugate_refuses_an_entry_that_is_zero_in_the_field() -> None:
     ``0.7.0rc6`` compared the entry to zero as an expression, so it reached
     SymPy's raw ``NotInvertible: zero divisor`` from inside the division.
     """
-    with pytest.raises(ValueError, match="non-zero entries"):
+    with pytest.raises(ValueError, match="The entry 2 is zero in GF\\(2\\)"):
         conjugate(squares(), (1, 2, 1))
 
 
@@ -473,22 +475,6 @@ def test_evaluation_does_not_cost_one_multiplication_per_degree() -> None:
     assert source(sp.Integer(2)) == sp.ImmutableMatrix([[2**64]])
 
 
-def test_conjugation_does_not_divide_once_per_degree() -> None:
-    """The same shape in `conjugate`, which `0.7.0rc8` left behind.
-
-    Only the evaluator was looked at, so the scaling loop kept dividing once
-    per unit of exponent. Asserted on the value rather than on a count,
-    because the reciprocal is formed outside the loop and the result is what
-    a caller sees; the loop itself is checked by the mutation probe.
-    """
-    ring, x = sp.ring("x", sp.QQ)
-    source = PolynomialMap.from_ring(ring, (x + x**64,))
-
-    changed = conjugate(source, (2,))
-
-    assert changed.components == (x.as_expr() + x.as_expr() ** 64 / 2**63,)
-
-
 def test_a_zero_exponent_is_skipped_rather_than_raised_to() -> None:
     """``domain.zero ** 0`` raises over every composite domain here.
 
@@ -499,6 +485,64 @@ def test_a_zero_exponent_is_skipped_rather_than_raised_to() -> None:
     source = PolynomialMap.from_ring(ring, (x + y**2, y))
 
     assert source(sp.Integer(0), sp.Integer(0)) == sp.ImmutableMatrix([[0], [0]])
+
+
+def test_conjugation_does_not_divide_once_per_degree() -> None:
+    """The same shape in `conjugate`, counted rather than asserted on the value.
+
+    `0.7.0rc8` left the scaling loop dividing once per unit of exponent
+    because only the evaluator had been looked at. `0.7.0rc9` fixed the loop
+    and covered it with the value alone -- which the old loop also produces,
+    so an audit put the old body back and the test stayed green. Its docstring
+    also said the loop was covered by a mutation probe, and no such probe
+    existed. Both claims were mine and neither was checked.
+
+    So this counts. `_scaled_terms` is the loop, and a coefficient that
+    records how it is combined separates one exponentiation from sixty-four
+    multiplications.
+    """
+    ring, x = sp.ring("x", sp.QQ)
+    reciprocal = CountingValue(sp.QQ(1, 2))
+    CountingValue.multiplications = 0
+    CountingValue.powers = 0
+
+    value = _scaled_terms((64,), sp.QQ(1), sp.QQ(1), [reciprocal])
+
+    assert _plain(value) == sp.QQ(1, 2**64)
+    assert CountingValue.powers == 1
+    assert CountingValue.multiplications <= 4
+
+    source = PolynomialMap.from_ring(ring, (x + x**64,))
+    changed = conjugate(source, (2,))
+
+    assert changed.components == (x.as_expr() + x.as_expr() ** 64 / 2**63,)
+
+
+def test_conjugation_composes_the_determinant_with_the_inverse_diagonal() -> None:
+    """CNJ-2, with a diagonal that is not an involution.
+
+    `conjugate` computes `G(X) = D F(D^-1 X)`, so the determinant composes
+    with `D^-1`. The clause and the docstring both said `D` until
+    `0.7.0rc10`, and the test covering them used a diagonal of signs -- where
+    `D` and `D^-1` are the same matrix, so it could not tell the two apart.
+    """
+    first, second = sp.symbols("x y")
+    source = over_field(
+        PolynomialMap((first, second), (first + first**2 * second**3, second))
+    )
+
+    changed = conjugate(source, (2, 3))
+
+    assert sp.expand(changed.determinant()) == sp.expand(
+        source.determinant().subs(
+            {first: first / 2, second: second / 3}, simultaneous=True
+        )
+    )
+    assert sp.expand(changed.determinant()) != sp.expand(
+        source.determinant().subs(
+            {first: 2 * first, second: 3 * second}, simultaneous=True
+        )
+    )
 
 
 def test_conjugate_accepts_a_unit_of_a_domain_that_is_not_a_field() -> None:
