@@ -51,8 +51,8 @@ compression and to thirty-four with the symmetric lift. The audits of milestone
 forty-two. That sentence had lost a conjunction and named two counts in a row
 without one until ``0.6.0rc6``. The audit of ``0.7.0rc1`` added three for the
 descent, which makes forty-five. The audit of ``0.7.0rc6`` added seven and the
-audit of ``0.7.0rc7`` two more and the audit of ``0.7.0rc8`` three,
-which makes fifty-seven. The seven: one each for
+audit of ``0.7.0rc7`` two more, the audit of ``0.7.0rc8`` three and the
+audit of ``0.7.0rc9`` four, which makes sixty-one. The seven: one each for
 COL-7, BCW-12, LIN-6, SEA-13, SEA-14, UNT-1 and the evaluation under DOM-4.
 Those are the promises the four ring-semantics blockers of that audit turned
 out to rest on, and none of the five files they live in had a selector before
@@ -532,14 +532,14 @@ PROBES: tuple[Probe, ...] = (
         "    # UNT-6 after UNT-1",
     ),
     Probe(
-        "DOM-4",
+        "MAP-1",
         "evaluation happens in the coefficient domain",
         "src/kellermap/polynomial_map.py",
         "        evaluated = self._evaluate_in_domain(args)",
         "        evaluated = None",
     ),
     Probe(
-        "DOM-4",
+        "MAP-2",
         "a point outside the domain falls back over every domain",
         "src/kellermap/polynomial_map.py",
         "            except (\n"
@@ -564,14 +564,14 @@ PROBES: tuple[Probe, ...] = (
         "",
     ),
     Probe(
-        "LIN-2",
+        "FAC-1",
         "a column without a unit pivot is folded to one",
         "src/kellermap/linear.py",
         "    if pivot is None and domain.is_PID:",
         "    if False:",
     ),
     Probe(
-        "DOM-4",
+        "MAP-3",
         "the evaluator exponentiates instead of multiplying per unit",
         "src/kellermap/polynomial_map.py",
         "            if exponent:\n                term = term * value**exponent",

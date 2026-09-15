@@ -169,6 +169,8 @@ the implementation is required to guarantee.
 - [Search](#search)
 - [Peeling](#peeling)
 - [The untargeted search](#the-untargeted-search)
+- [Evaluating and factorizing](#evaluating-and-factorizing)
+- [Conjugation by a diagonal](#conjugation-by-a-diagonal)
 - [The coefficient ring](#the-coefficient-ring)
 - [Errors](#errors)
 - [Deliberate non-obligations](#deliberate-non-obligations)
@@ -2422,6 +2424,80 @@ The transported collision is a second such fact. `Reduction.transport()` carries
 Alpöge's three points to `k^19` by RED-5, and the result, reordered, is compared
 against the published table. The two facts are independent: one is about the
 map, the other about three points of it.
+
+## Evaluating and factorizing
+
+Two families for operations that carry no certificate and are relied on by
+those that do. Neither is a step obligation; both name promises the code makes
+to its own callers, and both exist because mutation probes were filed against
+clauses that did not cover them. `DOM-4` says a `SearchOutcome` carries the
+ring it searched and was carrying three probes about arithmetic; `LIN-2` says
+an exhibited inverse undoes its transformation and was carrying one about what
+`factorize` can build. An audit of `0.7.0rc9` found both, and named the cost:
+the full sweep still catches every mutation, but a targeted run of `DOM-4` or
+`LIN-2` no longer means what its name says.
+
+**MAP-1 — Evaluation happens in the coefficient domain.** `F(point)` converts
+every coordinate into `ring.domain` and evaluates there, so the answer is the
+value of the map at that point and not a substitution into its expressions.
+Over `GF(2)` the map `X + X^2` sends `1` to `0`, where substituting gives `2`.
+
+**MAP-2 — A point outside the domain is substituted into instead.** Where any
+coordinate does not convert, every coordinate is substituted and no coordinate
+is reduced. All or nothing: a mixed evaluation would reduce part of a sum
+modulo the characteristic and leave the rest, which is neither answer.
+
+The fallback is the case a point genuinely outside the domain needs. Gao's
+collision over `Q(sqrt(-23))` carries a radical `QQ` does not hold, and a field
+into which `QQ` embeds has characteristic zero, so substitution is right there.
+Which exceptions "does not convert" covers is measured and not assumed: SymPy
+raises `CoercionFailed` over the atomic domains, a bare `ValueError` over every
+polynomial and fraction domain, and `NotImplementedError` over a fraction field
+for an argument that is not an expression.
+
+**MAP-3 — Evaluation is not linear in the exponent.** A monomial of degree `d`
+costs one exponentiation per variable and not `d` multiplications. A zero
+exponent is skipped rather than raised to, which is also what keeps it correct:
+`domain.zero ** 0` raises over every polynomial and fraction domain here.
+
+The same holds of the scaling in `conjugate`, which is CNJ-1's function and
+this clause's arithmetic.
+
+**FAC-1 — A pivot is a unit of the coefficient domain.** The elimination in
+`factorize` divides only by units, asked of the domain with `exquo`. Over a
+field every non-zero entry answers, so this is the same question there and a
+stronger one over a ring.
+
+Where no entry of a column is a unit, one is sought: the determinant lies in
+the ideal the column generates, so a unit determinant forces a unit greatest
+common divisor. Two attempts, in order. A Euclidean fold, complete where it
+applies, which is over an integral domain with a Euclidean division. Then a
+bounded search over row combinations, which applies everywhere.
+
+Both work on a copy and commit only on success, so a failed attempt leaves the
+elimination as it was. Neither trusts a domain predicate: `0.7.0rc9` gated the
+fold on `domain.is_PID`, which SymPy reports for `Z/6Z`, and the fold divided
+by a zero divisor.
+
+**FAC-2 — The search for a unit pivot is bounded, and the refusal says so.**
+Over a domain that is not a field, `factorize` may refuse a matrix that does
+factor. A refusal therefore reports that no unit pivot was reached and names
+the two readings — the matrix is not invertible there, or it is and the search
+did not find the combination — rather than asserting either.
+
+This is the supported boundary of `factorize`, and of `LinearStep.normalize`
+with it, since the normalization inverts a factorization rather than a matrix.
+It is one boundary and not two: `0.7.0rc9` inverted through
+`domain.get_field()`, which for `Z/nZ` returns that ring again and raised
+`DMNotAField` on a shear of unit determinant.
+
+The bound is measured and recorded in `docs/roadmap.md`. It reaches a unit
+pivot for every invertible `2x2` over `Z/4`, `Z/6`, `Z/8`, `Z/9`, `Z/10` and
+`Z/12` — 13296 matrices — and for the `ZZ[T]` matrix of unit determinant an
+audit of `0.7.0rc9` gave, which `0.7.0rc9` refused. It is not a proof for any
+of them.
+
+---
 
 ## Conjugation by a diagonal
 
