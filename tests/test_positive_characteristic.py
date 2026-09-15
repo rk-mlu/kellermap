@@ -631,28 +631,31 @@ def test_a_determinant_that_is_not_a_unit_is_still_refused() -> None:
     """
     ring = sp.ring("x,y", sp.ZZ)[0]
 
-    with pytest.raises(ValueError, match="over_field"):
+    with pytest.raises(ValueError, match="No unit pivot was reached"):
         LinearAutomorphism.factorize(ring, sp.Matrix([[2, 0], [0, 1]]))
 
 
-def test_a_domain_that_is_not_a_principal_ideal_domain_attempts_nothing() -> None:
-    """Over `ZZ[T]` there is no Euclidean algorithm to run.
+def test_a_domain_without_a_euclidean_algorithm_still_reaches_a_unit() -> None:
+    """`ZZ[T]` is not a principal ideal domain and the bounded search runs there.
 
-    A unit pivot that is already present still works, so the boundary is about
-    the folding and not about the domain as such.
+    `0.7.0rc9` gated the whole of the pivot work on `domain.is_PID`, so this
+    matrix was refused although its determinant is one and `R1 <- R1 - R2`
+    gives the unit pivot straight away. An audit of `0.7.0rc9` gave it.
+
+    The negative control is the second matrix, whose determinant `2 - T**2` is
+    not a unit of `ZZ[T]`: no combination can help, and the refusal stands.
     """
     parameter = sp.Symbol("T")
     ring = sp.ring("x,y", sp.ZZ.poly_ring(parameter))[0]
 
     assert not ring.domain.is_PID
 
-    present = sp.Matrix([[1, parameter], [0, 1]])
+    given = sp.Matrix([[parameter, parameter + 1], [parameter - 1, parameter]])
 
-    assert (
-        sp.Matrix(LinearAutomorphism.factorize(ring, present).matrix(ring)) == present
-    )
+    assert sp.expand(given.det()) == 1
+    assert sp.Matrix(LinearAutomorphism.factorize(ring, given).matrix(ring)) == given
 
-    with pytest.raises(ValueError, match="over_field"):
+    with pytest.raises(ValueError, match="No unit pivot was reached"):
         LinearAutomorphism.factorize(ring, sp.Matrix([[2, parameter], [parameter, 1]]))
 
 
@@ -686,3 +689,93 @@ def test_conjugate_refuses_every_zero_divisor_as_a_value_error(modulus: int) -> 
             continue
         with pytest.raises(ValueError):
             conjugate(source, (entry,))
+
+
+@pytest.mark.parametrize("modulus", [4, 6])
+def test_every_invertible_matrix_over_a_residue_ring_factors(modulus: int) -> None:
+    """FAC-1 over a ring that is not an integral domain.
+
+    `0.7.0rc9` gated the pivot work on `domain.is_PID`, and SymPy reports that
+    for `Z/6Z`. The fold then divided by a zero divisor and `NotInvertible`
+    escaped: an audit counted 48 invertible matrices over `Z/6Z` refused that
+    way, 320 over `Z/10Z` and 768 over `Z/12Z`.
+
+    Two moduli and not six: `Z/4Z` has zero divisors and a prime-power
+    modulus, `Z/6Z` has two distinct prime factors, and between them they
+    reach both shapes. The larger moduli are 13296 matrices and belong in
+    neither suite.
+    """
+    ring = sp.ring("x,y", sp.GF(modulus))[0]
+    domain = ring.domain
+    invertible = 0
+
+    for entries in product(range(modulus), repeat=4):
+        given = sp.Matrix(2, 2, list(entries))
+        if sp.gcd(int(given.det()) % modulus, modulus) != 1:
+            continue
+        invertible += 1
+        normalized = sp.Matrix(
+            2,
+            2,
+            [
+                domain.to_sympy(domain.from_sympy(given[row, column]))
+                for row in range(2)
+                for column in range(2)
+            ],
+        )
+
+        factored = LinearAutomorphism.factorize(ring, given)
+
+        assert sp.Matrix(factored.matrix(ring)) == normalized
+
+    assert invertible == {4: 96, 6: 288}[modulus]
+
+
+def test_a_shear_over_a_residue_ring_normalizes() -> None:
+    """The second half of the same blocker.
+
+    `LinearStep.normalize` inverted through `domain.get_field()`, which for
+    `Z/4Z` returns that ring again, so a shear of unit determinant raised
+    `DMNotAField`. The advice to call `over_field` cannot help where the
+    widening is not one. Nothing inverts a matrix now: the normalization
+    factors the linear part and inverts the factorization.
+    """
+    ring = sp.ring("x,y", sp.GF(4))[0]
+    first, second = ring.gens
+    source = PolynomialMap.from_ring(ring, (first + 2 * second, second))
+
+    LinearStep.normalize(source).verify()
+
+
+def test_a_column_of_non_units_over_a_residue_ring_factors_in_three() -> None:
+    """The search works past a column that holds no unit at all.
+
+    Over `Z/6Z` the first column here is `(2, 2, 3)`: no entry is a unit, and
+    subtracting one row from another clears an entry without reaching one
+    either, so the search has to carry on rather than stop at the first
+    combination. A `2x2` cannot show that -- a first column of two equal
+    non-units has a determinant that is not a unit -- so the case begins at
+    dimension three.
+
+    It does not cover the skip for a divisor driven to zero, which is what
+    this test was written for and does not do. That branch carries a pragma
+    and `linear.py` says what is and is not known about reaching it.
+    """
+    ring = sp.ring("x,y,z", sp.GF(6))[0]
+    domain = ring.domain
+    given = sp.Matrix([[2, 3, 4], [2, 4, 3], [3, 3, 5]])
+
+    assert sp.gcd(int(given.det()) % 6, 6) == 1
+
+    factored = LinearAutomorphism.factorize(ring, given)
+    normalized = sp.Matrix(
+        3,
+        3,
+        [
+            domain.to_sympy(domain.from_sympy(given[row, column]))
+            for row in range(3)
+            for column in range(3)
+        ],
+    )
+
+    assert sp.Matrix(factored.matrix(ring)) == normalized

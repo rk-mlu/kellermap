@@ -263,9 +263,17 @@ def test_factorize_rejects_the_wrong_shape(ring: object) -> None:
         LinearAutomorphism.factorize(ring, sp.eye(2))
 
 
-def test_factorize_needs_a_field() -> None:
-    """Over ZZ the reciprocal is missing. The message names over_field."""
-    with pytest.raises(ValueError, match="over_field"):
+def test_factorize_refuses_a_column_it_cannot_bring_to_a_unit() -> None:
+    """Over ZZ the column ``(2, 0, 0)`` has gcd two, which is not a unit.
+
+    The message changed at ``0.7.0rc10`` and says less than it used to on
+    purpose. It said the matrix needed the field of fractions, which for this
+    matrix is true and was being asserted of every refusal -- including of
+    matrices in ``GL_2(ZZ)`` whose determinant is one. It now reports what the
+    elimination actually established, that no unit pivot was reached, and
+    names FAC-2 for the two reasons that can produce it.
+    """
+    with pytest.raises(ValueError, match="No unit pivot was reached in column 0"):
         LinearAutomorphism.factorize(QUADRATIC.ring, sp.diag(2, 1, 1))
 
 

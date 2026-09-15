@@ -37,6 +37,7 @@ from __future__ import annotations
 from abc import ABC, abstractmethod
 from collections.abc import Iterable, Sequence
 from dataclasses import dataclass
+from itertools import permutations
 from typing import Any, cast
 
 import sympy as sp
@@ -768,6 +769,70 @@ def _unit_pivot_row(
     return None
 
 
+_PIVOT_ROUNDS = 4
+"""How many passes the bounded search makes over the pairs of a column.
+
+A bound and not a proof. Four was chosen against a measurement recorded in
+``docs/roadmap.md``: it reaches a unit pivot for every invertible ``2x2`` over
+``Z/4``, ``Z/6``, ``Z/8``, ``Z/9``, ``Z/10`` and ``Z/12``, and for the
+``ZZ[T]`` matrix an audit of ``0.7.0rc9`` gave. Raising it costs a pass and
+claims nothing more, because the search is incomplete at any bound.
+"""
+
+
+def _has_zero_divisors(domain: Any) -> bool:
+    """Return whether the domain is known to have zero divisors.
+
+    One case, and it is the one that matters: SymPy calls ``Z/nZ`` a finite
+    field for every ``n`` and sets ``is_Field`` only when ``n`` is prime, so a
+    finite-field domain that is not a field is a residue ring with a composite
+    modulus.
+
+    This exists because ``0.7.0rc9`` gated the Euclidean fold on
+    ``domain.is_PID``, and SymPy reports ``is_PID`` for ``Z/6Z``, which is not
+    even an integral domain. The fold then divided by a zero divisor and
+    SymPy's ``NotInvertible`` escaped: an audit of ``0.7.0rc9`` counted 48
+    invertible matrices over ``Z/6Z`` refused that way, 320 over ``Z/10Z`` and
+    768 over ``Z/12Z``. The lesson is wider than the fix: a domain predicate is
+    a claim like any other, and is checked against the domain rather than
+    trusted.
+    """
+    return bool(domain.is_FiniteField) and not bool(domain.is_Field)
+
+
+def _quotient(domain: Any, value: Any, divisor: Any) -> Any | None:
+    """Return the quotient of a division in the domain, or ``None``.
+
+    ``None`` wherever the division cannot be carried out: a divisor that is a
+    zero divisor, a domain without division, a domain whose ``div`` refuses
+    the pair. No caller treats ``None`` as an error -- it means one candidate
+    combination is unavailable and another is tried.
+    """
+    try:
+        quotient, _ = domain.div(value, divisor)
+    except (NotInvertible, ZeroDivisionError, CoercionFailed, NotImplementedError):
+        return None
+
+    return quotient
+
+
+def _record_transvection(
+    matrix: list[list[Any]],
+    operations: list[LinearFactor],
+    owned: PolyRing,
+    target: int,
+    other: int,
+    quotient: Any,
+) -> None:
+    """Subtract ``quotient`` times one row from another, and record it."""
+    domain = owned.domain
+    operations.append(Transvection(owned, target, other, domain.to_sympy(-quotient)))
+    matrix[target] = [
+        value - quotient * subtrahend
+        for value, subtrahend in zip(matrix[target], matrix[other], strict=True)
+    ]
+
+
 def _fold_rows(
     matrix: list[list[Any]],
     target: int,
@@ -775,33 +840,147 @@ def _fold_rows(
     column: int,
     owned: PolyRing,
     operations: list[LinearFactor],
-) -> None:
-    """Replace the two column entries by their gcd and zero, by row operations.
+) -> bool:
+    """Replace the two column entries by their gcd and zero, or report failure.
 
     The Euclidean algorithm, with each division carried out on the whole row
     so that the record stays a product of Gauss generators: a division step is
-    a ``Transvection`` and the exchange that follows it a ``Transposition``.
-    On termination ``target`` holds the greatest common divisor of the two
-    entries and ``other`` holds zero.
+    a ``Transvection`` and the exchange after it a ``Transposition``. On
+    success ``target`` holds the greatest common divisor of the two entries
+    and ``other`` holds zero.
+
+    ``False`` where a division could not be carried out or did not reduce. The
+    caller works on a copy, so a failure costs the copy and nothing else.
+    Since ``0.7.0rc10`` this reports rather than raises: a domain that says it
+    is a principal ideal domain and is not was an audit's first blocker, and
+    the guard is cheaper than the trust.
+
+    Both failure branches carry ``# pragma: no cover``, and the reason is the
+    gate in ``_fold_column``: it admits an integral domain with a Euclidean
+    division, where a division cannot fail and the remainder always reduces.
+    They are kept rather than removed because that gate is exactly the kind of
+    claim that was wrong once. An unreachable guard is cheaper than the crash
+    it would have turned into a refusal.
     """
     domain = owned.domain
     while matrix[other][column] != domain.zero:
-        quotient, remainder = domain.div(matrix[target][column], matrix[other][column])
+        quotient = _quotient(domain, matrix[target][column], matrix[other][column])
+        if quotient is None:  # pragma: no cover - the gate above rules it out
+            return False
         if quotient != domain.zero:
-            operations.append(
-                Transvection(owned, target, other, domain.to_sympy(-quotient))
-            )
-            matrix[target] = [
-                value - quotient * subtrahend
-                for value, subtrahend in zip(matrix[target], matrix[other], strict=True)
-            ]
-        if matrix[target][column] != remainder:  # pragma: no cover - div contract
-            raise ValueError(
-                f"The division of {domain.to_sympy(matrix[target][column])} in "
-                f"{domain} did not leave the remainder it reported."
-            )
+            _record_transvection(matrix, operations, owned, target, other, quotient)
+        elif (
+            matrix[target][column] == matrix[other][column]
+        ):  # pragma: no cover - the gate above rules it out
+            return False
         operations.append(Transposition(owned, target, other))
         matrix[target], matrix[other] = matrix[other], matrix[target]
+
+    return True
+
+
+def _fold_column(
+    matrix: list[list[Any]],
+    column: int,
+    owned: PolyRing,
+    operations: list[LinearFactor],
+) -> int | None:
+    """Fold the column to its gcd and return the row that holds a unit.
+
+    Complete where it applies: the determinant lies in the ideal the column
+    generates, so a unit determinant leaves a unit gcd. It applies over an
+    integral domain with a Euclidean division, and nowhere else.
+    """
+    domain = owned.domain
+    if not domain.is_PID or _has_zero_divisors(domain):
+        return None
+
+    trial = [row[:] for row in matrix]
+    recorded: list[LinearFactor] = []
+    rows = [
+        row for row in range(column, len(trial)) if trial[row][column] != domain.zero
+    ]
+    for other in rows[1:]:
+        if not _fold_rows(  # pragma: no cover - the gate above rules it out
+            trial, rows[0], other, column, owned, recorded
+        ):
+            return None
+
+    pivot = _unit_pivot_row(trial, column, domain)
+    if pivot is None:
+        return None
+
+    matrix[:] = trial
+    operations.extend(recorded)
+
+    return pivot
+
+
+def _search_unit_pivot(
+    matrix: list[list[Any]],
+    column: int,
+    owned: PolyRing,
+    operations: list[LinearFactor],
+) -> int | None:
+    """Look for a row combination that makes a unit, within a bounded search.
+
+    Every domain, including those no Euclidean algorithm is available over.
+    For each ordered pair of rows it tries subtracting one, minus one, and the
+    quotient the domain's division reports, and stops at the first combination
+    whose entry is a unit.
+
+    Bounded and therefore incomplete, and that is the supported boundary of
+    ``factorize`` over a domain that is not a field. It is stated here, in the
+    refusal ``_bring_unit_pivot`` raises, and in ``docs/contracts.md`` under
+    FAC-2, because the refusal of ``0.7.0rc9`` claimed something false about
+    the determinant instead.
+
+    Works on a copy and commits only on success, so a search that finds
+    nothing leaves the elimination exactly as it was.
+
+    The skip for a divisor the search has driven to zero carries a
+    ``# pragma: no cover`` and a weaker justification than the others on this
+    page. It is not ruled out by an obligation; it was not reached, by any of
+    the 13296 invertible ``2x2`` matrices over the residue rings or by 300000
+    random invertible ``3x3`` over ``Z/6Z``. The ordering of the pairs seems to
+    be why -- a row is used as a target again before it is offered as a
+    divisor -- but that is an observation and not an argument, so the guard
+    stays. Dividing by an entry this loop has just zeroed would be the same
+    class of defect as the one that made ``0.7.0rc9``'s fold crash.
+    """
+    domain = owned.domain
+    trial = [row[:] for row in matrix]
+    recorded: list[LinearFactor] = []
+    rows = [
+        row for row in range(column, len(trial)) if trial[row][column] != domain.zero
+    ]
+
+    for _ in range(_PIVOT_ROUNDS):
+        progressed = False
+        for target, other in permutations(rows, 2):
+            divisor = trial[other][column]
+            if divisor == domain.zero:  # pragma: no cover - not reached, see below
+                continue
+            candidates = [domain.one, -domain.one]
+            quotient = _quotient(domain, trial[target][column], divisor)
+            if quotient is not None and quotient != domain.zero:
+                candidates.append(quotient)
+            for candidate in candidates:
+                if (
+                    candidate * divisor == domain.zero
+                ):  # pragma: no cover - no candidate annihilates a non-zero divisor
+                    continue
+                _record_transvection(trial, recorded, owned, target, other, candidate)
+                progressed = True
+                if _is_unit(domain, trial[target][column]):
+                    matrix[:] = trial
+                    operations.extend(recorded)
+                    return target
+                break
+        if not progressed:
+            return None
+
+    return None
 
 
 def _bring_unit_pivot(
@@ -812,38 +991,31 @@ def _bring_unit_pivot(
 ) -> None:
     """Put a unit into ``matrix[column][column]``, or raise.
 
-    A unit and not merely a non-zero entry, which is the whole of what
-    ``0.7.0rc9`` changes here. Over a field the two coincide and the first
-    branch answers. Over a principal ideal domain the column is folded
-    pairwise by the Euclidean algorithm until one entry is the greatest common
-    divisor of them all; the determinant lies in the ideal that column
-    generates, so a matrix of unit determinant leaves a unit there. Anywhere
-    else nothing is attempted, because nothing general is available.
+    A unit and not merely a non-zero entry. Over a field the two coincide and
+    the first line answers. Otherwise two attempts in order: the Euclidean
+    fold, which is complete where it applies, and then the bounded search,
+    which applies everywhere and is complete nowhere.
     """
     domain = owned.domain
     pivot = _unit_pivot_row(matrix, column, domain)
 
-    if pivot is None and domain.is_PID:
-        rows = [
-            row
-            for row in range(column, len(matrix))
-            if matrix[row][column] != domain.zero
-        ]
-        for other in rows[1:]:
-            _fold_rows(matrix, rows[0], other, column, owned, operations)
-        pivot = _unit_pivot_row(matrix, column, domain)
+    if pivot is None:
+        pivot = _fold_column(matrix, column, owned, operations)
 
     if pivot is None:
-        if any(
-            matrix[row][column] != domain.zero for row in range(column, len(matrix))
+        pivot = _search_unit_pivot(matrix, column, owned, operations)
+
+    if pivot is None:
+        if all(
+            matrix[row][column] == domain.zero for row in range(column, len(matrix))
         ):
-            raise ValueError(
-                f"No unit pivot is available in column {column} over {domain}, "
-                "so the matrix does not factor into Gauss generators there. "
-                "A matrix whose determinant is not a unit needs the field of "
-                "fractions; see over_field()."
-            )
-        raise ValueError("The matrix is singular and does not lie in GL_n(k).")
+            raise ValueError("The matrix is singular and does not lie in GL_n(k).")
+        raise ValueError(
+            f"No unit pivot was reached in column {column} over {domain}. "
+            "Either the matrix is not invertible there, or it is and this "
+            "elimination did not find the row combination that shows it: over "
+            "a domain that is not a field the search is bounded. See FAC-2."
+        )
 
     if pivot != column:
         operations.append(Transposition(owned, column, pivot))

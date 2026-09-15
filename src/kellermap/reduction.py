@@ -83,30 +83,42 @@ def _linear_part(source: PolynomialMap) -> DomainMatrix:
     )
 
 
-def _inverted_linear_part(source: PolynomialMap) -> sp.Matrix | None:
-    """Return the inverse of ``J(F)(0)``, or ``None`` where it is singular.
+def _inverted_linear_part(source: PolynomialMap) -> LinearAutomorphism | None:
+    """Return ``J(F)(0)^-1`` as a factorization, or ``None`` if it has none.
 
-    Inverted in the field of fractions of the coefficient domain, which for a
-    finite field is that field. Singularity is decided there too: over
-    ``GF(2)`` the determinant ``2`` is zero and ``sp.Matrix.det()`` said it was
-    not.
+    By factoring ``J(F)(0)`` and inverting the factorization, since
+    ``0.7.0rc10``: every ``LinearFactor`` exhibits its own inverse, so the
+    inverse of a product is the reversed product of the inverses, and no
+    matrix is inverted anywhere.
 
-    The result comes back as a SymPy matrix, because ``factorize`` is where
-    membership in the domain is decided, and it has the message for an entry
-    that is not in it. Over ``ZZ`` that division of labour is what lets a
-    unimodular linear part through: the inverse is formed over ``QQ``, comes
-    back integral, and ``factorize`` finds every entry in ``ZZ``.
+    That replaces ``domain.get_field()`` followed by ``DomainMatrix.inv()``,
+    which had two defects and one of them fatal. Over ``Z/4Z`` the "field of
+    fractions" is that ring again, so inverting there raised ``DMNotAField``
+    on a shear whose determinant is one -- an audit of ``0.7.0rc9`` found it,
+    and pointed out that the ``over_field()`` advice cannot help where the
+    widening is not a widening. The second defect was a boundary of its own to
+    document, since inverting over a non-field needs the adjugate and the
+    adjugate needs a dimension it is affordable at. Both go: the supported
+    boundary is now exactly ``factorize``'s, stated once under FAC-2.
+
+    ``None`` where no factorization exists, which covers a singular matrix and
+    a matrix whose determinant is not a unit of the domain. The caller says
+    which of its own obligations that breaks.
     """
-    domain = source.ring.domain
-    field = domain.get_field()
-    matrix = _linear_part(source).convert_to(field)
+    matrix = _linear_part(source)
+    entries = sp.Matrix(
+        [
+            [source.ring.domain.to_sympy(entry) for entry in row]
+            for row in matrix.to_list()
+        ]
+    )
 
-    if matrix.det() == field.zero:
+    try:
+        factored = LinearAutomorphism.factorize(source.ring, entries)
+    except ValueError:
         return None
 
-    inverse = matrix.inv().to_list()
-
-    return sp.Matrix([[field.to_sympy(entry) for entry in row] for row in inverse])
+    return LinearAutomorphism(factor.inverse() for factor in reversed(factored.factors))
 
 
 def _same_in_domain(ring: PolyRing, left: sp.Expr, right: sp.Expr) -> bool:
@@ -292,15 +304,14 @@ class LinearStep:
         inverse = _inverted_linear_part(source)
         if inverse is None:
             raise ValueError(
-                "The linear part at the origin is singular; the map is not "
-                "invertible there and Proposition (1.1) does not apply."
+                "The linear part at the origin does not factor over "
+                f"{source.ring.domain}, so Proposition (1.1) does not apply "
+                "here: it is singular, or its determinant is not a unit of "
+                "the domain, or it is invertible and the bounded search of "
+                "FAC-2 did not reach a unit pivot."
             )
 
-        return cls.build(
-            source,
-            LinearAutomorphism.factorize(source.ring, inverse),
-            normalizing=True,
-        )
+        return cls.build(source, inverse, normalizing=True)
 
     # ----------------------------------------------------------------------
     # Inspection
@@ -456,8 +467,9 @@ class LinearStep:
 
         ring = self._source.ring
         declared = sp.Matrix(self._transformation.matrix(ring))
+        expected = sp.Matrix(inverse.matrix(ring))
         if not all(
-            _same_in_domain(ring, declared[row, column], inverse[row, column])
+            _same_in_domain(ring, declared[row, column], expected[row, column])
             for row in range(self._source.dimension)
             for column in range(self._source.dimension)
         ):

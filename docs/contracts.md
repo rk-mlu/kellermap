@@ -358,9 +358,17 @@ records the row operations; two factorizations of one matrix are different
 objects and compare unequal, as for `ElementaryAutomorphism`.
 
 **Widening the domain is explicit.** A dilation needs its coefficient to be a
-unit, so a map over `ZZ` has to pass through `over_field()` before it can be
-normalized. Two maps over different domains are different objects here, and
-the arithmetic does not widen one quietly.
+unit. Over `ZZ` that admits every unimodular matrix without widening anything,
+and refuses one whose determinant is `2`; `over_field()` is for the second case
+and not for the domain as such. Two maps over different domains are different
+objects here, and the arithmetic does not widen one quietly.
+
+This paragraph said every map over `ZZ` has to pass through `over_field()`
+before it can be normalized. That was true of `0.7.0rc8` and false of
+`0.7.0rc9`, which implemented and tested the unimodular case, and the page was
+not revised with the code. An audit of `0.7.0rc9` found the contradiction and
+noted that this page calls itself binding, so the disagreement was not merely
+editorial. FAC-1 and FAC-2 state the boundary that actually holds.
 
 ---
 
