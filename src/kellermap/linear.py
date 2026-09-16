@@ -740,12 +740,17 @@ class LinearAutomorphism:
         return f"LinearAutomorphism(factors={self.factors})"
 
 
-def _is_unit(domain: Any, value: Any) -> bool:
+def is_unit(domain: Any, value: Any) -> bool:
     """Return whether ``value`` has a reciprocal in ``domain``.
 
     Asked of the domain and not of a list of known units. Over a field every
     non-zero element answers yes, so this is the same question the elimination
     always asked there; over a ring it is the stronger one it has to ask.
+
+    Module-level and public since ``0.7.0rc11``, because LIN-6 asks it of a
+    determinant. One answer to one question: a second unit test written in the
+    verifier would be free to drift from this one, which is the defect
+    ``docs/architecture.md`` records for the zero test.
     """
     if value == domain.zero:
         return False
@@ -763,7 +768,7 @@ def _unit_pivot_row(
 ) -> int | None:
     """Return the first row at or below ``column`` whose entry is a unit."""
     for row in range(column, len(matrix)):
-        if _is_unit(domain, matrix[row][column]):
+        if is_unit(domain, matrix[row][column]):
             return row
 
     return None
@@ -972,7 +977,7 @@ def _search_unit_pivot(
                     continue
                 _record_transvection(trial, recorded, owned, target, other, candidate)
                 progressed = True
-                if _is_unit(domain, trial[target][column]):
+                if is_unit(domain, trial[target][column]):
                     matrix[:] = trial
                     operations.extend(recorded)
                     return target

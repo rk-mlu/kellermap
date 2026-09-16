@@ -44,7 +44,7 @@ from .canonical import agree, canonical, is_zero
 from .collision import Collision
 from .elementary import ElementaryAutomorphism, ElementaryFactor
 from .errors import VerificationError
-from .linear import LinearAutomorphism
+from .linear import LinearAutomorphism, is_unit
 from .polynomial_map import PolynomialMap
 
 
@@ -62,16 +62,10 @@ class Provenance(Enum):
     CONSTRUCTED = "constructed"
 
 
-def _linear_part(source: PolynomialMap) -> DomainMatrix:
-    """Return ``J(F)(0)`` as a matrix over the coefficient domain."""
-    ring = source.ring
+def _domain_matrix(ring: PolyRing, entries: sp.Matrix) -> DomainMatrix:
+    """Return the entries as a matrix over the coefficient domain."""
     domain = ring.domain
-    entries = sp.Matrix(
-        source.jacobian().xreplace(
-            {variable: sp.Integer(0) for variable in source.variables}
-        )
-    )
-    size = source.dimension
+    size = entries.shape[0]
 
     return DomainMatrix(
         [
@@ -81,6 +75,32 @@ def _linear_part(source: PolynomialMap) -> DomainMatrix:
         (size, size),
         domain,
     )
+
+
+def _linear_part(source: PolynomialMap) -> DomainMatrix:
+    """Return ``J(F)(0)`` as a matrix over the coefficient domain."""
+    return _domain_matrix(
+        source.ring,
+        sp.Matrix(
+            source.jacobian().xreplace(
+                {variable: sp.Integer(0) for variable in source.variables}
+            )
+        ),
+    )
+
+
+def _is_identity(matrix: DomainMatrix, domain: Any) -> bool:
+    """Return whether the matrix is the identity of its domain.
+
+    Entry by entry and not matrix against matrix. ``DomainMatrix`` compares
+    its representation, so a dense product and the sparse identity of
+    ``DomainMatrix.eye`` hold the same entries and are unequal. A check
+    written as ``product == DomainMatrix.eye(...)`` therefore refuses every
+    step, including the ones it is meant to accept.
+    """
+    size = matrix.shape[0]
+
+    return bool(matrix.to_list() == DomainMatrix.eye(size, domain).to_list())
 
 
 def _inverted_linear_part(source: PolynomialMap) -> LinearAutomorphism | None:
@@ -101,9 +121,21 @@ def _inverted_linear_part(source: PolynomialMap) -> LinearAutomorphism | None:
     adjugate needs a dimension it is affordable at. Both go: the supported
     boundary is now exactly ``factorize``'s, stated once under FAC-2.
 
-    ``None`` where no factorization exists, which covers a singular matrix and
-    a matrix whose determinant is not a unit of the domain. The caller says
-    which of its own obligations that breaks.
+    ``None`` where no factorization exists, which covers a singular matrix, a
+    matrix whose determinant is not a unit of the domain, and one the bounded
+    search of FAC-2 did not reach. The caller says which of its own
+    obligations that breaks.
+
+    Construction only, since ``0.7.0rc11``. ``LinearStep.normalize`` is the
+    one caller. Verification called it too and turned every ``None`` into the
+    claim that the linear part is singular, which is false for a matrix the
+    search merely failed to reach: over ``ZZ[T]`` the matrix
+    ``[[T, -1], [2T+1, -2]]`` has determinant one, and a step carrying its
+    inverse as an exhibited factorization was refused as singular. An audit of
+    ``0.7.0rc10`` found it. A certificate may not rest on a search FAC-2
+    declares incomplete, so LIN-6 multiplies the exhibited inverse against
+    ``J(F)(0)`` and builds nothing. ``normalize`` has to build, and keeps the
+    boundary.
     """
     matrix = _linear_part(source)
     entries = sp.Matrix(
@@ -283,14 +315,17 @@ class LinearStep:
         condition was never that: the question belongs to ``factorize``, which
         asks it of the matrix it is given.
 
-        The inverse is formed in the coefficient domain, since ``0.7.0rc7``.
-        ``sp.Matrix.inv()`` inverts in characteristic zero whatever the
-        entries mean, so over ``GF(5)`` it produced rationals that
-        ``factorize`` then refused as not lying in the domain. Over a domain
-        that is not a field the inverse is formed in its field of fractions
-        and handed to ``factorize`` all the same, which refuses an entry
-        outside the domain by name and says to call ``over_field`` -- the
-        behaviour a caller over ``ZZ`` had before and still has.
+        The inverse is built by factoring ``J(F)(0)`` and inverting the
+        factorization, since ``0.7.0rc10``: every factor exhibits its own
+        inverse, so no matrix is inverted and nothing is formed in a field of
+        fractions. The boundary of ``factorize`` is therefore this method's
+        boundary, and FAC-2 states it once for both.
+
+        Verification does not share it, since ``0.7.0rc11``. LIN-6 multiplies
+        the exhibited transformation against ``J(F)(0)`` and builds nothing,
+        so a certificate this method cannot construct can still be supplied
+        and verified. An audit of ``0.7.0rc10`` found a sound certificate over
+        ``ZZ[T]`` refused because verification went through ``factorize``.
         """
         if not source.is_in_MA(0):
             raise ValueError(
@@ -458,21 +493,21 @@ class LinearStep:
                 "linear part.",
             )
 
-        inverse = _inverted_linear_part(self._source)
-        if inverse is None:
+        ring = self._source.ring
+        domain = ring.domain
+        linear_part = _linear_part(self._source)
+        determinant = linear_part.det()
+
+        if not is_unit(domain, determinant):
             raise VerificationError(
                 "LIN-6",
-                "The linear part of the source at the origin is singular.",
+                "The linear part of the source at the origin has determinant "
+                f"{domain.to_sympy(determinant)}, which is not a unit of "
+                f"{domain}, so Proposition (1.1) does not apply to it.",
             )
 
-        ring = self._source.ring
-        declared = sp.Matrix(self._transformation.matrix(ring))
-        expected = sp.Matrix(inverse.matrix(ring))
-        if not all(
-            _same_in_domain(ring, declared[row, column], expected[row, column])
-            for row in range(self._source.dimension)
-            for column in range(self._source.dimension)
-        ):
+        declared = _domain_matrix(ring, sp.Matrix(self._transformation.matrix(ring)))
+        if not _is_identity(declared * linear_part, domain):
             raise VerificationError(
                 "LIN-6",
                 "The step claims to normalize, but the transformation is not "
@@ -480,8 +515,8 @@ class LinearStep:
             )
 
         # Not reachable: LIN-1 runs first, the source lies in MA^0 and the
-        # transformation is the inverse of the linear part, so the linear part
-        # of the target is the identity.
+        # product above is the identity, so the linear part of the target is
+        # the identity too.
         if not self._target.is_in_MA(1):  # pragma: no cover - implied by LIN-1
             raise VerificationError(
                 "LIN-6",

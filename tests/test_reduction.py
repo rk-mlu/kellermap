@@ -383,7 +383,12 @@ def test_a_well_formed_chain_of_two_verifies(normalization: LinearStep) -> None:
 
 
 def test_LIN6_a_singular_linear_part_in_a_supplied_step() -> None:  # noqa: N802
-    """A supplied step may claim what normalize() refuses."""
+    """A supplied step may claim what normalize() refuses.
+
+    The message names the determinant rather than calling the matrix singular,
+    since ``0.7.0rc11``. Over a field the two readings coincide; over a ring
+    they do not, and one clause covers both.
+    """
     degenerate = over_field(PolynomialMap((x1, x2, x3), (x1**2, x2, x3)))
     identity = LinearAutomorphism([Transposition(degenerate.ring, 0, 1)])
 
@@ -393,7 +398,74 @@ def test_LIN6_a_singular_linear_part_in_a_supplied_step() -> None:  # noqa: N802
         ).verify()
 
     assert failure.value.obligation == "LIN-6"
-    assert "singular" in str(failure.value)
+    assert "determinant 0" in str(failure.value)
+
+
+def test_LIN6_a_determinant_that_is_not_a_unit_of_the_domain() -> None:  # noqa: N802
+    """Invertible is not enough over a ring, and the message says which.
+
+    ``(2 x1, x2)`` has an injective linear part with determinant ``2``, which
+    is not a unit of ``ZZ``. Proposition (1.1) needs a reciprocal in the
+    coefficient domain, so the step is refused where the same map over ``QQ``
+    would pass.
+    """
+    integral = PolynomialMap((x1, x2), (2 * x1, x2))
+    identity = LinearAutomorphism([Transposition(integral.ring, 0, 1)])
+
+    with pytest.raises(VerificationError) as failure:
+        LinearStep(
+            integral, identity.apply_to(integral), identity, normalizing=True
+        ).verify()
+
+    assert failure.value.obligation == "LIN-6"
+    assert "determinant 2" in str(failure.value)
+    assert "not a unit of ZZ" in str(failure.value)
+
+
+def test_LIN6_verifies_a_certificate_that_factorize_cannot_build() -> None:  # noqa: N802
+    """The release blocker an audit of ``0.7.0rc10`` found.
+
+    Verification re-derived the inverse by calling ``factorize`` and read its
+    refusal as a singular linear part. FAC-2 permits that refusal, and this
+    matrix has determinant one over ``ZZ[T]``: the certificate is sound, the
+    search does not reach it, and the step was rejected with a message that
+    was false of it. The inverse is exhibited here through the matrix with its
+    rows exchanged, which the same search does reach.
+    """
+    parameter = sp.Symbol("T")
+    source = PolynomialMap(
+        (x1, x2),
+        (parameter * x1 - x2, (2 * parameter + 1) * x1 - 2 * x2),
+    )
+    ring = source.ring
+    exchanged = sp.Matrix([[2 * parameter + 1, -2], [parameter, -1]])
+    inverse = LinearAutomorphism(
+        LinearAutomorphism.factorize(ring, exchanged).inverse().factors
+        + (Transposition(ring, 0, 1),)
+    )
+    step = LinearStep(source, inverse.apply_to(source), inverse, normalizing=True)
+
+    with pytest.raises(ValueError, match="No unit pivot"):
+        LinearAutomorphism.factorize(
+            ring, sp.Matrix([[parameter, -1], [2 * parameter + 1, -2]])
+        )
+
+    assert step.verify() is None
+    assert step.target == PolynomialMap.from_ring(ring, ring.gens)
+
+
+def test_LIN6_compares_entries_and_not_representations() -> None:  # noqa: N802
+    """The identity of a domain has more than one representation.
+
+    ``DomainMatrix`` compares its representation, and the product of two dense
+    matrices is not the sparse ``DomainMatrix.eye``. A verifier that compared
+    the matrices would refuse every normalizing step, including this one.
+    """
+    identity = LinearStep.normalize(ALPOEGE).target
+    step = LinearStep.normalize(identity)
+
+    assert step.verify() is None
+    assert step.transformation.matrix(identity.ring) == sp.eye(identity.dimension)
 
 
 def test_RED5_a_transport_failure_names_its_step(

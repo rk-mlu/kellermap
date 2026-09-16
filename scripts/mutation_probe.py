@@ -63,6 +63,14 @@ point lies outside the domain, and the unit test in ``conjugate``. Both were
 places where the repair of the previous audit had itself gone wrong, which is
 the argument for probing a repair and not only the thing repaired.
 
+The audit of ``0.7.0rc10`` replaced the LIN-6 probe. The rewritten verifier
+has two clauses and each carries one. The counts above are not re-derived
+here, and one of them was wrong: ``0.7.0rc10`` claimed one probe more than the
+set held. Replacing one probe with two makes that claim true by accident,
+which is not the same as re-deriving it. The count, and a test that holds it
+against ``PROBES``, are a work package of their own; ``docs/provenance.md``
+names a number older still.
+
 Milestone 0.7 added ten obligations and only three of them are here. HOM-11 and
 HOM-12 cannot fail after HOM-1, which the contract page argues where it says
 which of the HOM family can fail on supplied data, so a probe for either would
@@ -488,10 +496,17 @@ PROBES: tuple[Probe, ...] = (
     ),
     Probe(
         "LIN-6",
+        "the linear part is invertible over the coefficient domain",
+        "src/kellermap/reduction.py",
+        "        if not is_unit(domain, determinant):",
+        "        if False and is_unit(domain, determinant):",
+    ),
+    Probe(
+        "LIN-6",
         "the transformation is the inverse of the linear part",
         "src/kellermap/reduction.py",
-        "        if not all(\n            _same_in_domain(",
-        "        if False and all(\n            _same_in_domain(",
+        "        if not _is_identity(declared * linear_part, domain):",
+        "        if False and _is_identity(declared * linear_part, domain):",
     ),
     Probe(
         "SEA-13",
