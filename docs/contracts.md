@@ -22,12 +22,22 @@ read it as such. Obligations without a marker are implemented.
 
 **Status:** every obligation on this page is implemented and the test suite
 covers every statement of the package, with one exception that says so where it
-stands: SYM-7 is a consequence this library states and does not compute. Where
+stands: SYM-7 is a consequence this library states and does not compute. Four
+further clauses are ahead of the implementation while the release candidates of
+0.7 run, and the paragraph below names them. Where
 the implementation forced a change, this page was amended deliberately and the
 amendment is visible in the wording — the clearest cases are COL-4 and BCW-3,
 which moved from obligations of `verify()` to constructor invariants, LIN-2,
 which was narrowed to what is actually checkable, and UNI-9, which changed the
 route by which it takes a determinant.
+
+The four are WID-1, WID-2, the two middle clauses of LIN-6 and the candidate
+rule of FAC-1. An audit of `0.7.0rc10` found two release blockers, and this
+page is changed before the code, which is the order this section states. They
+carry no `[0.7]` marker, because a marker names a milestone that has not been
+released and the test that removes markers reads `0.7.0rc10` as released. This
+paragraph stands in place of those markers and goes when the four are
+implemented.
 
 This paragraph used to carry a version number. It said `0.4.0` through the
 whole of milestone 0.5 and was noticed only when 0.6 opened, which is what a
@@ -171,6 +181,7 @@ the implementation is required to guarantee.
 - [The untargeted search](#the-untargeted-search)
 - [Evaluating and factorizing](#evaluating-and-factorizing)
 - [Conjugation by a diagonal](#conjugation-by-a-diagonal)
+- [Widening the coefficient domain](#widening-the-coefficient-domain)
 - [The coefficient ring](#the-coefficient-ring)
 - [Errors](#errors)
 - [Deliberate non-obligations](#deliberate-non-obligations)
@@ -368,7 +379,8 @@ before it can be normalized. That was true of `0.7.0rc8` and false of
 `0.7.0rc9`, which implemented and tested the unimodular case, and the page was
 not revised with the code. An audit of `0.7.0rc9` found the contradiction and
 noted that this page calls itself binding, so the disagreement was not merely
-editorial. FAC-1 and FAC-2 state the boundary that actually holds.
+editorial. FAC-1 and FAC-2 state the boundary that actually holds, and WID-1
+and WID-2 state what the widening itself promises.
 
 ---
 
@@ -941,11 +953,35 @@ itself the normalization, `source` lies in `MA^0`, `transformation` equals the
 inverse of `J(source)(0)`, and `target` lies in `MA^1`. A `LinearStep` that is
 not so declared carries no such obligation.
 
-`J(source)(0)` is inverted in the field of fractions of the coefficient domain,
-its singularity is decided there, and the comparison against `transformation`
-runs entry by entry in `source.ring`. `sp.Matrix.inv()` inverts in
-characteristic zero whatever the entries mean, and `sp.Matrix.det()` calls the
-`GF(2)` entry `2` nonzero.
+Nothing is inverted and nothing is factorized to decide this. `det J(source)(0)`
+has to be a unit of the coefficient domain, which over a field is
+non-singularity and over a ring is stronger, and the determinant is taken in
+the domain. `transformation.matrix()` is then multiplied by `J(source)(0)` in
+the domain, and the product has to be the identity. One side is enough: over a
+commutative ring `A B = I` makes `det A` a unit and `B` the inverse of `A`.
+
+Verification therefore uses the certificate the step exhibits and builds
+nothing of its own. This is an amendment, and an audit of `0.7.0rc10` found the
+release blocker that forced it. Until then verification called `factorize` on
+`J(source)(0)` and compared the result entry by entry against `transformation`.
+`factorize` refuses a matrix whose column its bounded search cannot bring to a
+unit pivot, FAC-2 permits that refusal, and the verifier read it as a singular
+linear part. Over `ZZ[T]` the matrix `[[T, -1], [2T+1, -2]]` has determinant
+one; a step taking `(T x - y, (2T+1) x - 2y)` to the identity map, carrying the
+inverse as an exhibited factorization, was refused as singular. A certificate
+may not rest on a search that FAC-2 declares incomplete. `normalize()` still
+builds through `factorize` and keeps that boundary; verification does not.
+
+The two clauses have two messages, and each is true where it fires. A
+determinant that is not a unit says Proposition (1.1) does not apply to this
+source. A product that is not the identity says the transformation is not the
+inverse. `0.7.0rc10` had one message for both, and it named singularity, which
+was false of every matrix of unit determinant the search did not reach.
+
+The comparison is of entries and not of matrices. `DomainMatrix` compares its
+representation, so a dense product and the sparse identity of
+`DomainMatrix.eye` hold the same entries and are unequal, and a check written
+that way would refuse every step.
 
 The `MA^0` clause is not decoration. Proposition (1.1) splits `F` as
 `(X + F(0)) ∘ F_(1) ∘ F'`, so the linear normalization is the *second* factor
@@ -962,10 +998,14 @@ whose name mentions only one.
 
 ### Which of these can fail on supplied data
 
-LIN-1 and the first clause of LIN-6. LIN-2 and LIN-3 follow from LIN-1 and can
-only fail if the library is wrong about its own arithmetic; the second clause
-of LIN-6 follows from the first. They are retained as cheap self-checks, and a
-review should weigh them as such rather than as evidence about a supplied
+LIN-1, and of LIN-6 the `MA^0` clause, the unit determinant and the product: a
+supplied step can declare a normalization of a source that does not fix the
+origin, of one whose linear part is not invertible over the domain, or with a
+transformation that is not the inverse. LIN-2 and LIN-3 follow from LIN-1 and
+can only fail if the library is wrong about its own arithmetic, and so does the
+`MA^1` clause of LIN-6: under LIN-1 the linear part of the target is the
+product the clause before it checks. They are retained as cheap self-checks,
+and a review should weigh them as such rather than as evidence about a supplied
 target.
 
 ---
@@ -2487,6 +2527,17 @@ elimination as it was. Neither trusts a domain predicate: `0.7.0rc9` gated the
 fold on `domain.is_PID`, which SymPy reports for `Z/6Z`, and the fold divided
 by a zero divisor.
 
+The search tries three combinations for each ordered pair of rows, and it tests
+them before it applies one: subtract the other row, add it, or subtract the
+quotient the domain's division reports. The first whose entry is a unit is the
+one applied. Testing before applying is the amendment. `0.7.0rc10` applied the
+first combination and left the loop, so the other two were computed and thrown
+away, and whether a matrix factorized depended on the order of its rows: over
+`ZZ[T]` the matrix `[[T, -1], [2T+1, -2]]` was refused, and the same matrix
+with its rows exchanged factorized. Where no combination of a pair reaches a
+unit, one of them is applied to make progress and the pairs are traversed
+again, up to the bound FAC-2 states.
+
 **FAC-2 — The search for a unit pivot is bounded, and the refusal says so.**
 Over a domain that is not a field, `factorize` may refuse a matrix that does
 factor. A refusal therefore reports that no unit pivot was reached and names
@@ -3664,6 +3715,53 @@ UNT-3 is the one to read twice. Its first half is proved and its second half is
 not, the two are stated in one obligation because a search cannot apply them
 separately, and a reviewer weighing the family should weigh those halves
 differently.
+
+---
+
+## Widening the coefficient domain
+
+`field_ring` and `over_field` move a ring and a map to the field of fractions
+of the coefficient domain. They carry no certificate. The obligations of
+`LinearStep` and of `factorize` are stated against the domain a map actually
+has, so a widening that does not widen breaks a promise in silence and leaves
+every obligation around it intact.
+
+**WID-1 — A widening produces a field or refuses.** `field_ring` returns the
+ring over the field of fractions of its domain, and raises where the domain has
+none. The result is checked rather than the domain trusted: what `get_field`
+returns has to report itself a field.
+
+`Z/nZ` for composite `n` is the case that forced this. SymPy's `get_field`
+returns that ring again, and `0.7.0rc10` passed it on under a name and a
+docstring that promise a field, so `field_ring` over `Z/4Z` answered with a
+ring that has zero divisors. The rule is the one FAC-1 states about
+`domain.is_PID`: a domain predicate is a claim like any other, and it is
+measured rather than trusted.
+
+**WID-2 — `over_field` is named as advice only where it exists.** A message
+that tells a caller to widen names `over_field()` only where the widening
+exists and changes the domain. Where the domain already is a field the advice
+changes nothing, and where the domain has no field of fractions it cannot be
+followed at all.
+
+Both readings have cost a release candidate. Over `GF(5)` a pivot was refused
+with advice to widen a domain that is already a field, and an audit of
+`0.7.0rc6` enumerated 392 matrices refused that way. Over `Z/4Z` a shear of
+unit determinant was refused with the same advice, and an audit of `0.7.0rc9`
+pointed out that the widening is not one.
+
+The practice exists and is incomplete. `lift.py`, `collision.py` and
+`compression.py` withhold the advice where the domain is a finite field, which
+covers the first reading. The second is uncovered: SYM-4 and the hull refuse a
+domain that is not a field at all and name `over_field()` doing it, and `Z/4Z`
+is such a domain. This clause covers both readings and holds for every message,
+not only for the ones a past audit reached.
+
+### Which of these can fail on supplied data
+
+WID-1, on the ring a caller brings. WID-2 is an obligation on the library's own
+messages, and its negative control is therefore a message and not a
+computation.
 
 ---
 

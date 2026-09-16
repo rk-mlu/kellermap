@@ -128,6 +128,7 @@ FAMILIES = {
     "TRA",
     "UNI",
     "UNT",
+    "WID",
 }
 
 # The version number stands in three places: in ``pyproject.toml``, in the
