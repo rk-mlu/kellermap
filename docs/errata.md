@@ -617,3 +617,34 @@ no way to compare against before.
 that catches it is reading it against itself rather than against a source. Both
 sections were checked against the literature. Only one was checked against the
 other.
+
+## Three pages disagreed about how many mutation probes there are
+
+**Said, in `scripts/mutation_probe.py`:** a running total, built one audit's
+addition at a time, ending at sixty-one.
+
+**Said, in `CHANGELOG.md` for `0.7.0rc10`:** that all 61 probe identifiers had
+been read against the clauses they name.
+
+**Said, in `docs/provenance.md`:** forty-five, which had been right at
+`0.7.0rc1` and was carried forward unchanged through five release candidates.
+
+**True:** sixty. None of the three numbers was under a gate, and the probe
+sweep cannot find the disagreement: it runs the probes the set holds and says
+nothing about a sentence that claims another number.
+
+**Found** by an audit of `0.7.0rc10`, which counted the set.
+
+**Now:** the script states one number in one sentence and
+`tests/test_scripts.py` holds it against `PROBES`. The running total is gone.
+Which of its increments was wrong cannot be settled from this repository,
+since each is a claim about a tree that is now a tag, and the entry does not
+pretend otherwise. The provenance page no longer names a count and points at
+the script instead. The `0.7.0rc10` entry of the changelog keeps its wrong
+number, because that entry is a record of what was claimed at that tag.
+
+**Worth keeping:** a number that is maintained by addition is maintained by
+nobody. Every place that repeated it was written in good faith from the place
+before it, and the error travelled the same way. The fix that matters is not
+the corrected number but the test, which is why the count is now written once
+and in a shape a regular expression can find.

@@ -16,6 +16,7 @@ The scripts are not a package. They are loaded by path, the way
 
 import hashlib
 import importlib.util
+import re
 import sys
 from pathlib import Path
 from types import ModuleType
@@ -135,6 +136,24 @@ def test_a_whole_sweep_leaves_the_repository_untouched(probe: ModuleType) -> Non
 
     assert missed == 0
     assert source_hashes() == before
+
+
+def test_the_stated_count_is_the_count_of_the_set(probe: ModuleType) -> None:
+    """A number in prose beside the set it describes will drift from it.
+
+    That one did. An audit of ``0.7.0rc10`` counted the set, found sixty
+    against a docstring that said sixty-one, and found a third number in
+    ``docs/provenance.md``. None of the three was under a gate, so a green
+    sweep could not show the disagreement: the sweep runs the probes it has
+    and says nothing about the ones a sentence claims.
+
+    One number is written and this holds it. The narrative around it names
+    which audits added what, and no longer adds up.
+    """
+    stated = re.search(r"The set holds (\d+) probes\.", probe.__doc__ or "")
+
+    assert stated is not None, "the docstring no longer states a count"
+    assert int(stated.group(1)) == len(probe.PROBES)
 
 
 def test_every_fragment_still_matches_the_code_it_aims_at(probe: ModuleType) -> None:

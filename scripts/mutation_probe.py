@@ -42,34 +42,43 @@ What these probes do and do not reproduce
 They ask today's question of today's code. Every one of them should report
 ``CAUGHT``; a miss means a control has been lost since ``0.4.0rc13``, and
 ``tests/test_scripts.py`` checks that every fragment still matches the code it
-aims at. The set grew to eighteen with ``UnipotentStep``, whose three source
-obligations are the first here that a constructed step cannot make true. It
-grew to twenty-four with the homogenization, to twenty-nine with the
-compression and to thirty-four with the symmetric lift. The audits of milestone
-0.6 added the rest: three with ``0.6.0rc1``, one with ``0.6.0rc2``, one with
-``0.6.0rc3``, two with ``0.6.0rc4`` and one with ``0.6.0rc5``, which makes
-forty-two. That sentence had lost a conjunction and named two counts in a row
-without one until ``0.6.0rc6``. The audit of ``0.7.0rc1`` added three for the
-descent, which makes forty-five. The audit of ``0.7.0rc6`` added seven and the
-audit of ``0.7.0rc7`` two more, the audit of ``0.7.0rc8`` three and the
-audit of ``0.7.0rc9`` four, which makes sixty-one. The seven: one each for
-COL-7, BCW-12, LIN-6, SEA-13, SEA-14, UNT-1 and the evaluation under DOM-4.
-Those are the promises the four ring-semantics blockers of that audit turned
-out to rest on, and none of the five files they live in had a selector before
--- ``search.py``, ``untargeted.py`` and ``polynomial_map.py`` had none at all,
-which is why the audit could not run the selection this project's rules ask for
-after a change like that one. The two: the fallback the evaluation takes when a
-point lies outside the domain, and the unit test in ``conjugate``. Both were
-places where the repair of the previous audit had itself gone wrong, which is
-the argument for probing a repair and not only the thing repaired.
+aims at.
 
-The audit of ``0.7.0rc10`` replaced the LIN-6 probe. The rewritten verifier
-has two clauses and each carries one. The counts above are not re-derived
-here, and one of them was wrong: ``0.7.0rc10`` claimed one probe more than the
-set held. Replacing one probe with two makes that claim true by accident,
-which is not the same as re-deriving it. The count, and a test that holds it
-against ``PROBES``, are a work package of their own; ``docs/provenance.md``
-names a number older still.
+The set holds 67 probes. That sentence is held against ``PROBES`` by
+``tests/test_scripts.py``, which is the only reason to write a number here at
+all. Until ``0.7.0rc11`` this paragraph carried a running total instead, one
+audit's addition at a time, and an audit of ``0.7.0rc10`` found it one too
+high: the file said sixty-one and the set held sixty. Which increment is wrong
+cannot be settled from this repository, because each of them is a claim about
+a tree that is now a tag. A chain of additions nobody can recompute goes stale
+without saying so, so the chain is gone and one checked number stands in its
+place. ``docs/provenance.md`` carried a third number, older than both.
+
+Which probes were added and why is worth keeping, and that is history rather
+than arithmetic. The set began at eighteen with ``UnipotentStep``, whose three
+source obligations are the first here that a constructed step cannot make
+true, and grew with the homogenization, the compression and the symmetric
+lift. The audits of milestone 0.6 added five between ``0.6.0rc1`` and
+``0.6.0rc5``, and the audit of ``0.7.0rc1`` three for the descent.
+
+The audit of ``0.7.0rc6`` added seven: one each for COL-7, BCW-12, LIN-6,
+SEA-13, SEA-14, UNT-1 and the evaluation under DOM-4. Those are the promises
+its four ring-semantics blockers turned out to rest on, and of the five files
+they live in, ``search.py``, ``untargeted.py`` and ``polynomial_map.py`` had
+no selector at all, which is why that audit could not run the selection this
+project's rules ask for after a change like that one.
+
+The audit of ``0.7.0rc7`` added the fallback the evaluation takes when a point
+lies outside the domain and the unit test in ``conjugate``. Both were places
+where the repair of the previous audit had itself gone wrong, which is the
+argument for probing a repair and not only the thing repaired. The audits of
+``0.7.0rc8`` and ``0.7.0rc9`` added three and four.
+
+The audit of ``0.7.0rc10`` replaced the LIN-6 probe with one per clause of the
+rewritten verifier, and added one for the candidate rule of FAC-1, two for
+WID-2, one for WID-1 and two for FAC-2. The last two it found missing
+altogether: it stripped the refusal of everything FAC-2 requires it to say and
+the suite passed.
 
 Milestone 0.7 added ten obligations and only three of them are here. HOM-11 and
 HOM-12 cannot fail after HOM-1, which the contract page argues where it says
@@ -598,6 +607,21 @@ PROBES: tuple[Probe, ...] = (
         "src/kellermap/polynomial_map.py",
         '    if widened is None or widened == domain:\n        return ""',
         '    if widened == domain:\n        return ""',
+    ),
+    Probe(
+        "FAC-2",
+        "the refusal names the second reading",
+        "src/kellermap/linear.py",
+        '            "elimination did not find the row combination that shows'
+        ' it: over "',
+        '            ""',
+    ),
+    Probe(
+        "FAC-2",
+        "the refusal names the bound and the clause",
+        "src/kellermap/linear.py",
+        '            "a domain that is not a field the search is bounded. See FAC-2."',
+        '            ""',
     ),
     Probe(
         "FAC-1",

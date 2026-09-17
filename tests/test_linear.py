@@ -272,9 +272,24 @@ def test_factorize_refuses_a_column_it_cannot_bring_to_a_unit() -> None:
     matrices in ``GL_2(ZZ)`` whose determinant is one. It now reports what the
     elimination actually established, that no unit pivot was reached, and
     names FAC-2 for the two reasons that can produce it.
+
+    Each of those parts is asserted here, since ``0.7.0rc11``. This test
+    matched the first clause alone, so an audit of ``0.7.0rc10`` could delete
+    the two readings, the boundedness and the reference to FAC-2 and watch the
+    suite pass. The clause binds the whole message, and half a control is the
+    kind that reads as one.
     """
-    with pytest.raises(ValueError, match="No unit pivot was reached in column 0"):
+    with pytest.raises(ValueError) as refusal:
         LinearAutomorphism.factorize(QUADRATIC.ring, sp.diag(2, 1, 1))
+
+    message = str(refusal.value)
+
+    assert "No unit pivot was reached in column 0" in message
+    assert str(QUADRATIC.ring.domain) in message
+    assert "not invertible there" in message
+    assert "did not find the row combination" in message
+    assert "the search is bounded" in message
+    assert "FAC-2" in message
 
 
 def test_a_coefficient_outside_the_domain_is_rejected() -> None:
