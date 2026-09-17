@@ -308,6 +308,57 @@ def test_factorize_works_over_a_finite_field() -> None:
     )
 
 
+def test_FAC1_the_search_tries_its_candidates_before_applying_one() -> None:  # noqa: N802
+    """The matrix of the ``0.7.0rc10`` audit, in both orders of its rows.
+
+    ``0.7.0rc10`` applied the first candidate and left the loop, so minus one
+    and the quotient were computed and discarded. The quotient is what reaches
+    this matrix: ``(2T+1) - 2 T`` is one. Without it the matrix was refused
+    while the same matrix with its rows exchanged factorized, which made the
+    answer depend on the order in which the rows were written down.
+    """
+    parameter = sp.Symbol("T")
+    ring = sp.ring("a,b", sp.ZZ[parameter])[0]
+    given = sp.Matrix([[parameter, -1], [2 * parameter + 1, -2]])
+    exchanged = sp.Matrix([[2 * parameter + 1, -2], [parameter, -1]])
+
+    assert sp.expand(given.det()) == 1
+
+    for matrix in (given, exchanged):
+        factored = LinearAutomorphism.factorize(ring, matrix)
+
+        assert sp.expand(sp.Matrix(factored.matrix(ring)) - matrix).is_zero_matrix
+
+    quotients = [
+        factor
+        for factor in LinearAutomorphism.factorize(ring, given).factors
+        if isinstance(factor, Transvection) and factor.coefficient == -2
+    ]
+
+    assert quotients, "the quotient candidate did not reach the pivot"
+
+
+def test_FAC2_the_bound_is_still_reachable_over_a_parameter_ring() -> None:  # noqa: N802
+    """The search is wider since ``0.7.0rc11`` and still bounded.
+
+    ``[[7, 17], [2, 5]]`` has determinant one and integer entries. Over ``ZZ``
+    the Euclidean fold reaches it; over ``ZZ[T]`` there is no fold, and the
+    bounded search does not. A widening that left nothing refused would make
+    FAC-2 a clause about nothing, so the boundary needs a witness of its own.
+    """
+    parameter = sp.Symbol("T")
+    ring = sp.ring("a,b", sp.ZZ[parameter])[0]
+    integral = sp.ring("a,b", sp.ZZ)[0]
+    given = sp.Matrix([[7, 17], [2, 5]])
+
+    with pytest.raises(ValueError, match="No unit pivot was reached in column 0"):
+        LinearAutomorphism.factorize(ring, given)
+
+    factored = LinearAutomorphism.factorize(integral, given)
+
+    assert sp.Matrix(factored.matrix(integral)) == given
+
+
 def test_the_identity_factors_into_nothing(ring: object) -> None:
     factored = LinearAutomorphism.factorize(ring, sp.eye(3))
 
@@ -419,6 +470,69 @@ def test_over_field_is_idempotent() -> None:
     once = over_field(QUADRATIC)
 
     assert over_field(once) == once
+
+
+def test_WID1_a_domain_with_no_field_of_fractions_is_refused() -> None:  # noqa: N802
+    """`sp.GF(4)` is `Z/4Z`, and `get_field` answers with it again.
+
+    `0.7.0rc10` handed that answer on, so `field_ring` promised a field and
+    returned a ring with zero divisors, and a caller told to widen was given
+    the same ring and the same refusal. An audit found it.
+    """
+    residue = sp.ring("u,v", sp.GF(4))[0]
+
+    assert residue.domain.get_field().is_Field is False
+
+    with pytest.raises(ValueError, match="no field of fractions"):
+        field_ring(residue)
+
+    with pytest.raises(ValueError, match="no field of fractions"):
+        over_field(PolynomialMap.from_ring(residue, residue.gens))
+
+
+def test_WID1_a_domain_that_is_already_a_field_is_returned(  # noqa: N802
+) -> None:
+    """A widening that changes nothing is not a failure.
+
+    The refusal above has to separate the two readings of "there is no field
+    to widen to". `GF(5)` is a field, and asking for its field of fractions is
+    a question with an answer.
+    """
+    finite = sp.ring("u,v", sp.GF(5))[0]
+
+    assert field_ring(finite).domain == finite.domain
+
+
+def test_WID2_the_advice_names_over_field_only_where_it_exists() -> None:  # noqa: N802
+    """The message a non-unit coefficient raises, over three domains.
+
+    Over `ZZ` the widening exists and the advice is the way out. Over `GF(5)`
+    it moves nothing, and over `Z/4Z` there is nothing to move to: an audit of
+    `0.7.0rc6` enumerated 392 matrices refused with the first kind of wrong
+    advice, and an audit of `0.7.0rc9` found the second.
+    """
+    residue = sp.ring("u,v", sp.GF(4))[0]
+
+    with pytest.raises(ValueError, match="over_field") as integral:
+        Dilation(QUADRATIC.ring, 0, 2)
+
+    with pytest.raises(ValueError) as composite:
+        Dilation(residue, 0, 2)
+
+    assert "does not lie in" in str(composite.value)
+    assert "over_field" not in str(composite.value)
+    assert "QQ" in str(integral.value)
+
+    # The other site, where the coefficient does not convert at all. Both go
+    # through one template and both ask WID-2, and a control on one of them
+    # would leave the other free to drift.
+    with pytest.raises(ValueError, match="over_field"):
+        Dilation(QUADRATIC.ring, 0, sp.Rational(1, 2))
+
+    with pytest.raises(ValueError) as unconvertible:
+        Dilation(residue, 0, sp.Rational(1, 2))
+
+    assert "over_field" not in str(unconvertible.value)
 
 
 # --------------------------------------------------------------------------

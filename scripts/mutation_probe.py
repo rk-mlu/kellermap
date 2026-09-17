@@ -579,6 +579,37 @@ PROBES: tuple[Probe, ...] = (
         "",
     ),
     Probe(
+        "WID-1",
+        "a widening that does not produce a field is refused",
+        "src/kellermap/polynomial_map.py",
+        "    return widened if widened.is_Field else None",
+        "    return widened",
+    ),
+    Probe(
+        "WID-2",
+        "the advice is withheld where the widening changes nothing",
+        "src/kellermap/polynomial_map.py",
+        '    if widened is None or widened == domain:\n        return ""',
+        '    if widened is None:\n        return ""',
+    ),
+    Probe(
+        "WID-2",
+        "the advice is withheld where there is no widening",
+        "src/kellermap/polynomial_map.py",
+        '    if widened is None or widened == domain:\n        return ""',
+        '    if widened == domain:\n        return ""',
+    ),
+    Probe(
+        "FAC-1",
+        "the search tries its candidates and does not apply the first",
+        "src/kellermap/linear.py",
+        "            candidates = [domain.one, -domain.one]\n"
+        "            quotient = _quotient(domain, entry, divisor)\n"
+        "            if quotient is not None and quotient != domain.zero:\n"
+        "                candidates.append(quotient)",
+        "            candidates = [domain.one]",
+    ),
+    Probe(
         "FAC-1",
         "a column without a unit pivot is folded to one",
         "src/kellermap/linear.py",

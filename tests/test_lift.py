@@ -269,6 +269,26 @@ def test_a_source_over_a_ring_that_is_not_a_field_is_refused() -> None:
     assert "over_field()" in failure.value.message
 
 
+def test_a_source_over_a_residue_ring_is_refused_without_advice() -> None:
+    """SYM-4, the reading the finite field does not reach either.
+
+    ``Z/4Z`` is not a field, so this takes the same branch as ``ZZ`` above and
+    has to end differently: ``ZZ`` has ``QQ`` to widen to and ``Z/4Z`` has
+    nothing. Until ``0.7.0rc11`` the advice was attached to the branch, so a
+    caller here was sent to a field that does not exist. WID-2 asks the domain
+    instead.
+    """
+    ring = sp.ring("y1,y2", sp.GF(4))[0]
+    first, second = ring.gens
+    source = PolynomialMap.from_ring(ring, (first + second**3, second))
+
+    with pytest.raises(VerificationError, match=r"\[SYM-4\]") as failure:
+        SymmetricLiftStep.build(source)
+
+    assert "not a field" in failure.value.message
+    assert "over_field" not in failure.value.message
+
+
 def test_a_source_over_a_finite_field_is_refused() -> None:
     """SYM-4, the boundary the compression had and this step did not.
 

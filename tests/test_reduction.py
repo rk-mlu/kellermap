@@ -22,6 +22,7 @@ from kellermap import (
     LinearAutomorphism,
     PolynomialMap,
     Transposition,
+    Transvection,
     VerificationError,
     examples,
     over_field,
@@ -426,32 +427,46 @@ def test_LIN6_verifies_a_certificate_that_factorize_cannot_build() -> None:  # n
     """The release blocker an audit of ``0.7.0rc10`` found.
 
     Verification re-derived the inverse by calling ``factorize`` and read its
-    refusal as a singular linear part. FAC-2 permits that refusal, and this
-    matrix has determinant one over ``ZZ[T]``: the certificate is sound, the
-    search does not reach it, and the step was rejected with a message that
-    was false of it. The inverse is exhibited here through the matrix with its
-    rows exchanged, which the same search does reach.
+    refusal as a singular linear part. FAC-2 permits that refusal, so a sound
+    certificate was rejected with a message that was false of it.
+
+    The matrix is ``[[7, 17], [2, 5]]`` over ``ZZ[T]``. Its determinant is one
+    and its entries are integers; over ``ZZ`` the Euclidean fold reaches it at
+    once, and over ``ZZ[T]`` there is no fold and the bounded search does not.
+    ``normalize`` therefore refuses to build this step, and the step verifies.
+
+    The ``ZZ[T]`` matrix of the audit itself stood here until ``0.7.0rc11``,
+    which widened the search to reach it. A test that rests on a refusal has
+    to be rewritten when the refusal goes, not deleted: what it is about is
+    the independence of LIN-6 from the search, and that outlives any one
+    matrix.
     """
     parameter = sp.Symbol("T")
-    source = PolynomialMap(
-        (x1, x2),
-        (parameter * x1 - x2, (2 * parameter + 1) * x1 - 2 * x2),
+    ring = sp.ring("x,y", sp.ZZ[parameter])[0]
+    first, second = ring.gens
+    built = LinearAutomorphism(
+        [
+            Transvection(ring, 0, 1, 3),
+            Transvection(ring, 1, 0, 2),
+            Transvection(ring, 0, 1, 2),
+        ]
     )
-    ring = source.ring
-    exchanged = sp.Matrix([[2 * parameter + 1, -2], [parameter, -1]])
-    inverse = LinearAutomorphism(
-        LinearAutomorphism.factorize(ring, exchanged).inverse().factors
-        + (Transposition(ring, 0, 1),)
+    source = PolynomialMap.from_ring(
+        ring, (7 * first + 17 * second + parameter * first**2, 2 * first + 5 * second)
     )
+    inverse = built.inverse()
     step = LinearStep(source, inverse.apply_to(source), inverse, normalizing=True)
 
+    assert sp.Matrix(built.matrix(ring)) == sp.Matrix([[7, 17], [2, 5]])
+
     with pytest.raises(ValueError, match="No unit pivot"):
-        LinearAutomorphism.factorize(
-            ring, sp.Matrix([[parameter, -1], [2 * parameter + 1, -2]])
-        )
+        LinearAutomorphism.factorize(ring, sp.Matrix([[7, 17], [2, 5]]))
+
+    with pytest.raises(ValueError, match="does not factor"):
+        LinearStep.normalize(source)
 
     assert step.verify() is None
-    assert step.target == PolynomialMap.from_ring(ring, ring.gens)
+    assert step.target.is_in_MA(1)
 
 
 def test_LIN6_compares_entries_and_not_representations() -> None:  # noqa: N802

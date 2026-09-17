@@ -52,16 +52,16 @@ from sympy.polys.rings import PolyElement, PolyRing
 from .elementary import ElementaryFactor
 from .polynomial_map import (
     PolynomialMap,
-    clone_domain,
     clone_ring,
     copy_polynomial,
+    field_of_fractions,
     validate_ring,
+    widening_advice,
 )
 
 _NOT_IN_DOMAIN = (
     "The coefficient {coefficient} does not lie in the coefficient domain "
-    "{domain}. A dilation by a non-unit needs the field of fractions; see "
-    "over_field()."
+    "{domain}.{advice}"
 )
 
 
@@ -73,10 +73,25 @@ def field_ring(ring: PolyRing) -> PolyRing:
     of Alpoege's map has determinant ``-2``. Widening the domain is a
     deliberate step rather than something the arithmetic does silently, since
     two maps over different domains are different objects here.
+
+    WID-1: a domain with no field of fractions is refused rather than handed
+    back. ``Z/nZ`` for composite ``n`` is the case, and ``0.7.0rc10`` returned
+    it unchanged, so a caller who followed the advice to widen was given the
+    same ring and the same refusal again.
+
+    A domain that already is a field is returned as it is. That is a widening
+    that changes nothing and not a failure, and ``GF(5)`` reaches it.
     """
     validate_ring(ring)
 
-    return PolyRing(ring.symbols, clone_domain(ring.domain).get_field(), ring.order)
+    widened = field_of_fractions(ring.domain)
+    if widened is None:
+        raise ValueError(
+            f"The coefficient domain {ring.domain} has no field of fractions, "
+            f"so there is nothing to widen it to."
+        )
+
+    return PolyRing(ring.symbols, widened, ring.order)
 
 
 def over_field(F: PolynomialMap) -> PolynomialMap:  # noqa: N803
@@ -170,7 +185,11 @@ def _convert(ring: PolyRing, coefficient: sp.Expr | Any) -> Any:
         return ring.domain.convert(sp.sympify(coefficient))
     except (CoercionFailed, sp.SympifyError, TypeError, ValueError) as error:
         raise ValueError(
-            _NOT_IN_DOMAIN.format(coefficient=coefficient, domain=ring.domain)
+            _NOT_IN_DOMAIN.format(
+                coefficient=coefficient,
+                domain=ring.domain,
+                advice=widening_advice(ring.domain),
+            )
         ) from error
 
 
@@ -406,6 +425,7 @@ class Dilation(LinearFactor):
                 _NOT_IN_DOMAIN.format(
                     coefficient=f"1/{owned.domain.to_sympy(value)}",
                     domain=owned.domain,
+                    advice=widening_advice(owned.domain),
                 )
             ) from error
 
@@ -930,15 +950,30 @@ def _search_unit_pivot(
     """Look for a row combination that makes a unit, within a bounded search.
 
     Every domain, including those no Euclidean algorithm is available over.
-    For each ordered pair of rows it tries subtracting one, minus one, and the
-    quotient the domain's division reports, and stops at the first combination
-    whose entry is a unit.
+    For each ordered pair of rows it tries subtracting the other row, adding
+    it, and subtracting the quotient the domain's division reports, and it
+    applies the first of the three whose entry is a unit.
+
+    Tested before applied, since ``0.7.0rc11``. Until then the first candidate
+    was applied and the loop left, so the other two were computed and thrown
+    away: a matrix factorized or not depending on the order of its rows, and
+    over ``ZZ[T]`` ``[[T, -1], [2T+1, -2]]`` was refused while the same matrix
+    with its rows exchanged went through. An audit of ``0.7.0rc10`` found it.
+
+    Where no candidate of a pair makes a unit, the other row is subtracted
+    once to make progress and the pairs are traversed again. That is what the
+    loop did before at every pair, so this search accepts everything the
+    previous one accepted: candidate ``one`` reproduces the old step exactly,
+    and the two additional candidates can only add a success. The measurement
+    in ``docs/roadmap.md`` is the check on that argument and not a restatement
+    of it.
 
     Bounded and therefore incomplete, and that is the supported boundary of
     ``factorize`` over a domain that is not a field. It is stated here, in the
     refusal ``_bring_unit_pivot`` raises, and in ``docs/contracts.md`` under
     FAC-2, because the refusal of ``0.7.0rc9`` claimed something false about
-    the determinant instead.
+    the determinant instead. Verification does not depend on it: LIN-6
+    multiplies out the inverse a step exhibits and calls nothing here.
 
     Works on a copy and commits only on success, so a search that finds
     nothing leaves the elimination exactly as it was.
@@ -946,12 +981,19 @@ def _search_unit_pivot(
     The skip for a divisor the search has driven to zero carries a
     ``# pragma: no cover`` and a weaker justification than the others on this
     page. It is not ruled out by an obligation; it was not reached, by any of
-    the 13296 invertible ``2x2`` matrices over the residue rings or by 300000
-    random invertible ``3x3`` over ``Z/6Z``. The ordering of the pairs seems to
-    be why -- a row is used as a target again before it is offered as a
-    divisor -- but that is an observation and not an argument, so the guard
-    stays. Dividing by an entry this loop has just zeroed would be the same
-    class of defect as the one that made ``0.7.0rc9``'s fold crash.
+    the invertible ``2x2`` matrices over the residue rings or by the random
+    invertible ``3x3`` over ``Z/6Z`` the measurement runs. The ordering of the
+    pairs seems to be why -- a row is used as a target again before it is
+    offered as a divisor -- but that is an observation and not an argument, so
+    the guard stays. Dividing by an entry this loop has just zeroed would be
+    the same class of defect as the one that made ``0.7.0rc9``'s fold crash.
+
+    A candidate that annihilates the divisor needs no guard of its own any
+    more. It leaves the entry where it was, the entry is not a unit or the
+    search would have ended, and the candidate therefore loses the test and is
+    never applied. ``0.7.0rc10`` skipped it explicitly under a pragma whose
+    reason was that no candidate could annihilate a non-zero divisor -- true
+    only because the sole candidate ever reached was ``one``.
     """
     domain = owned.domain
     trial = [row[:] for row in matrix]
@@ -964,24 +1006,30 @@ def _search_unit_pivot(
         progressed = False
         for target, other in permutations(rows, 2):
             divisor = trial[other][column]
-            if divisor == domain.zero:  # pragma: no cover - not reached, see below
+            if divisor == domain.zero:  # pragma: no cover - not reached, see above
                 continue
+            entry = trial[target][column]
             candidates = [domain.one, -domain.one]
-            quotient = _quotient(domain, trial[target][column], divisor)
+            quotient = _quotient(domain, entry, divisor)
             if quotient is not None and quotient != domain.zero:
                 candidates.append(quotient)
-            for candidate in candidates:
-                if (
-                    candidate * divisor == domain.zero
-                ):  # pragma: no cover - no candidate annihilates a non-zero divisor
-                    continue
-                _record_transvection(trial, recorded, owned, target, other, candidate)
-                progressed = True
-                if is_unit(domain, trial[target][column]):
-                    matrix[:] = trial
-                    operations.extend(recorded)
-                    return target
-                break
+
+            winner = next(
+                (
+                    candidate
+                    for candidate in candidates
+                    if is_unit(domain, entry - candidate * divisor)
+                ),
+                None,
+            )
+            if winner is not None:
+                _record_transvection(trial, recorded, owned, target, other, winner)
+                matrix[:] = trial
+                operations.extend(recorded)
+                return target
+
+            _record_transvection(trial, recorded, owned, target, other, domain.one)
+            progressed = True
         if not progressed:
             return None
 

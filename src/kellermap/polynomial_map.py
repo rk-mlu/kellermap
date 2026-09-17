@@ -259,6 +259,49 @@ def clone_domain(domain: Any) -> Any:
     return clone_domain(domain.dom).poly_ring(*domain.symbols, order=sparse_ring.order)
 
 
+def field_of_fractions(domain: Any) -> Any | None:
+    """Return the field of fractions of ``domain``, or ``None`` where it has none.
+
+    ``get_field`` is asked and its answer is checked. SymPy answers for
+    ``Z/nZ`` with composite ``n`` by handing that ring back, which has zero
+    divisors and is no field, and ``0.7.0rc10`` passed that on as a widening:
+    ``field_ring`` over ``Z/4Z`` returned a ring with zero divisors under a
+    name and a docstring that promise a field. An audit found it. WID-1 makes
+    the answer something to check, which is the rule FAC-1 states for
+    ``is_PID``: a domain predicate is a claim like any other.
+
+    Measured over ``ZZ``, ``QQ``, ``RR``, ``EX``, ``GF(4)``, ``GF(5)``,
+    ``GF(6)``, ``GF(9)``, ``ZZ[T]``, ``QQ[T]``, ``ZZ[i]`` and ``ZZ(T)``:
+    ``get_field`` answers all twelve and raises for none of them, so nothing
+    here catches an exception it has never seen.
+    """
+    widened = clone_domain(domain).get_field()
+
+    return widened if widened.is_Field else None
+
+
+def widening_advice(domain: Any) -> str:
+    """Return the sentence naming ``over_field()``, or the empty string.
+
+    WID-2. A message tells a caller to widen only where the widening exists
+    and changes the domain. Over ``GF(5)`` the domain already is a field and
+    the advice moves nothing; over ``Z/4Z`` there is no field of fractions and
+    the advice cannot be followed at all. Both have been given: an audit of
+    ``0.7.0rc6`` enumerated 392 matrices over ``GF(5)`` refused with it, and an
+    audit of ``0.7.0rc9`` found a shear over ``Z/4Z`` refused with it.
+
+    The sentence begins with a space, so that a caller appends it to a message
+    that is complete without it. Where no widening exists the message ends at
+    the fact it reports, and nothing is said about a remedy that is none.
+    """
+    widened = field_of_fractions(domain)
+
+    if widened is None or widened == domain:
+        return ""
+
+    return f" over_field() moves a map to {widened}."
+
+
 def _normalized(element: PolyElement) -> PolyElement:
     """Return ``element`` with any zero-coefficient term dropped.
 

@@ -57,7 +57,7 @@ from .canonical import agree
 from .collision import Collision
 from .context import ReductionContext
 from .errors import VerificationError
-from .polynomial_map import PolynomialMap
+from .polynomial_map import PolynomialMap, widening_advice
 from .reduction import Provenance
 from .variables import VariableFactory, reserved_names
 
@@ -78,16 +78,20 @@ def _field(source: PolynomialMap) -> None:
 
     # Two conditions and two messages. Joined by ``or`` they were one branch,
     # so the test over ``GF(5)`` reached the characteristic alone and a
-    # mutation that dropped the field half went unnoticed; and the advice to
-    # use ``over_field`` is wrong for ``GF(5)``, whose field of fractions is
-    # itself. An audit of ``0.6.0rc3`` found both.
+    # mutation that dropped the field half went unnoticed. An audit of
+    # ``0.6.0rc3`` found both.
+    #
+    # The advice to widen is conditional since ``0.7.0rc11``. It was withheld
+    # for ``GF(5)``, whose field of fractions is itself, by leaving it out of
+    # the characteristic message; it was still given here, where ``Z/4Z``
+    # lands, and that domain has no field of fractions at all. WID-2 decides
+    # it per domain rather than per branch.
     if not domain.is_Field:
         raise VerificationError(
             "SYM-4",
             f"The coefficient domain is {domain}, which is not a field. The "
             "lift adjoins i to a field of characteristic zero, which is the "
-            "setting of Theorem 3; over_field() moves a map to the field of "
-            "fractions of its domain.",
+            f"setting of Theorem 3.{widening_advice(domain)}",
         )
 
     if domain.characteristic() != 0:

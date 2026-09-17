@@ -267,6 +267,24 @@ def test_a_source_over_a_ring_that_is_not_a_field_is_refused() -> None:
         CompressionStep(source, source, ((1, 0, 0),), (w1,))
 
 
+def test_a_source_over_a_residue_ring_is_refused_without_advice() -> None:
+    """CHC-2, the reading with no way out.
+
+    ``Z/4Z`` is not a field and has no field of fractions, so the branch the
+    ``ZZ`` test above reaches has to end differently here. Until ``0.7.0rc11``
+    the advice to widen belonged to the branch and was given to a caller who
+    could not follow it. WID-2 asks the domain.
+    """
+    ring = sp.ring("x1,x2", sp.GF(4))[0]
+    first, second = ring.gens
+    source = PolynomialMap.from_ring(ring, (first + first**2, second))
+
+    with pytest.raises(ValueError, match="not a field") as failure:
+        CompressionStep(source, source, ((1, 0),), (w1,))
+
+    assert "over_field" not in str(failure.value)
+
+
 def test_a_source_of_positive_characteristic_is_refused() -> None:
     """CHC-8 again, on the half of it that is about ``d!`` and not about a field.
 

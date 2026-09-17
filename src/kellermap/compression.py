@@ -40,7 +40,7 @@ from .canonical import agree
 from .collision import Collision
 from .context import ReductionContext
 from .errors import VerificationError
-from .polynomial_map import PolynomialMap
+from .polynomial_map import PolynomialMap, widening_advice
 from .reduction import Provenance
 from .variables import VariableFactory, reserved_names
 
@@ -158,14 +158,16 @@ def _field(source: PolynomialMap, obligation: str | None) -> Domain:
     if not domain.is_Field:
         complaint = (
             f"The coefficient domain is {domain}, which is not a field. The "
-            "hull divides by a pivot and by d!, so it needs one; over_field() "
-            "moves a map to the field of fractions of its domain."
+            f"hull divides by a pivot and by d!, so it needs one."
+            f"{widening_advice(domain)}"
         )
     elif domain.characteristic() != 0:
         # No advice to use ``over_field`` here: the field of fractions of a
         # finite field is itself, so the suggestion would send a caller in a
         # circle. The compression already separated the two messages; the lift
-        # did not until an audit of ``0.6.0rc3``.
+        # did not until an audit of ``0.6.0rc3``. Since ``0.7.0rc11`` the
+        # branch above asks WID-2 rather than always advising, which is where
+        # ``Z/4Z`` was told to widen to a field that does not exist.
         complaint = (
             f"The coefficient domain is {domain}, of characteristic "
             f"{domain.characteristic()}. The polarization divides by d!, which "

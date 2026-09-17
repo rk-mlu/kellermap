@@ -3052,6 +3052,50 @@ here on the wrong side of that, and its docstring says what the marking costs a
 delivery -- it is the test that says the widening of `0.7.0rc5` added a step
 without removing one, so any run that touches the targeted enumerator wants it.
 
+## What the pivot search reaches
+
+FAC-2 says the search for a unit pivot is bounded and that the bound is
+measured. The measurement is `scripts/measure_pivot_search.py`, and `make
+measure` runs it. Until `0.7.0rc11` the figure stood in a docstring and on the
+contract page, both of which pointed here, and this page did not carry it; the
+computation behind it could not be rerun from the repository at all.
+
+Rerun after `0.7.0rc11` changed the search to test its three candidates before
+applying one.
+
+| what | examined | refused |
+| --- | ---: | ---: |
+| invertible `2x2` over `Z/4` | 96 | 0 |
+| invertible `2x2` over `Z/6` | 288 | 0 |
+| invertible `2x2` over `Z/8` | 1536 | 0 |
+| invertible `2x2` over `Z/9` | 3888 | 0 |
+| invertible `2x2` over `Z/10` | 2880 | 0 |
+| invertible `2x2` over `Z/12` | 4608 | 0 |
+| all six | 13296 | 0 |
+| random invertible `3x3` over `Z/6Z` | 16013 | 0 |
+
+The last row is a figure with a time beside it and not a total. It is what
+seed 20260916 reached in 60 seconds; there are `6**9` matrices of that size
+over `Z/6Z`, and the part stops at its budget rather than at a count. The
+target passes a smaller budget, so a delivery reaches a few thousand of them
+rather than sixteen.
+
+Over `ZZ[T]`, one matrix at a time. `[[T, T+1], [T-1, T]]` is the matrix an
+audit of `0.7.0rc9` gave and `[[T, -1], [2T+1, -2]]` the one an audit of
+`0.7.0rc10` gave; both are reached, and the second is reached in either order
+of its rows, which it was not before the change.
+
+`[[7, 17], [2, 5]]` over `ZZ[T]` is refused. Its determinant is one and its
+entries are integers, and the same matrix over `ZZ` is reached by the
+Euclidean fold in five factors. That pair is what FAC-2's boundary looks like
+from the outside: not a statement about the matrix, but about the domain it is
+read over and the search available there. It is in the suite as well, as the
+certificate LIN-6 verifies without building.
+
+None of this is a proof for any of them. An exhaustive family, a random
+sample and three named matrices are evidence that the bound is not commonly
+met, and FAC-2 states the refusal precisely because it can be.
+
 ## Where the milestone stands
 
 All seven packages are done. WP 1 measured the bottleneck of SYM-7; WP 2 and

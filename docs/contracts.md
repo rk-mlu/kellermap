@@ -22,22 +22,21 @@ read it as such. Obligations without a marker are implemented.
 
 **Status:** every obligation on this page is implemented and the test suite
 covers every statement of the package, with one exception that says so where it
-stands: SYM-7 is a consequence this library states and does not compute. Four
-further clauses are ahead of the implementation while the release candidates of
-0.7 run, and the paragraph below names them. Where
+stands: SYM-7 is a consequence this library states and does not compute. Where
 the implementation forced a change, this page was amended deliberately and the
 amendment is visible in the wording — the clearest cases are COL-4 and BCW-3,
 which moved from obligations of `verify()` to constructor invariants, LIN-2,
 which was narrowed to what is actually checkable, and UNI-9, which changed the
 route by which it takes a determinant.
 
-The four are WID-1, WID-2, the two middle clauses of LIN-6 and the candidate
-rule of FAC-1. An audit of `0.7.0rc10` found two release blockers, and this
-page is changed before the code, which is the order this section states. They
-carry no `[0.7]` marker, because a marker names a milestone that has not been
-released and the test that removes markers reads `0.7.0rc10` as released. This
-paragraph stands in place of those markers and goes when the four are
-implemented.
+An audit of `0.7.0rc10` found two release blockers, and for them this page was
+changed before the code, which is the order this section states. LIN-6, FAC-1,
+WID-1 and WID-2 were stated that way and are implemented since `0.7.0rc11`.
+They carried no `[0.7]` marker in between: a marker names a milestone that has
+not been released, and the test that removes markers reads `0.7.0rc10` as
+released. Whether the convention should have room for an obligation added
+during a release-candidate cycle is an open question and not a decision this
+page takes.
 
 This paragraph used to carry a version number. It said `0.4.0` through the
 whole of milestone 0.5 and was noticed only when 0.6 opened, which is what a
@@ -2550,11 +2549,14 @@ It is one boundary and not two: `0.7.0rc9` inverted through
 `domain.get_field()`, which for `Z/nZ` returns that ring again and raised
 `DMNotAField` on a shear of unit determinant.
 
-The bound is measured and recorded in `docs/roadmap.md`. It reaches a unit
+The bound is measured and recorded in `docs/roadmap.md`, by
+`scripts/measure_pivot_search.py`, which `make measure` runs. It reaches a unit
 pivot for every invertible `2x2` over `Z/4`, `Z/6`, `Z/8`, `Z/9`, `Z/10` and
-`Z/12` — 13296 matrices — and for the `ZZ[T]` matrix of unit determinant an
-audit of `0.7.0rc9` gave, which `0.7.0rc9` refused. It is not a proof for any
-of them.
+`Z/12` — 13296 matrices — for a sample of random invertible `3x3` over `Z/6Z`,
+and for both `ZZ[T]` matrices of unit determinant that audits have given. It
+does not reach `[[7, 17], [2, 5]]` over `ZZ[T]`, whose determinant is one and
+whose entries are integers: over `ZZ` the same matrix is folded to a unit pivot
+at once. None of this is a proof for any of them.
 
 ---
 
@@ -3750,12 +3752,12 @@ with advice to widen a domain that is already a field, and an audit of
 unit determinant was refused with the same advice, and an audit of `0.7.0rc9`
 pointed out that the widening is not one.
 
-The practice exists and is incomplete. `lift.py`, `collision.py` and
-`compression.py` withhold the advice where the domain is a finite field, which
-covers the first reading. The second is uncovered: SYM-4 and the hull refuse a
-domain that is not a field at all and name `over_field()` doing it, and `Z/4Z`
-is such a domain. This clause covers both readings and holds for every message,
-not only for the ones a past audit reached.
+The practice existed and was incomplete. `lift.py`, `collision.py` and
+`compression.py` withheld the advice where the domain is a finite field, which
+covers the first reading. The second was uncovered until `0.7.0rc11`: SYM-4 and
+the hull refused a domain that is not a field at all and named `over_field()`
+doing it, and `Z/4Z` is such a domain. This clause covers both readings and
+holds for every message, not only for the ones a past audit reached.
 
 ### Which of these can fail on supplied data
 

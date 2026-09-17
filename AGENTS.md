@@ -126,11 +126,14 @@ python scripts/reconstruct_macfarlane13.py
 python scripts/reconstruct_prellberg40.py
 python scripts/untargeted_space.py
 python scripts/measure_pipeline.py
+python scripts/measure_pivot_search.py
 ```
 
 `make check` runs the first five, `make check-full` adds the slow markers,
 `make reconstruct` runs the eight reconstructions, and `make measure` the
-figures behind the untargeted family and behind the pipeline of 0.6. Before a
+figures behind the untargeted family, behind the pipeline of 0.6, and behind
+the bound FAC-2 states. The last takes a budget and the target passes it a
+small one; run it with a larger one when the pivot search changes. Before a
 tag, `make release` adds `lock-check`, `coverage`, `build-test`, `sdist-test`,
 `dist-complete`, `dist-check` and `test-minimum`.
 

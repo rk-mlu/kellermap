@@ -45,7 +45,7 @@ from .guards import (
     searched_domain,
     settled,
 )
-from .polynomial_map import CopiedDomain, PolynomialMap
+from .polynomial_map import CopiedDomain, PolynomialMap, widening_advice
 from .reduction import Reduction
 
 # A slot before a name is assigned: either the value a fresh coordinate
@@ -654,8 +654,8 @@ def conjugate(source: PolynomialMap, signs: Sequence[sp.Expr]) -> PolynomialMap:
             ):
                 raise ValueError(
                     f"Conjugating by {entries} over {domain} needs the "
-                    f"inverse of {entry}, which is not a unit there. Use "
-                    "over_field first."
+                    f"inverse of {entry}, which is not a unit there."
+                    f"{widening_advice(domain)}"
                 ) from None
 
     reciprocal = [domain.exquo(domain.one, value) for value in scale]

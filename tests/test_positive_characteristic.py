@@ -735,6 +735,27 @@ def test_conjugate_refuses_every_zero_divisor_as_a_value_error(modulus: int) -> 
             conjugate(source, (entry,))
 
 
+def test_WID2_the_conjugation_refusal_advises_only_where_it_helps() -> None:  # noqa: N802
+    """CNJ-1 refuses over both, and only one of them has a way out.
+
+    Over `ZZ` the entry 2 is not a unit and `QQ` is where a caller goes. Over
+    `Z/4Z` the same entry is not a unit either and there is nowhere to go, and
+    until `0.7.0rc11` the message named `over_field` in both cases.
+    """
+    integral = sp.ring("x", sp.ZZ)[0]
+    residue = sp.ring("x", sp.GF(4))[0]
+
+    with pytest.raises(ValueError, match="over_field") as widenable:
+        conjugate(PolynomialMap.from_ring(integral, (integral.gens[0] ** 3,)), (2,))
+
+    with pytest.raises(ValueError) as stuck:
+        conjugate(PolynomialMap.from_ring(residue, (residue.gens[0] ** 3,)), (2,))
+
+    assert "QQ" in str(widenable.value)
+    assert "not a unit there" in str(stuck.value)
+    assert "over_field" not in str(stuck.value)
+
+
 @pytest.mark.parametrize("modulus", [4, 6])
 def test_every_invertible_matrix_over_a_residue_ring_factors(modulus: int) -> None:
     """FAC-1 over a ring that is not an integral domain.

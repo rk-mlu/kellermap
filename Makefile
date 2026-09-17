@@ -64,6 +64,7 @@ reconstruct:
 measure:
 	uv run python scripts/untargeted_space.py
 	uv run python scripts/measure_pipeline.py
+	uv run python scripts/measure_pivot_search.py --budget 10
 
 # --------------------------------------------------------------------------
 # Collected targets
