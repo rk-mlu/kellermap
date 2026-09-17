@@ -937,10 +937,19 @@ wrong tool there because it does not clear a denominator.
 procedure for rational functions, which is exactly the class the coefficient
 domains of this project fall into. Coordinates are put into that form as they
 enter, so equality and hashing stay consistent with each other. The remaining
-`Expr`-level comparisons in the package — the three determinant checks and the
-pivot tests in `factorize` — use the same function, defensively rather than out
-of need: their values come out of a ring and are normalized already. Having a
-second, cheaper answer to the same question is how the original defect arose.
+`Expr`-level comparisons in the package — the determinant checks in
+`compression.py`, `lift.py` and `guards.settled` — use the same function,
+defensively rather than out of need: their values come out of a ring and are
+normalized already. Having a second, cheaper answer to the same question is
+how the original defect arose.
+
+This paragraph named the pivot tests in `factorize` among them until
+`0.7.0rc11`, and an audit of `0.7.0rc10` found that `linear.py` does not
+import `canonical` at all. It has not since `0.7.0rc7`, which moved the
+elimination into `ring.domain`: "is this entry zero" and "is this entry a
+unit" are asked of the domain there, so the question this section is about
+does not arise in that file. One answer per question is still the rule; the
+answer is the domain's and not this module's.
 
 The third of the three is the one in `guards.settled`, added in `0.4.0rc11`.
 It compared with `!=` until `0.4.0rc12`, which produced no wrong answer for

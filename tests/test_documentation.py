@@ -517,6 +517,33 @@ def test_no_milestone_marker_outlives_its_milestone() -> None:
     assert not outlived, f"the page still carries {outlived} at version {declared}"
 
 
+def test_the_contents_and_the_page_are_in_the_same_order() -> None:
+    """A section can be inserted in the middle of another one and look fine.
+
+    Two were. `Evaluating and factorizing` and `Conjugation by a diagonal`
+    went in between SEA-5 and SEA-6, so SEA-6 to SEA-14 stood under the
+    conjugation heading while the contents listed the two sections after the
+    untargeted search. Nothing failed: the anchors resolve, every obligation
+    is defined exactly once, and the page reads correctly from the top of any
+    one section. An audit of `0.7.0rc10` found it by reading.
+
+    The contents entry and the heading are the same string, so this is an
+    equality and not a containment. `Contents` heads the list itself and is
+    the one heading the list does not carry.
+    """
+    text = (ROOT / "docs" / "contracts.md").read_text(encoding="utf-8")
+    listed = [
+        title for title, _ in re.findall(r"^- \[([^\]]+)\]\(#([^)]+)\)$", text, re.M)
+    ]
+    written = [
+        heading
+        for heading in re.findall(r"^## (.+)$", text, re.M)
+        if heading != "Contents"
+    ]
+
+    assert listed == written
+
+
 def test_every_marker_closes_the_title_of_an_obligation() -> None:
     """A marker on nothing is a marker that will never be removed.
 

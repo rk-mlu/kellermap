@@ -2472,139 +2472,6 @@ Alpöge's three points to `k^19` by RED-5, and the result, reordered, is compare
 against the published table. The two facts are independent: one is about the
 map, the other about three points of it.
 
-## Evaluating and factorizing
-
-Two families for operations that carry no certificate and are relied on by
-those that do. Neither is a step obligation; both name promises the code makes
-to its own callers, and both exist because mutation probes were filed against
-clauses that did not cover them. `DOM-4` says a `SearchOutcome` carries the
-ring it searched and was carrying three probes about arithmetic; `LIN-2` says
-an exhibited inverse undoes its transformation and was carrying one about what
-`factorize` can build. An audit of `0.7.0rc9` found both, and named the cost:
-the full sweep still catches every mutation, but a targeted run of `DOM-4` or
-`LIN-2` no longer means what its name says.
-
-**MAP-1 — Evaluation happens in the coefficient domain.** `F(point)` converts
-every coordinate into `ring.domain` and evaluates there, so the answer is the
-value of the map at that point and not a substitution into its expressions.
-Over `GF(2)` the map `X + X^2` sends `1` to `0`, where substituting gives `2`.
-
-**MAP-2 — A point outside the domain is substituted into instead.** Where any
-coordinate does not convert, every coordinate is substituted and no coordinate
-is reduced. All or nothing: a mixed evaluation would reduce part of a sum
-modulo the characteristic and leave the rest, which is neither answer.
-
-The fallback is the case a point genuinely outside the domain needs. Gao's
-collision over `Q(sqrt(-23))` carries a radical `QQ` does not hold, and a field
-into which `QQ` embeds has characteristic zero, so substitution is right there.
-Which exceptions "does not convert" covers is measured and not assumed: SymPy
-raises `CoercionFailed` over the atomic domains, a bare `ValueError` over every
-polynomial and fraction domain, and `NotImplementedError` over a fraction field
-for an argument that is not an expression.
-
-**MAP-3 — Evaluation is not linear in the exponent.** A monomial of degree `d`
-costs one exponentiation per variable and not `d` multiplications. A zero
-exponent is skipped rather than raised to, which is also what keeps it correct:
-`domain.zero ** 0` raises over every polynomial and fraction domain here.
-
-The same holds of the scaling in `conjugate`, which is CNJ-1's function and
-this clause's arithmetic.
-
-**FAC-1 — A pivot is a unit of the coefficient domain.** The elimination in
-`factorize` divides only by units, asked of the domain with `exquo`. Over a
-field every non-zero entry answers, so this is the same question there and a
-stronger one over a ring.
-
-Where no entry of a column is a unit, one is sought: the determinant lies in
-the ideal the column generates, so a unit determinant forces a unit greatest
-common divisor. Two attempts, in order. A Euclidean fold, complete where it
-applies, which is over an integral domain with a Euclidean division. Then a
-bounded search over row combinations, which applies everywhere.
-
-Both work on a copy and commit only on success, so a failed attempt leaves the
-elimination as it was. Neither trusts a domain predicate: `0.7.0rc9` gated the
-fold on `domain.is_PID`, which SymPy reports for `Z/6Z`, and the fold divided
-by a zero divisor.
-
-The search tries three combinations for each ordered pair of rows, and it tests
-them before it applies one: subtract the other row, add it, or subtract the
-quotient the domain's division reports. The first whose entry is a unit is the
-one applied. Testing before applying is the amendment. `0.7.0rc10` applied the
-first combination and left the loop, so the other two were computed and thrown
-away, and whether a matrix factorized depended on the order of its rows: over
-`ZZ[T]` the matrix `[[T, -1], [2T+1, -2]]` was refused, and the same matrix
-with its rows exchanged factorized. Where no combination of a pair reaches a
-unit, one of them is applied to make progress and the pairs are traversed
-again, up to the bound FAC-2 states.
-
-**FAC-2 — The search for a unit pivot is bounded, and the refusal says so.**
-Over a domain that is not a field, `factorize` may refuse a matrix that does
-factor. A refusal therefore reports that no unit pivot was reached and names
-the two readings — the matrix is not invertible there, or it is and the search
-did not find the combination — rather than asserting either.
-
-This is the supported boundary of `factorize`, and of `LinearStep.normalize`
-with it, since the normalization inverts a factorization rather than a matrix.
-It is one boundary and not two: `0.7.0rc9` inverted through
-`domain.get_field()`, which for `Z/nZ` returns that ring again and raised
-`DMNotAField` on a shear of unit determinant.
-
-The bound is measured and recorded in `docs/roadmap.md`, by
-`scripts/measure_pivot_search.py`, which `make measure` runs. It reaches a unit
-pivot for every invertible `2x2` over `Z/4`, `Z/6`, `Z/8`, `Z/9`, `Z/10` and
-`Z/12` — 13296 matrices — for a sample of random invertible `3x3` over `Z/6Z`,
-and for both `ZZ[T]` matrices of unit determinant that audits have given. It
-does not reach `[[7, 17], [2, 5]]` over `ZZ[T]`, whose determinant is one and
-whose entries are integers: over `ZZ` the same matrix is folded to a unit pivot
-at once. None of this is a proof for any of them.
-
----
-
-## Conjugation by a diagonal
-
-`conjugate(source, entries)` rewrites a map in the coordinates `X_i -> d_i X_i`.
-It is not a step, certifies nothing, and appears in no chain. It is public, it
-is used by `diagonal_matching` and by the comparisons around a published map,
-and what it refuses it should refuse for a stated reason. These are those
-reasons. They were part of SEA-5 until work package 10 and unnamed from then
-until `0.7.0rc9`.
-
-**CNJ-1 — The diagonal is invertible over the coefficient domain.** Every entry
-lies in `ring.domain`, is non-zero there, and is a unit there. All three are
-decided in the domain and not against a list of values.
-
-Non-zero in the domain and not as an expression: over `GF(2)` the entry `2` is
-zero, and comparing it to `0` as a SymPy expression said otherwise, so the
-division below reached SymPy's raw `NotInvertible` instead of this refusal.
-
-A unit in the domain and not "`1` or `-1`": those are the units of `ZZ` and of
-nothing else the package supports. `2` is a unit of `QQ[T]` and `i` is a unit of
-`ZZ[i]`, and both were refused with advice to call `over_field()` -- which for
-`QQ[T]` widens to `QQ(T)` to obtain a reciprocal the domain already had. The
-question is asked with `exquo`, which is what `Dilation` had always asked and
-what this check disagreed with.
-
-The refusal is a `ValueError` and never a raw SymPy exception. Over `sp.GF(4)`,
-which is `Z/4Z` and not a field, `2` is a non-zero non-unit and the zero-divisor
-error escaped. Each of the three refusals says which entry it is about.
-
-**CNJ-2 — Conjugation preserves what a comparison is about.** Degree, order,
-filtration degree and the constant Jacobian determinant of a Keller map survive,
-and a collision carries over with its points and image scaled. Two conjugate
-maps are the same map in different coordinates, which is what makes the question
-`diagonal_matching` asks a diagnostic one rather than a claim.
-
-The Jacobian determinant survives as a *function*: `conjugate` computes
-`G(X) = D F(D^-1 X)`, so `det J(G)` is `det J(F)` composed with `D^-1`. For a
-Keller map that is the same constant; for a map whose determinant is not
-constant the two agree only up to the entries.
-
-`D^-1` and not `D`, which this clause said until `0.7.0rc10`. Over the entries
-`(2, 3)` the two read `1 + x y^3 / 27` and `1 + 108 x y^3`. The implementation
-was right and the clause was wrong, and the test covering it used a diagonal of
-signs, where the two coincide, so nothing could have found it short of reading
-the clause against the code — which is what an audit of `0.7.0rc9` did.
-
 **SEA-6 — A failure to find is not a proof of absence.** Reporting no chain
 means this search did not find one with these arguments. It is not a statement
 that no chain exists, and nothing in the package turns it into one. See
@@ -3717,6 +3584,141 @@ UNT-3 is the one to read twice. Its first half is proved and its second half is
 not, the two are stated in one obligation because a search cannot apply them
 separately, and a reviewer weighing the family should weigh those halves
 differently.
+
+---
+
+## Evaluating and factorizing
+
+Two families for operations that carry no certificate and are relied on by
+those that do. Neither is a step obligation; both name promises the code makes
+to its own callers, and both exist because mutation probes were filed against
+clauses that did not cover them. `DOM-4` says a `SearchOutcome` carries the
+ring it searched and was carrying three probes about arithmetic; `LIN-2` says
+an exhibited inverse undoes its transformation and was carrying one about what
+`factorize` can build. An audit of `0.7.0rc9` found both, and named the cost:
+the full sweep still catches every mutation, but a targeted run of `DOM-4` or
+`LIN-2` no longer means what its name says.
+
+**MAP-1 — Evaluation happens in the coefficient domain.** `F(point)` converts
+every coordinate into `ring.domain` and evaluates there, so the answer is the
+value of the map at that point and not a substitution into its expressions.
+Over `GF(2)` the map `X + X^2` sends `1` to `0`, where substituting gives `2`.
+
+**MAP-2 — A point outside the domain is substituted into instead.** Where any
+coordinate does not convert, every coordinate is substituted and no coordinate
+is reduced. All or nothing: a mixed evaluation would reduce part of a sum
+modulo the characteristic and leave the rest, which is neither answer.
+
+The fallback is the case a point genuinely outside the domain needs. Gao's
+collision over `Q(sqrt(-23))` carries a radical `QQ` does not hold, and a field
+into which `QQ` embeds has characteristic zero, so substitution is right there.
+Which exceptions "does not convert" covers is measured and not assumed: SymPy
+raises `CoercionFailed` over the atomic domains, a bare `ValueError` over every
+polynomial and fraction domain, and `NotImplementedError` over a fraction field
+for an argument that is not an expression.
+
+**MAP-3 — Evaluation is not linear in the exponent.** A monomial of degree `d`
+costs one exponentiation per variable and not `d` multiplications. A zero
+exponent is skipped rather than raised to, which is also what keeps it correct:
+`domain.zero ** 0` raises over every polynomial and fraction domain here.
+
+The same holds of the scaling in `conjugate`, which is CNJ-1's function and
+this clause's arithmetic.
+
+**FAC-1 — A pivot is a unit of the coefficient domain.** The elimination in
+`factorize` divides only by units, asked of the domain with `exquo`. Over a
+field every non-zero entry answers, so this is the same question there and a
+stronger one over a ring.
+
+Where no entry of a column is a unit, one is sought: the determinant lies in
+the ideal the column generates, so a unit determinant forces a unit greatest
+common divisor. Two attempts, in order. A Euclidean fold, complete where it
+applies, which is over an integral domain with a Euclidean division. Then a
+bounded search over row combinations, which applies everywhere.
+
+Both work on a copy and commit only on success, so a failed attempt leaves the
+elimination as it was. Neither trusts a domain predicate: `0.7.0rc9` gated the
+fold on `domain.is_PID`, which SymPy reports for `Z/6Z`, and the fold divided
+by a zero divisor.
+
+The search tries three combinations for each ordered pair of rows, and it tests
+them before it applies one: subtract the other row, add it, or subtract the
+quotient the domain's division reports. The first whose entry is a unit is the
+one applied. Testing before applying is the amendment. `0.7.0rc10` applied the
+first combination and left the loop, so the other two were computed and thrown
+away, and whether a matrix factorized depended on the order of its rows: over
+`ZZ[T]` the matrix `[[T, -1], [2T+1, -2]]` was refused, and the same matrix
+with its rows exchanged factorized. Where no combination of a pair reaches a
+unit, one of them is applied to make progress and the pairs are traversed
+again, up to the bound FAC-2 states.
+
+**FAC-2 — The search for a unit pivot is bounded, and the refusal says so.**
+Over a domain that is not a field, `factorize` may refuse a matrix that does
+factor. A refusal therefore reports that no unit pivot was reached and names
+the two readings — the matrix is not invertible there, or it is and the search
+did not find the combination — rather than asserting either.
+
+This is the supported boundary of `factorize`, and of `LinearStep.normalize`
+with it, since the normalization inverts a factorization rather than a matrix.
+It is one boundary and not two: `0.7.0rc9` inverted through
+`domain.get_field()`, which for `Z/nZ` returns that ring again and raised
+`DMNotAField` on a shear of unit determinant.
+
+The bound is measured and recorded in `docs/roadmap.md`, by
+`scripts/measure_pivot_search.py`, which `make measure` runs. It reaches a unit
+pivot for every invertible `2x2` over `Z/4`, `Z/6`, `Z/8`, `Z/9`, `Z/10` and
+`Z/12` — 13296 matrices — for a sample of random invertible `3x3` over `Z/6Z`,
+and for both `ZZ[T]` matrices of unit determinant that audits have given. It
+does not reach `[[7, 17], [2, 5]]` over `ZZ[T]`, whose determinant is one and
+whose entries are integers: over `ZZ` the same matrix is folded to a unit pivot
+at once. None of this is a proof for any of them.
+
+---
+
+## Conjugation by a diagonal
+
+`conjugate(source, entries)` rewrites a map in the coordinates `X_i -> d_i X_i`.
+It is not a step, certifies nothing, and appears in no chain. It is public, it
+is used by `diagonal_matching` and by the comparisons around a published map,
+and what it refuses it should refuse for a stated reason. These are those
+reasons. They were part of SEA-5 until work package 10 and unnamed from then
+until `0.7.0rc9`.
+
+**CNJ-1 — The diagonal is invertible over the coefficient domain.** Every entry
+lies in `ring.domain`, is non-zero there, and is a unit there. All three are
+decided in the domain and not against a list of values.
+
+Non-zero in the domain and not as an expression: over `GF(2)` the entry `2` is
+zero, and comparing it to `0` as a SymPy expression said otherwise, so the
+division below reached SymPy's raw `NotInvertible` instead of this refusal.
+
+A unit in the domain and not "`1` or `-1`": those are the units of `ZZ` and of
+nothing else the package supports. `2` is a unit of `QQ[T]` and `i` is a unit of
+`ZZ[i]`, and both were refused with advice to call `over_field()` -- which for
+`QQ[T]` widens to `QQ(T)` to obtain a reciprocal the domain already had. The
+question is asked with `exquo`, which is what `Dilation` had always asked and
+what this check disagreed with.
+
+The refusal is a `ValueError` and never a raw SymPy exception. Over `sp.GF(4)`,
+which is `Z/4Z` and not a field, `2` is a non-zero non-unit and the zero-divisor
+error escaped. Each of the three refusals says which entry it is about.
+
+**CNJ-2 — Conjugation preserves what a comparison is about.** Degree, order,
+filtration degree and the constant Jacobian determinant of a Keller map survive,
+and a collision carries over with its points and image scaled. Two conjugate
+maps are the same map in different coordinates, which is what makes the question
+`diagonal_matching` asks a diagnostic one rather than a claim.
+
+The Jacobian determinant survives as a *function*: `conjugate` computes
+`G(X) = D F(D^-1 X)`, so `det J(G)` is `det J(F)` composed with `D^-1`. For a
+Keller map that is the same constant; for a map whose determinant is not
+constant the two agree only up to the entries.
+
+`D^-1` and not `D`, which this clause said until `0.7.0rc10`. Over the entries
+`(2, 3)` the two read `1 + x y^3 / 27` and `1 + 108 x y^3`. The implementation
+was right and the clause was wrong, and the test covering it used a diagonal of
+signs, where the two coincide, so nothing could have found it short of reading
+the clause against the code — which is what an audit of `0.7.0rc9` did.
 
 ---
 

@@ -4,7 +4,85 @@ Notable changes per release. The milestone plan and its reasoning live in
 `docs/roadmap.md`, the binding obligations of the verification surface in
 `docs/contracts.md`.
 
-## 0.7.0rc10
+## 0.7.0rc11
+
+An audit of `0.7.0rc10` found two release blockers, two further defects and a
+page that had stopped describing the code in six places. Both blockers are in
+what the two previous release candidates built around the coefficient domain.
+
+**A certificate no longer rests on a search that is allowed to fail.** LIN-6
+verified a normalization by calling `factorize` on `J(F)(0)` and comparing the
+result against the declared transformation. `factorize` refuses a matrix whose
+column its bounded search cannot bring to a unit pivot, FAC-2 permits that
+refusal, and the verifier reported every one of them as a singular linear part.
+Over `ZZ[T]` the matrix `[[T, -1], [2T+1, -2]]` has determinant one, and a step
+carrying its inverse as an exhibited factorization was refused as singular.
+Verification now takes the determinant in the coefficient domain and requires a
+unit, then multiplies the declared transformation against `J(F)(0)` and requires
+the identity. Nothing is inverted and nothing is factorized. `normalize()` still
+builds through `factorize` and keeps that boundary; verification does not share
+it. One side of the product is enough over a commutative ring, and the two
+clauses have two messages, each true where it fires.
+
+**A widening that does not widen is refused.** `field_ring` promised the field
+of fractions of the coefficient domain and returned whatever `get_field` handed
+back. For `Z/nZ` with composite `n` SymPy hands back that ring, so `field_ring`
+over `Z/4Z` answered with a ring that has zero divisors, `over_field` left the
+domain unchanged, and a caller who followed the advice to widen met the same
+refusal again. WID-1 checks the answer instead of trusting it, which is the rule
+FAC-1 already states for `is_PID`. WID-2 names `over_field()` only where the
+widening exists and changes the domain, decided per domain rather than per
+branch: the advice had been withheld by hand for finite fields in three files
+and was still given for `Z/4Z` at four sites, where it cannot be followed at
+all. The whole suite passed the repair before a test was written for it, so
+there had been no control on any of those messages.
+
+**The pivot search tries the candidates it documents.** It named three
+combinations per ordered pair of rows and applied the first unconditionally,
+then left the loop, so minus one and the quotient were computed and discarded.
+Whether a matrix factorized depended on the order of its rows: the `ZZ[T]`
+matrix above was refused and the same matrix with its rows exchanged went
+through. The three are tested now and the one that reaches a unit is applied,
+which makes the search accept everything it accepted before and more. The guard
+against a candidate that annihilates the divisor is gone with its pragma, whose
+stated reason held only while the first candidate was the only one reached.
+
+**The bound behind FAC-2 can be rerun.** `scripts/measure_pivot_search.py` is
+new and `make measure` runs it. All 13296 invertible `2x2` matrices over `Z/4`,
+`Z/6`, `Z/8`, `Z/9`, `Z/10` and `Z/12` are reached, none refused, each
+reconstructing to the matrix it was given; so are random invertible `3x3` over
+`Z/6Z`, and both `ZZ[T]` matrices audits have supplied. `[[7, 17], [2, 5]]` over
+`ZZ[T]` is refused, has determinant one and integer entries, and is folded to a
+unit pivot at once over `ZZ`: the boundary is about the domain a matrix is read
+over and not about the matrix. The figures are in `docs/roadmap.md`, where the
+code and the contract page had been pointing without them being there.
+
+**FAC-2 had no control and no probe.** The clause binds the whole refusal and
+the test matched its first sentence, so the audit deleted the two readings, the
+boundedness and the reference to the clause, and watched the suite pass. Every
+part is asserted now, and two probes cover it.
+
+**The probe count was wrong in three places and gated in none.** The script
+narrated a running total ending at sixty-one against a set of sixty,
+`docs/provenance.md` named forty-five, and the changelog entry below repeats the
+first. One sentence states the count now and `tests/test_scripts.py` holds it
+against the set. The running total is gone: which of its increments was wrong
+cannot be settled from this repository. `docs/errata.md` records it.
+
+**Six places where a page had stopped describing the code.** `factorize` said
+that nothing is attempted over a domain that is not a principal ideal domain,
+which `0.7.0rc10` had made false, and advised `over_field` without qualification.
+`LinearStep.normalize` described an inverse formed in the field of fractions,
+which was `0.7.0rc9`'s route. `docs/api.md` said every map over `ZZ` has to be
+widened first, which `0.7.0rc9` had made false. `docs/architecture.md` named the
+pivot tests in `factorize` among the comparisons that go through
+`kellermap.canonical`, which `linear.py` does not import and has not since
+`0.7.0rc7`. The 13296 pointed at a page that did not carry the figure. And two
+sections had been inserted between SEA-5 and SEA-6, so SEA-6 to SEA-14 stood
+under the conjugation heading while the contents listed them elsewhere; the
+sections are where the contents puts them, and a test holds the two orders
+against each other.
+
 
 An audit of `0.7.0rc9` found two release blockers and five smaller defects.
 Both blockers are in the ring-general factorization `0.7.0rc9` introduced, and

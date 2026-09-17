@@ -592,13 +592,32 @@ components without substituting anything:
 
 ```
 
-Dilations need their coefficient to be a unit, so a map read off a paper over
-`ZZ` has to be widened first. That is a deliberate step, not something the
+Dilations need their coefficient to be a unit, which over `ZZ` means `1` or
+`-1`. That does not put every map over `ZZ` through `over_field()`: a
+unimodular matrix factors there without widening anything, because the
+elimination brings the column to a unit pivot rather than dividing by the
+first entry it finds.
+
+```python
+>>> import sympy as sp
+>>> from kellermap import LinearAutomorphism, over_field
+>>> integral = PolynomialMap((x, y), (x + y**2, y))
+>>> unimodular = LinearAutomorphism.factorize(
+...     integral.ring, sp.Matrix([[2, 1], [1, 1]])
+... )
+>>> sp.Matrix(unimodular.matrix(integral.ring)) == sp.Matrix([[2, 1], [1, 1]])
+True
+
+```
+
+This page said until `0.7.0rc11` that a map read off a paper over `ZZ` has to
+be widened first. That was true of `0.7.0rc8` and false of `0.7.0rc9`, which
+implemented the unimodular case; an audit of `0.7.0rc10` found the page still
+saying it. Widening is for a coefficient that is genuinely not a unit, such as
+a determinant of `2`, and it stays a deliberate step rather than something the
 arithmetic does quietly:
 
 ```python
->>> from kellermap import over_field
->>> integral = PolynomialMap((x, y), (x + y**2, y))
 >>> integral.ring.domain, over_field(integral).ring.domain
 (ZZ, QQ)
 

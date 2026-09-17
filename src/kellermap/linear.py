@@ -539,8 +539,10 @@ class LinearAutomorphism:
         arithmetic is the same.
 
         A singular matrix raises ``ValueError``, and so does one whose column
-        cannot be brought to a unit pivot in the coefficient domain --
-        ``over_field`` first, in that case.
+        cannot be brought to a unit pivot in the coefficient domain. Whether
+        widening is the way out of the second is a question about the domain
+        and not about ``factorize``: WID-2 decides it, and the refusal names
+        ``over_field`` only where it exists and changes something.
 
         Over a domain that is not a field the pivot has to be a *unit* and not
         merely non-zero, and where no entry of the column is one it is made
@@ -554,14 +556,21 @@ class LinearAutomorphism:
         unimodular matrices with entries from ``-2`` to ``2``.
 
         The combination is the Euclidean algorithm run with row operations,
-        and it is available exactly where the domain says it has one: on a
-        principal ideal domain. The determinant lies in the ideal the column
-        generates, so a unit determinant forces the greatest common divisor of
-        the column to be a unit, and folding the rows pairwise brings it into
-        one row. Over a domain that is not a principal ideal domain -- over
-        ``ZZ[T]``, say -- nothing is attempted and the refusal stands, now for
-        the reason that is actually true of the domain rather than as an
-        accident of which entry came first.
+        and it is available exactly where the domain has one, which is
+        measured rather than reported: ``0.7.0rc9`` gated it on
+        ``domain.is_PID``, which SymPy reports for ``Z/6Z``, and the fold
+        divided by a zero divisor. The determinant lies in the ideal the
+        column generates, so a unit determinant forces the greatest common
+        divisor of the column to be a unit, and folding the rows pairwise
+        brings it into one row.
+
+        Where the fold does not apply, a bounded search over row combinations
+        does, since ``0.7.0rc10``. This paragraph said until ``0.7.0rc11``
+        that over a domain which is not a principal ideal domain -- over
+        ``ZZ[T]``, say -- nothing is attempted and the refusal stands. That
+        was true of ``0.7.0rc9`` and false of the release candidate that
+        replaced it, and an audit of ``0.7.0rc10`` found the page still saying
+        it. FAC-1 states what the search tries and FAC-2 that it is bounded.
 
         The elimination runs in ``ring.domain`` and not in SymPy expressions,
         since ``0.7.0rc7``. "Is this entry zero", "is this entry one" and "what
