@@ -648,3 +648,47 @@ nobody. Every place that repeated it was written in good faith from the place
 before it, and the error travelled the same way. The fix that matters is not
 the corrected number but the test, which is why the count is now written once
 and in a shape a regular expression can find.
+
+## The carrier figures of work package 1 are not the ones the code selects
+
+**Said, in `docs/roadmap.md` under WP 1 of milestone 0.7, and in SYM-7:** that
+`determinant()` leaves a four-by-four determinant at every BCW-reduced stage of
+`spacerat11`, that the lift has 29 coordinates with a diagonal entry of one and
+a carrier of 9, and that the complement is 29 by 29 with 10364 monomials.
+
+**Measured on `0.7.0rc11`, through the chain `scripts/measure_pipeline.py`
+runs:**
+
+| stage | n | diagonal ones | carrier | complement |
+| --- | ---: | ---: | ---: | ---: |
+| `UnipotentStep` | 22 | 20 | 16 | 6 |
+| `HomogenizationStep` | 23 | 21 | 17 | 6 |
+| `CompressionStep` | 19 | 17 | 13 | 6 |
+| `SymmetricLiftStep` | 38 | 28 | 10 | 28 |
+
+The complement of the lift holds 13589 monomials. `alpoege12` still leaves four
+after the unipotent step and `alpoege13` leaves six, so the four-by-four is not
+a property of a BCW-reduced map either.
+
+**Found** while smoke-testing `scripts/measure_lift_determinant.py`, which
+prints the shape of the complement before it spends anything on the
+determinant.
+
+**Not established:** when the figures stopped matching, or which change moved
+them. Every one of them is a claim about a tree that is now a tag, and this
+entry does not guess.
+
+**Why nothing caught it:** none of the carrier figures is under a gate.
+`make measure` checks the dimensions and the monomial counts of the chain, and
+those still agree with `docs/references.md` to the last digit. The carrier is
+the one quantity in that table nothing recomputes, and it is the quantity SYM-7
+rests its explanation on.
+
+**Now:** the figures stand as they are until they are re-measured, and this
+entry is what a reader meets first. Correcting them inside the pages would put
+new numbers under no gate, which is how the old ones got there.
+
+**Worth keeping:** a measurement that explains something is load-bearing, and a
+load-bearing figure with no gate under it is the same object as an ungated
+count. The repair is the same one the probe count got: put it where something
+recomputes it.

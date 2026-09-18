@@ -38,6 +38,14 @@ released. Whether the convention should have room for an obligation added
 during a release-candidate cycle is an open question and not a decision this
 page takes.
 
+An audit of `0.7.0rc11` found two more, and three clauses are ahead of the
+implementation for them, by the same order and without markers for the same
+reason: MAP-4, the ground-domain amendment of WID-1, and the sentence in FAC-1
+that asks its predicate the same way. The figures SYM-7 quotes from work
+package 1 are a separate matter: the carrier they record is not the carrier the
+code selects today, which `docs/errata.md` states and a measurement has to
+settle.
+
 This paragraph used to carry a version number. It said `0.4.0` through the
 whole of milestone 0.5 and was noticed only when 0.6 opened, which is what a
 number maintained in one place and checked in none does. What it says now holds
@@ -1936,6 +1944,15 @@ rather than on a preference. On the thirty-eight-variable lift of
 forty-eight minutes without returning. `docs/roadmap.md` under work package 1
 of milestone 0.7 records the runs and the machines they were made on.
 
+That run used the fraction-free elimination of `DomainMatrix.det()`, which
+MAP-4 replaces with a division-free one. The paragraph below lists the
+elimination among the properties of the complement that were never isolated,
+so the figure belongs to a route this library no longer takes, and whether the
+replacement changes anything there is a question for a measurement rather than
+for this page. `scripts/measure_lift_determinant.py` puts both eliminations on
+that complement under a budget. Until it has been run with one large enough to
+matter, the departure stands on the run that was made.
+
 **The reason is the carrier and not the dimension.** `determinant()` takes the
 Schur complement of the unipotent block a map carries, so a BCW-reduced map of
 any size leaves a four-by-four determinant: the unipotent step, the
@@ -3625,6 +3642,61 @@ exponent is skipped rather than raised to, which is also what keeps it correct:
 The same holds of the scaling in `conjugate`, which is CNJ-1's function and
 this clause's arithmetic.
 
+**MAP-4 — The determinant is taken without dividing.** `determinant()` uses
+addition, subtraction and multiplication in the coefficient domain and nothing
+else. No step of it asks the domain for a quotient, so a domain with zero
+divisors is not a special case, is not detected, and is not refused.
+
+The Schur complement comes first and is unchanged. It divides nowhere: `D^-1`
+is never formed, only `D^-1 C` through the Neumann series, and the nilpotency
+that makes the series terminate is decided on the dependency graph rather than
+by taking powers. What follows it is an expansion of the remaining block, and
+that is the only place a division ever was.
+
+`0.7.0rc11` and everything before it took the remaining block with
+`DomainMatrix.det()`, whose fraction-free elimination divides exactly. Over
+`Z/nZ` with composite `n` the division meets a zero divisor and SymPy's
+`NotInvertible` or `ExactQuotientFailed` leaves the library as a raw exception.
+An audit of `0.7.0rc11` found it. It reaches the certificate surface and not
+only this method: LIN-3 asks for the determinant of the source, so a
+normalizing step over `Z/4Z` that `factorize` and `normalize` both accept fails
+in `verify()`.
+
+Two-by-two is unaffected, because `ad - bc` divides nothing. That is why 13296
+matrices passed and why the measurement did not reach this: its exhaustive part
+is two-by-two, and its three-by-three part calls `factorize` and not
+`determinant`. Over `Z/4Z`, 454 of 2000 random three-by-three blocks raise and
+1182 of 2000 four-by-four.
+
+No domain case distinction. A division-free expansion is correct over every
+commutative ring, so there is nothing for a predicate to decide, and a
+predicate here would be the defect WID-1 was amended for a second time. It is
+also not slower: on dense quadratic blocks over `QQ` the division-free
+expansion beats the fraction-free one by 4.6 at size five, 9.1 at six and 67 at
+seven.
+
+Only the determinant is computed, and not a characteristic polynomial it is
+one coefficient of. Both are division-free and the difference is in what else
+they hold. On the six-by-six complement of the `spacerat11` chain the
+determinant has one term and the largest coefficient in the middle of the
+characteristic polynomial has 147, which is the shape of every complement this
+library takes a determinant of: the determinant of a Keller map is a unit, so
+it is the one coefficient that cancels to almost nothing. Asking for all of
+them to read the last one off exhausted 32 GB on the complement of the lift.
+Bird's algorithm holds `n**2` ring elements and produces one polynomial.
+
+Not from a factorization. A determinant taken by factorizing the matrix would
+be defined only where `factorize` succeeds, and FAC-2 permits it to refuse a
+matrix of unit determinant: `[[7, 17], [2, 5]]` over `ZZ[T]` is the witness
+this page already carries. A value a certificate rests on may not rest on a
+bounded search, which is what LIN-6 was amended for. The route is narrower
+still than that suggests, since `determinant()` is asked of maps whose Jacobian
+is not constant and of maps that are not invertible at all: of 400 random
+nonlinear maps over `Z/4Z` in three variables, 96 fail on this path today, and
+none of them has a matrix to factorize. The factorization is an independent
+cross-check in the tests, which is where two implementations of one quantity
+belong.
+
 **FAC-1 — A pivot is a unit of the coefficient domain.** The elimination in
 `factorize` divides only by units, asked of the domain with `exquo`. Over a
 field every non-zero entry answers, so this is the same question there and a
@@ -3640,6 +3712,16 @@ Both work on a copy and commit only on success, so a failed attempt leaves the
 elimination as it was. Neither trusts a domain predicate: `0.7.0rc9` gated the
 fold on `domain.is_PID`, which SymPy reports for `Z/6Z`, and the fold divided
 by a zero divisor.
+
+The zero-divisor question is asked of the ground domain, since `0.7.0rc12`, and
+it is the same question WID-1 asks. `(Z/4Z)[T]` has zero divisors and reports
+neither `is_FiniteField` nor `is_Field` for itself, so a predicate that stops
+at the outermost level answers `False` there. The fold does not run over that
+domain today, because `is_PID` is `False` for it and the gate is a conjunction,
+so this is a hazard the other half of the gate happens to cover and not a
+defect that was found. One answer to one question all the same: two predicates
+that disagree about the same ring are how the audits of `0.7.0rc9` and
+`0.7.0rc11` both began.
 
 The search tries three combinations for each ordered pair of rows, and it tests
 them before it applies one: subtract the other row, add it, or subtract the
@@ -3735,12 +3817,23 @@ ring over the field of fractions of its domain, and raises where the domain has
 none. The result is checked rather than the domain trusted: what `get_field`
 returns has to report itself a field.
 
-`Z/nZ` for composite `n` is the case that forced this. SymPy's `get_field`
-returns that ring again, and `0.7.0rc10` passed it on under a name and a
-docstring that promise a field, so `field_ring` over `Z/4Z` answered with a
-ring that has zero divisors. The rule is the one FAC-1 states about
-`domain.is_PID`: a domain predicate is a claim like any other, and it is
-measured rather than trusted.
+The question is asked of the whole domain tower and not of its outermost
+level, since `0.7.0rc12`. A polynomial or fraction domain reports `is_Field`
+for itself and says nothing about the ring underneath it: `(Z/4Z)[T]` widens to
+`GF(4)(T)`, which reports `True` while holding `2 != 0` and `2 * 2 == 0`. The
+ground domain decides, and a ground with zero divisors is refused whatever the
+level above it reports.
+
+`Z/nZ` for composite `n` is the case that forced this twice. SymPy's
+`get_field` returns that ring again, and `0.7.0rc10` passed it on under a name
+and a docstring that promise a field, so `field_ring` over `Z/4Z` answered with
+a ring that has zero divisors. `0.7.0rc11` checked the answer and stopped at
+its outermost level, so the same ring with a parameter adjoined passed. An
+audit of `0.7.0rc11` found the second. The probe covered `Z/4Z` directly and
+did not reach `(Z/4Z)[T]`, which is what a probe per reading is for.
+
+A domain that already is a field is returned as it is. That is a widening that
+changes nothing and not a failure, and `GF(5)` reaches it.
 
 **WID-2 — `over_field` is named as advice only where it exists.** A message
 that tells a caller to widen names `over_field()` only where the widening
