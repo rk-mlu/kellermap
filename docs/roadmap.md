@@ -3074,6 +3074,13 @@ applying one.
 | all six | 13296 | 0 |
 | random invertible `3x3` over `Z/6Z` | 16013 | 0 |
 
+Since `0.7.0rc12` the last row takes the determinant of each matrix as well as
+factorizing it, and counts a wrong determinant beside a refusal. That part was
+added because an audit of `0.7.0rc11` found `determinant()` failing over
+exactly these rings while this script was passing them: it called `factorize`
+and nothing else, and its exhaustive part is two-by-two, where the determinant
+divides nothing.
+
 The last row is a figure with a time beside it and not a total. It is what
 seed 20260916 reached in 60 seconds; there are `6**9` matrices of that size
 over `Z/6Z`, and the part stops at its budget rather than at a count. The

@@ -36,6 +36,7 @@ import math
 
 import pytest
 import sympy as sp
+from sympy.polys.matrices import DomainMatrix
 
 from kellermap import (
     Collision,
@@ -190,20 +191,27 @@ def test_bcw17_determinant_is_not_constant_after_a_perturbation() -> None:
 
 @pytest.mark.slow
 def test_bcw17_determinant_strategies_agree(bcw17: PolynomialMap) -> None:
-    """A cross-check of the two determinant strategies at full size.
+    """A cross-check of the determinant at full size, against SymPy.
 
     Under "Cross-representation tests" ``architecture.md`` requires holding
-    this project's ``DomainMatrix`` integration against an independently
-    computed result. Here the comparison runs the other way round: the
-    ``DomainMatrix`` path is the reference and the Schur complement is the
-    optimisation. Reaching for the private method is deliberate. The public API
-    chooses the strategy itself, and that choice is what has to be bypassed
-    here.
+    this project's results against an independently computed one. The
+    reference here is SymPy's own fraction-free elimination, called directly
+    rather than through this library, so it shares neither the Schur
+    complement nor the expansion that follows it.
 
-    Marked ``slow``: the reference path takes about a minute. That is the price
-    of not checking the optimisation against itself.
+    That reference is sound here and only here. It divides exactly, and MAP-4
+    replaced it in the library because over a ring with zero divisors the
+    division either raises or returns a wrong answer. ``bcw17`` is over a
+    domain that has none, which is what makes the old route usable as a
+    witness against the new one at a size the Leibniz expansion cannot reach.
+
+    Marked ``slow``: the reference takes about a minute. That is the price of
+    not checking the strategy against itself.
     """
-    reference = bcw17._determinant_by_domain_matrix(bcw17._jacobian_polynomials)
+    reference = DomainMatrix.from_list(
+        [list(row) for row in bcw17._jacobian_polynomials],
+        bcw17.ring.to_domain(),
+    ).det()
 
     assert reference.as_expr() == bcw17.determinant() == 1
 

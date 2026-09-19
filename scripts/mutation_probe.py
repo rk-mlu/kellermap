@@ -44,7 +44,7 @@ They ask today's question of today's code. Every one of them should report
 ``tests/test_scripts.py`` checks that every fragment still matches the code it
 aims at.
 
-The set holds 67 probes. That sentence is held against ``PROBES`` by
+The set holds 69 probes. That sentence is held against ``PROBES`` by
 ``tests/test_scripts.py``, which is the only reason to write a number here at
 all. Until ``0.7.0rc11`` this paragraph carried a running total instead, one
 audit's addition at a time, and an audit of ``0.7.0rc10`` found it one too
@@ -79,6 +79,11 @@ rewritten verifier, and added one for the candidate rule of FAC-1, two for
 WID-2, one for WID-1 and two for FAC-2. The last two it found missing
 altogether: it stripped the refusal of everything FAC-2 requires it to say and
 the suite passed.
+
+The audit of ``0.7.0rc11`` added two for MAP-4. One puts the replaced route
+back, which is the mutation that matters: it does not raise on most blocks, it
+returns a wrong determinant on some, and a control that only watched for an
+exception would pass it. The other drops the sign of the size.
 
 Milestone 0.7 added ten obligations and only three of them are here. HOM-11 and
 HOM-12 cannot fail after HOM-1, which the contract page argues where it says
@@ -607,6 +612,23 @@ PROBES: tuple[Probe, ...] = (
         "src/kellermap/polynomial_map.py",
         '    if widened is None or widened == domain:\n        return ""',
         '    if widened == domain:\n        return ""',
+    ),
+    Probe(
+        "MAP-4",
+        "the determinant is taken without dividing",
+        "src/kellermap/polynomial_map.py",
+        "    corner = current[0][0]\n\n    return corner if size % 2 else -corner",
+        "    from sympy.polys.matrices import DomainMatrix\n\n"
+        "    return DomainMatrix.from_list(\n"
+        "        [list(row) for row in block], block[0][0].ring.to_domain()\n"
+        "    ).det()",
+    ),
+    Probe(
+        "MAP-4",
+        "the sign of the size is carried",
+        "src/kellermap/polynomial_map.py",
+        "    return corner if size % 2 else -corner",
+        "    return corner",
     ),
     Probe(
         "FAC-2",

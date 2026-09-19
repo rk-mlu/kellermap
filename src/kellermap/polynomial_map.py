@@ -37,7 +37,6 @@ from typing import Any, cast, overload
 
 import sympy as sp
 from sympy.polys.fields import FracElement
-from sympy.polys.matrices import DomainMatrix
 from sympy.polys.polyerrors import CoercionFailed, PolynomialError
 from sympy.polys.rings import PolyElement, PolyRing, sring
 
@@ -257,6 +256,76 @@ def clone_domain(domain: Any) -> Any:
         raise ValueError(_UNSUPPORTED_DOMAIN.format(domain=domain))
 
     return clone_domain(domain.dom).poly_ring(*domain.symbols, order=sparse_ring.order)
+
+
+def determinant_without_division(
+    block: Sequence[Sequence[Any]], zero: Any, one: Any
+) -> Any:
+    """Return the determinant of a square block using only ring arithmetic.
+
+    MAP-4. Bird's algorithm: ``mu(X)`` keeps the strict upper triangle of
+    ``X`` and carries minus the trailing diagonal sum on its diagonal, and
+    ``size - 1`` rounds of ``X -> mu(X) block`` leave the determinant in the
+    corner, up to the sign of the size. Addition, subtraction and
+    multiplication and nothing else, so a domain with zero divisors is not a
+    case here and is neither detected nor refused. The empty block has
+    determinant ``one``.
+
+    One function for two callers, because it answers one question: the
+    determinant of the Jacobian in the polynomial ring, and the determinant
+    of the linear part at the origin in the coefficient domain, which LIN-6
+    needs. The elements differ and the arithmetic does not.
+
+    ``DomainMatrix.det()`` stood in both places until ``0.7.0rc12``. Its
+    fraction-free elimination divides exactly, and over ``Z/nZ`` with
+    composite ``n`` that division meets a zero divisor: sometimes SymPy
+    raises, and sometimes the elimination finishes and the answer is wrong.
+    ``[[0, 0, 1], [0, 1, 0], [2, 0, 0]]`` over ``Z/4Z`` has determinant ``2``
+    and was answered with ``0``. An audit of ``0.7.0rc11`` found the
+    exception; the wrong answers were found while checking whether it could
+    be caught and the old route kept for the rest, which is what rules that
+    out.
+
+    The determinant alone, and not a characteristic polynomial it is one
+    coefficient of. Both are division-free and what differs is what they
+    hold. The determinant of a map this library reduces is a unit, so it is
+    the coefficient that cancels to almost nothing while the ones in the
+    middle do not: on the six-by-six complement of the ``spacerat11`` chain
+    the determinant has one term and the largest middle coefficient has 147.
+    ``docs/roadmap.md`` records what the difference costs on the lift.
+    """
+    size = len(block)
+    if not size:
+        return one
+
+    current = [list(row) for row in block]
+
+    for _ in range(size - 1):
+        shaped = [[zero] * size for _ in range(size)]
+        for row in range(size):
+            trailing = zero
+            for index in range(row + 1, size):
+                trailing = trailing - current[index][index]
+            shaped[row][row] = trailing
+            for column in range(row + 1, size):
+                shaped[row][column] = current[row][column]
+        current = [
+            [
+                sum(
+                    (
+                        shaped[row][index] * block[index][column]
+                        for index in range(size)
+                    ),
+                    zero,
+                )
+                for column in range(size)
+            ]
+            for row in range(size)
+        ]
+
+    corner = current[0][0]
+
+    return corner if size % 2 else -corner
 
 
 def field_of_fractions(domain: Any) -> Any | None:
@@ -724,20 +793,16 @@ class PolynomialMap:
 
         return True
 
-    def _determinant_by_domain_matrix(self, block: Block) -> PolyElement:
-        """Return ``det(block)`` over the sparse polynomial-ring domain.
+    def _determinant_of_block(self, block: Block) -> PolyElement:
+        """Return ``det(block)`` in the polynomial ring, without dividing.
 
-        The empty matrix has determinant one; ``DomainMatrix`` does not
-        accept it.
+        MAP-4, through ``determinant_without_division``. The empty matrix has
+        determinant one, which that function returns for the empty block.
         """
-        if not block:
-            return self._ring.one
-
-        matrix = DomainMatrix.from_list(
-            [list(row) for row in block],
-            self._ring.to_domain(),
+        return cast(
+            PolyElement,
+            determinant_without_division(block, self._ring.zero, self._ring.one),
         )
-        return cast(PolyElement, matrix.det())
 
     def _schur_complement(self, carrier: Sequence[int]) -> Block | None:
         """Return ``A - B D^-1 C`` for the split induced by ``carrier``.
@@ -826,9 +891,9 @@ class PolynomialMap:
         if carrier:
             schur_complement = self._schur_complement(carrier)
             if schur_complement is not None:
-                return self._determinant_by_domain_matrix(schur_complement)
+                return self._determinant_of_block(schur_complement)
 
-        return self._determinant_by_domain_matrix(self._jacobian_polynomials)
+        return self._determinant_of_block(self._jacobian_polynomials)
 
     def determinant(self) -> sp.Expr:
         """Return the Jacobian determinant.

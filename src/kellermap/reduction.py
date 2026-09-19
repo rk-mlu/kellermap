@@ -45,7 +45,7 @@ from .collision import Collision
 from .elementary import ElementaryAutomorphism, ElementaryFactor
 from .errors import VerificationError
 from .linear import LinearAutomorphism, is_unit
-from .polynomial_map import PolynomialMap
+from .polynomial_map import PolynomialMap, determinant_without_division
 
 
 class Provenance(Enum):
@@ -496,7 +496,9 @@ class LinearStep:
         ring = self._source.ring
         domain = ring.domain
         linear_part = _linear_part(self._source)
-        determinant = linear_part.det()
+        determinant = determinant_without_division(
+            linear_part.to_list(), domain.zero, domain.one
+        )
 
         if not is_unit(domain, determinant):
             raise VerificationError(

@@ -1,9 +1,14 @@
+import itertools
 import math
+import random
 
 import pytest
 import sympy as sp
+from sympy.combinatorics import Permutation
 
 from kellermap import PolynomialMap, examples
+from kellermap.polynomial_map import determinant_without_division
+from kellermap.reduction import LinearStep
 
 
 @pytest.fixture
@@ -472,11 +477,19 @@ def test_determinant_matches_an_expression_valued_computation(
 
 
 @pytest.mark.parametrize("F", DETERMINANT_CASES)
-def test_schur_complement_agrees_with_the_domain_matrix_path(
+def test_schur_complement_agrees_with_the_full_expansion(
     F: PolynomialMap,
 ) -> None:
-    """Both strategies have to give the same polynomial."""
-    reference = F._determinant_by_domain_matrix(F._jacobian_polynomials)
+    """Both strategies have to give the same polynomial.
+
+    The reduction and the expansion, not two determinants: `determinant()`
+    reduces by the Schur complement first and this expands the whole Jacobian.
+    The expansion was `DomainMatrix.det()` until `0.7.0rc12` and is the same
+    division-free function now, so what this checks is the reduction. MAP-4
+    has its own control against an independent expansion elsewhere in the
+    suite.
+    """
+    reference = F._determinant_of_block(F._jacobian_polynomials)
 
     assert F.determinant() == reference.as_expr()
 
@@ -1315,3 +1328,126 @@ def test_the_identity_refuses_what_the_constructor_refuses() -> None:
     """No second checking path: the constructor decides."""
     with pytest.raises(ValueError):
         PolynomialMap.identity(())
+
+
+def leibniz(block: list[list[object]], zero: object, one: object) -> object:
+    """Return the determinant by its definition, for use as a control.
+
+    Every permutation and its sign, which is the definition and not an
+    algorithm anybody should run: `n!` terms. It exists here because MAP-4
+    needs an expansion that shares nothing with the one it states, and the
+    definition shares less than any other.
+    """
+    size = len(block)
+    total = zero
+    for permutation in itertools.permutations(range(size)):
+        term = one
+        for row, column in enumerate(permutation):
+            term = term * block[row][column]
+        if Permutation(list(permutation)).signature() == 1:
+            total = total + term
+        else:
+            total = total - term
+
+    return total
+
+
+def test_MAP4_the_determinant_agrees_with_the_definition() -> None:  # noqa: N802
+    """The control MAP-4 asks for, over a ring with zero divisors.
+
+    Random blocks over `Z/4Z`, constant and with polynomial entries, against
+    the Leibniz expansion. This is what the route in use has to be held
+    against: `DomainMatrix.det()` passed a comparison with itself for as long
+    as it was the only implementation in the repository.
+    """
+    ring = sp.ring("x,y,z", sp.GF(4))[0]
+    generator = random.Random(20260919)
+    checked = 0
+
+    for _ in range(120):
+        block = [[ring(generator.randrange(4)) for _ in range(3)] for _ in range(3)]
+        assert determinant_without_division(block, ring.zero, ring.one) == leibniz(
+            block, ring.zero, ring.one
+        )
+        checked += 1
+
+    for _ in range(40):
+        block = [
+            [
+                ring(generator.randrange(4)) * factor
+                for factor in generator.sample([*ring.gens, ring.one], 3)
+            ]
+            for _ in range(3)
+        ]
+        assert determinant_without_division(block, ring.zero, ring.one) == leibniz(
+            block, ring.zero, ring.one
+        )
+        checked += 1
+
+    assert checked == 160
+
+
+def test_MAP4_the_witness_of_the_rc11_audit() -> None:  # noqa: N802
+    """The smallest block the replaced route answered wrongly.
+
+    Expanding along the first row gives `-2`, which is `2` in `Z/4Z`.
+    `DomainMatrix.det()` answered `0`, without raising and without any sign
+    that it had divided by a zero divisor. The map built from it has that
+    determinant too, through the Schur complement and the expansion after it.
+    """
+    ring = sp.ring("x,y,z", sp.GF(4))[0]
+    first, second, third = ring.gens
+    block = [[ring(e) for e in row] for row in ([0, 0, 1], [0, 1, 0], [2, 0, 0])]
+
+    assert determinant_without_division(block, ring.zero, ring.one) == ring(2)
+    assert (
+        PolynomialMap.from_ring(ring, (third, second, ring(2) * first)).determinant()
+        == 2
+    )
+
+
+def test_MAP4_a_step_over_a_residue_ring_verifies() -> None:  # noqa: N802
+    """The blocker an audit of `0.7.0rc11` found, end to end.
+
+    `factorize` and `normalize` both accepted this source and `verify()`
+    raised `NotInvertible` from inside LIN-3. It reached LIN-6 as well, on a
+    determinant of the linear part that `0.7.0rc11` took the same way; both
+    sites ask one function now.
+    """
+    ring = sp.ring("x,y,z", sp.GF(4))[0]
+    first, second, third = ring.gens
+    source = PolynomialMap.from_ring(
+        ring,
+        (
+            ring(3) * second + third,
+            ring(2) * first + third,
+            ring(3) * first + ring(3) * second + ring(3) * third,
+        ),
+    )
+
+    assert source.determinant() == 1
+
+    step = LinearStep.normalize(source)
+
+    assert step.verify() is None
+
+
+@pytest.mark.parametrize("modulus", [4, 6, 8, 9, 10, 12])
+def test_MAP4_no_determinant_raises_over_a_residue_ring(modulus: int) -> None:  # noqa: N802
+    """Nothing escapes, over every modulus the library measures.
+
+    The old route raised `NotInvertible` or `ExactQuotientFailed` on 454 of
+    2000 random three-by-three blocks over `Z/4Z` and on 1182 of 2000
+    four-by-four. A raw exception from a dependency is not a refusal this
+    library made, so there is nothing to catch and nothing to name.
+    """
+    ring = sp.ring("x,y,z,w", sp.GF(modulus))[0]
+    generator = random.Random(modulus)
+
+    for size in (3, 4):
+        for _ in range(40):
+            block = [
+                [ring(generator.randrange(modulus)) for _ in range(size)]
+                for _ in range(size)
+            ]
+            determinant_without_division(block, ring.zero, ring.one)

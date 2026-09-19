@@ -42,7 +42,7 @@ import sympy as sp
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 
-from kellermap import LinearAutomorphism  # noqa: E402
+from kellermap import LinearAutomorphism, PolynomialMap  # noqa: E402
 
 PARAMETER = sp.Symbol("T")
 
@@ -81,6 +81,36 @@ def reached(ring: Any, given: sp.Matrix) -> bool:
         return reproduces(ring, given)
     except ValueError:
         return False
+
+
+def determines(ring: Any, given: sp.Matrix) -> bool:
+    """Return whether the map with this linear part has the determinant it should.
+
+    MAP-4, asked of the same matrices. This part is here because an audit of
+    ``0.7.0rc11`` found a determinant that raised over exactly these rings
+    while ``factorize`` was fine with them, and this script could not see it:
+    it called ``factorize`` and nothing else, and its exhaustive part is
+    two-by-two, where the determinant is ``ad - bc`` and divides nothing.
+    """
+    size = given.shape[0]
+    names = ",".join(f"x{index}" for index in range(size))
+    carrier = sp.ring(names, ring.domain)[0]
+    components = tuple(
+        sum(
+            (
+                carrier.domain.from_sympy(given[row, column]) * carrier.gens[column]
+                for column in range(size)
+            ),
+            carrier.zero,
+        )
+        for row in range(size)
+    )
+    determinant = PolynomialMap.from_ring(carrier, components).determinant()
+    expected = carrier.domain.to_sympy(
+        carrier.domain.from_sympy(sp.Integer(given.det()))
+    )
+
+    return bool(sp.simplify(determinant - expected) == 0)
 
 
 def parameter_cases() -> list[tuple[str, sp.Matrix, bool]]:
@@ -168,6 +198,10 @@ def measure_residue_rings() -> tuple[int, int]:
 def measure_random_triples(budget: float, seed: int) -> tuple[int, int]:
     """Report random invertible ``3x3`` over ``Z/6Z`` until the budget runs out.
 
+    Each matrix is factorized and its determinant is taken, since
+    ``0.7.0rc12``. Three-by-three is where the determinant starts dividing
+    and where an audit of ``0.7.0rc11`` found it failing.
+
     Returns the number examined and the number refused. This part always ends
     at the budget rather than at a count, so the figure it reports is a figure
     with a time beside it and not a total. Random and not exhaustive: there
@@ -179,6 +213,7 @@ def measure_random_triples(budget: float, seed: int) -> tuple[int, int]:
     started = time.monotonic()
     examined = 0
     refused = 0
+    wrong = 0
 
     print(f"Random invertible 3x3 over Z/6Z, seed {seed}, budget {budget:.0f} s:")
     while time.monotonic() - started < budget:
@@ -188,11 +223,15 @@ def measure_random_triples(budget: float, seed: int) -> tuple[int, int]:
             continue
         examined += 1
         refused += int(not reached(ring, given))
+        wrong += int(not determines(ring, given))
 
-    mark = "ok " if refused == 0 else "!! "
-    print(f"  [{mark}] {examined} matrices, {refused} refused")
+    mark = "ok " if refused == 0 and wrong == 0 else "!! "
+    print(
+        f"  [{mark}] {examined} matrices, {refused} refused, "
+        f"{wrong} with the wrong determinant"
+    )
 
-    return examined, refused
+    return examined, refused + wrong
 
 
 def main() -> int:
