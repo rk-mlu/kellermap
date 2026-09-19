@@ -3096,6 +3096,37 @@ None of this is a proof for any of them. An exhaustive family, a random
 sample and three named matrices are evidence that the bound is not commonly
 met, and FAC-2 states the refusal precisely because it can be.
 
+## What the determinant costs on the lift
+
+Work package 1 of this milestone measured `determinant()` on the
+thirty-eight-variable lift of `spacerat11` and stopped it after nineteen hours
+and forty-eight minutes. SYM-7 rests on that run, and it lists the elimination
+among the properties of the complement that the package never isolated. MAP-4
+replaces the elimination, so the run was made again with the new one beside the
+old, by `scripts/measure_lift_determinant.py` on the maintainer's machine.
+Twenty hours and 24 GB for each route:
+
+| route | outcome |
+| --- | --- |
+| fraction-free, `DomainMatrix.det()` | nothing after twenty hours, under the memory limit throughout |
+| division-free, determinant only | reached 24 GB after 2 h 07 |
+| division-free, characteristic polynomial | reached 24 GB after 31 min |
+
+None returns, so the elimination is isolated and it is not what the cost rests
+on. The departure SYM-7 makes now stands on a measurement that covers the route
+the library takes as well as the one it took.
+
+What the routes do not share is how they fail. The fraction-free elimination is
+bound by time and spends little memory; both division-free routes are bound by
+memory. The gap between the two division-free routes is the reason MAP-4 takes
+the determinant alone: the characteristic polynomial holds `n + 1` coefficients
+where Bird's algorithm holds `n**2` ring elements, and it filled the same 24 GB
+four times sooner.
+
+The complement here is 28 by 28 with 13589 monomials, not the 29 by 29 with
+10364 that work package 1 recorded. `docs/errata.md` carries that, and it is a
+separate matter from this table.
+
 ## Where the milestone stands
 
 All seven packages are done. WP 1 measured the bottleneck of SYM-7; WP 2 and

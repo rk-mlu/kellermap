@@ -1947,11 +1947,20 @@ of milestone 0.7 records the runs and the machines they were made on.
 That run used the fraction-free elimination of `DomainMatrix.det()`, which
 MAP-4 replaces with a division-free one. The paragraph below lists the
 elimination among the properties of the complement that were never isolated,
-so the figure belongs to a route this library no longer takes, and whether the
-replacement changes anything there is a question for a measurement rather than
-for this page. `scripts/measure_lift_determinant.py` puts both eliminations on
-that complement under a budget. Until it has been run with one large enough to
-matter, the departure stands on the run that was made.
+and it is isolated now: `scripts/measure_lift_determinant.py` put three routes
+on that complement with twenty hours and 24 GB each, and none of them returned.
+The fraction-free elimination spent the twenty hours without reaching the
+memory limit. The division-only route reached it after two hours and seven
+minutes, and the route through the characteristic polynomial after
+thirty-one. So the elimination is not what the cost rests on, and the departure
+stands on a measurement that now covers the route this library takes as well as
+the one it took.
+
+The failure differs even though the outcome does not. A caller who asks this
+method for the determinant of a complement of that size now meets a memory
+limit in hours rather than a computation that runs for as long as it is given.
+That is the same answer in the end, which is no answer, and it arrives
+differently.
 
 **The reason is the carrier and not the dimension.** `determinant()` takes the
 Schur complement of the unipotent block a map carries, so a BCW-reduced map of
@@ -3655,18 +3664,44 @@ that is the only place a division ever was.
 
 `0.7.0rc11` and everything before it took the remaining block with
 `DomainMatrix.det()`, whose fraction-free elimination divides exactly. Over
-`Z/nZ` with composite `n` the division meets a zero divisor and SymPy's
-`NotInvertible` or `ExactQuotientFailed` leaves the library as a raw exception.
-An audit of `0.7.0rc11` found it. It reaches the certificate surface and not
-only this method: LIN-3 asks for the determinant of the source, so a
-normalizing step over `Z/4Z` that `factorize` and `normalize` both accept fails
-in `verify()`.
+`Z/nZ` with composite `n` that division meets a zero divisor, and it does so in
+two ways. Sometimes SymPy's `NotInvertible` or `ExactQuotientFailed` leaves the
+library as a raw exception. Sometimes the elimination finishes and the answer is
+wrong.
+
+The second is the one that matters. Over `Z/4Z`, of 3000 random constant
+three-by-three blocks 702 raised and 2298 returned, and 282 of those returned
+disagree with the Leibniz expansion; with polynomial entries, 57 of 247. The
+smallest witness is checkable by hand:
+
+    A = [[0, 0, 1], [0, 1, 0], [2, 0, 0]]
+
+Expanding along the first row gives `-2`, which is `2` in `Z/4Z`.
+`DomainMatrix.det()` answers `0`.
+
+An audit of `0.7.0rc11` found the exception. The wrong answers were found while
+checking whether the old route could be kept and its exception caught, which is
+what rules that out: an elimination that is silently wrong signals nothing to
+catch.
+This reaches the verification surface. LIN-3 compares determinants, so a step
+over such a ring can be accepted or refused on a number that is not the
+determinant, rather than failing where a reader would see it.
 
 Two-by-two is unaffected, because `ad - bc` divides nothing. That is why 13296
 matrices passed and why the measurement did not reach this: its exhaustive part
 is two-by-two, and its three-by-three part calls `factorize` and not
 `determinant`. Over `Z/4Z`, 454 of 2000 random three-by-three blocks raise and
-1182 of 2000 four-by-four.
+1182 of 2000 four-by-four, and the wrong answers above sit among the rest.
+
+What the replacement costs is a failure mode and not a result. On a block that
+fits it is faster. On one that does not it fills memory where the fraction-free
+elimination ran long in little of it: on the complement of the lift, at 24 GB,
+the determinant-only route reached the limit after two hours and the
+fraction-free one was still running after twenty without reaching it.
+`docs/roadmap.md` records the run. Nothing returns either way, so no
+determinant is lost; what changes is that a caller who asks for one on a block
+of that size now meets a limit rather than a long wait. SYM-7 is where that
+matters and says so.
 
 No domain case distinction. A division-free expansion is correct over every
 commutative ring, so there is nothing for a predicate to decide, and a
