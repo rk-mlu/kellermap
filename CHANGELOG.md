@@ -4,6 +4,89 @@ Notable changes per release. The milestone plan and its reasoning live in
 `docs/roadmap.md`, the binding obligations of the verification surface in
 `docs/contracts.md`.
 
+## 0.7.0rc12
+
+An audit of `0.7.0rc11` found two release blockers. Both are the same shape:
+a question about a coefficient domain answered at the outermost level, and an
+elimination that divides where a division is not available.
+
+**Every determinant is taken without dividing.** `DomainMatrix.det()` runs a
+fraction-free elimination, which divides exactly, and over `Z/nZ` with
+composite `n` that division meets a zero divisor. It reaches the verification
+surface: LIN-3 compares determinants, so a normalizing step over `Z/4Z` that
+`factorize` and `normalize` both accept failed inside `verify()`. MAP-4
+replaces it with Bird's algorithm, which uses addition, subtraction and
+multiplication and nothing else, so no domain is a case and none is refused.
+The Schur complement is unchanged and keeps its place in front: it divides
+nowhere, forms `D^-1 C` through the Neumann series rather than `D^-1`, and
+settles nilpotency on the dependency graph.
+
+**And the old route did more than raise.** Of 3000 random constant
+three-by-three blocks over `Z/4Z`, 702 raised and 2298 returned, and 282 of
+those disagree with the Leibniz expansion; with polynomial entries, 57 of 247.
+`[[0, 0, 1], [0, 1, 0], [2, 0, 0]]` has determinant `2` there and was answered
+with `0`. The audit found the exception. The wrong answers were found while
+checking whether the exception could be caught and the old route kept for the
+rest, which is what rules that out, and it moves the blocker: a certificate
+could be accepted or refused on a number that is not the determinant.
+
+Two sites took it that way and the second was added in `0.7.0rc11` itself,
+where LIN-6 takes the determinant of the linear part. One function serves
+both. The control is the Leibniz expansion, which shares nothing with the
+route in use, on 160 blocks over `Z/4Z`; at full size `tests/test_bcw17.py`
+holds the 17 by 17 Jacobian against SymPy's elimination directly, which is
+sound there because that map is over a domain with no zero divisors.
+
+**A widening that does not widen is refused, one level further down.**
+`field_ring` checked what `get_field` returned and stopped at its outermost
+level. `(Z/4Z)[T]` widens to `GF(4)(T)`, which reports `is_Field` as `True`
+while holding `2 != 0` and `2 * 2 == 0`, so the widening was accepted and the
+caller received a coefficient domain with a nonzero nilpotent in it. WID-1 now
+walks down the tower of domains and asks there. Measured over fourteen
+domains: the deepest is two levels down and every one terminates.
+
+The Euclidean fold in `factorize` asked the same question the same way and now
+asks the shared function. It never ran over that domain, because `is_PID` is
+`False` for it, which is the other half of a conjunction and not an argument.
+What changes is that one question has one answer, which is what the audits of
+`0.7.0rc9` and `0.7.0rc11` both turned on.
+
+**SYM-7 is settled against both eliminations.** Its departure from UNI-10,
+HOM-7 and CHC-6 rested on a run that used the elimination MAP-4 replaces, and
+its own text listed the elimination among the properties of the complement
+that were never isolated. `scripts/measure_lift_determinant.py` put three
+routes on that complement with twenty hours and 24 GB each: the fraction-free
+elimination spent the twenty hours without reaching the memory limit, the
+division-only route reached it after two hours and seven minutes, and the
+route through the characteristic polynomial after thirty-one. None returns, so
+the elimination is isolated and the departure stands. What differs is the
+failure: the old route is bound by time and the new one by memory.
+
+That gap is also why MAP-4 takes the determinant alone rather than reading it
+off a characteristic polynomial. Both are division-free; the polynomial holds
+`n + 1` coefficients where Bird's algorithm holds `n**2` ring elements, and
+the determinant of a map this library reduces is the one coefficient that
+cancels to almost nothing while the middle ones do not.
+
+**The carrier figures are recomputed and gated.** The table of work package 1
+and the paragraph SYM-7 rests on stated a carrier the code no longer selects:
+four at every BCW-reduced stage and 29 by 29 at the lift, against a measured
+four for `alpoege12`, six for the other two, and 28 by 28 with 13589 monomials
+for `spacerat11`. Nothing recomputed that column, which is why it drifted;
+`make measure` checked the dimensions and the monomial counts of the same
+chains and they still agreed to the last digit. `scripts/measure_pipeline.py`
+now recomputes every cell for all three chains, and `docs/errata.md` records
+what happened. When the figures stopped matching is not established.
+
+**Measurements and controls.** `scripts/measure_pivot_search.py` takes the
+determinant of each random three-by-three as well as factorizing it: the
+audit is right that it could not have found this, since its exhaustive part is
+two-by-two, where `ad - bc` divides nothing. `scripts/measure_lift_determinant.py`
+is new. The probe set holds 71: two for MAP-4, of which the one that matters
+puts the replaced route back rather than breaking the new one, and two more
+for WID-1, whose single probe had covered `Z/4Z` directly and never reached
+one level up.
+
 ## 0.7.0rc11
 
 An audit of `0.7.0rc10` found two release blockers, two further defects and a
