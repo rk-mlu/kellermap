@@ -1963,13 +1963,21 @@ That is the same answer in the end, which is no answer, and it arrives
 differently.
 
 **The reason is the carrier and not the dimension.** `determinant()` takes the
-Schur complement of the unipotent block a map carries, so a BCW-reduced map of
-any size leaves a four-by-four determinant: the unipotent step, the
-homogenization and the compression all do, at 22, 23 and 19 variables. The
-gradient form of a quartic carries no such block. Of the 38 coordinates of the
-lift, 29 have a diagonal entry of one and 9 survive the acyclicity test, so
-the complement is 29 by 29 with 10364 monomials in it. Forming it costs two
-tenths of a second. Its determinant is the whole of the cost.
+Schur complement of the unipotent block a map carries, so a BCW-reduced map is
+left with a determinant of a size that does not grow with it: the unipotent
+step, the homogenization and the compression leave six, six and six for
+`spacerat11` at 22, 23 and 19 variables, and four at each of the three for
+`alpoege12`. The gradient form of a quartic carries no such block. Of the 38
+coordinates of the lift, 28 have a diagonal entry of one and 10 survive the
+acyclicity test, so the complement is 28 by 28 with 13589 monomials in it.
+Forming it costs two tenths of a second. Its determinant is the whole of the
+cost.
+
+Those figures are recomputed by `scripts/measure_pipeline.py`, which `make
+measure` runs, since `0.7.0rc12`. This paragraph said four at every
+BCW-reduced stage and 29 by 29 at the lift until then, which was right for
+neither, and nothing recomputed the column it rested on. `docs/errata.md`
+records it; `docs/roadmap.md` carries the table for all three chains.
 
 This paragraph named dimension six against dimension forty until `0.7`, and
 read as a statement about size. Size is what it is not. The lift is the one
@@ -1979,8 +1987,9 @@ cheap by.
 What was not isolated is which property of that complement carries the cost --
 its width, the density of its entries, the coefficient domain or the
 elimination used. Each candidate probe changed the problem instead of scaling
-it. Narrowing the complement by a different acyclicity rule reaches 21 by 21
-and 13627 monomials, denser rather than smaller, and buys nothing. A leading
+it. Narrowing the complement by a different acyclicity rule reached 21 by 21
+and 13627 monomials, denser rather than smaller, and bought nothing; that rule
+is not in the code and those two figures were not re-measured with the rest. A leading
 `k` by `k` submatrix is a smaller matrix with a far larger answer, because the
 determinant of the whole is one and a corner of it cancels not at all. Any
 probe that does not preserve that cancellation measures a different kind of

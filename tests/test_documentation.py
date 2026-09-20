@@ -632,6 +632,37 @@ def test_no_wrapped_line_begins_a_numbered_list_by_accident(path: Path) -> None:
         previous = line
 
 
+def test_the_carrier_figures_appear_on_the_roadmap_page() -> None:
+    """The same tie again, on the column that had none.
+
+    The carrier and the complement are what SYM-7 rests its explanation on,
+    and until `0.7.0rc12` nothing recomputed them. They had stopped matching
+    the code at some point nobody can name, and `make measure` could not see
+    it: it checks the dimensions and the monomial counts of the same chains,
+    and those still agreed to the last digit.
+
+    The script now recomputes them and fails when the page states a figure it
+    does not measure. This fails when the page stops stating one it does.
+    """
+    path = ROOT / "scripts" / "measure_pipeline.py"
+    spec = importlib.util.spec_from_file_location("carrier_probe", path)
+    assert spec is not None and spec.loader is not None
+    module = importlib.util.module_from_spec(spec)
+    sys.modules[spec.name] = module
+    spec.loader.exec_module(module)
+
+    roadmap = (ROOT / "docs" / "roadmap.md").read_text(encoding="utf-8")
+    section = roadmap[roadmap.index("### WP 1, and what it found") :]
+    section = section[: section.index("\n## ")]
+    missing = [
+        figure
+        for figure in module.CARRIER_FIGURES
+        if not re.search(rf"(?<![\w-]){figure}\b", section)
+    ]
+
+    assert not missing, f"the page does not state {missing}"
+
+
 def test_the_pipeline_figures_appear_on_the_references_page() -> None:
     """The same tie as for the untargeted figures, on the other measurement.
 

@@ -2751,23 +2751,44 @@ package leaves open, and WP 7 is where it is taken up.
 ### WP 1, and what it found
 
 **Where the cost is.** `determinant()` takes the Schur complement of the
-unipotent block a map carries, so a BCW-reduced map of any size leaves a
-four-by-four determinant. Through `spacerat11`:
+unipotent block a map carries, so a BCW-reduced map is left with a determinant
+of a size that does not grow with it. Through the three chains, re-measured at
+`0.7.0rc12`:
 
 | stage | n | diagonal ones | carrier | complement |
 | --- | ---: | ---: | ---: | ---: |
-| `UnipotentStep` | 22 | 20 | 18 | 4 |
-| `HomogenizationStep` | 23 | 21 | 19 | 4 |
-| `CompressionStep` | 19 | 17 | 15 | 4 |
-| `SymmetricLiftStep` | 38 | 29 | 9 | **29** |
+| `spacerat11`, `UnipotentStep` | 22 | 20 | 16 | 6 |
+| `spacerat11`, `HomogenizationStep` | 23 | 21 | 17 | 6 |
+| `spacerat11`, `CompressionStep` | 19 | 17 | 13 | 6 |
+| `spacerat11`, `SymmetricLiftStep` | 38 | 28 | 10 | **28** |
+| `alpoege12`, `UnipotentStep` | 24 | 24 | 20 | 4 |
+| `alpoege12`, `HomogenizationStep` | 25 | 25 | 21 | 4 |
+| `alpoege12`, `CompressionStep` | 20 | 20 | 16 | 4 |
+| `alpoege12`, `SymmetricLiftStep` | 40 | 30 | 10 | **30** |
+| `alpoege13`, `UnipotentStep` | 26 | 26 | 20 | 6 |
+| `alpoege13`, `HomogenizationStep` | 27 | 27 | 21 | 6 |
+| `alpoege13`, `CompressionStep` | 22 | 22 | 16 | 6 |
+| `alpoege13`, `SymmetricLiftStep` | 44 | 38 | 12 | **32** |
 
-`alpoege12` gives 30 and 10 at dimension 40, `alpoege13` gives 38 and 8 at 44.
-The lift is the one target of the chain that carries no unipotent block: a
-gradient form is not triangular in any order of its coordinates. Forming the
-29 by 29 complement costs two tenths of a second and it holds 10364 monomials.
-Its determinant was stopped after nineteen hours and forty-eight minutes
-without returning, on the maintainer's machine, through `determinant()`. Taken
-directly on the complement it was stopped after three hours and fourteen.
+`scripts/measure_pipeline.py` recomputes every cell of it and `make measure`
+runs that script. The complement was the one column nothing recomputed, and
+this is why: the table said four at every BCW-reduced stage and 29 by 29 at the
+lift, which is four for `alpoege12` and six for the other two, and 28 by 28 for
+`spacerat11`. When it stopped matching is not established, and
+`docs/errata.md` carries that rather than a guess.
+
+The four-by-four was the claim the paragraph was written around, and it is
+withdrawn. What holds is the sentence above it: the complement stays small and
+flat along a chain whose dimension doubles, and it is four or six rather than
+one number. The lift is the one target of the chain that carries no unipotent
+block: a gradient form is not triangular in any order of its coordinates.
+Forming the complement of `spacerat11` costs two tenths of a second and it
+holds 13589 monomials. Its determinant was stopped after nineteen hours and
+forty-eight minutes without returning, on the maintainer's machine, through
+`determinant()`, and taken directly on the complement after three hours and
+fourteen. Those two timings are of the fraction-free elimination `0.7.0rc12`
+replaced; the section on what the determinant costs on the lift has the run
+that covers both.
 
 **So the answer to the question the package asked is: none of the four.** Not
 the dimension, which every earlier stage shows is free; not the domain or the
@@ -2792,6 +2813,11 @@ and 21 of 44. It buys nothing. The complement narrows from 29 by 29 to 21 by
 21 and its content rises from 10364 monomials to 13627, because a longer
 Neumann series over a larger carrier smears more terms into a narrower matrix.
 Six timed cells, three lifts under both rules, all over ten minutes.
+
+That rule is not in the code and these figures were not re-measured at
+`0.7.0rc12`: they are stated against the carrier of the day, which the table
+above corrects. What the paragraph is for survives the correction, since it is
+the shape of the trade and not the size of either side.
 
 No cheap probe of the residual exists. The determinant of the whole complement
 is one, so the computation is a single large cancellation, and a leading `k` by
@@ -3130,9 +3156,9 @@ the determinant alone: the characteristic polynomial holds `n + 1` coefficients
 where Bird's algorithm holds `n**2` ring elements, and it filled the same 24 GB
 four times sooner.
 
-The complement here is 28 by 28 with 13589 monomials, not the 29 by 29 with
-10364 that work package 1 recorded. `docs/errata.md` carries that, and it is a
-separate matter from this table.
+The complement here is 28 by 28 with 13589 monomials. The work package 1
+section recorded 29 by 29 with 10364 and has been corrected;
+`docs/errata.md` carries how that happened.
 
 ## Where the milestone stands
 

@@ -684,9 +684,20 @@ those still agree with `docs/references.md` to the last digit. The carrier is
 the one quantity in that table nothing recomputes, and it is the quantity SYM-7
 rests its explanation on.
 
-**Now:** the figures stand as they are until they are re-measured, and this
-entry is what a reader meets first. Correcting them inside the pages would put
-new numbers under no gate, which is how the old ones got there.
+**Now:** re-measured and corrected on both pages, for all three chains rather
+than the one the table carried, and recomputed by
+`scripts/measure_pipeline.py`, which already walked those chains for the
+figures it checks against `docs/references.md`. `make measure` runs it, so a
+carrier that moves again fails a gate on the day it moves.
+
+The four-by-four the pages were written around is withdrawn: it is four for
+`alpoege12` and six for the other two. What survives is the sentence it was
+supporting, that the complement stays small and flat while the dimension
+doubles, which is what SYM-7 needs and does not need one number to say.
+
+Two figures in that section were not re-measured and say so where they stand:
+they belong to an acyclicity rule that was tried in work package 1 and is not
+in the code, so there is nothing to recompute them against.
 
 **Worth keeping:** a measurement that explains something is load-bearing, and a
 load-bearing figure with no gate under it is the same object as an ungated
