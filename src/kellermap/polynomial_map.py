@@ -328,6 +328,62 @@ def determinant_without_division(
     return corner if size % 2 else -corner
 
 
+def ground_domain(domain: Any) -> Any:
+    """Return the domain at the bottom of a tower of domains.
+
+    A polynomial or fraction domain carries the one it was built over, and
+    that one may carry another. This walks down until a domain carries
+    nothing, which is where a claim about zero divisors has to be made.
+
+    Measured over ``ZZ``, ``QQ``, ``RR``, ``EX``, ``GF(4)``, ``GF(5)``,
+    ``GF(4)[T]``, ``GF(4)(T)``, ``ZZ[T]``, ``QQ[T]``, ``ZZ(T)``, ``ZZ[i]``,
+    ``QQ(sqrt(2))`` and the sparse polynomial domains this library builds: the
+    deepest of them is two levels down and every one of them terminates.
+    """
+    current = domain
+
+    while True:
+        below = getattr(current, "domain", None)
+        if below is None or below == current:
+            return current
+        current = below
+
+
+def has_zero_divisors(domain: Any) -> bool:
+    """Return whether the domain is known to have zero divisors.
+
+    One case, and it is the one that matters: SymPy calls ``Z/nZ`` a finite
+    field for every ``n`` and sets ``is_Field`` only when ``n`` is prime, so a
+    finite-field domain that is not a field is a residue ring with a composite
+    modulus.
+
+    Asked of the ground domain, since ``0.7.0rc12``. A polynomial or fraction
+    domain reports neither predicate for itself and says nothing about the
+    ring underneath it, so a question asked at the outermost level answers
+    ``False`` for ``(Z/4Z)[T]``, where ``2 * 2`` is zero. An audit of
+    ``0.7.0rc11`` found the widening accepting that domain. The fold in
+    ``linear.py`` asked the same question the same way and does not run there
+    only because ``is_PID`` is ``False`` for it, which is the other half of a
+    conjunction and not an argument.
+
+    This exists because ``0.7.0rc9`` gated the Euclidean fold on
+    ``domain.is_PID``, and SymPy reports ``is_PID`` for ``Z/6Z``, which is not
+    even an integral domain. The fold then divided by a zero divisor and
+    SymPy's ``NotInvertible`` escaped: an audit of ``0.7.0rc9`` counted 48
+    invertible matrices over ``Z/6Z`` refused that way, 320 over ``Z/10Z`` and
+    768 over ``Z/12Z``. The lesson is wider than the fix: a domain predicate is
+    a claim like any other, and is checked against the domain rather than
+    trusted.
+
+    One function for both callers. FAC-1 and WID-1 ask one question, and two
+    predicates that disagree about the same ring are how the audits of
+    ``0.7.0rc9`` and ``0.7.0rc11`` both began.
+    """
+    ground = ground_domain(domain)
+
+    return bool(ground.is_FiniteField) and not bool(ground.is_Field)
+
+
 def field_of_fractions(domain: Any) -> Any | None:
     """Return the field of fractions of ``domain``, or ``None`` where it has none.
 
@@ -346,7 +402,12 @@ def field_of_fractions(domain: Any) -> Any | None:
     """
     widened = clone_domain(domain).get_field()
 
-    return widened if widened.is_Field else None
+    if not widened.is_Field:
+        return None
+    if has_zero_divisors(widened):
+        return None
+
+    return widened
 
 
 def widening_advice(domain: Any) -> str:

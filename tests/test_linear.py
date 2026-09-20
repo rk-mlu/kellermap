@@ -23,6 +23,7 @@ from kellermap.linear import (
     field_ring,
     over_field,
 )
+from kellermap.polynomial_map import ground_domain, has_zero_divisors
 
 x, y, z = sp.symbols("x y z")
 
@@ -485,6 +486,50 @@ def test_over_field_is_idempotent() -> None:
     once = over_field(QUADRATIC)
 
     assert over_field(once) == once
+
+
+def test_WID1_a_ground_domain_with_zero_divisors_is_refused() -> None:  # noqa: N802
+    """`(Z/4Z)[T]` widens to something SymPy calls a field and is not one.
+
+    `GF(4)(T)` reports `is_Field` as `True` while holding `2 != 0` and
+    `2 * 2 == 0`. `0.7.0rc11` checked the answer at its outermost level and
+    accepted it, and an audit found that. The probe for WID-1 covered `Z/4Z`
+    directly and did not reach one level up, which is the argument for a probe
+    per reading rather than per clause.
+    """
+    parameter = sp.Symbol("T")
+    nested = sp.ring("u,v", sp.GF(4).poly_ring(parameter))[0]
+    widened = nested.domain.get_field()
+
+    two = widened.from_sympy(sp.Integer(2))
+
+    assert widened.is_Field is True
+    assert two != widened.zero
+    assert two * two == widened.zero
+
+    with pytest.raises(ValueError, match="no field of fractions"):
+        field_ring(nested)
+
+
+def test_WID1_the_question_is_asked_of_the_ground_domain() -> None:  # noqa: N802
+    """The predicate FAC-1 and WID-1 share, over a tower and at its bottom.
+
+    `GF(4)[T]` reports neither `is_FiniteField` nor `is_Field` for itself, so
+    a question asked at the outermost level answers `False` there. The fold in
+    `factorize` asks this too, and it does not run over that domain only
+    because `is_PID` is `False` for it, which is the other half of a
+    conjunction and not an argument.
+    """
+    parameter = sp.Symbol("T")
+    residue = sp.GF(4)
+    tower = residue.poly_ring(parameter)
+
+    assert bool(tower.is_FiniteField) is False
+    assert ground_domain(tower) == residue
+    assert has_zero_divisors(tower) is True
+    assert has_zero_divisors(residue) is True
+    assert has_zero_divisors(sp.GF(5).poly_ring(parameter)) is False
+    assert has_zero_divisors(sp.ZZ[parameter]) is False
 
 
 def test_WID1_a_domain_with_no_field_of_fractions_is_refused() -> None:  # noqa: N802

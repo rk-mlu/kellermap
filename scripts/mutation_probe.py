@@ -44,7 +44,7 @@ They ask today's question of today's code. Every one of them should report
 ``tests/test_scripts.py`` checks that every fragment still matches the code it
 aims at.
 
-The set holds 69 probes. That sentence is held against ``PROBES`` by
+The set holds 71 probes. That sentence is held against ``PROBES`` by
 ``tests/test_scripts.py``, which is the only reason to write a number here at
 all. Until ``0.7.0rc11`` this paragraph carried a running total instead, one
 audit's addition at a time, and an audit of ``0.7.0rc10`` found it one too
@@ -80,7 +80,10 @@ WID-2, one for WID-1 and two for FAC-2. The last two it found missing
 altogether: it stripped the refusal of everything FAC-2 requires it to say and
 the suite passed.
 
-The audit of ``0.7.0rc11`` added two for MAP-4. One puts the replaced route
+The audit of ``0.7.0rc11`` added two for MAP-4 and two for WID-1, whose single
+probe covered ``Z/4Z`` directly and did not reach ``(Z/4Z)[T]``. One of the new
+ones aims at the walk down the tower rather than at either refusal, because
+that walk is what both readings of the clause rest on. One puts the replaced route
 back, which is the mutation that matters: it does not raise on most blocks, it
 returns a wrong determinant on some, and a control that only watched for an
 exception would pass it. The other drops the sign of the size.
@@ -596,8 +599,22 @@ PROBES: tuple[Probe, ...] = (
         "WID-1",
         "a widening that does not produce a field is refused",
         "src/kellermap/polynomial_map.py",
-        "    return widened if widened.is_Field else None",
-        "    return widened",
+        "    if not widened.is_Field:\n        return None",
+        "    if False:\n        return None",
+    ),
+    Probe(
+        "WID-1",
+        "a widening onto zero divisors below is refused",
+        "src/kellermap/polynomial_map.py",
+        "    if has_zero_divisors(widened):\n        return None",
+        "    if False:\n        return None",
+    ),
+    Probe(
+        "WID-1",
+        "the zero-divisor question reaches the ground domain",
+        "src/kellermap/polynomial_map.py",
+        "    ground = ground_domain(domain)\n\n    return bool(ground.is_FiniteField)",
+        "    ground = domain\n\n    return bool(ground.is_FiniteField)",
     ),
     Probe(
         "WID-2",
@@ -682,7 +699,7 @@ PROBES: tuple[Probe, ...] = (
         "FAC-1",
         "the fold is not run over a domain with zero divisors",
         "src/kellermap/linear.py",
-        "    if not domain.is_PID or _has_zero_divisors(domain):",
+        "    if not domain.is_PID or has_zero_divisors(domain):",
         "    if not domain.is_PID:",
     ),
     Probe(

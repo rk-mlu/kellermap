@@ -55,6 +55,7 @@ from .polynomial_map import (
     clone_ring,
     copy_polynomial,
     field_of_fractions,
+    has_zero_divisors,
     validate_ring,
     widening_advice,
 )
@@ -814,26 +815,6 @@ claims nothing more, because the search is incomplete at any bound.
 """
 
 
-def _has_zero_divisors(domain: Any) -> bool:
-    """Return whether the domain is known to have zero divisors.
-
-    One case, and it is the one that matters: SymPy calls ``Z/nZ`` a finite
-    field for every ``n`` and sets ``is_Field`` only when ``n`` is prime, so a
-    finite-field domain that is not a field is a residue ring with a composite
-    modulus.
-
-    This exists because ``0.7.0rc9`` gated the Euclidean fold on
-    ``domain.is_PID``, and SymPy reports ``is_PID`` for ``Z/6Z``, which is not
-    even an integral domain. The fold then divided by a zero divisor and
-    SymPy's ``NotInvertible`` escaped: an audit of ``0.7.0rc9`` counted 48
-    invertible matrices over ``Z/6Z`` refused that way, 320 over ``Z/10Z`` and
-    768 over ``Z/12Z``. The lesson is wider than the fix: a domain predicate is
-    a claim like any other, and is checked against the domain rather than
-    trusted.
-    """
-    return bool(domain.is_FiniteField) and not bool(domain.is_Field)
-
-
 def _quotient(domain: Any, value: Any, divisor: Any) -> Any | None:
     """Return the quotient of a division in the domain, or ``None``.
 
@@ -926,7 +907,7 @@ def _fold_column(
     integral domain with a Euclidean division, and nowhere else.
     """
     domain = owned.domain
-    if not domain.is_PID or _has_zero_divisors(domain):
+    if not domain.is_PID or has_zero_divisors(domain):
         return None
 
     trial = [row[:] for row in matrix]
