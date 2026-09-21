@@ -53,10 +53,14 @@ answers something is the maintainer's.
 from __future__ import annotations
 
 import argparse
+import datetime
 import multiprocessing
+import os
+import platform
 import resource
 import sys
 import time
+from importlib.metadata import version
 from pathlib import Path
 from typing import Any
 
@@ -81,6 +85,12 @@ DEFAULT_BUDGET = 60.0
 DEFAULT_MEMORY = 8.0
 
 LADDER = (4, 5, 6)
+"""The default sizes of the synthetic part. ``--ladder`` replaces them.
+
+Seven is left out of the default because the fraction-free elimination spends
+minutes there, which is the point of the comparison and too much for a smoke
+test. A run meant to be recorded passes it.
+"""
 
 GIGABYTE = 1024**3
 
@@ -135,7 +145,45 @@ def fraction_free(block: Any, domain: Any) -> Any:
     return DomainMatrix.from_list([list(row) for row in block], domain).det()
 
 
-def measure_ladder() -> None:
+def installed_memory() -> float:
+    """Return the physical memory of the machine in gigabytes, where it is known."""
+    try:
+        pages = os.sysconf("SC_PHYS_PAGES")
+        size = os.sysconf("SC_PAGE_SIZE")
+    except (ValueError, OSError, AttributeError):
+        return float("nan")
+
+    return float(pages * size) / GIGABYTE
+
+
+def describe_the_run(arguments: argparse.Namespace) -> None:
+    """Print what ``AGENTS.md`` requires a recorded runtime to carry.
+
+    A runtime in this repository has to say when it was taken and on which
+    machine, and ``docs/roadmap.md`` is where the profile lives. The first run
+    of this script printed neither, and its figures could not be dated
+    afterwards with certainty, so the run had to be repeated. The script now
+    prints both before it spends anything, and the time again at the end.
+    """
+    started = datetime.datetime.now(datetime.timezone.utc)
+    print(f"Started  {started:%Y-%m-%d %H:%M} UTC")
+    print(f"Machine  {platform.node()}, {platform.platform()}")
+    print(
+        f"         {os.cpu_count()} logical processors, "
+        f"{installed_memory():.1f} GB installed"
+    )
+    print(
+        f"Versions Python {platform.python_version()}, SymPy {sp.__version__}, "
+        f"kellermap {version('kellermap')}"
+    )
+    print(
+        f"Asked    budget {arguments.budget:.0f} s and {arguments.memory:.1f} GB "
+        f"per route, ladder {', '.join(str(size) for size in arguments.ladder)}"
+    )
+    print()
+
+
+def measure_ladder(sizes: tuple[int, ...] = LADDER) -> None:
     """Report the three routes on dense blocks of growing size.
 
     Synthetic and not the complement. What it shows is whether they differ by
@@ -143,7 +191,7 @@ def measure_ladder() -> None:
     the question a cheap run can reach.
     """
     print("Dense quadratic blocks over QQ, all three routes:")
-    for size in LADDER:
+    for size in sizes:
         ring = sp.ring(",".join(f"v{index}" for index in range(size)), sp.QQ)[0]
         generators = list(ring.gens)
         block = [
@@ -299,10 +347,13 @@ def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--budget", type=float, default=DEFAULT_BUDGET)
     parser.add_argument("--memory", type=float, default=DEFAULT_MEMORY)
+    parser.add_argument("--ladder", type=int, nargs="+", default=list(LADDER))
     arguments = parser.parse_args()
 
+    describe_the_run(arguments)
+
     started = time.monotonic()
-    measure_ladder()
+    measure_ladder(tuple(arguments.ladder))
     print(f"  {time.monotonic() - started:.1f} s\n")
 
     started = time.monotonic()
@@ -327,6 +378,8 @@ def main() -> int:
         under_budget(block, domain, zero, route, arguments.budget, arguments.memory)
     print()
     print("A budget that runs out is evidence about the budget and not a proof.")
+    finished = datetime.datetime.now(datetime.timezone.utc)
+    print(f"Finished {finished:%Y-%m-%d %H:%M} UTC")
 
     return 0
 
