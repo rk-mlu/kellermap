@@ -6,9 +6,17 @@ from. It runs the whole chain on each of the three degree-three maps in
 `kellermap.examples`, checks every step through the library's own verification
 surface, and compares what comes out with what the page says.
 
-Every figure the page states about the pipeline is in ``FIGURES`` below, and
-``tests/test_documentation.py`` requires each of them to occur in that section.
-Editing a number in one place and not the other leaves one of the two red.
+It also recomputes what the Schur reduction leaves at each stage, which is
+what SYM-7 rests its explanation on, and compares it with ``CARRIERS``, the
+table ``docs/roadmap.md`` carries under work package 1.
+
+The two tables here and the two on the pages are held against each other by
+``tests/test_documentation.py``, row by row. Until ``0.7.0rc13`` the test asked
+only whether each number occurred somewhere in the section, and an audit of
+``0.7.0rc12`` changed a carrier from 16 to 17 and watched it stay green,
+because 17 occurs elsewhere in that table. The same held for the pipeline
+table, which that test had been written for. A row is a label and its values,
+so the values are checked against the label.
 
 The stages, in order:
 
@@ -26,7 +34,8 @@ Run with::
 
     python scripts/measure_pipeline.py
 
-The exit status is 0 if every figure agrees and 1 otherwise.
+The exit status is 0 if every figure agrees with the tables here and 1
+otherwise. That the tables agree with the pages is the tests' to say.
 """
 
 from __future__ import annotations
@@ -87,82 +96,33 @@ TABLE: tuple[Row, ...] = (
     Row("alpoege13", 13, 26, 27, 73, 22, 68, 44, 506),
 )
 
+LIFT_COMPLEMENT_MONOMIALS = 13589
+"""The monomials in the complement of the lift of ``spacerat11``.
+
+The one carrier figure stated in prose rather than in the table, so the row
+check does not reach it and it is held on its own.
+"""
+
 CARRIERS: dict[str, tuple[Carrier, ...]] = {
     "spacerat11": (
-        Carrier("unipotent", 22, 20, 16),
-        Carrier("homogeneous", 23, 21, 17),
-        Carrier("compressed", 19, 17, 13),
-        Carrier("quartic", 38, 28, 10),
+        Carrier("UnipotentStep", 22, 20, 16),
+        Carrier("HomogenizationStep", 23, 21, 17),
+        Carrier("CompressionStep", 19, 17, 13),
+        Carrier("SymmetricLiftStep", 38, 28, 10),
     ),
     "alpoege12": (
-        Carrier("unipotent", 24, 24, 20),
-        Carrier("homogeneous", 25, 25, 21),
-        Carrier("compressed", 20, 20, 16),
-        Carrier("quartic", 40, 30, 10),
+        Carrier("UnipotentStep", 24, 24, 20),
+        Carrier("HomogenizationStep", 25, 25, 21),
+        Carrier("CompressionStep", 20, 20, 16),
+        Carrier("SymmetricLiftStep", 40, 30, 10),
     ),
     "alpoege13": (
-        Carrier("unipotent", 26, 26, 20),
-        Carrier("homogeneous", 27, 27, 21),
-        Carrier("compressed", 22, 22, 16),
-        Carrier("quartic", 44, 38, 12),
+        Carrier("UnipotentStep", 26, 26, 20),
+        Carrier("HomogenizationStep", 27, 27, 21),
+        Carrier("CompressionStep", 22, 22, 16),
+        Carrier("SymmetricLiftStep", 44, 38, 12),
     ),
 }
-
-CARRIER_FIGURES = (
-    20,
-    16,
-    6,
-    21,
-    17,
-    13,
-    28,
-    10,
-    24,
-    4,
-    30,
-    38,
-    12,
-    32,
-    13589,
-)
-"""Every carrier figure this script asserts, for the test that ties it there.
-
-The dimensions are left out: they are stated in the row above and tied to
-``docs/references.md`` already, and a figure tied to two pages drifts from one
-of them. What is here is the diagonal-one counts, the carriers, the
-complements and the monomials in the largest of them.
-"""
-
-FIGURES = (
-    11,
-    22,
-    23,
-    60,
-    19,
-    56,
-    38,
-    386,
-    12,
-    24,
-    25,
-    20,
-    55,
-    40,
-    398,
-    13,
-    26,
-    27,
-    73,
-    68,
-    44,
-    506,
-)
-"""Every number this script asserts, for the test that ties it to the page.
-
-``60`` occurs twice in the table and once here. ``22`` is the unipotent
-dimension of the first row and the compressed dimension of the third, which is
-a coincidence of two different stages and not a figure stated twice.
-"""
 
 
 def monomials(polynomial_map: PolynomialMap) -> int:
@@ -227,7 +187,7 @@ def run(row: Row) -> None:
     unipotent.verify()
     collision = unipotent.transport(collision)
     check("after the unipotent reduction", unipotent.target.dimension, row.unipotent)
-    check_carrier(row.name, "unipotent", unipotent.target)
+    check_carrier(row.name, "UnipotentStep", unipotent.target)
 
     homogenized = HomogenizationStep.build(unipotent.target)
     homogenized.verify()
@@ -238,7 +198,7 @@ def run(row: Row) -> None:
         monomials(homogenized.target),
         row.homogeneous_monomials,
     )
-    check_carrier(row.name, "homogeneous", homogenized.target)
+    check_carrier(row.name, "HomogenizationStep", homogenized.target)
 
     compression = CompressionStep.build(homogenized.target, collision)
     compression.verify()
@@ -249,7 +209,7 @@ def run(row: Row) -> None:
         monomials(compression.target),
         row.compressed_monomials,
     )
-    check_carrier(row.name, "compressed", compression.target)
+    check_carrier(row.name, "CompressionStep", compression.target)
 
     # The lift carries a pair, and every collision here has three points, so
     # the caller chooses which two. The first two, in the order the chain
@@ -264,7 +224,7 @@ def run(row: Row) -> None:
     check("monomials in P", len(form.terms()), row.quartic_monomials)
     check("the degree of P", form.total_degree(), 4)
     check("points in the lifted collision", len(moved.points), 2)
-    check_carrier(row.name, "quartic", symmetric.target)
+    check_carrier(row.name, "SymmetricLiftStep", symmetric.target)
 
     if row.name == "spacerat11":
         complement = symmetric.target._schur_complement(  # noqa: SLF001
@@ -274,7 +234,7 @@ def run(row: Row) -> None:
         check(
             "monomials in the complement of the lift",
             sum(len(entry.to_dict()) for line in complement for entry in line),
-            13589,
+            LIFT_COMPLEMENT_MONOMIALS,
             "roadmap",
         )
 
@@ -289,7 +249,10 @@ def main() -> int:
     for row in TABLE:
         run(row)
 
-    print("\nEvery figure agrees with the page that states it.")
+    print(
+        "\nEvery figure agrees with the tables in this script. The tests hold "
+        "those\nagainst docs/references.md and docs/roadmap.md row by row."
+    )
 
     return 0
 

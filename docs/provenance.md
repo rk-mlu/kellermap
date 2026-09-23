@@ -125,8 +125,9 @@ the Zenodo record and of `CITATION.cff` lists one person.
 **What was verified rather than trusted.** Every claim in this repository is
 under a gate that a person ran: the obligations of `docs/contracts.md` with a
 negative control each, the mutation probes of `scripts/mutation_probe.py`,
-eight reconstructions that do not import the library, three measurement
-scripts tied to the pages in both directions, and the audits. How many probes
+eight reconstructions that do not import the library, the measurement scripts
+`make measure` runs, each tied to a page in both directions, one more that the
+maintainer runs with a budget because it does not fit a gate, and the audits. How many probes
 there are is written in that script and held against the set by a test, and
 not repeated here: this page said forty-five for several milestones after that
 stopped being true, and an audit of `0.7.0rc10` found the number wrong in two

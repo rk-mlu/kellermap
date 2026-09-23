@@ -81,11 +81,19 @@ python scripts/reconstruct_macfarlane13.py
 python scripts/reconstruct_prellberg40.py
 python scripts/untargeted_space.py
 python scripts/measure_pipeline.py
+python scripts/measure_pivot_search.py
 ```
 
-The eight reconstructions and the two measurement scripts are exactly what
-`make reconstruct` and `make measure` run. This list stood at six and one until
-`0.7.0rc7`; keeping it in step with the `Makefile` is part of changing either.
+These are exactly what `make reconstruct` and `make measure` run, and
+`tests/test_documentation.py` holds the list against both targets in both
+directions. It stood at six and one until `0.7.0rc7`, and it missed
+`measure_pivot_search.py` from `0.7.0rc11` until an audit of `0.7.0rc12`
+counted it, because the test then asked only whether every command named here
+is one a target runs and not whether every command a target runs is named.
+
+`scripts/measure_lift_determinant.py` is not on the list. It is a measurement
+the maintainer runs with a budget of about a day, not a gate, and no target
+runs it.
 
 Setup is `uv sync`. Python 3.10 to 3.14 are supported and the CI runs both
 ends.

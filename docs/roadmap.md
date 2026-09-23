@@ -3239,7 +3239,8 @@ obvious first target and a figure that already exists to be checked against.
 Two things to settle before any of it. Whether the check belongs in the library
 or in a script -- it is one polynomial identity about one object and not a step
 of a chain, so a `reconstruct_`-style script is the likelier home. And what
-happens at 38 variables where a determinant already needed eight hours: `P^2`
+happens at 38 variables, where a determinant does not return within the
+budgets SYM-7 records: `P^2`
 has on the order of a hundred thousand terms before the Laplacian touches it,
 so a run belongs to the maintainer under the rule in `AGENTS.md` and the first
 job is a budgeted measurement, not an implementation.
@@ -3248,12 +3249,13 @@ job is a budgeted measurement, not an implementation.
 
 What the old list asked for that is still missing, and now with a reason.
 
-Two measurement scripts exist, `untargeted_space.py` and `measure_pipeline.py`,
-both tied to a page in both directions. Neither produces machine-readable
-output and neither compares across releases, so a regression in cost is
-invisible until somebody notices a gate taking longer. The timing tables in
-`AGENTS.md` are maintained by hand and were last measured at the end of 0.5,
-against a suite that has since grown by a quarter.
+The measurement scripts `make measure` runs are tied to a page in both
+directions, and `measure_lift_determinant.py` runs on the maintainer's machine
+under a budget, outside every gate. None of them produces machine-readable
+output and none compares across releases, so a regression in cost is
+invisible until somebody notices a gate taking longer. `AGENTS.md` no longer
+keeps timing tables, since `0.7.0rc7`, for the reason it gives under "Timings
+are not figures", so there is no hand-kept record to compare against either.
 
 The runner is worth building only after 0.7 has profiled the pipeline, because
 until then there is no agreed list of what to measure.
@@ -3268,9 +3270,10 @@ Verified reduction certificates for large examples: `measure_pipeline.py`
 verifies every step of three chains up to 44 variables, and the suite carries
 the 38-variable gradient form behind a slow marker.
 
-Large-scale regression tests are the suite, which is at 1760 tests and 100 per
-cent coverage; what is missing there is the *cost* side, which is the runner
-above.
+Large-scale regression tests are the suite, at 100 per cent coverage; what is
+missing there is the *cost* side, which is the runner above. How many tests it
+holds is left to `pytest` to say, because a count written here went stale by a
+seventh between two milestones.
 
 Performance comparisons across releases and a reproducible benchmark runner
 overlap with milestone 0.7, which profiles and optimizes. They stay here rather

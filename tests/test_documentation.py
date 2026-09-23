@@ -31,6 +31,7 @@ import inspect
 import re
 import sys
 from pathlib import Path
+from types import ModuleType
 
 import pytest
 
@@ -453,6 +454,47 @@ def test_the_gates_of_the_contributing_guide_exist() -> None:
     )
 
 
+def target_recipes(target: str) -> list[str]:
+    """Return the commands one Makefile target runs, without the ``uv run`` prefix."""
+    lines = (ROOT / "Makefile").read_text(encoding="utf-8").splitlines()
+    start = next(index for index, line in enumerate(lines) if line == f"{target}:")
+    recipes = []
+    for line in lines[start + 1 :]:
+        if not line.startswith("\t"):
+            break
+        recipes.append(line.strip().removeprefix("uv run "))
+
+    return recipes
+
+
+@pytest.mark.parametrize("guide", ["AGENTS.md", "CONTRIBUTING.md"])
+@pytest.mark.parametrize("target", ["reconstruct", "measure"])
+def test_every_command_of_a_measuring_target_is_named(guide: str, target: str) -> None:
+    """The direction the other gate tests do not check.
+
+    Those require every command a list names to be one some target runs, so a
+    list can lose an entry and stay green. `CONTRIBUTING.md` did: from
+    `0.7.0rc11` it did not name `measure_pivot_search.py`, which `make measure`
+    runs, and said beneath the list that it was exactly what the target runs.
+    An audit of `0.7.0rc12` counted the scripts. A target's arguments are not
+    part of the comparison, since the lists name the commands and the Makefile
+    passes the budgets.
+    """
+    if guide == "AGENTS.md":
+        listed = gate_commands()
+    else:
+        listed = fenced_blocks(
+            ROOT / "CONTRIBUTING.md", "## Before you open a pull request"
+        )[1]
+    missing = [
+        recipe
+        for recipe in target_recipes(target)
+        if not any(recipe.startswith(command) for command in listed)
+    ]
+
+    assert not missing, f"{guide} does not name what make {target} runs: {missing}"
+
+
 def test_every_reconstruction_script_is_named_in_the_agreements() -> None:
     """The list went stale exactly here, and quietly.
 
@@ -632,61 +674,158 @@ def test_no_wrapped_line_begins_a_numbered_list_by_accident(path: Path) -> None:
         previous = line
 
 
-def test_the_carrier_figures_appear_on_the_roadmap_page() -> None:
-    """The same tie again, on the column that had none.
-
-    The carrier and the complement are what SYM-7 rests its explanation on,
-    and until `0.7.0rc12` nothing recomputed them. They had stopped matching
-    the code at some point nobody can name, and `make measure` could not see
-    it: it checks the dimensions and the monomial counts of the same chains,
-    and those still agreed to the last digit.
-
-    The script now recomputes them and fails when the page states a figure it
-    does not measure. This fails when the page stops stating one it does.
-    """
+def load_pipeline() -> ModuleType:
+    """Import ``scripts/measure_pipeline.py`` for the tests that read its tables."""
     path = ROOT / "scripts" / "measure_pipeline.py"
-    spec = importlib.util.spec_from_file_location("carrier_probe", path)
+    spec = importlib.util.spec_from_file_location("pipeline_tables", path)
     assert spec is not None and spec.loader is not None
     module = importlib.util.module_from_spec(spec)
     sys.modules[spec.name] = module
     spec.loader.exec_module(module)
 
-    roadmap = (ROOT / "docs" / "roadmap.md").read_text(encoding="utf-8")
-    section = roadmap[roadmap.index("### WP 1, and what it found") :]
-    section = section[: section.index("\n## ")]
-    missing = [
-        figure
-        for figure in module.CARRIER_FIGURES
-        if not re.search(rf"(?<![\w-]){figure}\b", section)
+    return module
+
+
+def pipeline_rows(module: ModuleType) -> list[str]:
+    """Return the rows the references page has to carry, as the page writes them."""
+    return [
+        f"| `{row.name}`, {row.degree_three} | {row.unipotent} "
+        f"| {row.homogeneous}, {row.homogeneous_monomials} monomials "
+        f"| {row.compressed}, {row.compressed_monomials} "
+        f"| {row.quartic}, `P` of {row.quartic_monomials} |"
+        for row in module.TABLE
     ]
 
-    assert not missing, f"the page does not state {missing}"
+
+def carrier_rows(module: ModuleType) -> list[str]:
+    """Return the rows the carrier table has to carry, as the page writes them."""
+    return [
+        f"| `{name}`, `{row.stage}` | {row.dimension} | {row.diagonal_ones} "
+        f"| {row.carrier} | {row.dimension - row.carrier} |"
+        for name, rows in module.CARRIERS.items()
+        for row in rows
+    ]
 
 
-def test_the_pipeline_figures_appear_on_the_references_page() -> None:
-    """The same tie as for the untargeted figures, on the other measurement.
+def references_section() -> str:
+    """Return the section of the references page the pipeline table stands in."""
+    page = (ROOT / "docs" / "references.md").read_text(encoding="utf-8")
+    section = page[page.index("## What the pipeline reaches") :]
 
-    ``scripts/measure_pipeline.py`` fails when the page states a figure it does
-    not measure. This fails when the page stops stating one it does, which the
-    script cannot see.
+    return section[: section.index("\n## ", 1)]
+
+
+def carrier_section() -> str:
+    """Return the work package 1 section of the roadmap, without emphasis.
+
+    The table sets the complement of each lift in bold, which is emphasis on
+    the page and not part of the figure, so it is taken off before comparing.
     """
-    path = ROOT / "scripts" / "measure_pipeline.py"
-    spec = importlib.util.spec_from_file_location("pipeline_probe", path)
+    page = (ROOT / "docs" / "roadmap.md").read_text(encoding="utf-8")
+    section = page[page.index("### WP 1, and what it found") :]
+
+    return section[: section.index("\n## ")].replace("**", "")
+
+
+def test_the_pipeline_table_agrees_with_the_measurement_script() -> None:
+    """The table on the references page, row by row rather than number by number.
+
+    The test this replaces asked whether every number the script checks
+    occurred somewhere in the section. Changing the compressed dimension of
+    `spacerat11` from 19 to 20 left it green, because 20 is the compressed
+    dimension of `alpoege12` in the next row. The same weakness was found for
+    UNT-10 and fixed there with a row check, before the carrier test below was
+    written with the weak one; an audit of `0.7.0rc12` found it in that test,
+    and this is the table the weak test had been copied from.
+    """
+    section = references_section()
+    missing = [row for row in pipeline_rows(load_pipeline()) if row not in section]
+
+    assert not missing, f"the references page does not carry {missing}"
+
+
+def test_the_carrier_table_agrees_with_the_measurement_script() -> None:
+    """Every cell of the carrier table against the chain it belongs to.
+
+    The complement is what `determinant()` is left with, and SYM-7 rests on
+    it. It drifted once without anything noticing, was corrected at
+    `0.7.0rc12` with a test that could not see a wrong cell, and an audit of
+    that release candidate changed 16 to 17 in one row to show it.
+    """
+    section = carrier_section()
+    missing = [row for row in carrier_rows(load_pipeline()) if row not in section]
+
+    assert not missing, f"the carrier table does not carry {missing}"
+
+
+def test_the_complement_of_the_lift_is_stated_beside_the_table() -> None:
+    """The one carrier figure that stands in prose, where a row check misses it."""
+    figure = load_pipeline().LIFT_COMPLEMENT_MONOMIALS
+
+    assert re.search(rf"(?<![\w-]){figure}\b", carrier_section())
+
+
+def test_the_pivot_search_table_agrees_with_the_measurement_script() -> None:
+    """The residue-ring rows of FAC-2's measurement, against the script.
+
+    The same shape as the two tables above, found while fixing them: this
+    script closed with "Every part agrees with docs/roadmap.md" and compared
+    nothing with that page. The counts are the orders of `GL_2(Z/nZ)`, so the
+    script now checks what it enumerates against them and this checks them
+    against the table, with the refusals at zero, which is what the table
+    claims.
+    """
+    path = ROOT / "scripts" / "measure_pivot_search.py"
+    spec = importlib.util.spec_from_file_location("pivot_tables", path)
     assert spec is not None and spec.loader is not None
     module = importlib.util.module_from_spec(spec)
     sys.modules[spec.name] = module
     spec.loader.exec_module(module)
 
-    references = (ROOT / "docs" / "references.md").read_text(encoding="utf-8")
-    section = references[references.index("## What the pipeline reaches") :]
-    section = section[: section.index("\n---")]
-    missing = [
-        figure
-        for figure in module.FIGURES
-        if not re.search(rf"(?<![\w-]){figure}\b", section)
+    page = (ROOT / "docs" / "roadmap.md").read_text(encoding="utf-8")
+    section = page[page.index("## What the pivot search reaches") :]
+    section = section[: section.index("\n## ", 1)]
+    expected = [
+        f"| invertible `2x2` over `Z/{modulus}` | {count} | 0 |"
+        for modulus, count in module.INVERTIBLE.items()
     ]
+    expected.append(f"| all six | {sum(module.INVERTIBLE.values())} | 0 |")
+    missing = [row for row in expected if row not in section]
 
-    assert not missing, f"the page does not state {missing}"
+    assert not missing, f"the pivot-search table does not carry {missing}"
+
+
+@pytest.mark.parametrize(
+    ("rows", "section", "old", "new"),
+    [
+        (
+            "carrier",
+            "carrier",
+            "| `spacerat11`, `UnipotentStep` | 22 | 20 | 16 | 6 |",
+            "| `spacerat11`, `UnipotentStep` | 22 | 20 | 17 | 6 |",
+        ),
+        (
+            "pipeline",
+            "references",
+            "| `spacerat11`, 11 | 22 | 23, 60 monomials | 19, 56 |",
+            "| `spacerat11`, 11 | 22 | 23, 60 monomials | 20, 56 |",
+        ),
+    ],
+)
+def test_a_wrong_cell_is_caught(rows: str, section: str, old: str, new: str) -> None:
+    """The negative control, with the two mutations that went through before.
+
+    Each one changes a single cell to a value that occurs elsewhere in the
+    same table, which is the case a search for the number cannot see.
+    """
+    module = load_pipeline()
+    expected = carrier_rows(module) if rows == "carrier" else pipeline_rows(module)
+    text = carrier_section() if section == "carrier" else references_section()
+
+    assert old in text
+    mutated = text.replace(old, new)
+
+    assert [row for row in expected if row not in mutated]
 
 
 def test_the_order_table_agrees_with_the_measurement_script() -> None:

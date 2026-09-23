@@ -48,6 +48,15 @@ PARAMETER = sp.Symbol("T")
 
 MODULI = (4, 6, 8, 9, 10, 12)
 
+INVERTIBLE: dict[int, int] = {4: 96, 6: 288, 8: 1536, 9: 3888, 10: 2880, 12: 4608}
+"""How many invertible ``2x2`` matrices each ring has, as ``docs/roadmap.md`` states.
+
+The order of ``GL_2(Z/nZ)``, a property of the ring and not of this library,
+so a count that disagrees is a defect in the enumeration rather than a finding.
+``tests/test_documentation.py`` holds these against the table row by row, and
+this script holds what it counts against these.
+"""
+
 DEFAULT_BUDGET = 120.0
 
 
@@ -185,10 +194,14 @@ def measure_residue_rings() -> tuple[int, int]:
         ring = sp.ring("x,y", sp.GF(modulus))[0]
         matrices = invertible_pairs(modulus)
         missed = sum(1 for given in matrices if not reached(ring, given))
+        counted = len(matrices) == INVERTIBLE[modulus]
         examined += len(matrices)
-        refused += missed
-        mark = "ok " if missed == 0 else "!! "
-        print(f"  [{mark}] Z/{modulus}: {len(matrices)} matrices, {missed} refused")
+        refused += missed + int(not counted)
+        mark = "ok " if missed == 0 and counted else "!! "
+        print(
+            f"  [{mark}] Z/{modulus}: {len(matrices)} matrices "
+            f"(table says {INVERTIBLE[modulus]}), {missed} refused"
+        )
 
     print(f"  {examined} matrices, {refused} refused")
 
@@ -262,7 +275,10 @@ def main() -> int:
         print(f"{disagreements} results disagree with what this script expects.")
         return 1
 
-    print("Every part agrees with docs/roadmap.md.")
+    print(
+        "Every part agrees with what this script expects. The tests hold its\n"
+        "table against docs/roadmap.md row by row."
+    )
 
     return 0
 
