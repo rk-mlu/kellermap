@@ -4,838 +4,105 @@ Notable changes per release. The milestone plan and its reasoning live in
 `docs/roadmap.md`, the binding obligations of the verification surface in
 `docs/contracts.md`.
 
-## 0.7.0rc13
-
-An audit of `0.7.0rc12` found no defect in the mathematics and three in the
-evidence for it. All three are of one kind: a claim about the repository that
-nothing held against the repository.
-
-**The tables are held against the pages row by row.** The carrier test added
-in `0.7.0rc12` asked whether every number the script checks occurred somewhere
-in the section, and the audit changed one carrier from 16 to 17 and watched it
-stay green, because 17 occurs elsewhere in that table. The test for the
-pipeline table on `docs/references.md`, which the carrier test had been copied
-from, had the same hole: 19 becoming 20 in one row stays green because 20 is in
-the next. The same weakness had been found and fixed for the UNT-10 table
-before either was written. Both are now checked row by row, and so is the
-residue-ring table of FAC-2's measurement, which had no tie at all. A negative
-control applies the mutations that got through before.
-
-Each measurement script also stopped saying the page agrees. They compare the
-code with tables they hold themselves; that those tables agree with the pages
-is what the tests say, and only the two together say what the scripts' closing
-lines had claimed.
-
-**Runtimes are dated and stand in one place.** MAP-4 gave the gap between the
-division-free and the fraction-free route as three factors, undated and with
-no machine, and the script could not reproduce the largest of them. SYM-7 and
-MAP-4 both quoted the times of the lift run, and a row of FAC-2's measurement
-carried a count set by a time budget. `AGENTS.md` allows a runtime only where
-the measurement is the subject, and then with its day and its machine in
-`docs/roadmap.md`. The run was repeated: `scripts/measure_lift_determinant.py`
-now prints its date, machine and versions, and the run of 2026-09-21 on
-`paddy4` is recorded with them. It gave a different factor at every size and
-the same shape at all of them, so the contract states the shape and the
-roadmap the figures. None of the three routes returns on the complement of the
-lift, and the conclusion SYM-7 draws is unchanged.
-
-The `0.7.0rc12` entry below keeps the times of the first run, because that
-entry is a record of what was claimed at that tag.
-
-**The inventories are corrected, and the other direction is gated.** Three
-pages counted the measurement scripts and each count was wrong, and the
-roadmap gave a test count that had gone stale by a seventh. The pages now
-distinguish what `make measure` runs from the one run the maintainer makes
-with a budget of a day, and name no count that nothing recomputes.
-`CONTRIBUTING.md` had not named `measure_pivot_search.py` since `0.7.0rc11`
-while saying its list was exactly what the targets run. The test on that list
-asked only whether every command it names is one a target runs, so a list
-could lose an entry and stay green; every command `make reconstruct` and `make
-measure` run now has to be named, in that guide and in `AGENTS.md`.
-
-## 0.7.0rc12
-
-An audit of `0.7.0rc11` found two release blockers. Both are the same shape:
-a question about a coefficient domain answered at the outermost level, and an
-elimination that divides where a division is not available.
-
-**Every determinant is taken without dividing.** `DomainMatrix.det()` runs a
-fraction-free elimination, which divides exactly, and over `Z/nZ` with
-composite `n` that division meets a zero divisor. It reaches the verification
-surface: LIN-3 compares determinants, so a normalizing step over `Z/4Z` that
-`factorize` and `normalize` both accept failed inside `verify()`. MAP-4
-replaces it with Bird's algorithm, which uses addition, subtraction and
-multiplication and nothing else, so no domain is a case and none is refused.
-The Schur complement is unchanged and keeps its place in front: it divides
-nowhere, forms `D^-1 C` through the Neumann series rather than `D^-1`, and
-settles nilpotency on the dependency graph.
-
-**And the old route did more than raise.** Of 3000 random constant
-three-by-three blocks over `Z/4Z`, 702 raised and 2298 returned, and 282 of
-those disagree with the Leibniz expansion; with polynomial entries, 57 of 247.
-`[[0, 0, 1], [0, 1, 0], [2, 0, 0]]` has determinant `2` there and was answered
-with `0`. The audit found the exception. The wrong answers were found while
-checking whether the exception could be caught and the old route kept for the
-rest, which is what rules that out, and it moves the blocker: a certificate
-could be accepted or refused on a number that is not the determinant.
-
-Two sites took it that way and the second was added in `0.7.0rc11` itself,
-where LIN-6 takes the determinant of the linear part. One function serves
-both. The control is the Leibniz expansion, which shares nothing with the
-route in use, on 160 blocks over `Z/4Z`; at full size `tests/test_bcw17.py`
-holds the 17 by 17 Jacobian against SymPy's elimination directly, which is
-sound there because that map is over a domain with no zero divisors.
-
-**A widening that does not widen is refused, one level further down.**
-`field_ring` checked what `get_field` returned and stopped at its outermost
-level. `(Z/4Z)[T]` widens to `GF(4)(T)`, which reports `is_Field` as `True`
-while holding `2 != 0` and `2 * 2 == 0`, so the widening was accepted and the
-caller received a coefficient domain with a nonzero nilpotent in it. WID-1 now
-walks down the tower of domains and asks there. Measured over fourteen
-domains: the deepest is two levels down and every one terminates.
-
-The Euclidean fold in `factorize` asked the same question the same way and now
-asks the shared function. It never ran over that domain, because `is_PID` is
-`False` for it, which is the other half of a conjunction and not an argument.
-What changes is that one question has one answer, which is what the audits of
-`0.7.0rc9` and `0.7.0rc11` both turned on.
-
-**SYM-7 is settled against both eliminations.** Its departure from UNI-10,
-HOM-7 and CHC-6 rested on a run that used the elimination MAP-4 replaces, and
-its own text listed the elimination among the properties of the complement
-that were never isolated. `scripts/measure_lift_determinant.py` put three
-routes on that complement with twenty hours and 24 GB each: the fraction-free
-elimination spent the twenty hours without reaching the memory limit, the
-division-only route reached it after two hours and seven minutes, and the
-route through the characteristic polynomial after thirty-one. None returns, so
-the elimination is isolated and the departure stands. What differs is the
-failure: the old route is bound by time and the new one by memory.
-
-That gap is also why MAP-4 takes the determinant alone rather than reading it
-off a characteristic polynomial. Both are division-free; the polynomial holds
-`n + 1` coefficients where Bird's algorithm holds `n**2` ring elements, and
-the determinant of a map this library reduces is the one coefficient that
-cancels to almost nothing while the middle ones do not.
-
-**The carrier figures are recomputed and gated.** The table of work package 1
-and the paragraph SYM-7 rests on stated a carrier the code no longer selects:
-four at every BCW-reduced stage and 29 by 29 at the lift, against a measured
-four for `alpoege12`, six for the other two, and 28 by 28 with 13589 monomials
-for `spacerat11`. Nothing recomputed that column, which is why it drifted;
-`make measure` checked the dimensions and the monomial counts of the same
-chains and they still agreed to the last digit. `scripts/measure_pipeline.py`
-now recomputes every cell for all three chains, and `docs/errata.md` records
-what happened. When the figures stopped matching is not established.
-
-**Measurements and controls.** `scripts/measure_pivot_search.py` takes the
-determinant of each random three-by-three as well as factorizing it: the
-audit is right that it could not have found this, since its exhaustive part is
-two-by-two, where `ad - bc` divides nothing. `scripts/measure_lift_determinant.py`
-is new. The probe set holds 71: two for MAP-4, of which the one that matters
-puts the replaced route back rather than breaking the new one, and two more
-for WID-1, whose single probe had covered `Z/4Z` directly and never reached
-one level up.
-
-## 0.7.0rc11
-
-An audit of `0.7.0rc10` found two release blockers, two further defects and a
-page that had stopped describing the code in six places. Both blockers are in
-what the two previous release candidates built around the coefficient domain.
-
-**A certificate no longer rests on a search that is allowed to fail.** LIN-6
-verified a normalization by calling `factorize` on `J(F)(0)` and comparing the
-result against the declared transformation. `factorize` refuses a matrix whose
-column its bounded search cannot bring to a unit pivot, FAC-2 permits that
-refusal, and the verifier reported every one of them as a singular linear part.
-Over `ZZ[T]` the matrix `[[T, -1], [2T+1, -2]]` has determinant one, and a step
-carrying its inverse as an exhibited factorization was refused as singular.
-Verification now takes the determinant in the coefficient domain and requires a
-unit, then multiplies the declared transformation against `J(F)(0)` and requires
-the identity. Nothing is inverted and nothing is factorized. `normalize()` still
-builds through `factorize` and keeps that boundary; verification does not share
-it. One side of the product is enough over a commutative ring, and the two
-clauses have two messages, each true where it fires.
-
-**A widening that does not widen is refused.** `field_ring` promised the field
-of fractions of the coefficient domain and returned whatever `get_field` handed
-back. For `Z/nZ` with composite `n` SymPy hands back that ring, so `field_ring`
-over `Z/4Z` answered with a ring that has zero divisors, `over_field` left the
-domain unchanged, and a caller who followed the advice to widen met the same
-refusal again. WID-1 checks the answer instead of trusting it, which is the rule
-FAC-1 already states for `is_PID`. WID-2 names `over_field()` only where the
-widening exists and changes the domain, decided per domain rather than per
-branch: the advice had been withheld by hand for finite fields in three files
-and was still given for `Z/4Z` at four sites, where it cannot be followed at
-all. The whole suite passed the repair before a test was written for it, so
-there had been no control on any of those messages.
-
-**The pivot search tries the candidates it documents.** It named three
-combinations per ordered pair of rows and applied the first unconditionally,
-then left the loop, so minus one and the quotient were computed and discarded.
-Whether a matrix factorized depended on the order of its rows: the `ZZ[T]`
-matrix above was refused and the same matrix with its rows exchanged went
-through. The three are tested now and the one that reaches a unit is applied,
-which makes the search accept everything it accepted before and more. The guard
-against a candidate that annihilates the divisor is gone with its pragma, whose
-stated reason held only while the first candidate was the only one reached.
-
-**The bound behind FAC-2 can be rerun.** `scripts/measure_pivot_search.py` is
-new and `make measure` runs it. All 13296 invertible `2x2` matrices over `Z/4`,
-`Z/6`, `Z/8`, `Z/9`, `Z/10` and `Z/12` are reached, none refused, each
-reconstructing to the matrix it was given; so are random invertible `3x3` over
-`Z/6Z`, and both `ZZ[T]` matrices audits have supplied. `[[7, 17], [2, 5]]` over
-`ZZ[T]` is refused, has determinant one and integer entries, and is folded to a
-unit pivot at once over `ZZ`: the boundary is about the domain a matrix is read
-over and not about the matrix. The figures are in `docs/roadmap.md`, where the
-code and the contract page had been pointing without them being there.
-
-**FAC-2 had no control and no probe.** The clause binds the whole refusal and
-the test matched its first sentence, so the audit deleted the two readings, the
-boundedness and the reference to the clause, and watched the suite pass. Every
-part is asserted now, and two probes cover it.
-
-**The probe count was wrong in three places and gated in none.** The script
-narrated a running total ending at sixty-one against a set of sixty,
-`docs/provenance.md` named forty-five, and the changelog entry below repeats the
-first. One sentence states the count now and `tests/test_scripts.py` holds it
-against the set. The running total is gone: which of its increments was wrong
-cannot be settled from this repository. `docs/errata.md` records it.
-
-**Six places where a page had stopped describing the code.** `factorize` said
-that nothing is attempted over a domain that is not a principal ideal domain,
-which `0.7.0rc10` had made false, and advised `over_field` without qualification.
-`LinearStep.normalize` described an inverse formed in the field of fractions,
-which was `0.7.0rc9`'s route. `docs/api.md` said every map over `ZZ` has to be
-widened first, which `0.7.0rc9` had made false. `docs/architecture.md` named the
-pivot tests in `factorize` among the comparisons that go through
-`kellermap.canonical`, which `linear.py` does not import and has not since
-`0.7.0rc7`. The 13296 pointed at a page that did not carry the figure. And two
-sections had been inserted between SEA-5 and SEA-6, so SEA-6 to SEA-14 stood
-under the conjugation heading while the contents listed them elsewhere; the
-sections are where the contents puts them, and a test holds the two orders
-against each other.
-
-
-An audit of `0.7.0rc9` found two release blockers and five smaller defects.
-Both blockers are in the ring-general factorization `0.7.0rc9` introduced, and
-the first of them is a domain predicate that was trusted instead of checked.
-
-**The Euclidean fold ran over rings with zero divisors.** It was gated on
-`domain.is_PID`, and SymPy reports that for `Z/6Z`, which is not an integral
-domain at all. The fold then divided by a zero divisor and SymPy's
-`NotInvertible` escaped as a raw exception: 48 invertible matrices over `Z/6Z`
-were refused that way, 320 over `Z/10Z` and 768 over `Z/12Z`. All 13296
-invertible `2x2` matrices over `Z/4`, `Z/6`, `Z/8`, `Z/9`, `Z/10` and `Z/12`
-factor now, each reconstructing to the matrix it was given.
-
-The gate is a measured predicate rather than a reported one: SymPy calls
-`Z/nZ` a finite field for every `n` and sets `is_Field` only when `n` is
-prime, so a finite-field domain that is not a field is a residue ring with a
-composite modulus. Both attempts at a unit pivot also work on a copy and
-commit only on success, and the fold reports failure rather than raising, so a
-domain predicate that is wrong again costs a refusal and not a crash.
-
-**A unit determinant was not enough over `ZZ[T]`.** The same gate excluded
-every domain that is not a principal ideal domain, so `[[T, T+1], [T-1, T]]`,
-of determinant one, was refused although `R1 <- R1 - R2` gives a unit pivot
-immediately. A bounded search over row combinations now runs on every domain,
-after the fold and before the refusal. It is incomplete at any bound and FAC-2
-says so; the refusal reports that no unit pivot was reached and names the two
-readings, rather than asserting that the determinant is not a unit, which is
-what `0.7.0rc9` asserted of every refusal including of matrices in `GL_2(ZZ)`.
-
-**`LinearStep.normalize` inverts a factorization, not a matrix.** It went
-through `domain.get_field()` and `DomainMatrix.inv()`, and for `Z/4Z` the
-field of fractions is that ring again, so a shear of unit determinant raised
-`DMNotAField` -- with `over_field()` unable to help, since the widening is not
-one. Every `LinearFactor` exhibits its own inverse, so the inverse of the
-linear part is the reversed product of the inverses of its factors. Nothing
-inverts a matrix, no adjugate is needed and no dimension bound with it, and
-the supported boundary is exactly `factorize`'s, stated once.
-
-**Two new obligation families.** Four mutation probes carried clauses that do
-not cover them: three about `PolynomialMap` arithmetic under `DOM-4`, which
-says a `SearchOutcome` carries the ring it searched, and one about what
-`factorize` can build under `LIN-2`, which says an exhibited inverse undoes
-its transformation. A full sweep still caught every mutation, but a targeted
-run of either selector meant less than its name. `MAP-1` to `MAP-3` cover
-evaluation in the coefficient domain, the substitution fallback outside it,
-and that neither is linear in the exponent; `FAC-1` and `FAC-2` cover the unit
-pivot and the bounded search. All 61 probe identifiers were then read against
-the clauses they name; the other 55 hold.
-
-**CNJ-2 had the coordinate change backwards.** `conjugate` computes
-`G(X) = D F(D^-1 X)`, so the determinant composes with `D^-1`; the clause and
-the docstring said `D`. Over the entries `(2, 3)` the two read
-`1 + x y^3 / 27` and `1 + 108 x y^3`. The implementation was right throughout.
-The test covering it used a diagonal of signs, where `D` and `D^-1` coincide,
-so it could not have found the error.
-
-**A second test asserted a value where the claim was a complexity.** The
-scaling loop in `conjugate` was covered by its result, which the loop it
-replaced produces just as well, and the docstring said a mutation probe
-covered the loop where none existed. The loop is now a module-level
-`_scaled_terms` exercised with a value that counts how it is combined, and it
-has a probe.
-
-**Documentation.** `docs/contracts.md`, `docs/architecture.md` and
-`docs/api.md` all still required `over_field()` for every map over `ZZ`, which
-`0.7.0rc9` had made false and tested false. `diagonal_matching` and two tests
-still spoke of SEA-5 in the present tense. The `CNJ` section was missing from
-the contract page's table of contents. And CNJ-1 promised that every refusal
-names the entry, where only the non-unit path did; the conversion and zero
-paths named the whole tuple.
-
-## 0.7.0rc9
-
-An audit of `0.7.0rc8` found two release blockers and four smaller defects, all
-of them in public behaviour at an edge nothing had tested.
-
-**`LinearAutomorphism.factorize` refused matrices it should factor.** Over a
-domain that is not a field a pivot has to be a *unit* and not merely non-zero.
-The elimination took the first non-zero entry and divided by it, which is right
-over a field and wrong over a ring: `[[2, 1], [1, 1]]` lies in `GL_2(ZZ)` with
-determinant one and a swap with the second row gives a unit pivot straight
-away, while `[[2, 1], [3, 2]]` needs a real Euclidean combination. Both were
-refused with advice to call `over_field()`, and of the 104 unimodular matrices
-with entries from `-2` to `2`, 16 were refused. All 104 factor now, each
-reconstructing to the matrix it was given.
-
-Where no entry of a column is a unit, one is made: the determinant lies in the
-ideal the column generates, so a unit determinant forces the column's greatest
-common divisor to be a unit, and the rows are folded pairwise by the Euclidean
-algorithm run with row operations — a division is a `Transvection` and the
-exchange after it a `Transposition`, so the record stays a product of Gauss
-generators. The folding runs exactly where the domain says it has a Euclidean
-structure, on a principal ideal domain. Over `ZZ[T]` nothing is attempted and
-the refusal stands, now for a reason that is true of the domain rather than an
-accident of which entry came first.
-
-`LinearStep.normalize` documented a field and checked nothing, so which `ZZ`
-maps normalized depended on the same accident. The condition was never that the
-domain is a field: it is that the linear part's determinant is a unit, which is
-`factorize`'s question and is asked of the matrix. A unimodular linear part over
-`ZZ` now normalizes without widening; a determinant of `2` still needs
-`over_field`, and says so.
-
-**`conjugate` let a raw SymPy exception escape.** `sp.GF(4)` is `Z/4Z` and not a
-field, so `2` is a non-zero non-unit, and the unit check caught
-`ExactQuotientFailed` but not `NotInvertible`. Every non-zero zero divisor
-modulo 4, 6, 8, 9, 10 and 12 is now refused as a `ValueError` naming the entry,
-and every unit of those rings is still accepted.
-
-**CNJ is a new obligation family**, for `conjugate`. The diagonal was part of
-SEA-5 until work package 10 and unnamed from then on, while the docstring went
-on attributing it there. That cost something rather than merely reading oddly: a
-mutation probe for the unit rule had been filed under `SEA-5`, so one selector
-stood for two unrelated promises and a green run said less than it looked like.
-CNJ-1 is the admissible diagonal — every entry lies in the domain, is non-zero
-there and is a unit there, each decided in the domain — and CNJ-2 is what
-conjugation preserves. SEA-5 is untouched.
-
-**A test claimed a complexity and tested a value.** `0.7.0rc8` replaced a
-multiplication per unit of exponent with exponentiation and covered it by
-evaluating `x**64` and checking the answer, which the linear version also
-returns; the audit put the old body back and the test stayed green. It now
-evaluates against a value that counts how it is combined, and asserts one
-exponentiation and at most four multiplications. Re-running the audit's own
-experiment fails it.
-
-The same shape was still in `conjugate`, which divided once per unit of
-exponent, because only the evaluator had been looked at when that was fixed.
-
-**Gate documentation.** The rule that runtimes are not written into prose was
-itself ambiguous — its framing forbade every runtime and its prohibition named
-only seconds — and `AGENTS.md` broke it under the wider reading. The rule now
-says exactly what it permits: an order of magnitude carrying an argument about
-who runs something, and a figure that is the subject of its own sentence, which
-says when it was taken. Everything mentioned in passing goes. A sweep found
-seven places beyond the three the audit named; four were corrected and three
-were already magnitudes.
-
-Three mutation probes, which makes fifty-seven: the unit rule's refusal, the
-unit pivot, and the evaluator's exponentiation. Two of the three sit on claims
-that a test was asserting without checking.
-
-## 0.7.0rc8
-
-An audit of `0.7.0rc7` found one release blocker and five smaller defects. Four
-of the six are in `0.7.0rc7`'s own repairs rather than in anything older, which
-is the pattern this release takes its lesson from: a repair is a change and
-earns the same scrutiny as the thing it repaired.
-
-**The blocker.** `PolynomialMap.__call__` falls back to substitution when a
-point does not lie in the coefficient domain, and the fallback caught only
-`CoercionFailed`. That is what the atomic domains raise. Measured across the
-domains this package supports, `from_sympy` raises three different things:
-`CoercionFailed` over `ZZ`, `QQ`, `GF(p)`, `QQ_I` and an algebraic field, a
-bare `ValueError` over every polynomial and fraction domain, and
-`NotImplementedError` over a fraction field for an argument that is not an
-expression. So over `QQ[T]`, `QQ(T)`, `ZZ[T]`, `GF(p)[T]` and `GF(p)(T)` the
-fallback crashed instead of falling back: `F(s)` for a free symbol returned
-`s**2` in `0.7.0rc6` and raised in `0.7.0rc7`, and so did a legitimate
-characteristic-zero collision at `±sqrt(2)`. `Collision.at`, `Collision.verify`
-and every transport path with a point outside the domain went with it.
-
-The test that covered the fallback used `QQ`, which raises the one exception
-that was caught, so a suite at 100 per cent statement coverage reached the
-branch and never exercised what reaches it. The regression is parametrized over
-five composite domains and has a control that a point *inside* the domain still
-evaluates there.
-
-**COL-7's justification was wrong, and the obligation is unchanged.** It read
-that the Jacobian conjecture is open in characteristic zero. The first page of
-`README.md` says it fell in July 2026 and that the counterexamples are this
-library's subject. The claim stood in `collision.py`, in `docs/contracts.md`,
-in this changelog and in the `VerificationError` a caller sees.
-
-The boundary itself is sound and rests on this type's own semantics: COL-5
-keeps the map out of a `Collision`, so COL-4 decides distinctness in the normal
-form of `kellermap.canonical`, which carries no characteristic, and deciding
-COL-3 in the coefficient domain while COL-4 stays outside it would let `0` and
-`2` over `GF(2)` pass as two distinct points with one image. It is the boundary
-`lift.py` draws at SYM-4 and `compression.py` at CHC-8. The justification now
-says that and does not mention the conjecture's status at all. COL-7 also
-reached `docs/api.md`, which `AGENTS.md` requires for new public behaviour and
-which `0.7.0rc7` skipped.
-
-**`conjugate` refused units.** Over a domain that is not a field it admitted
-`1` and `-1`, which are the units of `ZZ` and of nothing else here. `2` is a
-unit of `QQ[T]` and `i` of `ZZ[i]`, and both were refused with advice to call
-`over_field` — which for `QQ[T]` widens to `QQ(T)` to obtain a reciprocal the
-domain already had. `Dilation` had this right and the check disagreed with it.
-The question is now asked of the domain with `exquo`.
-
-**`LinearAutomorphism.matrix` came back congruent rather than normalized.** The
-product of the factor matrices was formed in ordinary SymPy arithmetic, so over
-`GF(2)` the factorization of `[[1, 1], [1, 0]]` returned `[[1, 1], [1, 2]]`. No
-certificate was wrong, because LIN-6 converts into the ring before it compares,
-but a public method answered with a matrix that is not the one it was given.
-Of the 2550 invertible `2x2` matrices over `GF(2)`, `GF(3)`, `GF(5)` and
-`GF(7)`, 1297 came back differing syntactically from their own normalized
-input; none do now. The product is formed as a `DomainMatrix`.
-
-**Evaluation is no longer linear in the exponent.** `_evaluate_at` multiplied
-once per unit of exponent, where the public API sets no bound on the degree. It
-exponentiates, and skips a zero exponent rather than raising to it — which is
-also what keeps it correct, since `domain.zero ** 0` raises `ValueError` over
-every polynomial and fraction domain here.
-
-**Gate documentation.** The `Makefile` described one slow test where the marker
-carries seventeen, `.github/workflows/ci.yml` described three reconstructions
-where `make reconstruct` runs eight, and a docstring in
-`tests/test_positive_characteristic.py` said the `GF(7)` enumeration belongs to
-the slow suite, where nothing had put it there.
-
-Two mutation probes, which makes fifty-four: the fallback the evaluation takes
-for a point outside the domain, and the unit test in `conjugate`. Both sit on
-repairs that had themselves gone wrong, which is the argument for probing a
-repair and not only the thing it repaired.
-
-## 0.7.0rc7
-
-An audit of `0.7.0rc6` found four release blockers with one cause between them:
-several paths decided equality, nullity and inversion in ordinary SymPy
-expressions rather than in the ring the map lives over. Every one is closed
-here, and each was reproduced against `0.7.0rc6` before anything was changed.
-
-The targeted search compares a pool value against a slot factor in the ring of
-the map the walk has reached, as `PolyElement` and with the sign, where it
-compared expanded expressions. A spelling says nothing: over `GF(2)` the pool
-value `3z^2` and the factor `z^2` are one element, and over `QQ(T)` so are
-`(T+1)z^2` and `((T^2-1)/(T-1))z^2`. An exact match written differently was
-charged a rewrite, and with the default of one rewrite left the chain was
-dropped and the space reported as exhausted -- a claim SEA-13 makes and it was
-false. The `GF(2)` case went from eleven maps and `exhausted=True` to a chain
-found in ninety-two.
-
-BCW-12 compares two `PolyElement` of the source's ring and runs after the slots
-are converted into it. It ran before, on the expressions as they arrived, and
-decided with `kellermap.canonical`, which has no characteristic: over `GF(2)`
-it read `y` and `-y` as two values and refused a step whose two slots are one
-element.
-
-`Candidate.shared` is the whole of the intent. `shares_one_generator` kept a
-structural equality test beside it, so the switch `0.7.0rc6` introduced could
-not express what it promised -- `x^2 - y^2` beside `(x-y)(x+y)` gave
-`shared=True` with `m == 2`. A `Candidate` carries expressions and no ring, so
-whether the two values agree is decided where a ring exists to decide it.
-`untargeted_candidates` sets the flag only where both slots are fresh and equal
-in the source's ring, where it set it on every candidate it emitted.
-
-The linear step does its arithmetic in the coefficient domain. The Gauss-Jordan
-elimination formed `1/entry` as a rational and decided nullity with
-`sp.simplify`, the determinant bookkeeping multiplied in characteristic zero,
-and the normalization inverted the linear part with `sp.Matrix.inv()`. Over
-`GF(5)` the pivot `2` produced `1/2` and the matrix was refused as needing
-`over_field()`, which cannot help there. Of the invertible `2x2` matrices,
-`LinearStep.normalize` failed on 5 of 6 over `GF(2)`, 8 of 48 over `GF(3)`, 392
-of 480 over `GF(5)` and 1864 of 2016 over `GF(7)`; it now succeeds on all of
-them. The inverse is formed over the domain's field of fractions and handed to
-`factorize`, which still decides domain membership and still names
-`over_field` for a caller over `ZZ`.
-
-`PolynomialMap.__call__` evaluates in the coefficient domain wherever the
-arguments lie in it, and substitutes otherwise. It was a bare `xreplace`, so
-over `GF(2)` it answered `F(1) = 2` for `F = X + X^2` and COL-3 discarded a
-true collision on the strength of it. The fallback is what a point outside the
-domain needs: Gao's collision over `Q(sqrt(-23))` carries a radical `QQ` does
-not hold, and a field into which `QQ` embeds has characteristic zero.
-
-**COL-7 is new: a collision is stated over characteristic zero only.** Making
-COL-3 domain-aware alone would have opened a worse hole than it closed, since
-with distinctness still decided as expressions `0` and `2` over `GF(2)` would
-have passed as a collision of distinct points. The reason to decline rather
-than to extend the equality is this type's own semantics: COL-5 keeps the map
-out of a `Collision`, so COL-4 decides distinctness with `kellermap.canonical`,
-which has no characteristic. It is the boundary `lift.py` draws at SYM-4 and
-`compression.py` at CHC-8. Nothing is lost with it that the library is for:
-non-injective Keller maps in characteristic `p` are cheap and long known, the
-`GF(2)` map the audit used being the Artin-Schreier map `X + X^p`. Checked in
-`verify()` and not in the constructor, because COL-5 keeps the map out of the
-object; what is refused is stating the points against that map. Two
-consequences: a chain over positive characteristic carries no collision at any
-step type, and `collision_hull` answers COL-7 where it answered the `d!` half
-of CHC-8, which is still reached through the `CompressionStep` constructor.
-
-`conjugate` decides in the domain whether a diagonal entry is zero.
-`conjugate(F, (1, 2))` over `GF(2)` reached SymPy's raw `NotInvertible` instead
-of the refusal the function owes its caller. A `# pragma: no cover` beside the
-coercion branch there claimed the field check answers first; over `QQ` it does
-not, and the branch has a test rather than the pragma.
-
-Seven mutation probes, which makes fifty-two: COL-7, BCW-12, LIN-6, SEA-13,
-SEA-14, UNT-1 and the evaluation under DOM-4. `search.py`, `untargeted.py` and
-`polynomial_map.py` had no selector at all, which is why the audit could not
-run the selection this project's rules ask for after a change of that kind.
-
-**Timings are no longer written into prose.** `AGENTS.md` had summed a column of
-gate timings and kept the sum after one entry of the column had grown, so the
-stated total was off by most of a run, and `CONTRIBUTING.md` had copied the
-number. A runtime is the one figure here that the reader who finds it cannot
-check: it is a property of one machine on one day, where every other figure is
-a property of the mathematics or the code. Both pages now state the division of
-labour by which gate dominates and who runs it. `docs/roadmap.md` keeps the one
-exact profile, under "What the fast suite costs", where the numbers are the
-subject rather than an aside, and says on its face that they are a record of
-one run on one machine. `AGENTS.md` carries the rule under "Timings are not
-figures".
-
-Documentation defects from the same audit. `CONTRIBUTING.md` said six
-reconstructions where the `Makefile` runs eight, left out two reconstruction
-scripts and `measure_pipeline.py`, and listed `make release` without
-`sdist-test` and `dist-complete`. `linear.py` and the diagram in
-`docs/architecture.md` named seven step types and the diagram omitted
-`DescentStep`; there are eight. `docs/contracts.md` claimed the concrete
-`GF(2)` example shows that neither carrier set contains the other, where they
-are `(0,1,2)` and `()`. `docs/api.md` gained
-`carrier_indices_for_factors` and `Candidate.shared`.
-`docs/references.md` said the library has no form for the fourth move of the
-eleven-variable derivation, which `DescentStep` has been since 0.7; what
-remains true is that DSC-7 gives it no `build` and neither search constructs
-one, so the move can be certified and not found.
-
-`tests/test_positive_characteristic.py` holds the four blockers as regressions
-over `GF(2)`, `GF(5)` and `QQ(T)`, and gained the adversarial map
-`(x + y^2, y + x^2)` over `GF(2)`, which worked in `0.7.0rc6` with nothing
-holding it there.
-
-## 0.7.0rc6
-
-`Candidate` has a `shared` field, and two fresh slots carrying one value are
-two coordinates unless a candidate asks for one. Sharing was inferred from the
-two polynomials being equal, so the two could not be told apart, and an audit
-of `0.7.0rc5` found both directions. The targeted search could not express a
-verified step with two distinct coordinates of one value -- it reported its
-space exhausted after thirty maps -- and it did build a shared one, which
-SEA-14 excludes, naming two coordinates and consuming one. Neither was a false
-certificate; both were the search disagreeing with its own statement of where
-it looks. `untargeted_candidates` asks for the sharing where UNT-1 wants
-BCW-12's saving.
-
-`Candidate.factors` refuses a surplus of names as well as a shortage, which is
-the invariant that failed silently. One caller relied on that silence --
-`scripts/untargeted_space.py` handed two names over whatever the candidate
-needed -- and `make measure` failed the moment the guard went in, which is the
-evidence the silence was worth ending.
-
-The four-variable case with a carrier on a dependency cycle has a test for the
-targeted search too. The untargeted walk and `peel` got theirs when they were
-corrected; this one reached the changelog of `0.7.0rc4` without one, and an
-audit noted the gap rather than finding a fault. It holds `anchors`,
-`enumerate_candidates` and `search` against the step that verifies and drops
-the degree to three without buying a coordinate.
-
-The fast suite was profiled and one test marked slow. It had grown to 139
-seconds, of which the unweighted control of SEA-14 was 44: it examines 3189
-maps since `0.7.0rc5` widened the forward space, and it is now a test of its
-own rather than one case of a parametrization, so the two weighted cases keep
-their small budget and stay fast. The suite is 84 seconds and the coverage run
-over it 208. `docs/roadmap.md` carries the rest of the profile and why nothing
-else moves.
-
-A Keller map over `GF(2)` broke four public operations at once, and all four
-had one cause. `PolyElement.diff` leaves a term with a zero coefficient in the
-sparse dictionary in positive characteristic, and such a polynomial compares
-unequal to the same polynomial without it, so the Jacobian entries this library
-stores were not in the ring's normal form. `carrier_indices` was empty on a map
-whose Jacobian is the identity, and `determinant`, `search` and
-`BCWStep.verify` let a raw `ExactQuotientFailed` out. The entries are
-normalized where they are computed.
-
-`carrier_indices_for_factors` asks BCW-10's condition on the monomial support
-of `F_j - X_j` and not on `dF_j/dX_j`. The two are the same question in
-characteristic zero only, and the property claimed they were the same: over
-`GF(2)` the map `(x + x^2, y + y^2, z + z^2)` has the identity for its Jacobian
-and no displacement free of its own variable, so the block is the whole map and
-no coordinate is a carried factor. Neither set contains the other there, where
-one contained the other before. The old test came out right by accident,
-because the unnormalized derivative compared unequal to one, so correcting the
-storage would have made the wrong condition bite.
-
-`tests/test_positive_characteristic.py` holds the audit's map against the
-Jacobian, both carrier notions, the determinant, a search from the map to
-itself and a step that builds and verifies, with a control that characteristic
-zero is unchanged.
-
-## 0.7.0rc5
-
-The targeted enumerator asks BCW-10's condition for a carried factor, like the
-untargeted one since `0.7.0rc4`, and offers a co-factor a coordinate holds both
-as that carrier and bought. The second half is what makes the first safe. Until
-now the carried form displaced the bought one in the deduplication, and the
-bought form is what a pool name fills, so widening the carrier condition alone
-removed a chain the search used to find rather than adding any.
-
-On the four-variable map an audit of `0.7.0rc3` reported against, `anchors`
-offered two of four coordinates and `search` called its space exhausted after
-one map although the target was one verified step away. It offers all four now
-and finds the step after two.
-
-The cost is branching and it is measured: the unweighted control of SEA-14
-examines 3189 maps where 200 sufficed, about sixteen times as many, and finds
-the same chain. Its budget in the tests moves for that case and not for the
-weighted ones, where the chain is absent and a larger budget buys only the time
-to exhaust the space.
-
-## 0.7.0rc4
-
-`PolynomialMap.carrier_indices_for_factors` is what a carried factor is asked
-for now: BCW-10's own condition, `dF_j/dX_j == 1`, and not the unipotent block
-of `carrier_indices`, which drops every coordinate on a dependency cycle and
-says of itself that it is not maximal. The untargeted enumerator and the
-pruning rule of `peel` ask it.
-
-The pruning rule is why this is a release blocker rather than a lost dimension.
-It prunes a branch standing one coordinate above the source when the source has
-no carrier, and `carrier_indices` is empty on a linear map whose coordinates
-depend on each other in a cycle although every one of them satisfies BCW-10. A
-peel on such a source reported an exhausted space with a verified two-step
-chain inside its bounds. An exhausted space is a claim.
-
-The figures do not move, and the exhaustiveness claims of work packages 6 and 7
-were made again rather than assumed to hold: a negative claim over a space that
-has since grown is the error the pruning rule was making. `reduce_to_degree3`
-reaches the same thirteen from Alpoege's map in the same seven steps and the
-same map, the multi-affine walk reaches the same 19, 23 and 24, the candidate
-counts at all six maps of the published chain are unchanged, and the exhaustive
-searches under the bound of eleven give the same 2, 33, 299 and 2720 states.
-
-The reason they do not move is worth recording. The two sets differ only on a
-dependency cycle, and a chain of `BCWStep`s does not make one: a bought
-coordinate is `X_u + P` with `P` over the coordinates already there, so the
-carriers a reduction produces never depend on each other. The widening bites on
-a map somebody hands in, not on one this library builds.
-
-Four statements that an audit found disagreeing with their own page or with
-their source. `docs/references.md` credited Prellberg with the symmetric lift,
-where his version 2 credits de Bondt and van den Essen and claims the
-collision-generated subspace instead, and where the same page says so a hundred
-lines down. Its density paragraph set his forty-variable quartic against this
-project's thirty-eight, which is not a comparison, and left out his
-thirty-eight with 340 monomials. `docs/contracts.md` named Corollary 7's
-route-specific minimality and not Proposition 8's. And `docs/api.md` and one
-test docstring still gave the justification for a base of at least three that
-`0.7.0rc3` removed from the code and the contract page.
-
-The entry for version 2 of arXiv:2608.12543 moves to `0.7.0rc3`, where the work
-was done; it was written while `0.7.0rc2` was the open heading. One test
-docstring called itself marked slow and carries no marker: the sentence goes
-rather than the marker being added, because deselecting it would leave the
-figures on three pages with nothing checking them.
-
-The targeted search still asks the narrower question, and that is measured
-rather than left. Swapping the condition in there does not widen the space:
-a carrier takes a slot a pool name would otherwise fill, and the first
-candidate to reach the deduplication wins, so a chain the search used to find
-drops out -- the unweighted control of SEA-14 then exhausts at 2667 states with
-nothing. Offering both forms is the correction, and it is the same one the
-multi-affine walk needed; it is its own package.
-
-## 0.7.0rc3
-
-Version 2 of arXiv:2608.12543, of 31 August 2026, is recorded. It renames the
-paper, keeps Theorem 3 with its number and its statement, and adds a second
-application at nineteen variables whose collision hull is the whole space, so
-its thirty-eight-variable lift cannot be lowered by any invariant linear
-restriction retaining that collision. Van Rijn's nineteen and thirty-eight were
-already on `docs/references.md` and are not what the new version adds. Its
-ancillary file was read and has the digest that version states, and nothing
-from it is vendored: what this repository needs from it is already held in its
-own idiom, and the maps it carries are third party twice over.
-
-`docs/references.md` also withdraws a claim two of its own sections disagreed
-about. One said the nineteen this pipeline reaches is one below anything
-published; another said on the same page that nineteen and thirty-eight are van
-Rijn's figures too, a month earlier. The second was right and the first was
-wrong when it was written. `docs/errata.md` records it.
-
-The citations that name a theorem move to version 2; those that record where
-fixed data was transcribed from stay at version 1, because a transcription is
-from the bytes it was made from.
-
-UNT-12 says one candidate per factorization *and* slot assignment. It said per
-factorization, which was the count before the walk stopped choosing an
-assignment greedily; on `(x + y^2, y, z + y)` one factorization yields two. The
-obligation is widened rather than the walk deduplicated, because the
-alternatives are what let the pair that buys least win.
-
-The justification for a base of at least three loses its second half. Being
-zero exactly on a multi-affine map fails at base zero alone and holds at one
-and at two, so it is a reason for refusing zero and not for asking three. The
-falling measure is the whole reason and was always the first half.
-
-The README no longer names the candidate its DOI sentence was written for. It
-said the number is the DOI of `0.7.0rc1` and went stale at the next candidate;
-it says the number is not the DOI of the version above, which stays true.
-
-The multi-affine walk asks BCW-10's own condition for what holds a factor, not
-`carrier_indices`. That set is deliberately not maximal -- it drops every
-coordinate on a dependency cycle, which is what makes the block it picks out
-unipotent -- and that is the right question for the block and the wrong one for
-a factor. On `(x + y, y + x + z, z + 2x + y, w + y^2)` the walk reached six
-where five is enough. The three maps of this milestone are unchanged at 19, 23
-and 24, so no figure on any page moves.
-
-DSC-4 is checked at every public route into a `DescentStep`. `0.7.0rc2`
-checked it in `verify` and in `target`, and an audit found `conjugate` and
-`tail` still letting a bare `ValueError` out of
-`ElementaryAutomorphism.apply_to`. The test that was meant to cover those two
-called `target`, which is why it went unnoticed; it is three tests now, one per
-method, and each calls the method it names.
-
-## 0.7.0rc2
-
-The corrections an external audit of `0.7.0rc1` asked for.
-
-`DescentStep` rebuilt its target with the expression constructor, which
-re-infers a ring: a source over `QQ` gave a target over `ZZ`, and over a finite
-field that changes the characteristic. It is carried over with `clone_ring` and
-`reindex` now. The step's `ring` property went through SymPy's cache and handed
-the same mutable object back on every access, which is what `clone_ring` exists
-to prevent. DSC-4 asked for automorphisms over the source's ring and nothing
-checked; a mismatch surfaced as a bare `ValueError` from inside
-`ElementaryAutomorphism`.
-
-`squared_terms` rebuilt its exempt set inside a comprehension, so a one-shot
-iterable was empty from the second generator onward and every variable counted.
-`remaining_excess` validated nothing: a base of zero reported zero on a map
-that squares a variable. `reduce_to_multi_affine` now carries the note about
-the interpreter's recursion limit that its sibling has.
-
-Documentation the audit found stale. `docs/references.md` still said the
-library does not implement the multi-affine half of Theorem 2.1(b), which
-stopped being true in this milestone, and a second paragraph still said it
-carries out neither of the two stages that lead to the cubic homogeneous form,
-which stopped being true in 0.6: the 27 and the 22 for `alpoege13` are
-certified now and `scripts/measure_pipeline.py` recomputes both. The abstract of
-`CITATION.cff` described milestone 0.6 and the description in `pyproject.toml`
-still said the project was working towards the reduction.
-
-`scripts/mutation_probe.py` gains three probes, for both halves of DSC-3 and
-for the half of DSC-4 that is about arithmetic. Those are the clauses the
-contract page names as able to fail on data a caller supplies; HOM-11 and
-HOM-12 cannot fail after HOM-1 and UNT-12 is an enumerator, so neither takes
-one.
-
-The carrier map kept one coordinate per value where two can hold it, so the
-walk bought a coordinate it already had. `(x + y^3, y)` reaches the multi-affine
-form at dimension six again, which is the chain `docs/roadmap.md` writes out,
-and the three maps of the milestone reach 19, 23 and 24 against 20, 24 and 26.
-Their chains to the normal form of Theorem 2.1(b) were rerun and reach 39, 47
-and 49.
-
-## 0.7.0rc1
-
-What the Reduction Theorem still owed, the obligation of the symmetric lift
-that was argued rather than checked, and the first questions about the search
-that were worth asking.
+## 0.7.0
+
+The milestone finished the half of the Reduction Theorem the homogenization
+cannot supply, added the step type the two published derivations use and this
+library had none for, and settled what a search without a target reaches. Six
+audits over thirteen release candidates then turned it into something else as
+well: the point at which this library became correct over coefficient rings
+that are not fields.
 
 ### Theorem 2.1(b)
 
-`reduce_to_multi_affine` reaches the half of the theorem the homogenization
-cannot supply: a cubic map in which no variable occurs squared. HOM-11 and
-HOM-12 say at the end of the chain that the property arrived, over every
-variable except the homogenizing parameter and not only over the ones the
-source began with. `squared_terms` in `kellermap.bcw.grading` is what all three
-read.
+`reduce_to_multi_affine` reaches a cubic map in which no variable occurs
+squared. HOM-11 and HOM-12 say at the end of the chain that the property
+arrived, over every variable except the homogenizing parameter and not only
+over the ones the source began with. The walk is a second enumerator and not
+the degree reduction with another stopping rule, UNT-12: it measures itself by
+`remaining_excess`, and a count of squared monomials would not serve, because
+the first step on `y^3` replaces one by two while the measure falls.
 
-The walk is a second enumerator and not the degree reduction with another
-stopping rule, UNT-12. It measures itself by `remaining_excess`, and the count
-of squared monomials would not serve: the first step on `y^3` replaces one by
-two while the measure falls from nine to six.
-
-Measured, every step verified: `alpoege13` reaches the normal form at 39
-variables, `alpoege12` at 47, `spacerat11` at 49. The order inverts, and the
-cost of verifying a chain follows neither the dimension nor the density -- of
-six chains on one machine the cheapest determinant is the largest map and the
-dearest is the smallest.
-
-The refinement is a branch and not a stage. `docs/architecture.md` says why
-under "Where the pipeline forks": the symmetric lift does not carry the
-property, nothing between the gradient form and the Vanishing Conjecture asks
-for it, and carrying it there would cost about 130 variables against 38.
+`alpoege13` reaches the normal form at 39 variables, `alpoege12` at 47,
+`spacerat11` at 49. The order inverts against the dimension. The refinement is
+a branch and not a stage, for the reason `docs/architecture.md` gives under
+"Where the pipeline forks".
 
 ### The descent
 
 `DescentStep` deletes a coordinate that two elementary changes have made
-triangular, DSC-1 to DSC-7. It is the fourth move of the two published
-derivations at degree three and the one this library had no step type for. It
-verifies a claim a caller supplies; there is no `build`, so every instance is
-`SUPPLIED`, and searching for the two changes is a separate question.
+triangular, DSC-1 to DSC-7. It verifies a claim a caller supplies; there is no
+`build`, so every instance is `SUPPLIED`, and searching for the two changes is
+a separate question.
 
-### SYM-7
+### Coefficient rings that are not fields
 
-The determinant of the gradient form was stopped after nineteen hours rather
-than eight, and the obligation now rests on what the run showed: the cost
-follows the carrier and not the dimension. Every stage before the lift leaves a
-four-by-four block; the lift leaves twenty-nine.
+Where 0.6 worked over a field, this release works over any commutative ring
+the elimination can ask about, and every part of that came out of an audit.
+
+`factorize` brings a column to a unit pivot by a Euclidean fold where the
+domain has one and by a bounded search everywhere else, FAC-1. The search tests
+three combinations per ordered pair of rows and applies the one that reaches a
+unit; it is incomplete and says so, FAC-2. All 13296 invertible `2x2` matrices
+over `Z/4`, `Z/6`, `Z/8`, `Z/9`, `Z/10` and `Z/12` factor.
+
+LIN-6 decides a normalization by multiplying the transformation the step
+exhibits against `J(F)(0)`. It used to re-derive the inverse through
+`factorize` and read that refusal as a singular linear part, so a sound
+certificate over `ZZ[T]` was rejected with a message that was false of it. A
+certificate may not rest on a search that FAC-2 declares incomplete.
+
+WID-1 and WID-2 are new. A widening produces a field or refuses, asked of the
+whole tower of domains: `Z/4Z` widens to itself and `(Z/4Z)[T]` to something
+SymPy calls a field while `2 * 2` is zero in it. A message names `over_field()`
+only where the widening exists and changes the domain.
+
+MAP-4 is new. Every determinant is taken without dividing, by Bird's
+algorithm, after the Schur complement that divides nowhere. What it replaces
+does not only raise over a residue ring: `DomainMatrix.det()` answers `0` for
+`[[0, 0, 1], [0, 1, 0], [2, 0, 0]]` over `Z/4Z`, whose determinant is `2`. That
+reached the verification surface, since LIN-3 compares determinants, and it
+rules out keeping the old route and catching its exception.
+
+### What a determinant costs, and SYM-7
+
+SYM-7 states a consequence this library does not compute, and it is a
+departure from UNI-10, HOM-7 and CHC-6 on a measurement. The cost follows the
+carrier and not the dimension: the unipotent step, the homogenization and the
+compression leave four or six, and the gradient form of a quartic carries no
+unipotent block at all, leaving 28 by 28 with 13589 monomials for
+`spacerat11`. Three routes on that complement under twenty hours and 24 GB
+each, one of them the elimination MAP-4 replaced, and none returns.
+
+`scripts/measure_pipeline.py` recomputes every cell of that table for all three
+chains and `make measure` runs it. The figures it holds were wrong for a while
+and nothing noticed, because nothing recomputed them.
 
 ### What the search does and does not reach
 
 `reduce_to_degree3` reaches dimension 13 from Alpoege's map in seven steps and
 never spends its budget, so what bounds it is the greedy rule and the offer.
-Started on the published eleven-variable chain's own maps it leaves for 13 or
-14 every time, including one step from the end.
-
 Searched exhaustively under a hard bound of eleven, the offer runs out with
-nothing of degree three to find from five of the six maps of that chain, and
-the external beam driver reached the same answer from the sixth. Both searches
-enumerate one offer, so the two negatives are one negative.
+nothing of degree three to find from five of the six maps of the published
+chain, and an external beam driver reached the same answer from the sixth.
+Both searches enumerate one offer, so the two negatives are one negative.
 
 Widening that offer was measured and does not pay. The three ways to widen it
-cost a branching factor of nine at Alpoege's map; the cheapest of them
-multiplies the searched space by a factor that compounds to twenty or fifty per
-coordinate and reaches nothing new from any map where the answer is known. No
-single one of them makes the published chain reachable.
+cost a branching factor of nine at Alpoege's map, and no single one of them
+makes the published chain reachable.
 
-### Documentation
+### Evidence
 
-`docs/errata.md` gains four entries. Theorem 2.1(b) had been stated for the
-original variables only; a work package planned a step a previous milestone had
-already built; a widening was assigned to a milestone that does not contain it;
-and a bought coordinate was said not to be able to carry a sum. All four were
-found by reading a page against the source it rests on rather than by a gate.
+71 mutation probes, each a deliberate defect the suite has to catch, and the
+count is written once and held against the set. Four tables in the
+documentation are held against the scripts that recompute them row by row
+rather than number by number, which is the difference between a test and the
+look of one. Runtimes live on one page, dated and naming the machine, and the
+contract states what the argument needs rather than the number.
+
+`docs/errata.md` holds 26 entries at this release. The two newest are about
+figures that went stale with nothing recomputing them, and both repairs are
+gates rather than corrected numbers.
 
 ## 0.6.0
 

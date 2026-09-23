@@ -1286,13 +1286,13 @@ determinant is `det(I + T J(N))`. That being one says that every coefficient of
 the characteristic polynomial of `J(N)` below the leading one vanishes, and
 Cayley-Hamilton over a commutative ring then gives `J(N)^m = 0`. The matrix
 power is not an option: `J**26` on the 26-variable target of `alpoege13`
-normalized did not finish in twenty-five minutes, where this determinant takes
-0.72 seconds, against 0.65 for the plain determinant of the target under
-UNI-10.
+normalized had not finished after about half an hour, where this determinant is
+done in a fraction of a second, which is about what the plain determinant of
+the target costs under UNI-10.
 
 The wording is an amendment, made when the step was implemented. It read `over
 k[T]`, with `T` a parameter of the coefficient domain. That check is correct
-and it is the slower of the two, 2.06 seconds against 0.72. It also needs a
+and it is the slower of the two. It also needs a
 fresh *parameter*, and nothing in this repository allocates one: RC-1 to RC-7
 name fresh *generators*, and the factory protocol is about generators
 throughout. The second reason is the stronger of the two.
@@ -1453,8 +1453,8 @@ source's. Nilpotence survives that and invertibility alone does not. A source
 with `det J = 1` whose `J(N)` is not nilpotent homogenizes to a map whose
 determinant is not constant.
 
-Measured on the 24-variable target of `alpoege12` lifted by `UnipotentStep`:
-0.07 seconds.
+Measured on the 24-variable target of `alpoege12` lifted by `UnipotentStep`,
+where it costs a fraction of a second.
 
 **HOM-4 — Dimension and generators.** `target.dimension == n + 1`; the
 generators of `target` are those of `source` followed by `variable`; and
@@ -1480,7 +1480,7 @@ caller needs to know that the third comes back past it. A `BCWStep` declaring
 **HOM-7 — The determinant is one.** `target.determinant() == 1`.
 
 Follows from HOM-1 and HOM-3, and retained as a cheap self-check in the shape
-of BCW-7. Measured on the 25-variable target: 0.05 seconds. The source's own
+of BCW-7, and a fraction of a second on the 25-variable target. The source's own
 determinant needs no obligation of its own: HOM-3 at `S = 1` is
 `det(I + J(N)) = 1`, which is Kellerness.
 
@@ -1971,7 +1971,7 @@ step, the homogenization and the compression leave six, six and six for
 `alpoege12`. The gradient form of a quartic carries no such block. Of the 38
 coordinates of the lift, 28 have a diagonal entry of one and 10 survive the
 acyclicity test, so the complement is 28 by 28 with 13589 monomials in it.
-Forming it costs two tenths of a second. Its determinant is the whole of the
+Forming it is a matter of a moment. Its determinant is the whole of the
 cost.
 
 Those figures are recomputed by `scripts/measure_pipeline.py`, which `make
@@ -1996,7 +1996,7 @@ determinant of the whole is one and a corner of it cancels not at all. Any
 probe that does not preserve that cancellation measures a different kind of
 problem, and none that preserves it is cheap.
 
-What is affordable is the determinant at a point: 25 seconds, and one, at each
+What is affordable is the determinant at a point: under a minute, and one, at each
 of two random rational points of the space. That is the check the
 `reconstruct_*` scripts make and it is worth exactly what they say it is worth
 -- a value other than one falsifies the claim, and agreement at finitely many
@@ -3551,9 +3551,9 @@ numbers was noise.
 
 The cost of verifying the chain follows neither the dimension nor the density.
 The unipotent target of `spacerat11` is the widest of the three at 78
-coordinates and the densest at 310 monomials, and it verifies in 26 seconds
-against 133 for `alpoege13` at 66 coordinates and 272 monomials. The domain is
-not the reason; the figures are over `QQ` throughout. What UNI-9 spends is a
+coordinates and the densest at 310 monomials, and it verifies in about a fifth
+of the time `alpoege13` needs at 66 coordinates and 272 monomials. The domain
+is not the reason; the figures are over `QQ` throughout. What UNI-9 spends is a
 determinant, and work package 1 of milestone `0.7` found that a determinant
 follows the carrier and not the size. That is a hypothesis here and not a
 measurement, and it is recorded in `docs/roadmap.md` rather than claimed.

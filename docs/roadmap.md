@@ -2784,11 +2784,13 @@ one number. The lift is the one target of the chain that carries no unipotent
 block: a gradient form is not triangular in any order of its coordinates.
 Forming the complement of `spacerat11` costs two tenths of a second and it
 holds 13589 monomials. Its determinant was stopped after nineteen hours and
-forty-eight minutes without returning, on the maintainer's machine, through
-`determinant()`, and taken directly on the complement after three hours and
-fourteen. Those two timings are of the fraction-free elimination `0.7.0rc12`
-replaced; the section on what the determinant costs on the lift has the run
-that covers both.
+forty-eight minutes without returning, through `determinant()`, and taken
+directly on the complement after three hours and fourteen. Both were run during
+this work package on the maintainer's machine, which is as closely as they can
+be dated: the day was not recorded, and the script that prints one did not
+exist yet. They are of the fraction-free elimination `0.7.0rc12` replaced, and
+the section on what the determinant costs on the lift has the dated run that
+covers both eliminations.
 
 **So the answer to the question the package asked is: none of the four.** Not
 the dimension, which every earlier stage shows is free; not the domain or the
@@ -3197,7 +3199,11 @@ WP 4 answered both of its questions; WP 5 and 5.1 added the descent; WP 6
 answered the milestone's own question in the negative with a reason; and WP 7
 measured the widening that reason suggested and found that none of it pays.
 
-`0.7.0rc1` is tagged from here. The `[0.7]` markers are gone from
+`0.7.0rc1` is tagged from here, and `0.7.0` is released after thirteen
+candidates and six audits. What those audits found is not in this section,
+which is the plan and its reasoning; the changelog entry for `0.7.0` carries
+it, and `docs/errata.md` the part of it that is about this page and its
+neighbours. The `[0.7]` markers are gone from
 `docs/contracts.md` and the milestone paragraph there says which of the ten new
 obligations a reviewer should weigh differently.
 
