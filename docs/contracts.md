@@ -1947,14 +1947,15 @@ of milestone 0.7 records the runs and the machines they were made on.
 That run used the fraction-free elimination of `DomainMatrix.det()`, which
 MAP-4 replaces with a division-free one. The paragraph below lists the
 elimination among the properties of the complement that were never isolated,
-and it is isolated now: `scripts/measure_lift_determinant.py` put three routes
-on that complement with twenty hours and 24 GB each, and none of them returned.
-The fraction-free elimination spent the twenty hours without reaching the
-memory limit. The division-only route reached it after two hours and seven
-minutes, and the route through the characteristic polynomial after
-thirty-one. So the elimination is not what the cost rests on, and the departure
-stands on a measurement that now covers the route this library takes as well as
-the one it took.
+and it is isolated now. `scripts/measure_lift_determinant.py` put three routes
+on that complement, each under the same budget of time and of memory, and none
+of them returned. The fraction-free elimination spent the whole budget without
+reaching the memory limit; both division-free routes reached the limit, the one
+through the characteristic polynomial first. So the elimination is not what the
+cost rests on, and the departure stands on a measurement that now covers the
+route this library takes as well as the one it took. `docs/roadmap.md` records
+that run, dated and with the machine it was made on, under what the
+determinant costs on the lift.
 
 The failure differs even though the outcome does not. A caller who asks this
 method for the determinant of a complement of that size now meets a memory
@@ -3704,20 +3705,27 @@ is two-by-two, and its three-by-three part calls `factorize` and not
 
 What the replacement costs is a failure mode and not a result. On a block that
 fits it is faster. On one that does not it fills memory where the fraction-free
-elimination ran long in little of it: on the complement of the lift, at 24 GB,
-the determinant-only route reached the limit after two hours and the
-fraction-free one was still running after twenty without reaching it.
-`docs/roadmap.md` records the run. Nothing returns either way, so no
+elimination runs long in little of it, which is what the run SYM-7 now rests on
+shows for the complement of the lift. Nothing returns either way, so no
 determinant is lost; what changes is that a caller who asks for one on a block
-of that size now meets a limit rather than a long wait. SYM-7 is where that
-matters and says so.
+of that size meets a limit rather than a long wait. SYM-7 is where that matters
+and says so.
 
 No domain case distinction. A division-free expansion is correct over every
 commutative ring, so there is nothing for a predicate to decide, and a
 predicate here would be the defect WID-1 was amended for a second time. It is
-also not slower: on dense quadratic blocks over `QQ` the division-free
-expansion beats the fraction-free one by 4.6 at size five, 9.1 at six and 67 at
-seven.
+also not slower on a block that fits: on dense polynomial blocks the
+division-free expansion is faster than the fraction-free elimination, and the
+gap grows with the size of the block. `docs/roadmap.md` carries the dated
+profile, which `scripts/measure_lift_determinant.py` prints before anything
+else.
+
+This paragraph gave the gap as three factors, undated and with no machine, and
+the script could not reproduce the largest of them. An audit of `0.7.0rc12`
+found it against the rule in `AGENTS.md` that a runtime is a property of one
+machine on one day. The repeated run gave a different factor at every size and
+the same shape at all of them, which is the case for stating the shape here and
+the figures there.
 
 Only the determinant is computed, and not a characteristic polynomial it is
 one coefficient of. Both are division-free and the difference is in what else
@@ -3725,9 +3733,10 @@ they hold. On the six-by-six complement of the `spacerat11` chain the
 determinant has one term and the largest coefficient in the middle of the
 characteristic polynomial has 147, which is the shape of every complement this
 library takes a determinant of: the determinant of a Keller map is a unit, so
-it is the one coefficient that cancels to almost nothing. Asking for all of
-them to read the last one off exhausted 32 GB on the complement of the lift.
-Bird's algorithm holds `n**2` ring elements and produces one polynomial.
+it is the one coefficient that cancels to almost nothing. Bird's algorithm
+holds `n**2` ring elements and produces one polynomial, and on the complement
+of the lift the route through the characteristic polynomial reaches the memory
+limit well before it does.
 
 Not from a factorization. A determinant taken by factorizing the matrix would
 be defined only where `factorize` succeeds, and FAC-2 permits it to refuse a

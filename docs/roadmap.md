@@ -3098,20 +3098,22 @@ applying one.
 | invertible `2x2` over `Z/10` | 2880 | 0 |
 | invertible `2x2` over `Z/12` | 4608 | 0 |
 | all six | 13296 | 0 |
-| random invertible `3x3` over `Z/6Z` | 16013 | 0 |
 
-Since `0.7.0rc12` the last row takes the determinant of each matrix as well as
+A random sample of invertible `3x3` over `Z/6Z`, seed 20260916, is refused
+nowhere and has no wrong determinant. How many matrices the sample holds is
+not stated: the part stops at a time budget rather than at a count, so its size
+is a property of the machine it ran on, and nothing here turns on it. There are
+`6**9` matrices of that size over `Z/6Z`, and no budget a gate can spend
+reaches them all. This row carried a count until `0.7.0rc13`, undated, which an
+audit of `0.7.0rc12` found against the rule in `AGENTS.md` that a runtime is a
+property of one machine on one day.
+
+Since `0.7.0rc12` the sample takes the determinant of each matrix as well as
 factorizing it, and counts a wrong determinant beside a refusal. That part was
 added because an audit of `0.7.0rc11` found `determinant()` failing over
 exactly these rings while this script was passing them: it called `factorize`
 and nothing else, and its exhaustive part is two-by-two, where the determinant
 divides nothing.
-
-The last row is a figure with a time beside it and not a total. It is what
-seed 20260916 reached in 60 seconds; there are `6**9` matrices of that size
-over `Z/6Z`, and the part stops at its budget rather than at a count. The
-target passes a smaller budget, so a delivery reaches a few thousand of them
-rather than sixteen.
 
 Over `ZZ[T]`, one matrix at a time. `[[T, T+1], [T-1, T]]` is the matrix an
 audit of `0.7.0rc9` gave and `[[T, -1], [2T+1, -2]]` the one an audit of
@@ -3136,14 +3138,24 @@ thirty-eight-variable lift of `spacerat11` and stopped it after nineteen hours
 and forty-eight minutes. SYM-7 rests on that run, and it lists the elimination
 among the properties of the complement that the package never isolated. MAP-4
 replaces the elimination, so the run was made again with the new one beside the
-old, by `scripts/measure_lift_determinant.py` on the maintainer's machine.
-Twenty hours and 24 GB for each route:
+old, by `scripts/measure_lift_determinant.py`.
+
+The run recorded here started on 2026-09-21 at 14:17 UTC and finished on
+2026-09-22 at 13:08 UTC, on the maintainer's machine `paddy4`: Linux
+7.0.0-31-generic on x86_64, 12 logical processors, 30.5 GB installed, Python
+3.10.20, SymPy 1.14.0, kellermap `0.7.0rc12`. A first run with the same
+budgets could not be dated afterwards with certainty and is not recorded; the
+script prints the date and the machine since, so that no run has to be repeated
+for that reason again.
+
+Twenty hours and 24 GB for each route, on the 28 by 28 complement with 13589
+monomials:
 
 | route | outcome |
 | --- | --- |
-| fraction-free, `DomainMatrix.det()` | nothing after twenty hours, under the memory limit throughout |
-| division-free, determinant only | reached 24 GB after 2 h 07 |
-| division-free, characteristic polynomial | reached 24 GB after 31 min |
+| fraction-free, `DomainMatrix.det()` | nothing after 72000 s, under the memory limit throughout |
+| division-free, determinant only | reached 24 GB after 7477 s |
+| division-free, characteristic polynomial | reached 24 GB after 2577 s |
 
 None returns, so the elimination is isolated and it is not what the cost rests
 on. The departure SYM-7 makes now stands on a measurement that covers the route
@@ -3153,11 +3165,28 @@ What the routes do not share is how they fail. The fraction-free elimination is
 bound by time and spends little memory; both division-free routes are bound by
 memory. The gap between the two division-free routes is the reason MAP-4 takes
 the determinant alone: the characteristic polynomial holds `n + 1` coefficients
-where Bird's algorithm holds `n**2` ring elements, and it filled the same 24 GB
-four times sooner.
+where Bird's algorithm holds `n**2` ring elements, and it filled the same limit
+in about a third of the time.
 
-The complement here is 28 by 28 with 13589 monomials. The work package 1
-section recorded 29 by 29 with 10364 and has been corrected;
+The same run, first, on dense quadratic blocks over `QQ`, which is where the
+three routes can be compared at all:
+
+| size | determinant only | characteristic polynomial | fraction-free |
+| ---: | ---: | ---: | ---: |
+| 4 | 0.003 s | 0.003 s | 0.006 s |
+| 5 | 0.023 s | 0.020 s | 0.093 s |
+| 6 | 0.138 s | 0.153 s | 1.228 s |
+| 7 | 1.783 s | 2.287 s | 163.821 s |
+
+The two division-free routes stay within a small factor of each other; the
+fraction-free elimination falls behind by a factor that grows with the size, to
+about ninety at seven. That is what MAP-4 states without the numbers. The first
+run gave other factors at every size and the same shape at all of them, which
+is why the contract carries the shape and this page the figures, with the day
+and the machine beside them.
+
+The complement measured here is 28 by 28 with 13589 monomials. The work
+package 1 section recorded 29 by 29 with 10364 and has been corrected;
 `docs/errata.md` carries how that happened.
 
 ## Where the milestone stands
