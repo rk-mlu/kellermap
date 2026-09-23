@@ -40,7 +40,7 @@ thing, and avoiding it costs one click in the right order.
 This page said to write the DOI in afterwards, which would have meant a commit
 after the tag, an archive naming no record, and a repository whose newest
 commit is not the one that was deposited. The order below is the one used for
-`0.6.0`.
+`0.6.0` and again for `0.7.0`.
 
 That is the version DOI. The concept DOI, which resolves to the newest
 version, is not reservable; it exists once the record is published, and it
@@ -73,7 +73,7 @@ below and `docs/provenance.md` for why.
 *Version:* the version of the archive, which is the number `pyproject.toml`
 carries.
 
-*DOI:* the reserved one, `10.5281/zenodo.22299353` for `0.6.0`. It is already
+*DOI:* the reserved one, `10.5281/zenodo.22924138` for `0.7.0`. It is already
 in `CITATION.cff` and `README.md`; the form only has to keep it.
 
 *Related identifiers:* the GitHub release tag, and the PyPI release of the same
@@ -93,12 +93,16 @@ its own obligations; verification names the obligation that failed rather than
 returning a boolean, and a collision is transported across each step and
 re-verified, so that a reduction of a counterexample is still a counterexample.
 
-Version 0.6 implements the second and third stages of the Bass-Connell-Wright
-Reduction Theorem, collision-hull compression, and the symmetric lift to the
-gradient form of a quartic over a field containing i. Applied in sequence to
-the smallest degree-three map this project holds, the chain runs 11, 22, 23,
-19, 38 variables with every step verified and the collision arriving at the
-far end.
+Version 0.7 adds the multi-affine normal form of Theorem 2.1(b), a descent
+step that deletes a coordinate two elementary changes have made triangular,
+and the arithmetic that makes the library correct over coefficient rings that
+are not fields: elimination to a unit pivot rather than to a non-zero one, and
+determinants taken without dividing. Version 0.6 implemented the second and
+third stages of the Bass-Connell-Wright Reduction Theorem, collision-hull
+compression, and the symmetric lift to the gradient form of a quartic over a
+field containing i. Applied in sequence to the smallest degree-three map this
+project holds, the chain runs 11, 22, 23, 19, 38 variables with every step
+verified and the collision arriving at the far end.
 
 The constructions are other people's. What this project contributes is the
 composition of them, the certificates, and eight reconstruction scripts that
@@ -109,10 +113,10 @@ of what this project claimed too widely and corrected is in `docs/errata.md`.
 
 Generative AI tools were used in two roles: one model wrote code, tests and
 documentation in conversation with the maintainer, and a different model
-audited the release candidates. `docs/provenance.md` names the tools, says what
-each did, and records what the arrangement found -- six audits, of which the
-first five each turned up faults that the test suite, the coverage requirement
-and the mutation sweep, forty-two probes at the time, had all passed. Neither model is an
+audited the release candidates. `docs/provenance.md` names the tools and says
+what each did. Every audit of this milestone found faults that the test suite,
+the coverage requirement and the mutation sweep had all passed, and more than
+once the fault was in a repair made for the previous audit. Neither model is an
 author. The maintainer set the tasks, ran the gates, read the deliveries and
 decided what entered the repository.
 
@@ -135,6 +139,6 @@ concept DOI stands in one place, so nothing can compare it with a second copy;
 what is checked is that it is not the version DOI, since a number pasted from a
 browser after the release is the one that can end up as a duplicate.
 
-For `0.6.0` the two are `10.5281/zenodo.22299353` for the version and
-`10.5281/zenodo.22299351` for the concept. They differ in one digit, which is
-the reason for the check above.
+For `0.7.0` the two are `10.5281/zenodo.22924138` for the version and
+`10.5281/zenodo.22299351` for the concept. For `0.6.0` they differed in a
+single digit, which is where the check above comes from.

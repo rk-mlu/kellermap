@@ -102,10 +102,16 @@ that carried them.
 **Why two.** An audit by the model that wrote the code would not be one. The
 two are not independent in the way two people are -- overlapping training data,
 related failure modes, neither deterministic -- so what the arrangement gives
-is better than nothing and less than independence. What it gave here is on
-record: six audits, and each of the first five found faults that the suite,
-the coverage and the mutation probe had all passed. Twice the fault was in a
-repair made for the previous audit.
+is better than nothing and less than independence. What it gave is on record
+rather than in a count: each audit is named in the clause, the errata entry or
+the changelog entry that carries its finding. Every audit of milestone 0.7
+found something the suite, the coverage and the mutation probe had all passed,
+and more than once the fault was in a repair made for the previous audit.
+
+A number of audits stood here and was kept by adding to it. It went stale, as
+the count of mutation probes on this page did and the carrier figures of
+`docs/roadmap.md` did, and for the same reason: nothing recomputed it. Where a
+count cannot be recomputed it is not written here.
 
 The audits are not blind. The auditing model reads `AGENTS.md`,
 `docs/errata.md` and the roadmap, so it knows where this project has already
@@ -127,8 +133,9 @@ under a gate that a person ran: the obligations of `docs/contracts.md` with a
 negative control each, the mutation probes of `scripts/mutation_probe.py`,
 eight reconstructions that do not import the library, the measurement scripts
 `make measure` runs, each tied to a page in both directions, one more that the
-maintainer runs with a budget because it does not fit a gate, and the audits. How many probes
-there are is written in that script and held against the set by a test, and
+maintainer runs with a budget because it does not fit a gate, and the audits.
+How many probes there are is written in that script and held against the set
+by a test, and
 not repeated here: this page said forty-five for several milestones after that
 stopped being true, and an audit of `0.7.0rc10` found the number wrong in two
 places at once. `docs/errata.md` lists what got through anyway, which is the
