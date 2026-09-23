@@ -4,6 +4,55 @@ Notable changes per release. The milestone plan and its reasoning live in
 `docs/roadmap.md`, the binding obligations of the verification surface in
 `docs/contracts.md`.
 
+## 0.7.0rc13
+
+An audit of `0.7.0rc12` found no defect in the mathematics and three in the
+evidence for it. All three are of one kind: a claim about the repository that
+nothing held against the repository.
+
+**The tables are held against the pages row by row.** The carrier test added
+in `0.7.0rc12` asked whether every number the script checks occurred somewhere
+in the section, and the audit changed one carrier from 16 to 17 and watched it
+stay green, because 17 occurs elsewhere in that table. The test for the
+pipeline table on `docs/references.md`, which the carrier test had been copied
+from, had the same hole: 19 becoming 20 in one row stays green because 20 is in
+the next. The same weakness had been found and fixed for the UNT-10 table
+before either was written. Both are now checked row by row, and so is the
+residue-ring table of FAC-2's measurement, which had no tie at all. A negative
+control applies the mutations that got through before.
+
+Each measurement script also stopped saying the page agrees. They compare the
+code with tables they hold themselves; that those tables agree with the pages
+is what the tests say, and only the two together say what the scripts' closing
+lines had claimed.
+
+**Runtimes are dated and stand in one place.** MAP-4 gave the gap between the
+division-free and the fraction-free route as three factors, undated and with
+no machine, and the script could not reproduce the largest of them. SYM-7 and
+MAP-4 both quoted the times of the lift run, and a row of FAC-2's measurement
+carried a count set by a time budget. `AGENTS.md` allows a runtime only where
+the measurement is the subject, and then with its day and its machine in
+`docs/roadmap.md`. The run was repeated: `scripts/measure_lift_determinant.py`
+now prints its date, machine and versions, and the run of 2026-09-21 on
+`paddy4` is recorded with them. It gave a different factor at every size and
+the same shape at all of them, so the contract states the shape and the
+roadmap the figures. None of the three routes returns on the complement of the
+lift, and the conclusion SYM-7 draws is unchanged.
+
+The `0.7.0rc12` entry below keeps the times of the first run, because that
+entry is a record of what was claimed at that tag.
+
+**The inventories are corrected, and the other direction is gated.** Three
+pages counted the measurement scripts and each count was wrong, and the
+roadmap gave a test count that had gone stale by a seventh. The pages now
+distinguish what `make measure` runs from the one run the maintainer makes
+with a budget of a day, and name no count that nothing recomputes.
+`CONTRIBUTING.md` had not named `measure_pivot_search.py` since `0.7.0rc11`
+while saying its list was exactly what the targets run. The test on that list
+asked only whether every command it names is one a target runs, so a list
+could lose an entry and stay green; every command `make reconstruct` and `make
+measure` run now has to be named, in that guide and in `AGENTS.md`.
+
 ## 0.7.0rc12
 
 An audit of `0.7.0rc11` found two release blockers. Both are the same shape:
