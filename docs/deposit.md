@@ -42,9 +42,16 @@ after the tag, an archive naming no record, and a repository whose newest
 commit is not the one that was deposited. The order below is the one used for
 `0.6.0` and again for `0.7.0`.
 
-That is the version DOI. The concept DOI, which resolves to the newest
-version, is not reservable; it exists once the record is published, and it
-belongs in `README.md` beside the other, described as what it is.
+That is the version DOI, and each version gets its own. The concept DOI is
+not reservable and is not per version: Zenodo assigned it when the first
+record of this software was published, at `0.6.0`, and it resolves to whatever
+the newest version is. It is in `README.md` already and does not change here.
+
+What makes that true is one choice in the form. The deposit has to be made as
+a **new version of the existing record**, not as a new upload. A new upload
+would open a second concept, with a concept DOI of its own, and the one
+`README.md` carries would go on resolving to `0.6.0` while nothing in this
+repository said so.
 
 ## What to upload
 
@@ -124,11 +131,22 @@ decided what entered the repository.
 
 ## After the deposit
 
-The version DOI is already in the repository, so what is left is the concept
-DOI, which Zenodo assigns when the record is published. It is the one to cite
-for "the software" rather than for a state, and it goes into `README.md` beside
-the version DOI, said to be the concept one. `CITATION.cff` carries a version,
-so it keeps the version DOI and not this one.
+Nothing is written into the repository. Both DOIs are in it before the tag:
+the version DOI because it was reserved first, and the concept DOI because it
+has been there since `0.6.0` and belongs to the software rather than to a
+version. `CITATION.cff` carries a version and therefore keeps the version DOI
+and not the concept one.
+
+What is left is one check, and it is the one the choice above can get wrong.
+Open the concept DOI and see that it resolves to the version just published.
+If it resolves to the previous one, the deposit opened a second record instead
+of a new version of the first, and `README.md` names a concept that no longer
+covers the newest version.
+
+This section said the concept DOI was what remained to be written in. That was
+true of `0.6.0`, the first deposit, and of no deposit after it; it would have
+sent the maintainer looking for a number that was already on the page.
+`docs/errata.md` carries it.
 
 `tests/test_documentation.py` holds the version DOI in the two places that
 carry it, with a control for the case where the label and the target of the

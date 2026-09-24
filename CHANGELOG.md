@@ -100,9 +100,11 @@ rather than number by number, which is the difference between a test and the
 look of one. Runtimes live on one page, dated and naming the machine, and the
 contract states what the argument needs rather than the number.
 
-`docs/errata.md` holds 26 entries at this release. The two newest are about
+`docs/errata.md` holds 27 entries at this release. Two of the newest are about
 figures that went stale with nothing recomputing them, and both repairs are
-gates rather than corrected numbers.
+gates rather than corrected numbers. The third is about a procedure no gate
+can see, written down while it was being done the first time and read back at
+the second.
 
 ## 0.6.0
 

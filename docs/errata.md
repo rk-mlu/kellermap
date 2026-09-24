@@ -703,3 +703,32 @@ in the code, so there is nothing to recompute them against.
 load-bearing figure with no gate under it is the same object as an ungated
 count. The repair is the same one the probe count got: put it where something
 recomputes it.
+
+## The deposit page turned a first-time step into a standing one
+
+**Said, in `docs/deposit.md` under "After the deposit":** that the version DOI
+is already in the repository, so what is left is the concept DOI, which Zenodo
+assigns when the record is published, and that it goes into `README.md`.
+
+**True of `0.6.0` and of no deposit after it.** A concept DOI is assigned once,
+when the first record of a piece of software is published, and it resolves to
+whatever the newest version is. It is not per version and not reservable. At
+`0.7.0` it was already on the page, unchanged, and the instruction would have
+sent the maintainer looking for a number that was there.
+
+**Found** by the maintainer, reading the page for the `0.7.0` deposit, against
+an assistant that had repeated the instruction in the same conversation
+without noticing it.
+
+**Now:** the page says the concept DOI does not change and names what does
+have to be right instead, which is a choice in the form: the deposit has to be
+made as a new version of the existing record. A new upload opens a second
+concept, and the concept DOI in `README.md` would go on resolving to the
+previous version with nothing here saying so. What is left after the deposit
+is to open the concept DOI and see which version it reaches.
+
+**Worth keeping:** a procedure written down while doing it the first time
+records the first time. Everything that was one-off in it reads as standing
+until somebody does it a second time, and this page had no second time between
+`0.6.0` and now. The gates cannot see this class at all -- there is nothing to
+recompute and no page to hold it against, only the next person to follow it.
