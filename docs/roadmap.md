@@ -3333,10 +3333,12 @@ licence, and this project does not transcribe them.
 
 ## A first measurement
 
-Made once while this section was written, on 28 September 2026, on the
-assistant's machine with about four gigabytes of memory, by
-`experiments/measure_vanishing.py`. Not a gate: work package 3 puts the cheap
-rows under one.
+Made with `experiments/measure_vanishing.py` on 28 September 2026, on two
+machines. The rows up to `Delta^2(P^2)` ran on the assistant's machine, which
+has about four gigabytes of memory. The rows from `P^3` on ran on the
+maintainer's machine `paddy4`, under a budget of an hour and a limit of
+24 gigabytes, and that run repeated the rows above them with the same figures.
+Not a gate: work package 3 puts the cheap rows under one.
 
 | | `prellberg40` | `spacerat11`, 38 |
 | --- | ---: | ---: |
@@ -3346,23 +3348,33 @@ rows under one.
 | monomials of `Delta(P^2)` | 8 630 | 8 999 |
 | `Delta^2(P^2) = 0` | yes | yes |
 | monomials of `P^3` | 3 369 739 | not run |
+| monomials of `Delta(P^3)` | 1 621 144 | not run |
+| monomials of `Delta^2(P^3)` | 117 696 | not run |
+| `Delta^3(P^3) = 0` | yes | not run |
 
 The 8 630 is the figure the paper states for its forty-variable form. No
 Laplacian figure had been compared with somebody else's mathematics in this
-project before.
+project before. The 117 696 has nothing to be compared with: the paper states
+`Delta(P^2)` only.
 
-Everything above the last row takes seconds for either form. The cost is the
-point of the next sentences, which is why they carry figures. At forty
-variables `P^3` took about four minutes and a peak of about two gigabytes. Its
-Laplacians give depth three of the hypothesis and `m = 2` of the conclusion,
-and none of them was reached: the run under a budget stopped at the budget
-right after `P^3`. They belong to the maintainer, under the rule in
-`AGENTS.md`. `P^4` is not expected to fit anywhere.
+Read by the three kinds above. `Delta^3(P^3) = 0` is depth three of the
+hypothesis, so the parts of degrees two, four and six of the determinant of the
+lift vanish. That is the furthest SYM-7 has been checked on a lift of this
+size, and it is still a truncation: the whole needs depth forty.
+`Delta^2(P^3) != 0` is `m = 2` of the conclusion. It is a figure and decides
+nothing.
 
-The first attempt at this measurement did not report. It ran without a budget
-or a memory limit, for longer than the ten minutes `AGENTS.md` allows an
-exploratory run on the assistant's machine, and ended without output. The
-script replaces it and stops on its own budget or memory limit.
+The cost is the point of the next sentences, which is why they carry figures.
+Everything up to `Delta^2(P^2)` takes seconds for either form. On `paddy4`,
+`P^3` took a little over three minutes, and its three Laplacians together a
+little under three more, at a peak of about four and a third gigabytes. That is
+why VAN-3 defaults to depth two: depth three is affordable as a deliberate run
+and not as the default of `verify()`. `P^4` is not expected to fit anywhere.
+
+The first attempt at this measurement did not report. It ran on the
+assistant's machine without a budget or a memory limit, for longer than the ten
+minutes `AGENTS.md` allows an exploratory run there, and ended without output.
+The script replaces it and stops on its own budget or memory limit.
 
 ## The packages
 
