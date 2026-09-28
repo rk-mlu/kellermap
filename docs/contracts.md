@@ -20,9 +20,10 @@ statement of intent that the implementation is measured against, not a
 description of the current code, and a review of an unfinished milestone should
 read it as such. Obligations without a marker are implemented.
 
-**Status:** every obligation on this page is implemented and the test suite
-covers every statement of the package, with one exception that says so where it
-stands: SYM-7 is a consequence this library states and does not compute. Where
+**Status:** every obligation on this page without a milestone marker is
+implemented and the test suite covers every statement of the package, with one
+exception that says so where it stands: SYM-7 is a consequence this library
+states and does not compute. Where
 the implementation forced a change, this page was amended deliberately and the
 amendment is visible in the wording — the clearest cases are COL-4 and BCW-3,
 which moved from obligations of `verify()` to constructor invariants, LIN-2,
@@ -51,6 +52,15 @@ whole of milestone 0.5 and was noticed only when 0.6 opened, which is what a
 number maintained in one place and checked in none does. What it says now holds
 whenever it is read, and the milestone paragraphs below carry the history.
 `docs/errata.md` records the stale one.
+
+**Milestone `0.8`, open.** The milestone adds `VanishingWitness`, VAN-1 to
+VAN-5, all marked `[0.8]` and none implemented yet.
+
+Two of the five want a reviewer's attention before the code exists. VAN-3 and
+VAN-4 cannot fail on a lift that verifies, because both follow from Theorem 3,
+so they are cross-checks against Zhao's theorems rather than checks of data.
+And VAN-5 is the first obligation on this page that no computation could
+finish, as distinct from SYM-7, which is one that did not.
 
 **Milestone `0.7`, closed.** The milestone finished Theorem 2.1(b), HOM-11 and
 HOM-12 for the property and UNT-12 for the walk that reaches it, and added the
@@ -181,6 +191,7 @@ the implementation is required to guarantee.
 - [HomogenizationStep](#homogenizationstep)
 - [CompressionStep](#compressionstep)
 - [SymmetricLiftStep](#symmetricliftstep)
+- [VanishingWitness](#vanishingwitness)
 - [DescentStep](#descentstep)
 - [Reduction](#reduction)
 - [Search](#search)
@@ -2107,7 +2118,130 @@ claims either for any other route.
 **No claim about Zhao's Vanishing Conjecture beyond the construction.** The
 quartic form is a counterexample to it when the source is one. That is a
 consequence of published theorems, and this library produces the object rather
-than the theorem.
+than the theorem. What can be checked about that object is under
+VanishingWitness.
+
+---
+
+## VanishingWitness
+
+A witness to Zhao's Vanishing Conjecture: the gradient form of a symmetric
+lift, a collision of its gradient map, and the finite checks that can be made
+on the two. Theorem 3, part 4, of arXiv:2608.12543v3 says what it witnesses.
+W. Zhao, *Hessian nilpotent polynomials and the Jacobian conjecture*, Trans.
+Amer. Math. Soc. 359 (2007), 249-274, gives the theorems it is checked
+against. `docs/roadmap.md` under "Version 0.8" states the conjecture and says
+what each finite check is worth.
+
+```python
+@dataclass(frozen=True)
+class VanishingWitness:
+    lift: SymmetricLiftStep
+    collision: Collision
+    depth: int = 2
+
+    @property
+    def form(self) -> sp.Expr: ...
+
+    def verify(self) -> None: ...
+```
+
+It lives in `kellermap.vanishing`. It is not a step. It changes no map and
+takes nothing to a target, so it has no `transport`, no `filtration_level` and
+no provenance of its own.
+
+`form` is `lift.form` and is not stored a second time. The nilpotent Hessian of
+the form is what makes it a witness, and for a lift that follows from a
+verified source by Theorem 3. That is the reason the witness takes a lift and
+not a quartic.
+
+Write `P` for `form`, `n` for `lift.target.dimension` and `Delta` for the
+Laplacian in the variables of the lift.
+
+**VAN-1 — The lift verifies, and its source is cubic. [0.8]**
+`lift.verify()` passes, and the displacement of `lift.source` has degree three. `P` is then a
+homogeneous quartic by SYM-6.
+
+Part 4 of Theorem 3 is stated for degree three only, and Zhao's conjecture is
+about quartics. A lift of a source of degree two gives a cubic form that
+witnesses nothing here. A lift of degree four or more gives a form this page
+has no theorem for.
+
+**VAN-2 — The collision is a collision of the gradient map. [0.8]**
+`collision.verify(lift.target)` passes: the points are distinct and
+`id - grad(P)` sends them to one image.
+
+The witness does not require that the collision came from `lift.transport`. A
+collision found any other way witnesses the same thing, and the obligations of
+`Collision` check it the same way.
+
+**VAN-3 — The hypothesis holds to the stated depth. [0.8]**
+`Delta^m(P^m) = 0` for `1 <= m <= depth`, checked as polynomial identities.
+
+Zhao's Theorem 4.3: the Hessian of `P` is nilpotent if and only if this holds
+for every `m >= 1`, and if and only if it holds for `m <= n`. His proof gives
+the finite form: for a fixed `k`, vanishing for `m <= k` is equivalent to
+`Tr Hes^m(P) = 0` for `m <= k`. Through Newton's identities and the degrees of
+the Hessian's entries, depth `k` is equivalent to the vanishing of the
+homogeneous parts of degrees `2, 4, ..., 2k` of `det J(id - grad(P))`. That
+last step is this page's derivation and not Zhao's. So VAN-3 at depth `n`
+would be SYM-7, and at a smaller depth it is a truncation of it.
+
+The default depth is two because depth three needs `P^3`, which has more than
+three million monomials at forty variables. `docs/roadmap.md` has the
+measurement. A depth below one or above `n` is refused with a `ValueError`: the
+first checks nothing, and the second checks nothing more than depth `n`.
+
+**VAN-4 — `Delta(P^2)` is not zero. [0.8]** Checked as a polynomial.
+
+By Zhao's Corollary 3.9, a Hessian-nilpotent `P` with `Delta(P^2) = 0` has
+`Q_t = P`. The formal inverse of `z - grad(P)` is then `z + grad(P)`, which is
+a polynomial, and `id - grad(P)` is injective. VAN-2 exhibits a collision, so
+VAN-4 follows from VAN-2 and Theorem 3. It is checked because it relates the
+collision to the form through a published theorem, and both are cheap: one
+square and one Laplacian.
+
+The number of monomials of `Delta(P^2)` is not an obligation. It depends on the
+coordinates. For the forty-variable lift of Thompson's map it is 8 630, the
+figure Section 4 of arXiv:2608.12543v3 states, and the gates hold it there.
+
+**VAN-5 — The conclusion fails, and it is not checked. [0.8]**
+`Delta^m(P^(m+1)) != 0` for infinitely many `m`. This follows from VAN-1 and
+VAN-2 by Theorem 3, part 4, of arXiv:2608.12543v3, which rests on Zhao's
+Theorems 3.4 and 4.3. `verify()` does not compute it.
+
+It is left out for a different reason than SYM-7. SYM-7 is a finite statement
+that did not finish. VAN-5 cannot be finished. Non-zero values at finitely many
+`m` are consistent with the conjecture. Zhao's Proposition 7.4 puts every `m`
+that could decide it above `(3^(n-1) - 3) / 2`, which at `n = 38` has eighteen
+digits.
+
+### Which of these can fail on supplied data
+
+VAN-1 always, since it verifies the lift, and for a lift of the wrong degree.
+VAN-2 for a supplied collision. The depth of VAN-3 is refused before anything
+is computed.
+
+The vanishing in VAN-3 and the value in VAN-4 cannot fail on a lift that
+verifies. Both follow from Theorem 3 and a verified source, so they are
+cross-checks of this library's arithmetic against Zhao's theorems. Their
+negative controls therefore cannot go through `verify()` on a real lift, in
+the same way as for HOM-12. `docs/roadmap.md` names the form they use.
+
+VAN-5 is not checked at all.
+
+### Deliberate non-obligations of this type
+
+**No quartic without a lift.** A bare quartic with a collision would need its
+Hessian to be nilpotent, and that is VAN-3 at depth `n`, which is not
+affordable. With a lift it is a theorem about a verified source.
+
+**No figure of the conclusion.** `Delta^m(P^(m+1))` for small `m` is a
+measurement and belongs to the scripts that measure. It establishes nothing
+about the conjecture either way.
+
+**No minimality**, of the form or of its dimension, for the reasons under
+SymmetricLiftStep.
 
 ---
 
@@ -4061,6 +4195,7 @@ identifier also appears in `str(...)`, but a caller is expected to branch on
 | a basis whose vectors are dependent, or not of the source's dimension | `ValueError` |
 | a collision whose points leave the compressed subspace | `VerificationError` |
 | a collision of more than two points, at the symmetric lift | `VerificationError` |
+| a witness `depth` below one or above the number of variables | `ValueError` |
 | `reordered()` given anything but a permutation of the variables | `ValueError` |
 | a structural case the search does not handle | `NotImplementedError` |
 | an argument over a ring other than `over` | `VerificationError` |

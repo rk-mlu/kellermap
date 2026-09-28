@@ -3248,52 +3248,173 @@ there.
 
 # Version 0.8
 
-This section was a list of six engineering items until milestone 0.6 closed.
-Two of them are done, two belong to 0.7, and the list left out the one thing
-0.6 made possible. It is rewritten here rather than ticked off, and what it
-said is in `docs/errata.md`.
+The last link of the chain: a witness to Zhao's Vanishing Conjecture, taken
+from arXiv:2608.12543v3 and from Zhao's paper as far as a finite computation
+can take it.
 
-## The last link of the chain
+This section was rewritten when the milestone opened. The version before it
+stated the conjecture with its hypothesis in place of its conclusion and set a
+target that cannot exist. `docs/errata.md` records both.
 
-`docs/references.md` states the chain this project follows: Jacobian
-Conjecture, BCW reduction, gradient form, Zhao's Vanishing Conjecture.
-Milestone 0.6 built everything up to the gradient form. The last link is not in
-this repository at all, and nothing in the roadmap asked for it.
+## What the conjecture says
 
-For a quartic `P` with nilpotent Hessian, the Vanishing Conjecture says that
-`Delta^m(P^m) = 0` for all large `m`. A counterexample is a `P` where it is
-not, and this project now produces such a `P` in 38 variables without ever
-looking at the Laplacian.
+W. Zhao, *Hessian nilpotent polynomials and the Jacobian conjecture*, Trans.
+Amer. Math. Soc. 359 (2007), 249-274. Write `Delta` for the Laplacian in `n`
+variables and let `P` be a homogeneous quartic.
 
-The work is to compute `Delta^m(P^m)` for the smallest `m` that decides it, and
-to say what the computation shows and at what cost. The ancillary file of
-arXiv:2608.12543v1 checks the term count of `Delta(P^2)` for the
-forty-variable form and this project has never recomputed it, which is the
-obvious first target and a figure that already exists to be checked against.
+- **Theorem 4.3.** The Hessian of `P` is nilpotent if and only if
+  `Delta^m(P^m) = 0` for every `m >= 1`, and if and only if this holds for
+  `1 <= m <= n`.
+- **Conjecture 7.1, homogeneous quartic case.** If the Hessian of `P` is
+  nilpotent, then `Delta^m(P^(m+1)) = 0` for all large `m`. Theorem 7.2 shows
+  that this case is equivalent to the Jacobian Conjecture.
+- **Theorem 3.4.** For such a `P` the formal inverse of `z - t grad(P)` is
+  `z + t grad(Q_t)`, and `Q_t` is a power series in `t` whose coefficients
+  are, up to constants, the polynomials `Delta^m(P^(m+1))`.
 
-Two things to settle before any of it. Whether the check belongs in the library
-or in a script -- it is one polynomial identity about one object and not a step
-of a chain, so a `reconstruct_`-style script is the likelier home. And what
-happens at 38 variables, where a determinant does not return within the
-budgets SYM-7 records: `P^2`
-has on the order of a hundred thousand terms before the Laplacian touches it,
-so a run belongs to the maintainer under the rule in `AGENTS.md` and the first
-job is a budgeted measurement, not an implementation.
+So `Delta^m(P^m) = 0` is the hypothesis and `Delta^m(P^(m+1))` is the
+conclusion. A counterexample is a Hessian-nilpotent quartic for which the
+second sequence does not end.
+
+Theorem 3, part 4, of arXiv:2608.12543v3 draws that consequence for the
+symmetric lift. When the source is cubic homogeneous, Keller and has a
+collision, the lift `P` has a nilpotent Hessian, and `Delta^m(P^(m+1)) != 0`
+for infinitely many `m`. The proof goes through the collision. If the sequence
+ended, `Q_t` would be a polynomial, the formal inverse would be a polynomial
+inverse, and `id - grad(P)` would be injective.
+
+## What a finite computation can and cannot show
+
+No finite `m` decides the conclusion. A non-zero value at finitely many `m` is
+consistent with the conjecture, which only asks for zeros from some point on.
+Zhao's Proposition 7.4 says where that point would lie: under the Jacobian
+Conjecture, `Delta^m(P^(m+1)) = 0` for every `m > (3^(n-1) - 3) / 2`. The
+values that could matter all lie beyond that bound. At `n = 38` it is a number
+with eighteen digits, and at `n = 40` one with nineteen.
+
+Three kinds of finite statement remain, and they are worth different things.
+
+**The hypothesis, up to a depth.** For a fixed `k`, `Delta^m(P^m) = 0` for all
+`m <= k` holds if and only if `Tr Hes^m(P) = 0` for all `m <= k`. That is
+Zhao's Theorem 4.1, as used in his proof of Theorem 4.3. Newton's identities
+turn the traces into the elementary symmetric functions of the Hessian, and for
+a quartic the `k`-th of them is homogeneous of degree `2k`. The consequence is
+this project's and not Zhao's: the check up to depth `k` says that the
+homogeneous parts of degrees `2, 4, ..., 2k` of `det J(id - grad(P))` vanish.
+Depth `n` would be the whole of SYM-7. It is not affordable, because it needs
+`P^n`.
+
+**`Delta(P^2) != 0`.** This is necessary and not sufficient. By Zhao's
+Corollary 3.9, `Delta(P^2) = 0` makes `Q_t = P`, so `z + grad(P)` would invert
+`z - grad(P)` and there could be no collision. A zero here would falsify the
+witness. The value itself is a count of monomials, which is a property of the
+coordinates and not of the form.
+
+**Higher values of the conclusion.** `Delta^m(P^(m+1))` for small `m >= 2`.
+These are figures and establish nothing either way.
+
+## The witnesses
+
+Two forms, both derived in this library from maps that are already here.
+
+`prellberg40` is the lift of Thompson's map after the compression. The
+compression reproduces the published twenty-dimensional basis and the lift is
+the published formula, so this is the form of Section 4 of arXiv:2608.12543v3
+and its figures can be compared with the paper's.
+
+The lift at the end of the `spacerat11` chain has 38 variables and 386
+monomials. It is this project's own. Its figures have nothing published to be
+compared with, and Section 5 of the paper is about a different 38-variable form
+with 340 monomials.
+
+Van Rijn's form is not taken in. `docs/references.md` gives the reason: the
+paper's ancillary file carries his maps copied from a repository note with no
+licence, and this project does not transcribe them.
+
+## A first measurement
+
+Made once while this section was written, on 28 September 2026, on the
+assistant's machine with about four gigabytes of memory, by
+`experiments/measure_vanishing.py`. Not a gate: work package 3 puts the cheap
+rows under one.
+
+| | `prellberg40` | `spacerat11`, 38 |
+| --- | ---: | ---: |
+| monomials of `P` | 350 | 386 |
+| `Delta(P) = 0` | yes | yes |
+| monomials of `P^2` | 46 695 | 55 021 |
+| monomials of `Delta(P^2)` | 8 630 | 8 999 |
+| `Delta^2(P^2) = 0` | yes | yes |
+| monomials of `P^3` | 3 369 739 | not run |
+
+The 8 630 is the figure the paper states for its forty-variable form. No
+Laplacian figure had been compared with somebody else's mathematics in this
+project before.
+
+Everything above the last row takes seconds for either form. The cost is the
+point of the next sentences, which is why they carry figures. At forty
+variables `P^3` took about four minutes and a peak of about two gigabytes. Its
+Laplacians give depth three of the hypothesis and `m = 2` of the conclusion,
+and none of them was reached: the run under a budget stopped at the budget
+right after `P^3`. They belong to the maintainer, under the rule in
+`AGENTS.md`. `P^4` is not expected to fit anywhere.
+
+The first attempt at this measurement did not report. It ran without a budget
+or a memory limit, for longer than the ten minutes `AGENTS.md` allows an
+exploratory run on the assistant's machine, and ended without output. The
+script replaces it and stops on its own budget or memory limit.
+
+## The packages
+
+Internal versions `0.7.k`, tags `wp/0.7.k`.
+
+**WP 1** is this plan, the entry in `docs/errata.md`, and the obligations of
+the witness, VAN-1 to VAN-5, marked `[0.8]`. Documentation only, apart from the
+family added to `tests/test_documentation.py`.
+
+**WP 2** makes the scripts behave from the source archive. `tests/data.py` is
+not distributed, and three scripts fail differently without it:
+`reconstruct_alpoege19.py` stops with exit code 2 and a sentence,
+`reconstruct_macfarlane13.py` with a traceback, and `untargeted_space.py` with
+a `pytest` skip raised outside `pytest`. So `make reconstruct` and
+`make measure` fail on the Zenodo deposit. `sdist-test` runs only the suite and
+does not see it. The package decides what a script reports when its data is
+absent, and makes the three agree.
+
+**WP 3** puts the cheap rows of the table above under a gate, in both
+directions `AGENTS.md` asks for. `scripts/reconstruct_prellberg40.py` gains
+`Delta(P) = 0`, the count of `Delta(P^2)` against 8 630, and
+`Delta^2(P^2) = 0`, in plain SymPy and without this library.
+`scripts/measure_pipeline.py` gains the same three for the three chains it
+runs, through the library, checked against this page. The 8 630 is external to
+the project; the other counts are external only to the library.
+
+**WP 4** implements `VanishingWitness` against VAN-1 to VAN-5. Each check gets
+a negative control. Two of them cannot be reached through a verified lift,
+because a verified lift always has a nilpotent Hessian and a collision, and the
+package says so where the controls stand. `(x + i y)^4` is a candidate for one
+of them: its Hessian is nilpotent, `Delta` of its square is zero, and its
+gradient map is invertible.
+
+**WP 5** is the benchmark runner. The section below says what it measures
+first.
 
 ## A benchmark runner
 
-What the old list asked for that is still missing, and now with a reason.
-
 The measurement scripts `make measure` runs are tied to a page in both
-directions, and `measure_lift_determinant.py` runs on the maintainer's machine
-under a budget, outside every gate. None of them produces machine-readable
-output and none compares across releases, so a regression in cost is
-invisible until somebody notices a gate taking longer. `AGENTS.md` no longer
-keeps timing tables, since `0.7.0rc7`, for the reason it gives under "Timings
-are not figures", so there is no hand-kept record to compare against either.
+directions. None of them produces machine-readable output and none compares
+across releases, so a regression in cost is invisible until somebody notices a
+gate taking longer.
 
-The runner is worth building only after 0.7 has profiled the pipeline, because
-until then there is no agreed list of what to measure.
+The previous version of this section made the runner wait until 0.7 had
+profiled the pipeline. 0.7 profiled the fast suite and the determinant of the
+lift, and not the pipeline, so that condition was never met and is dropped.
+
+A timing compared across releases is also a runtime, and `AGENTS.md` does not
+document runtimes. So the runner records machine-independent counts first:
+monomials at each stage, examined maps of a search, calls of the operations
+that dominate. Times are recorded beside them with the date and the machine,
+and compared only on one machine.
 
 ## What the old list had that is done
 
@@ -3313,6 +3434,36 @@ seventh between two milestones.
 Performance comparisons across releases and a reproducible benchmark runner
 overlap with milestone 0.7, which profiles and optimizes. They stay here rather
 than moving, because 0.7 asks what is slow and 0.8 asks whether it got slower.
+
+## Answered here, left open in 0.7
+
+"What is not planned" in 0.7 said that the eleven-variable map and the
+twelve-variable ones are not a comparison until someone checks that the
+normalization keeps the dimension. It does. The normalization is a linear step,
+which changes neither the dimension nor the degree. `LinearStep.normalize` on
+`spacerat11` gives a map in eleven variables, of degree three, with
+determinant one, and `scripts/measure_pipeline.py` makes that step at the start
+of its chain. The comparison is legitimate. No priority is claimed from it.
+
+## What is not planned
+
+No minimality, and no priority, as in every milestone before.
+
+No proof of the conclusion. VAN-5 states it and does not check it, in the way
+SYM-7 states the determinant.
+
+No check of the hypothesis at depth `n`. VAN-3 checks it to a depth the caller
+names, and the table above says what each depth costs.
+
+No quartic supplied without a lift. For a lift, the nilpotent Hessian follows
+from a verified source by Theorem 3. For a bare quartic it would be an
+assertion.
+
+The research threads 0.7 left open stay open. A search that may go up in
+dimension, proposals for `DescentStep`, pairs of levers, whether the
+multi-affine property of `UnipotentStep` becomes an obligation, and running
+`alpoege15` and `bcw17` through the four stages. None of them is this
+milestone's.
 
 ---
 

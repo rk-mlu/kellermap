@@ -142,10 +142,10 @@ of guessed, and `docs/roadmap.md` carries the figures.
 
 ### Next, 0.8
 
-The last link of the chain: `Delta^m(P^m)` for the gradient form, which is what
-Zhao's Vanishing Conjecture is about, and a benchmark runner so that the
-timings this milestone collected can be compared across releases rather than
-read once.
+The last link of the chain: a witness to Zhao's Vanishing Conjecture, built
+from the gradient form, with the finite checks that can be made on it. And a
+benchmark runner, so that the cost of the pipeline can be compared across
+releases rather than read once.
 
 `docs/roadmap.md` carries the plan and the measurements behind it.
 `CHANGELOG.md` lists what each release changed, and the milestones before this

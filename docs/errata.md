@@ -732,3 +732,37 @@ records the first time. Everything that was one-off in it reads as standing
 until somebody does it a second time, and this page had no second time between
 `0.6.0` and now. The gates cannot see this class at all -- there is nothing to
 recompute and no page to hold it against, only the next person to follow it.
+
+## The roadmap stated the Vanishing Conjecture backwards
+
+**Said, in `docs/roadmap.md` under "Version 0.8", from the close of 0.6 to the
+opening of 0.8, and in the README under "Next, 0.8":** that for a quartic `P`
+with nilpotent Hessian the conjecture says `Delta^m(P^m) = 0` for all large
+`m`, that a counterexample is a `P` where this fails, and that the work was to
+compute `Delta^m(P^m)` for the smallest `m` that decides it.
+
+**True:** `Delta^m(P^m) = 0` for every `m >= 1` is the hypothesis, and it is
+equivalent to the nilpotent Hessian (Zhao, Theorem 4.3). The conclusion is
+about the other sequence: `Delta^m(P^(m+1)) = 0` for all large `m`. For a
+Hessian-nilpotent `P` the first sequence vanishes by the theorem, so computing
+it could never have shown a counterexample. For the second, no finite `m`
+decides anything: a counterexample needs non-zero values for infinitely many
+`m`, and Theorem 3, part 4, of arXiv:2608.12543 gets that from the collision
+and not from a computation. So "the smallest `m` that decides it" does not
+exist.
+
+The same section cited version 1 of that paper for the term count of
+`Delta(P^2)`, which was then at version 2 and is now at version 3.
+
+**Found** when milestone 0.8 opened, by reading Section 1 and the proof of
+Theorem 3 of arXiv:2608.12543v2 against the roadmap, and then Zhao's paper
+itself, which the project had not read before.
+
+**Now:** `docs/roadmap.md` under "What the conjecture says" states the
+hypothesis and the conclusion with the numbered results they come from, and
+"What a finite computation can and cannot show" says what each finite check is
+worth. `README.md` says what 0.8 is for without restating the conjecture.
+
+**Worth keeping:** the sentence named no theorem, and the project did not hold
+Zhao's paper, so nothing could be checked against it. A statement of somebody
+else's theorem is a citation, and it needs the number like any other.

@@ -434,6 +434,27 @@ this page list: the gates a person ran and six external audits of the
 candidates for milestone 0.6. A reader who takes the sentence for a second
 opinion on this repository would be taking it for more than it says.
 
+### What version 3 changes
+
+Version 3, 15 September 2026, was read when milestone 0.8 opened. The
+statements this repository cites keep their numbers and their wording: Lemma 2,
+the four parts of Theorem 3, Proposition 6, Corollary 7 and Proposition 8. The
+figures are unchanged, and so is the digest of the ancillary file. The
+citations of version 2 on these pages and in the code therefore stay correct.
+It is licensed CC BY 4.0, as the versions before it. Nothing is transcribed
+from it.
+
+Two things are new. Theorem 3 adds that the collision hull is equivariant under
+a linear change of coordinates. And the citation of this project now names
+`0.7.0rc9` and describes the chain from 23 to 19 to 38 variables as reproducing
+the collision-hull dimension of the paper. That holds for the dimension and not
+for the map: the nineteen-variable maps are not equal as written, and their
+lifts have 386 and 340 monomials.
+
+It also adds references on the Hessian Conjecture and a geometric account of
+the three-variable map. The paper says itself that the first are not dimension
+comparisons with the quartic problem.
+
 ### What was recomputed here
 
 Recomputed by `scripts/reconstruct_prellberg40.py`, which make reconstruct runs,
@@ -473,6 +494,36 @@ absent: the symmetric lift over `Q(i)` is the de Bondt–van den Essen gradient
 form, with the image of the collision given explicitly. The chain this project
 follows — Jacobian Conjecture, BCW reduction, gradient form, Zhao's Vanishing
 Conjecture — is closed end to end in one paper.
+
+---
+
+## The Vanishing Conjecture
+
+**W. Zhao**, *Hessian nilpotent polynomials and the Jacobian conjecture*,
+Trans. Amer. Math. Soc. 359 (2007), no. 1, 249-274. Published by the American
+Mathematical Society. It is cited here and nothing is transcribed from it.
+
+The results this project uses, by number:
+
+| | what it says |
+| --- | --- |
+| Theorem 3.4 | for a Hessian-nilpotent `P`, the potential `Q_t` of the formal inverse of `z - t grad(P)` has the coefficients `Delta^m(P^(m+1))`, up to constants |
+| Corollary 3.9 | `Delta(P^2) = 0` gives `Q_t = P` |
+| Theorem 4.3 | the Hessian of `P` is nilpotent exactly when `Delta^m(P^m) = 0` for all `m >= 1`, and exactly when this holds for `m <= n` |
+| Theorem 7.2 | the conjecture for homogeneous quartics is equivalent to the Jacobian Conjecture |
+| Proposition 7.4 | under the Jacobian Conjecture, `Delta^m(P^(m+1)) = 0` for `m > ((d-1)^(n-1) - (d-1)) / (d-2)` |
+
+The conjecture is Conjecture 7.1: for a Hessian-nilpotent `P`,
+`Delta^m(P^(m+1)) = 0` for all large `m`. The condition
+`Delta^m(P^m) = 0` is its hypothesis and not its conclusion, and
+`docs/errata.md` records that this project once had the two the other way
+round.
+
+Theorem 3, part 4, of arXiv:2608.12543 applies Theorems 3.4 and 4.3 to the
+symmetric lift, and that is the route by which a lift with a collision becomes
+a counterexample. `docs/contracts.md` under VanishingWitness states what this
+library checks about it, and `docs/roadmap.md` under "Version 0.8" what a
+finite computation can show.
 
 ---
 
@@ -616,6 +667,12 @@ therefore a choice about the search space and not only about the shape of the
 first step: over `ZZ` a step coefficient must be an integer, over `QQ` it need
 not. Milestone 0.5 searches without a fixed target and has to make that choice
 deliberately; `roadmap.md` records it.
+
+The column does not make the dimensions incomparable. The normalization is a
+linear step, so it changes neither the dimension nor the degree. On
+`spacerat11` it gives a map in eleven variables, of degree three, with
+determinant one, and `scripts/measure_pipeline.py` makes that step at the start
+of its chain.
 
 Comparing them meaningfully needs certificates, which 0.2 introduced.
 Reproducing the dimension-19 map's own step sequence was the target of 0.4 and
