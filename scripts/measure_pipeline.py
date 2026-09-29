@@ -40,8 +40,10 @@ otherwise. That the tables agree with the pages is the tests' to say.
 
 from __future__ import annotations
 
+import sys
 import time
 from dataclasses import dataclass
+from pathlib import Path
 
 import sympy as sp
 
@@ -55,6 +57,10 @@ from kellermap import (
     over_field,
 )
 from kellermap.bcw import HomogenizationStep, UnipotentStep
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+
+from _report import describe_the_end, describe_the_run  # noqa: E402
 
 
 @dataclass(frozen=True)
@@ -242,6 +248,7 @@ def run(row: Row) -> None:
 
 
 def main() -> int:
+    describe_the_run()
     print(
         "The pipeline of milestone 0.6, against docs/references.md, and what "
         "the\nSchur reduction leaves at each stage, against docs/roadmap.md."
@@ -253,6 +260,7 @@ def main() -> int:
         "\nEvery figure agrees with the tables in this script. The tests hold "
         "those\nagainst docs/references.md and docs/roadmap.md row by row."
     )
+    describe_the_end()
 
     return 0
 

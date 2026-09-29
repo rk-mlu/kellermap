@@ -1868,7 +1868,7 @@ The last row is the one that decided SYM-7, and it took two machines to state
 it. Two runs here were given about fifteen and about twelve minutes and neither
 returned, and both were cut off by the environment rather than by a decision,
 so neither was a figure. The maintainer then ran
-`exploration/measure_lift_determinant.py` and stopped it after eight hours
+`experiments/measure_lift_determinant.py` and stopped it after eight hours
 without a result. That is the row.
 
 The same run puts the sample-point determinant at 21.7 and 22.3 seconds against
@@ -2166,7 +2166,7 @@ search here. A derivation that passes through it has to be supplied.
 
 Whether the twelve-variable map is reachable without a descent is no longer
 open in the direction this paragraph asked.
-`exploration/measure_untargeted_reach.py` ran it and the answer is no, and not
+`experiments/measure_untargeted_reach.py` ran it and the answer is no, and not
 for the reason the plan expected: the
 greedy walk does not fail at one of the four moves, it never rejoins the
 published chain at all, leaving for 13 or 14 from every one of that chain's own
@@ -2357,7 +2357,7 @@ reason. For each of the thirteen steps in the two chains, record which of the
 two reasons applies, or a third if neither does.
 
 **Run, and there are three reasons rather than two.**
-`exploration/measure_untargeted_gap.py` rebuilds both chains and reports each
+`experiments/measure_untargeted_gap.py` rebuilds both chains and reports each
 condition of UNT-1, UNT-2, UNT-6 and UNT-7 on its own, so that a step failing
 two is not filed under whichever was tested first:
 
@@ -2548,7 +2548,7 @@ because a chain that produces it produces its coefficients. Neither repository
 that carries it has a licence, so a transcription is not available anyway, and
 `docs/references.md` records both as cited and not copied.
 
-**Run.** `exploration/measure_untargeted_reach.py`, and the answer is no, in a
+**Run.** `experiments/measure_untargeted_reach.py`, and the answer is no, in a
 way the plan did not expect.
 
 **The budget is not what stops it.** From Alpoege's map, normalized or not,
@@ -2609,7 +2609,7 @@ error.
 
 ### What is measured now
 
-`exploration/measure_dimension_eleven.py` searches the offer exhaustively under
+`experiments/measure_dimension_eleven.py` searches the offer exhaustively under
 a hard bound of eleven, from each map of the published chain in turn, and asks
 whether a map of degree three is reachable at all. No weight rule: a step that
 leaves UNT-3's weight alone or raises it is built like any other, so what is
@@ -3384,14 +3384,28 @@ Internal versions `0.7.k`, tags `wp/0.7.k`.
 the witness, VAN-1 to VAN-5, marked `[0.8]`. Documentation only, apart from the
 family added to `tests/test_documentation.py`.
 
-**WP 2** makes the scripts behave from the source archive. `tests/data.py` is
-not distributed, and three scripts fail differently without it:
-`reconstruct_alpoege19.py` stops with exit code 2 and a sentence,
-`reconstruct_macfarlane13.py` with a traceback, and `untargeted_space.py` with
-a `pytest` skip raised outside `pytest`. So `make reconstruct` and
-`make measure` fail on the Zenodo deposit. `sdist-test` runs only the suite and
-does not see it. The package decides what a script reports when its data is
-absent, and makes the three agree.
+**WP 2** makes the scripts say what they are and what they lack.
+
+`tests/data.py` is not distributed, and three scripts failed differently
+without it: `reconstruct_alpoege19.py` stopped with exit code 2 and a
+sentence, `reconstruct_macfarlane13.py` with a traceback, and
+`untargeted_space.py` with a `pytest` skip raised outside `pytest`. So
+`make reconstruct` and `make measure` failed on the Zenodo deposit, and
+`sdist-test` ran only the suite and did not see it. Now all three say so in one
+sentence and exit with 3, which means not checked. Both targets run every
+script, and `scripts/gate_outcome.py` reports them together. A target is green
+only when every script passed. `sdist-test` runs both targets from the archive
+and requires exactly these three not to be checked, so a script that fails
+there for another reason is found, and so is one that runs although its data
+should be absent.
+
+The same package makes every measurement print its machine, its date and the
+versions, through `scripts/_report.py`, as the maintainer asked when the first
+measurement of this milestone had to be dated by hand. It renames
+`exploration/` to `experiments/` on these pages, where the scripts have lived
+for some time. And `tests/test_documentation.py` requires every top-level
+heading of this page to occur once, since a copy of a whole milestone in
+work package 1 passed every other gate.
 
 **WP 3** puts the cheap rows of the table above under a gate, in both
 directions `AGENTS.md` asks for. `scripts/reconstruct_prellberg40.py` gains

@@ -84,9 +84,12 @@ python scripts/measure_pipeline.py
 python scripts/measure_pivot_search.py
 ```
 
-These are exactly what `make reconstruct` and `make measure` run, and
+These are exactly the scripts `make reconstruct` and `make measure` run, and
 `tests/test_documentation.py` holds the list against both targets in both
-directions. It stood at six and one until `0.7.0rc7`, and it missed
+directions. Each target also opens and reads a record of which scripts did not
+pass, through `scripts/gate_outcome.py`, so that it runs every script and
+reports them together. The list does not name that script, because it checks
+nothing itself. It stood at six and one until `0.7.0rc7`, and it missed
 `measure_pivot_search.py` from `0.7.0rc11` until an audit of `0.7.0rc12`
 counted it, because the test then asked only whether every command named here
 is one a target runs and not whether every command a target runs is named.

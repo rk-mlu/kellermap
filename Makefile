@@ -51,20 +51,40 @@ docs:
 # The second computations, independent of the library. They have stood in
 # AGENTS.md among the gates since 0.2, but no target called them, so they ran
 # only by hand. A check nobody runs is not a check.
+#
+# Both targets run every script and do not stop at the first that fails. A
+# script that does not pass appends its exit code and its name to a record
+# under .gate-outcome/, and scripts/gate_outcome.py reads the record at the end.
+# The target is green only when every script passed. `Error 3` means that
+# some scripts were not checked, because tests/data.py is not in the tree, and
+# that nothing failed; `Error 1` means that a script failed. From the source archive that is expected, and
+# sdist-test passes the expected sets through EXPECT_RECONSTRUCT and
+# EXPECT_MEASURE.
+#
+# Until milestone 0.8 the first script that failed stopped the target, and
+# from the archive three scripts failed in three different ways.
+EXPECT_RECONSTRUCT ?=
+EXPECT_MEASURE ?=
+RECORD = .gate-outcome
+
 reconstruct:
-	uv run python scripts/reconstruct_bcw17.py
-	uv run python scripts/reconstruct_alpoege15.py
-	uv run python scripts/reconstruct_alpoege19.py
-	uv run python scripts/reconstruct_alpoege13.py
-	uv run python scripts/reconstruct_alpoege12.py
-	uv run python scripts/reconstruct_spacerat11.py
-	uv run python scripts/reconstruct_macfarlane13.py
-	uv run python scripts/reconstruct_prellberg40.py
+	uv run python scripts/gate_outcome.py reconstruct --start
+	uv run python scripts/reconstruct_bcw17.py || echo "$$? reconstruct_bcw17.py" >> $(RECORD)/reconstruct
+	uv run python scripts/reconstruct_alpoege15.py || echo "$$? reconstruct_alpoege15.py" >> $(RECORD)/reconstruct
+	uv run python scripts/reconstruct_alpoege19.py || echo "$$? reconstruct_alpoege19.py" >> $(RECORD)/reconstruct
+	uv run python scripts/reconstruct_alpoege13.py || echo "$$? reconstruct_alpoege13.py" >> $(RECORD)/reconstruct
+	uv run python scripts/reconstruct_alpoege12.py || echo "$$? reconstruct_alpoege12.py" >> $(RECORD)/reconstruct
+	uv run python scripts/reconstruct_spacerat11.py || echo "$$? reconstruct_spacerat11.py" >> $(RECORD)/reconstruct
+	uv run python scripts/reconstruct_macfarlane13.py || echo "$$? reconstruct_macfarlane13.py" >> $(RECORD)/reconstruct
+	uv run python scripts/reconstruct_prellberg40.py || echo "$$? reconstruct_prellberg40.py" >> $(RECORD)/reconstruct
+	uv run python scripts/gate_outcome.py reconstruct --expect "$(EXPECT_RECONSTRUCT)"
 
 measure:
-	uv run python scripts/untargeted_space.py
-	uv run python scripts/measure_pipeline.py
-	uv run python scripts/measure_pivot_search.py --budget 10
+	uv run python scripts/gate_outcome.py measure --start
+	uv run python scripts/untargeted_space.py || echo "$$? untargeted_space.py" >> $(RECORD)/measure
+	uv run python scripts/measure_pipeline.py || echo "$$? measure_pipeline.py" >> $(RECORD)/measure
+	uv run python scripts/measure_pivot_search.py --budget 10 || echo "$$? measure_pivot_search.py" >> $(RECORD)/measure
+	uv run python scripts/gate_outcome.py measure --expect "$(EXPECT_MEASURE)"
 
 # --------------------------------------------------------------------------
 # Collected targets
@@ -133,8 +153,14 @@ sdist-test:
 	VIRTUAL_ENV=sdist_env uv pip install ./sdist_tree pytest
 	@echo "--> Running the suite the archive ships, from the archive..."
 	cd sdist_tree && ../sdist_env/bin/python -m pytest -q
+	@echo "--> Running the reconstructions and measurements the archive ships..."
+	# The archive does not carry tests/data.py, so exactly these scripts report
+	# that they are not checked. Any other set fails, in either direction.
+	cd sdist_tree && $(MAKE) --no-print-directory reconstruct measure \
+		EXPECT_RECONSTRUCT="reconstruct_alpoege19.py reconstruct_macfarlane13.py" \
+		EXPECT_MEASURE="untargeted_space.py"
 	rm -rf sdist_build
-	@echo "Success: the shipped suite passes against the shipped package."
+	@echo "Success: the shipped suite and scripts pass against the shipped package."
 
 # Resolution to the smallest permitted versions rather than to the newest.
 # Without this target the lower bound in pyproject.toml stays an assertion:
@@ -202,3 +228,4 @@ clean:
 	rm -rf htmlcov
 	rm -f .coverage
 	rm -rf dist build_env min_env sdist_env sdist_tree sdist_build
+	rm -rf .gate-outcome

@@ -33,3 +33,6 @@ htmlcov/
 # local experiment files
 experiments/
 
+# The record make reconstruct and make measure keep between their lines
+.gate-outcome/
+

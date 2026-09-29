@@ -143,6 +143,15 @@ archive, installs it, and runs the suite the archive ships from the archive.
 Only the second sees what a user who runs the shipped tests sees, and an audit
 of `0.6.0rc1` found a test there that had been failing since 0.5.
 
+`make reconstruct` and `make measure` run every script and do not stop at the
+first that fails. They end with a summary from `scripts/gate_outcome.py`, and
+their exit code is 0 only when every script passed. A script whose data is not
+in the tree reports "not checked" and exits with 3. When nothing failed, the
+summary then exits with 3 as well, and `make` stops with `Error 3`; a failure
+gives `Error 1`. In both cases `make` itself exits with 2. The source archive lacks
+`tests/data.py`, so from the archive three scripts are not checked.
+`sdist-test` runs both targets there and requires exactly those three.
+
 This list is not the authority. The Makefile is, and two tests in
 `tests/test_documentation.py` hold the two against each other: every command
 named here has to be one a target runs, and every `scripts/reconstruct_*.py`
@@ -279,6 +288,16 @@ The assistant writes the measurement as a script that takes a budget, prints
 the cheap figures first so that a run which never reaches the expensive one
 still reports something, and prints either the time or the budget it exceeded.
 It goes into the delivery beside the change that needs it.
+
+**Every measurement prints its machine and its date.** It calls
+`describe_the_run` from `scripts/_report.py` first and `describe_the_end`
+last. The header gives the local time with its offset from UTC, the machine,
+its processors and memory, and the versions of Python, SymPy and kellermap. A
+figure a script prints can then be dated from its own output, which is what the
+rule above asks of a runtime that is the subject of a sentence.
+`tests/test_scripts.py` holds every measuring script in `scripts/` to it. A
+script in `experiments/` is not under that test and follows the same rule. It
+also finds the repository from `__file__`, since it is started from anywhere.
 
 - **Coverage is 100 per cent and enforced.** A branch that cannot be reached,
   because an obligation checked earlier rules it out, gets

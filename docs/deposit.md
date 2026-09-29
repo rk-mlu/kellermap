@@ -66,6 +66,13 @@ Before uploading, one check by hand, because it is the one that matters here:
 
 must print `0`.
 
+Somebody who unpacks the deposit and runs `make reconstruct` and
+`make measure` sees three scripts reported as not checked:
+`reconstruct_alpoege19.py`, `reconstruct_macfarlane13.py` and
+`untargeted_space.py`. They need `tests/data.py`. Each says so in one sentence,
+and each target then ends with `Error 3` and not with success. That is the expected state of
+the archive, and `sdist-test` requires exactly it.
+
 ## Metadata for the form
 
 *Upload type:* Software.

@@ -622,3 +622,179 @@ def test_the_cost_script_runs(
 
     assert "bcw17, by hand" in printed
     assert "found without a target" in printed
+
+
+# --------------------------------------------------------------------------
+# What a script reports about itself: scripts/_report.py and
+# scripts/gate_outcome.py, milestone 0.8.
+# --------------------------------------------------------------------------
+
+MEASUREMENTS = sorted(
+    {path.name for path in (ROOT / "scripts").glob("measure_*.py")}
+    | {"untargeted_space.py"}
+)
+"""Every script that measures: the ``measure_*`` scripts and what ``make
+measure`` runs. ``test_documentation.py`` holds the second half against the
+Makefile; here the list is written out, so that a new measurement that is not
+called ``measure_*`` has to be added by hand."""
+
+NEEDS_DATA = ("reconstruct_alpoege19", "reconstruct_macfarlane13", "untargeted_space")
+"""The scripts that read ``tests/data.py``, which the source archive lacks."""
+
+
+@pytest.fixture(scope="module")
+def report() -> ModuleType:
+    return load("_report")
+
+
+@pytest.fixture(scope="module")
+def outcome() -> ModuleType:
+    return load("gate_outcome")
+
+
+def main_calls(source: str, name: str) -> bool:
+    """Return whether the function ``main`` in ``source`` calls ``name``."""
+    import ast
+
+    for node in ast.walk(ast.parse(source)):
+        if isinstance(node, ast.FunctionDef) and node.name == "main":
+            return any(
+                isinstance(call, ast.Call)
+                and isinstance(call.func, ast.Name)
+                and call.func.id == name
+                for call in ast.walk(node)
+            )
+
+    return False
+
+
+@pytest.mark.parametrize("script", MEASUREMENTS)
+def test_every_measurement_prints_its_machine_and_date(script: str) -> None:
+    """A figure without its machine and its date cannot be dated afterwards.
+
+    Checked on the source and not by a run, since running the measurements is
+    what ``make measure`` does. What the header prints is checked below.
+    """
+    source = (ROOT / "scripts" / script).read_text(encoding="utf-8")
+
+    assert main_calls(source, "describe_the_run"), f"{script} prints no header"
+    assert main_calls(source, "describe_the_end"), f"{script} prints no end"
+
+
+def test_a_measurement_without_the_header_is_found() -> None:
+    """The negative control: a ``main`` that calls something else."""
+    source = "def main():\n    describe()\n\ndef describe_the_run():\n    pass\n"
+
+    assert not main_calls(source, "describe_the_run")
+    assert main_calls("def main():\n    describe_the_run()\n", "describe_the_run")
+
+
+def test_the_header_names_the_machine_the_date_and_the_versions(
+    report: ModuleType, capsys: pytest.CaptureFixture[str]
+) -> None:
+    import platform
+
+    report.describe_the_run("budget 1 s")
+    printed = capsys.readouterr().out
+
+    assert platform.node() in printed
+    assert "UTC" in printed
+    assert "Python" in printed and "SymPy" in printed and "kellermap" in printed
+    assert "Asked    budget 1 s" in printed
+
+
+@pytest.mark.parametrize("script", NEEDS_DATA)
+def test_a_script_without_its_data_reports_not_checked(
+    script: str,
+    report: ModuleType,
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    """One sentence and exit code 3, before anything is computed.
+
+    From the source archive these three failed in three different ways until
+    milestone 0.8: exit code 2 with a sentence, a traceback, and a ``pytest``
+    skip raised outside ``pytest``.
+    """
+    module = load(script)
+    shared = sys.modules["_report"]
+    monkeypatch.setattr(shared, "DATA", tmp_path / "data.py")
+    monkeypatch.setattr(shared, "ROOT", tmp_path)
+    monkeypatch.setattr(sys, "argv", [f"{script}.py"])
+
+    with pytest.raises(SystemExit) as stopped:
+        module.main()
+
+    assert stopped.value.code == report.NOT_CHECKED
+    assert "Not checked: data.py is not in this tree." in capsys.readouterr().out
+
+
+def test_the_scripts_share_one_copy_of_the_helper(report: ModuleType) -> None:
+    """``require_data`` reads the module the scripts import, not a second one.
+
+    The test above patches ``sys.modules["_report"]``. Were the scripts to load
+    their own copy, the patch would not reach them and the test would stop in
+    the data instead.
+    """
+    load("reconstruct_macfarlane13")
+
+    assert sys.modules["_report"].NOT_CHECKED == report.NOT_CHECKED == 3
+
+
+@pytest.mark.parametrize(
+    ("entries", "expected", "code"),
+    [
+        ([], set(), 0),
+        ([(3, "a.py")], set(), 3),
+        ([(1, "a.py")], set(), 1),
+        ([(3, "a.py"), (2, "b.py")], set(), 1),
+        ([(3, "a.py")], {"a.py"}, 0),
+        ([(3, "a.py")], {"a.py", "b.py"}, 1),
+        ([], {"a.py"}, 1),
+        ([(3, "a.py"), (1, "b.py")], {"a.py"}, 1),
+    ],
+    ids=[
+        "all passed",
+        "not checked",
+        "failed",
+        "a failure outweighs not checked",
+        "exactly the expected set",
+        "fewer than expected",
+        "none although some were expected",
+        "a failure beside the expected set",
+    ],
+)
+def test_the_outcome_of_a_target(
+    outcome: ModuleType,
+    entries: list[tuple[int, str]],
+    expected: set[str],
+    code: int,
+) -> None:
+    """Green only when everything ran, or exactly the expected set did not."""
+    assert outcome.outcome(entries, expected)[0] == code
+
+
+def test_a_record_is_opened_read_and_refused_when_missing(
+    outcome: ModuleType,
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    monkeypatch.setattr(outcome, "RECORDS", tmp_path / "records")
+
+    with pytest.raises(SystemExit, match="not a clean run"):
+        outcome.main(["measure"])
+
+    assert outcome.main(["measure", "--start"]) == 0
+
+    (tmp_path / "records" / "measure").write_text(
+        "3 untargeted_space.py\n", encoding="utf-8"
+    )
+
+    assert outcome.main(["measure"]) == 3
+    assert outcome.main(["measure", "--expect", "untargeted_space.py"]) == 0
+    assert "not checked, as expected here" in capsys.readouterr().out
+
+    assert outcome.main(["measure", "--start"]) == 0
+    assert outcome.main(["measure"]) == 0

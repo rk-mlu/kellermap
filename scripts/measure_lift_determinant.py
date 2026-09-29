@@ -54,14 +54,10 @@ answers something is the maintainer's.
 from __future__ import annotations
 
 import argparse
-import datetime
 import multiprocessing
-import os
-import platform
 import resource
 import sys
 import time
-from importlib.metadata import version
 from pathlib import Path
 from typing import Any
 
@@ -80,6 +76,10 @@ from kellermap import (  # noqa: E402
     over_field,
 )
 from kellermap.bcw import HomogenizationStep, UnipotentStep  # noqa: E402
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+
+from _report import describe_the_end, describe_the_run  # noqa: E402
 
 DEFAULT_BUDGET = 60.0
 
@@ -146,42 +146,18 @@ def fraction_free(block: Any, domain: Any) -> Any:
     return DomainMatrix.from_list([list(row) for row in block], domain).det()
 
 
-def installed_memory() -> float:
-    """Return the physical memory of the machine in gigabytes, where it is known."""
-    try:
-        pages = os.sysconf("SC_PHYS_PAGES")
-        size = os.sysconf("SC_PAGE_SIZE")
-    except (ValueError, OSError, AttributeError):
-        return float("nan")
+def asked(arguments: argparse.Namespace) -> str:
+    """Return the line of the header that records what this run was given.
 
-    return float(pages * size) / GIGABYTE
-
-
-def describe_the_run(arguments: argparse.Namespace) -> None:
-    """Print what ``AGENTS.md`` requires a recorded runtime to carry.
-
-    A runtime in this repository has to say when it was taken and on which
-    machine, and ``docs/roadmap.md`` is where the profile lives. The first run
-    of this script printed neither, and its figures could not be dated
-    afterwards with certainty, so the run had to be repeated. The script now
-    prints both before it spends anything, and the time again at the end.
+    The rest of the header is ``describe_the_run`` in ``scripts/_report.py``,
+    which began here: the first run of this script printed neither machine nor
+    date, its figures could not be dated afterwards with certainty, and the run
+    had to be repeated. Since milestone 0.8 every measurement prints it.
     """
-    started = datetime.datetime.now(datetime.timezone.utc)
-    print(f"Started  {started:%Y-%m-%d %H:%M} UTC")
-    print(f"Machine  {platform.node()}, {platform.platform()}")
-    print(
-        f"         {os.cpu_count()} logical processors, "
-        f"{installed_memory():.1f} GB installed"
+    return (
+        f"budget {arguments.budget:.0f} s and {arguments.memory:.1f} GB per route, "
+        f"ladder {', '.join(str(size) for size in arguments.ladder)}"
     )
-    print(
-        f"Versions Python {platform.python_version()}, SymPy {sp.__version__}, "
-        f"kellermap {version('kellermap')}"
-    )
-    print(
-        f"Asked    budget {arguments.budget:.0f} s and {arguments.memory:.1f} GB "
-        f"per route, ladder {', '.join(str(size) for size in arguments.ladder)}"
-    )
-    print()
 
 
 def measure_ladder(sizes: tuple[int, ...] = LADDER) -> None:
@@ -351,7 +327,7 @@ def main() -> int:
     parser.add_argument("--ladder", type=int, nargs="+", default=list(LADDER))
     arguments = parser.parse_args()
 
-    describe_the_run(arguments)
+    describe_the_run(asked(arguments))
 
     started = time.monotonic()
     measure_ladder(tuple(arguments.ladder))
@@ -379,8 +355,7 @@ def main() -> int:
         under_budget(block, domain, zero, route, arguments.budget, arguments.memory)
     print()
     print("A budget that runs out is evidence about the budget and not a proof.")
-    finished = datetime.datetime.now(datetime.timezone.utc)
-    print(f"Finished {finished:%Y-%m-%d %H:%M} UTC")
+    describe_the_end()
 
     return 0
 

@@ -500,7 +500,7 @@ the source.
 
 **Now:** the four pages state the condition over every variable except `T`, and
 say that the bought coordinates fall under it. Nothing measured has to be
-redone. The count in `exploration/measure_multi_affine.py` exempted the
+redone. The count in `experiments/measure_multi_affine.py` exempted the
 parameter and nothing else from the first run, so the figures under UNT-12 --
 67, 73 and 79 -- were made against the correct reading while the prose around
 them stated the weaker one. HOM-12 was worded over the fresh generator rather

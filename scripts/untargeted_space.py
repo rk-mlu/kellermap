@@ -57,6 +57,10 @@ from kellermap.peeling import moves, undo  # noqa: E402
 from kellermap.reduction import Reduction  # noqa: E402
 from kellermap.untargeted import lowers_the_weight, remaining_weight  # noqa: E402
 
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+
+from _report import describe_the_end, describe_the_run, require_data  # noqa: E402
+
 
 def _load(name: str) -> Any:
     """Load a test module by path, the way ``scripts/_common.py`` loads data.
@@ -203,6 +207,15 @@ def walk_in_order(source: PolynomialMap, key: Any, budget: int = 3000) -> Any:
 
 
 def main() -> int:
+    describe_the_run()
+    # The figures below are pooled over both chains, and one of them is built
+    # from the nineteen-dimensional map. Without it no row can be checked as
+    # stated. UNT-10 needs only Alpoege's map, and running it alone would
+    # report half a gate as a whole one.
+    require_data(
+        "The nineteen-dimensional map is somebody else's mathematics and its "
+        "licence could not be established, so this project does not distribute it."
+    )
     walked = list(chains().items())
 
     offered: list[int] = []
@@ -284,6 +297,7 @@ def main() -> int:
         )
 
     print("\nEvery figure agrees with docs/contracts.md.")
+    describe_the_end()
 
     return 0
 

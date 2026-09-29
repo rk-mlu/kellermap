@@ -57,6 +57,10 @@ from types import ModuleType
 
 import sympy as sp
 
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+
+from _report import require_data  # noqa: E402
+
 x, y, z = sp.symbols("x y z")
 w = sp.symbols("w1:17")
 w1, w2, w3, w4, w5, w6, w7, w8, w9, w10, w11, w12, w13, w14, w15, w16 = w
@@ -195,11 +199,11 @@ def _degree(components: dict[sp.Symbol, sp.Expr], order: list[sp.Symbol]) -> int
 
 
 def main() -> int:
-    try:
-        data = published()
-    except FileNotFoundError as missing:
-        print(missing)
-        return 2
+    require_data(
+        "The nineteen-dimensional map is somebody else's mathematics and its "
+        "licence could not be established, so this project does not distribute it."
+    )
+    data = published()
 
     components, order, dimensions, degrees, identities = apply_steps()
     points = transport()

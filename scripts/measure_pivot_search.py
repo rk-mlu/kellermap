@@ -44,6 +44,10 @@ sys.path.insert(0, str(ROOT))
 
 from kellermap import LinearAutomorphism, PolynomialMap  # noqa: E402
 
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+
+from _report import describe_the_end, describe_the_run  # noqa: E402
+
 PARAMETER = sp.Symbol("T")
 
 MODULI = (4, 6, 8, 9, 10, 12)
@@ -253,6 +257,7 @@ def main() -> int:
     parser.add_argument("--budget", type=float, default=DEFAULT_BUDGET)
     parser.add_argument("--seed", type=int, default=20260916)
     arguments = parser.parse_args()
+    describe_the_run(f"budget {arguments.budget:.0f} s, seed {arguments.seed}")
 
     disagreements = 0
 
@@ -279,6 +284,7 @@ def main() -> int:
         "Every part agrees with what this script expects. The tests hold its\n"
         "table against docs/roadmap.md row by row."
     )
+    describe_the_end()
 
     return 0
 

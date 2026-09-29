@@ -455,17 +455,93 @@ def test_the_gates_of_the_contributing_guide_exist() -> None:
     )
 
 
-def target_recipes(target: str) -> list[str]:
-    """Return the commands one Makefile target runs, without the ``uv run`` prefix."""
+BOOKKEEPING = "python scripts/gate_outcome.py"
+"""The first and the last line of both measuring targets.
+
+It opens and reads the record of which scripts did not pass, and it checks
+nothing itself. A reader who follows the lists runs the scripts one by one and
+sees each outcome directly, so the lists do not name it.
+"""
+
+
+def target_body(target: str) -> list[str]:
+    """Return the lines of one Makefile target, without the ``uv run`` prefix."""
     lines = (ROOT / "Makefile").read_text(encoding="utf-8").splitlines()
     start = next(index for index, line in enumerate(lines) if line == f"{target}:")
-    recipes = []
+    body = []
     for line in lines[start + 1 :]:
         if not line.startswith("\t"):
             break
-        recipes.append(line.strip().removeprefix("uv run "))
+        body.append(line.strip().removeprefix("uv run "))
 
-    return recipes
+    return body
+
+
+def target_recipes(target: str) -> list[str]:
+    """Return the scripts one Makefile target runs.
+
+    The bookkeeping lines are left out, and so is what a line does after its
+    script: ``|| echo ...`` records the outcome and is not a command of its own.
+    """
+    return [
+        line.split(" || ")[0]
+        for line in target_body(target)
+        if not line.startswith(BOOKKEEPING)
+    ]
+
+
+def unrecorded(body: list[str], target: str) -> list[str]:
+    """Return the scripts of a target body whose outcome is not recorded."""
+    missing = []
+    for line in body[1:-1]:
+        script = line.split(" || ")[0].split()[1]
+        suffix = f' || echo "$$? {Path(script).name}" >> $(RECORD)/{target}'
+        if not line.endswith(suffix):
+            missing.append(script)
+    if not body or body[0] != f"{BOOKKEEPING} {target} --start":
+        missing.append("the opening of the record")
+    if not body or not body[-1].startswith(f"{BOOKKEEPING} {target} --expect "):
+        missing.append("the reading of the record")
+
+    return missing
+
+
+@pytest.mark.parametrize("target", ["reconstruct", "measure"])
+def test_every_script_of_a_measuring_target_is_recorded(target: str) -> None:
+    """A script whose outcome is not recorded would be green whatever it did.
+
+    Each script line ends in ``|| echo "$$? name" >> record``. Without the
+    suffix a failing script stops the target before the summary, and a script
+    that is not checked is not counted. The target opens the record first and
+    reads it last.
+    """
+    missing = unrecorded(target_body(target), target)
+
+    assert not missing, f"make {target} does not record {missing}"
+
+
+def test_a_script_without_its_record_is_reported() -> None:
+    """The negative control: one line without the suffix, one with it."""
+    recorded = ' || echo "$$? reconstruct_bcw17.py" >> $(RECORD)/reconstruct'
+    body = [
+        f"{BOOKKEEPING} reconstruct --start",
+        "python scripts/reconstruct_bcw17.py" + recorded,
+        "python scripts/reconstruct_alpoege15.py",
+        f'{BOOKKEEPING} reconstruct --expect ""',
+    ]
+
+    assert unrecorded(body, "reconstruct") == ["scripts/reconstruct_alpoege15.py"]
+
+
+def test_a_record_that_is_not_opened_is_reported() -> None:
+    """The negative control for the first and the last line."""
+    recorded = ' || echo "$$? reconstruct_bcw17.py" >> $(RECORD)/reconstruct'
+    body = ["python scripts/reconstruct_bcw17.py" + recorded]
+
+    assert unrecorded(body, "reconstruct") == [
+        "the opening of the record",
+        "the reading of the record",
+    ]
 
 
 @pytest.mark.parametrize("guide", ["AGENTS.md", "CONTRIBUTING.md"])
@@ -1159,3 +1235,52 @@ def test_a_doi_whose_link_and_label_disagree_is_not_read(tmp_path: Path) -> None
 
     with pytest.raises(AssertionError):
         only_match(README_DOI, readme)
+
+
+def repeated_titles(text: str) -> list[str]:
+    """Return every top-level heading that occurs more than once in ``text``.
+
+    Lines inside fenced blocks are skipped, since a ``#`` there is a comment.
+    """
+    seen: dict[str, int] = {}
+    fenced = False
+    for line in text.splitlines():
+        if line.startswith("```"):
+            fenced = not fenced
+        elif not fenced and line.startswith("# "):
+            seen[line] = seen.get(line, 0) + 1
+
+    return [title for title, count in seen.items() if count > 1]
+
+
+def test_every_milestone_of_the_roadmap_appears_once() -> None:
+    """A repeated section is a copy, and a copy is invisible to every other test.
+
+    Work package 1 of milestone 0.8 delivered a roadmap in which about 1 800
+    lines stood twice: a replacement had found the end of the section it was
+    replacing in an earlier milestone. Every table in both copies was correct,
+    so every gate passed, and the maintainer found it by reading.
+    """
+    page = (ROOT / "docs" / "roadmap.md").read_text(encoding="utf-8")
+
+    assert not repeated_titles(page), (
+        f"repeated in the roadmap: {repeated_titles(page)}"
+    )
+
+
+def test_a_repeated_milestone_is_found() -> None:
+    """The negative control: a page with one section twice, and a fenced ``#``."""
+    page = "\n".join(
+        [
+            "# Version 0.7",
+            "text",
+            "```",
+            "# a comment in a block",
+            "# a comment in a block",
+            "```",
+            "# Version 0.8",
+            "# Version 0.7",
+        ]
+    )
+
+    assert repeated_titles(page) == ["# Version 0.7"]

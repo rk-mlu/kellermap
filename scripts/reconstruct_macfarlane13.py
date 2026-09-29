@@ -58,6 +58,10 @@ from types import ModuleType
 
 import sympy as sp
 
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+
+from _report import require_data  # noqa: E402
+
 X = sp.symbols("x1:14")
 _1, _2, _3, _4, _5, _6, _7, _8, _9, _10, _11, _12, _13 = X
 
@@ -334,6 +338,10 @@ def check(label: str, held: bool) -> bool:
 
 
 def main() -> int:
+    require_data(
+        "Macfarlane's thirteen-variable map is somebody else's mathematics and "
+        "his repository carries no licence, so this project does not distribute it."
+    )
     passed = []
 
     print("Macfarlane's map, as read from tests/data.py")
