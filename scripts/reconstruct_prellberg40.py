@@ -2,11 +2,12 @@
 
 The version is v1 and stays v1: the map, the restriction, the collision and
 ``rho`` below are transcribed from its ancillary file, and a transcription is
-from the bytes it was made from. Version 2 of 31 August 2026 keeps Theorem 3
-with its number and its statement, and keeps both figures this script checks --
-the hull sequence 2, 4, 11, 20, 20 and the 350 monomials of the
-forty-variable lift -- so the reconstruction is a reconstruction of the current
-paper as well. ``docs/references.md`` records what version 2 adds.
+from the bytes it was made from. Versions 2 of 31 August and 3 of 15 September
+2026 keep Theorem 3 with its number and its statement, and keep every figure
+this script checks -- the hull sequence 2, 4, 11, 20, 20, the 350 monomials of
+the forty-variable lift and the 8,630 monomials of ``Delta(P^2)`` -- so the
+reconstruction is a reconstruction of the current paper as well.
+``docs/references.md`` records what the later versions add.
 
 This file does not depend on ``kellermap``. It stands to Prellberg's result as
 ``reconstruct_alpoege19.py`` stands to the published nineteen-dimensional map:
@@ -40,13 +41,21 @@ Checked here: that ``h`` is cubic homogeneous and has the stated collision,
 that Thompson's ``H`` is cubic homogeneous and satisfies the four linear
 relations, that ``H`` restricted along the embedding is ``h``, that the
 polarization dimensions are 2, 4, 11, 20, 20, that the lift ``P`` is quartic
-homogeneous with 350 monomials, and that ``id - grad(P)`` has the stated
-collision over ``Q(i)``.
+homogeneous with 350 monomials, that ``id - grad(P)`` has the stated
+collision over ``Q(i)``, and four statements about the Laplacian ``Delta`` in
+the forty variables: ``Delta(P) = 0``, ``P^2`` has 46,695 monomials,
+``Delta(P^2)`` has 8,630, and ``Delta^2(P^2) = 0``. Milestone 0.8 added the
+last four. The count of ``P^2`` is not a figure of the paper; it is held so
+that ``docs/roadmap.md`` can state it.
+
+What they are worth is in ``docs/roadmap.md`` under "Version 0.8". In short:
+``Delta^m(P^m) = 0`` for ``m = 1, 2`` is the hypothesis of Zhao's Vanishing
+Conjecture up to depth two, and ``Delta(P^2) != 0`` is necessary for the
+collision by his Corollary 3.9. The count of monomials is a property of the
+coordinates, and it is the figure Section 4 of the paper states.
 
 Not checked here: the nilpotency index of ``J h``, which costs matrix powers
-over a polynomial ring, and the term count of ``Delta(P^2)``. The ancillary
-file checks both. Their absence is why this file makes seventeen assertions
-where that one makes eleven groups.
+over a polynomial ring. The ancillary file checks it.
 
 Why it is in the tree
 ---------------------
@@ -72,6 +81,7 @@ from __future__ import annotations
 
 from fractions import Fraction
 from itertools import permutations
+from typing import Any
 
 import sympy as sp
 
@@ -275,6 +285,8 @@ which is a claim the paper can be wrong about.
 
 DIMENSIONS = (2, 4, 11, 20, 20)
 MONOMIALS = 350
+SQUARE_MONOMIALS = 46695
+LAPLACIAN_MONOMIALS = 8630
 
 
 # --------------------------------------------------------------------------
@@ -398,6 +410,36 @@ def apply(
     )
 
 
+def laplacian_checks(lift: sp.Expr, variables: list[sp.Symbol]) -> list[bool]:
+    """Check ``Delta(P)``, ``Delta(P^2)`` and ``Delta^2(P^2)``.
+
+    In a sparse ring over ``Q(i)``, by eighty derivatives per Laplacian. The
+    library's measurement script sums the second derivatives in one pass over
+    the monomials instead, so the two agree only if both are right.
+    """
+    ring, *generators = sp.ring(variables, sp.QQ_I)
+    form = ring(lift)
+
+    def laplacian(polynomial: Any) -> Any:
+        total = ring.zero
+        for generator in generators:
+            total += polynomial.diff(generator).diff(generator)
+        return total
+
+    square = form**2
+    once = laplacian(square)
+
+    return [
+        check("Delta(P) = 0", laplacian(form) == 0),
+        check(f"P^2 has {SQUARE_MONOMIALS} monomials", len(square) == SQUARE_MONOMIALS),
+        check(
+            f"Delta(P^2) has {LAPLACIAN_MONOMIALS} monomials",
+            len(once) == LAPLACIAN_MONOMIALS,
+        ),
+        check("Delta^2(P^2) = 0", laplacian(once) == 0),
+    ]
+
+
 def check(label: str, held: bool) -> bool:
     """Print one line and return what was checked."""
     print(f"  [{'ok ' if held else 'BAD'}] {label}")
@@ -493,6 +535,9 @@ def main() -> int:
             all(sp.expand(c.subs(at_first) - c.subs(at_second)) == 0 for c in gradient),
         )
     )
+
+    print("\nThe Laplacian of the lift, in the forty variables")
+    passed.extend(laplacian_checks(lift, variables))
 
     print(f"\n{sum(passed)} of {len(passed)} checks passed.")
 

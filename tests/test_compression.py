@@ -645,3 +645,28 @@ def test_alpoege12_compresses_to_twenty_variables() -> None:
 
     assert len(moved.points) == 3
     assert moved.verify(compression.target) is None
+
+
+def test_the_laplacian_checks_of_the_reconstruction_can_fail(
+    published: object,
+) -> None:
+    """The negative controls of the four checks milestone 0.8 added there.
+
+    On the lift itself all three hold, and ``make reconstruct`` shows it. Here
+    two small forms that are not the lift, so the run costs nothing. ``x1^4``
+    fails every one. ``(x1 + i x2)^4`` has a nilpotent Hessian and a harmonic
+    square: it passes the first and the last and fails both counts, and its
+    gradient map is invertible, which is why ``Delta(P^2) != 0`` is necessary
+    for a collision.
+    """
+    variables = list(published.x) + list(published.y)  # type: ignore[attr-defined]
+    x1, x2 = variables[0], variables[1]
+    checks = published.laplacian_checks  # type: ignore[attr-defined]
+
+    assert checks(x1**4, variables) == [False, False, False, False]
+    assert checks(sp.expand((x1 + sp.I * x2) ** 4), variables) == [
+        True,
+        False,
+        False,
+        True,
+    ]

@@ -842,6 +842,74 @@ def test_the_complement_of_the_lift_is_stated_beside_the_table() -> None:
     assert re.search(rf"(?<![\w-]){figure}\b", carrier_section())
 
 
+def laplacian_rows(pipeline: ModuleType, reconstruction: ModuleType) -> list[str]:
+    """Return the rows of the Laplacian table, as the roadmap writes them.
+
+    The first row comes from the reconstruction, which does not use the
+    library, and the others from the pipeline script, which does.
+    """
+
+    def spaced(number: int) -> str:
+        return f"{number:,}".replace(",", " ")
+
+    rows = [
+        f"| `prellberg40` | 40 | {reconstruction.MONOMIALS} "
+        f"| {spaced(reconstruction.SQUARE_MONOMIALS)} "
+        f"| {spaced(reconstruction.LAPLACIAN_MONOMIALS)} |"
+    ]
+    for row in pipeline.TABLE:
+        stated = pipeline.LAPLACIANS[row.name]
+        rows.append(
+            f"| `{row.name}` | {row.quartic} | {row.quartic_monomials} "
+            f"| {spaced(stated.square)} | {spaced(stated.once)} |"
+        )
+
+    return rows
+
+
+def laplacian_section() -> str:
+    """Return the section of the roadmap that holds the Laplacian table."""
+    page = (ROOT / "docs" / "roadmap.md").read_text(encoding="utf-8")
+    section = page[page.index("# Version 0.8") :]
+    section = section[section.index("## A first measurement") :]
+
+    return section[: section.index("\n## ")]
+
+
+def load_reconstruction() -> ModuleType:
+    """Import ``scripts/reconstruct_prellberg40.py`` for its constants."""
+    path = ROOT / "scripts" / "reconstruct_prellberg40.py"
+    spec = importlib.util.spec_from_file_location("prellberg_constants", path)
+    assert spec is not None and spec.loader is not None
+    module = importlib.util.module_from_spec(spec)
+    sys.modules[spec.name] = module
+    spec.loader.exec_module(module)
+
+    return module
+
+
+def test_the_laplacian_table_agrees_with_the_two_scripts() -> None:
+    """Every row of the table milestone 0.8 measured, against its script.
+
+    Row by row, for the reason the pipeline test gives above: 40 is the
+    dimension of two of the four forms, so a number found anywhere in the
+    section proves nothing about the row it belongs to.
+    """
+    section = laplacian_section()
+    rows = laplacian_rows(load_pipeline(), load_reconstruction())
+    missing = [row for row in rows if row not in section]
+
+    assert not missing, f"the roadmap does not carry {missing}"
+
+
+def test_a_changed_laplacian_row_is_found() -> None:
+    """The negative control: the same section with one count changed."""
+    section = laplacian_section().replace("| 8 999 |", "| 8 998 |")
+    rows = laplacian_rows(load_pipeline(), load_reconstruction())
+
+    assert [row for row in rows if row not in section] == [rows[1]]
+
+
 def test_the_pivot_search_table_agrees_with_the_measurement_script() -> None:
     """The residue-ring rows of FAC-2's measurement, against the script.
 

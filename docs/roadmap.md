@@ -3334,23 +3334,35 @@ licence, and this project does not transcribe them.
 ## A first measurement
 
 Made with `experiments/measure_vanishing.py` on 28 September 2026, on two
-machines. The rows up to `Delta^2(P^2)` ran on the assistant's machine, which
-has about four gigabytes of memory. The rows from `P^3` on ran on the
-maintainer's machine `paddy4`, under a budget of an hour and a limit of
-24 gigabytes, and that run repeated the rows above them with the same figures.
-Not a gate: work package 3 puts the cheap rows under one.
+machines, and put under gates by work package 3.
 
-| | `prellberg40` | `spacerat11`, 38 |
-| --- | ---: | ---: |
-| monomials of `P` | 350 | 386 |
-| `Delta(P) = 0` | yes | yes |
-| monomials of `P^2` | 46 695 | 55 021 |
-| monomials of `Delta(P^2)` | 8 630 | 8 999 |
-| `Delta^2(P^2) = 0` | yes | yes |
-| monomials of `P^3` | 3 369 739 | not run |
-| monomials of `Delta(P^3)` | 1 621 144 | not run |
-| monomials of `Delta^2(P^3)` | 117 696 | not run |
-| `Delta^3(P^3) = 0` | yes | not run |
+The cheap part ran on the assistant's machine, which has about four gigabytes
+of memory. For each form, `Delta(P) = 0` and `Delta^2(P^2) = 0` hold, and the
+counts are these:
+
+| form | variables | `P` | `P^2` | `Delta(P^2)` |
+| --- | ---: | ---: | ---: | ---: |
+| `prellberg40` | 40 | 350 | 46 695 | 8 630 |
+| `spacerat11` | 38 | 386 | 55 021 | 8 999 |
+| `alpoege12` | 40 | 398 | 59 131 | 11 446 |
+| `alpoege13` | 44 | 506 | 97 276 | 12 709 |
+
+`scripts/reconstruct_prellberg40.py` recomputes the first row in plain SymPy,
+without this library. `scripts/measure_pipeline.py` recomputes the other three
+through the library, at the end of the chains it runs. The two scripts take
+the Laplacian in two different ways. `tests/test_documentation.py` holds every
+row against the script it comes from.
+
+The expensive part ran on the maintainer's machine `paddy4`, under a budget of
+an hour and a limit of 24 gigabytes, for `prellberg40` only. That run repeated
+the first row with the same figures. It is not a gate.
+
+| `prellberg40` | |
+| --- | ---: |
+| monomials of `P^3` | 3 369 739 |
+| monomials of `Delta(P^3)` | 1 621 144 |
+| monomials of `Delta^2(P^3)` | 117 696 |
+| `Delta^3(P^3) = 0` | yes |
 
 The 8 630 is the figure the paper states for its forty-variable form. No
 Laplacian figure had been compared with somebody else's mathematics in this
@@ -3365,7 +3377,7 @@ size, and it is still a truncation: the whole needs depth forty.
 nothing.
 
 The cost is the point of the next sentences, which is why they carry figures.
-Everything up to `Delta^2(P^2)` takes seconds for either form. On `paddy4`,
+Everything in the first table takes seconds for each form. On `paddy4`,
 `P^3` took a little over three minutes, and its three Laplacians together a
 little under three more, at a peak of about four and a third gigabytes. That is
 why VAN-3 defaults to depth two: depth three is affordable as a deliberate run
@@ -3407,13 +3419,15 @@ for some time. And `tests/test_documentation.py` requires every top-level
 heading of this page to occur once, since a copy of a whole milestone in
 work package 1 passed every other gate.
 
-**WP 3** puts the cheap rows of the table above under a gate, in both
-directions `AGENTS.md` asks for. `scripts/reconstruct_prellberg40.py` gains
-`Delta(P) = 0`, the count of `Delta(P^2)` against 8 630, and
+**WP 3** puts the first table above under gates, in both directions
+`AGENTS.md` asks for. `scripts/reconstruct_prellberg40.py` gains
+`Delta(P) = 0`, the counts of `P^2` and of `Delta(P^2)`, and
 `Delta^2(P^2) = 0`, in plain SymPy and without this library.
-`scripts/measure_pipeline.py` gains the same three for the three chains it
-runs, through the library, checked against this page. The 8 630 is external to
-the project; the other counts are external only to the library.
+`scripts/measure_pipeline.py` gains the same four for the three chains it runs,
+through the library. `tests/test_documentation.py` holds each row against the
+script, and `tests/test_compression.py` shows that the four checks of the
+reconstruction can fail. The 8 630 is external to the project; the other
+counts are external only to the library.
 
 **WP 4** implements `VanishingWitness` against VAN-1 to VAN-5. Each check gets
 a negative control. Two of them cannot be reached through a verified lift,

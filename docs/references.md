@@ -470,10 +470,15 @@ in plain SymPy and without this library:
 | `id - grad(P)` has the stated collision | yes | agrees |
 | Thompson's `H` is cubic homogeneous, four relations | yes | agrees |
 | `H` restricted along the embedding is `h` | yes | agrees |
+| monomials of `Delta(P^2)` | 8 630 | 8 630 |
+
+Since milestone 0.8 the script also checks `Delta(P) = 0` and
+`Delta^2(P^2) = 0`, which the paper does not report. Both are the hypothesis of
+Zhao's conjecture at small depth, and `docs/roadmap.md` under "Version 0.8"
+says what they are worth.
 
 Not recomputed: the nilpotency index of `J h`, which costs matrix powers over a
-polynomial ring, and the term count of `Delta(P^2)`. The ancillary file checks
-both.
+polynomial ring. The ancillary file checks it.
 
 
 ### What it means for this project

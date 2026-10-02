@@ -8,9 +8,11 @@ surface, and compares what comes out with what the page says.
 
 It also recomputes what the Schur reduction leaves at each stage, which is
 what SYM-7 rests its explanation on, and compares it with ``CARRIERS``, the
-table ``docs/roadmap.md`` carries under work package 1.
+table ``docs/roadmap.md`` carries under work package 1. And since milestone 0.8
+it takes the Laplacian of each lift and compares it with ``LAPLACIANS``, the
+first table under "A first measurement" in the 0.8 section of that page.
 
-The two tables here and the two on the pages are held against each other by
+The three tables here and the three on the pages are held against each other by
 ``tests/test_documentation.py``, row by row. Until ``0.7.0rc13`` the test asked
 only whether each number occurred somewhere in the section, and an audit of
 ``0.7.0rc12`` changed a carrier from 16 to 17 and watched it stay green,
@@ -44,6 +46,7 @@ import sys
 import time
 from dataclasses import dataclass
 from pathlib import Path
+from typing import Any
 
 import sympy as sp
 
@@ -102,6 +105,26 @@ TABLE: tuple[Row, ...] = (
     Row("alpoege13", 13, 26, 27, 73, 22, 68, 44, 506),
 )
 
+
+@dataclass(frozen=True)
+class Laplacian:
+    """What ``docs/roadmap.md`` states about the Laplacian of one lift.
+
+    Under "Version 0.8", in the table of the first measurement. ``Delta(P)``
+    and ``Delta^2(P^2)`` are zero for every lift, which the page says in one
+    sentence, so only the two counts are held per chain.
+    """
+
+    square: int
+    once: int
+
+
+LAPLACIANS: dict[str, Laplacian] = {
+    "spacerat11": Laplacian(55021, 8999),
+    "alpoege12": Laplacian(59131, 11446),
+    "alpoege13": Laplacian(97276, 12709),
+}
+
 LIFT_COMPLEMENT_MONOMIALS = 13589
 """The monomials in the complement of the lift of ``spacerat11``.
 
@@ -149,6 +172,39 @@ def check(
         raise SystemExit(
             f"{label}: measured {measured}, and docs/{page}.md says {claimed}."
         )
+
+
+def laplacian(polynomial: Any) -> Any:
+    """Return the Laplacian of a ``PolyElement`` in one pass over its terms.
+
+    ``scripts/reconstruct_prellberg40.py`` takes eighty derivatives instead, so
+    on the forty-variable form the two agree only if both are right.
+    """
+    ring = polynomial.ring
+    out: dict[tuple[int, ...], Any] = {}
+    for monomial, coefficient in polynomial.items():
+        for j, exponent in enumerate(monomial):
+            if exponent < 2:
+                continue
+            lowered = monomial[:j] + (exponent - 2,) + monomial[j + 1 :]
+            out[lowered] = out.get(lowered, ring.domain.zero) + coefficient * (
+                exponent * (exponent - 1)
+            )
+
+    return ring.from_dict({m: c for m, c in out.items() if c})
+
+
+def check_laplacian(name: str, symmetric: SymmetricLiftStep) -> None:
+    """Check the Laplacian figures of one lift against ``docs/roadmap.md``."""
+    stated = LAPLACIANS[name]
+    form = symmetric._form()  # noqa: SLF001
+    square = form**2
+    once = laplacian(square)
+
+    check("Delta(P) = 0", laplacian(form) == 0, True, "roadmap")
+    check("monomials in P^2", len(square), stated.square, "roadmap")
+    check("monomials in Delta(P^2)", len(once), stated.once, "roadmap")
+    check("Delta^2(P^2) = 0", laplacian(once) == 0, True, "roadmap")
 
 
 def check_carrier(name: str, stage: str, target: PolynomialMap) -> None:
@@ -231,6 +287,7 @@ def run(row: Row) -> None:
     check("the degree of P", form.total_degree(), 4)
     check("points in the lifted collision", len(moved.points), 2)
     check_carrier(row.name, "SymmetricLiftStep", symmetric.target)
+    check_laplacian(row.name, symmetric)
 
     if row.name == "spacerat11":
         complement = symmetric.target._schur_complement(  # noqa: SLF001
