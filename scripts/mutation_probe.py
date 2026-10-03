@@ -44,7 +44,7 @@ They ask today's question of today's code. Every one of them should report
 ``tests/test_scripts.py`` checks that every fragment still matches the code it
 aims at.
 
-The set holds 71 probes. That sentence is held against ``PROBES`` by
+The set holds 78 probes. That sentence is held against ``PROBES`` by
 ``tests/test_scripts.py``, which is the only reason to write a number here at
 all. Until ``0.7.0rc11`` this paragraph carried a running total instead, one
 audit's addition at a time, and an audit of ``0.7.0rc10`` found it one too
@@ -96,6 +96,15 @@ enumerator and offers rather than certifies, as no UNT clause has a probe. What
 is left is DSC-3 in both halves and DSC-4 in the half that is about arithmetic,
 and those are exactly the clauses that page names as able to fail on data a
 caller supplies.
+
+Milestone 0.8 added seven for the witness. VAN-1 and VAN-2 can fail on
+supplied data. VAN-3 and VAN-4 cannot on a lift that verifies, which by the
+rule above would leave them out. They are in because their checks are module
+functions with controls that call them on forms that are not lifts, so a
+deletion there is noticed for the right reason. The probe on the loop bound of
+VAN-3 is the one that matters most: depth one passes on a harmonic form whose
+Hessian is not nilpotent, and only the control at depth two sees the
+difference.
 
 They do **not** reproduce the ten misses of the first run, and until
 ``0.4.0rc14`` this file and ``CHANGELOG.md`` said they did. Two reasons. The
@@ -708,6 +717,55 @@ PROBES: tuple[Probe, ...] = (
         "src/kellermap/polynomial_map.py",
         "            if exponent:\n                term = term * value**exponent",
         "            for _ in range(exponent):\n                term = term * value",
+    ),
+    Probe(
+        "VAN-1",
+        "the witness does not verify its lift",
+        "src/kellermap/vanishing.py",
+        "            self.lift.verify()\n",
+        "            pass\n",
+    ),
+    Probe(
+        "VAN-1",
+        "the witness accepts a lift of any degree",
+        "src/kellermap/vanishing.py",
+        "        if degree != 3:",
+        "        if False:",
+    ),
+    Probe(
+        "VAN-2",
+        "the witness does not verify its collision",
+        "src/kellermap/vanishing.py",
+        "            self.collision.verify(self.lift.target)",
+        "            pass",
+    ),
+    Probe(
+        "VAN-3",
+        "a depth outside one to n is accepted",
+        "src/kellermap/vanishing.py",
+        "        if not 1 <= self.depth <= variables:",
+        "        if False:",
+    ),
+    Probe(
+        "VAN-3",
+        "a non-zero Delta^m(P^m) is accepted",
+        "src/kellermap/vanishing.py",
+        "        if value:",
+        "        if False:",
+    ),
+    Probe(
+        "VAN-3",
+        "the hypothesis is checked at depth one only",
+        "src/kellermap/vanishing.py",
+        "    for m in range(1, depth + 1):",
+        "    for m in range(1, 2):",
+    ),
+    Probe(
+        "VAN-4",
+        "a harmonic square is accepted",
+        "src/kellermap/vanishing.py",
+        "    if not laplacian(square):",
+        "    if False:",
     ),
 )
 

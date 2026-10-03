@@ -42,6 +42,7 @@ from .untargeted import (
     remaining_weight,
     untargeted_candidates,
 )
+from .vanishing import VanishingWitness
 from .variables import (
     DEFAULT_VARIABLE_FACTORY,
     FixedVariableFactory,
@@ -77,6 +78,7 @@ __all__ = [
     "Transposition",
     "Transvection",
     "Undo",
+    "VanishingWitness",
     "VariableFactory",
     "VerificationError",
     "anchors",

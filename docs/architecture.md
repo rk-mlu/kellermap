@@ -145,6 +145,7 @@ kellermap/
 ├── compression.py        CompressionStep, collision_hull
 ├── descent.py            DescentStep
 ├── lift.py               SymmetricLiftStep
+├── vanishing.py          VanishingWitness, laplacian
 ├── examples.py           the Keller maps written out more than once
 ├── errors.py             VerificationError
 └── bcw/                  BCWStep, UnipotentStep, HomogenizationStep,

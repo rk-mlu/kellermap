@@ -3429,12 +3429,16 @@ script, and `tests/test_compression.py` shows that the four checks of the
 reconstruction can fail. The 8 630 is external to the project; the other
 counts are external only to the library.
 
-**WP 4** implements `VanishingWitness` against VAN-1 to VAN-5. Each check gets
-a negative control. Two of them cannot be reached through a verified lift,
-because a verified lift always has a nilpotent Hessian and a collision, and the
-package says so where the controls stand. `(x + i y)^4` is a candidate for one
-of them: its Hessian is nilpotent, `Delta` of its square is zero, and its
-gradient map is invertible.
+**WP 4** implements `VanishingWitness` in `kellermap.vanishing`, against VAN-1
+to VAN-5, of which VAN-5 is stated and not checked. Each check has a negative
+control. Two of them cannot be reached through a verified lift, because a
+verified lift always has a nilpotent Hessian and a collision. So the two checks
+are module functions, and their controls call them on small forms that are not
+lifts. `(x + i y)^4` is one: its Hessian is nilpotent, `Delta` of its square is
+zero, and its gradient map is invertible. `Re (x + i y)^4` is the other, which
+passes depth one and fails depth two. The library's `laplacian` gives the 8 630
+of the paper on the forty-variable form, a third way beside the two scripts of
+work package 3. The thirty-eight-variable witness is a slow test.
 
 **WP 5** is the benchmark runner. The section below says what it measures
 first.

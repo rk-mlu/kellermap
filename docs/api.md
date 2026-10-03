@@ -32,6 +32,7 @@ what they do.
 - [The homogenization](#the-homogenization)
 - [Collision-hull compression](#collision-hull-compression)
 - [The symmetric lift](#the-symmetric-lift)
+- [The vanishing witness](#the-vanishing-witness)
 - [Finding candidates](#finding-candidates)
 - [Assembling a chain](#assembling-a-chain)
 - [Peeling a chain off a target](#peeling-a-chain-off-a-target)
@@ -46,7 +47,7 @@ what they do.
 ```python
 >>> import kellermap
 >>> kellermap.__all__
-['DEFAULT_VARIABLE_FACTORY', 'Candidate', 'Collision', 'CompressionStep', 'DescentStep', 'Dilation', 'ElementaryAutomorphism', 'ElementaryFactor', 'FixedVariableFactory', 'IndexedVariableFactory', 'LinearAutomorphism', 'LinearFactor', 'LinearStep', 'PeelOutcome', 'PolynomialMap', 'Provenance', 'Reduction', 'ReductionOutcome', 'ReductionContext', 'SearchOutcome', 'Step', 'SymmetricLiftStep', 'TranslationStep', 'Transposition', 'Transvection', 'Undo', 'VariableFactory', 'VerificationError', 'anchors', 'collision_hull', 'conjugate', 'diagonal_matching', 'enumerate_candidates', 'lowers_the_weight', 'multi_affine_steps', 'field_ring', 'over_field', 'peel', 'reduce_to_degree3', 'reduce_to_multi_affine', 'remaining_excess', 'remaining_weight', 'reserved_names', 'search', 'untargeted_candidates']
+['DEFAULT_VARIABLE_FACTORY', 'Candidate', 'Collision', 'CompressionStep', 'DescentStep', 'Dilation', 'ElementaryAutomorphism', 'ElementaryFactor', 'FixedVariableFactory', 'IndexedVariableFactory', 'LinearAutomorphism', 'LinearFactor', 'LinearStep', 'PeelOutcome', 'PolynomialMap', 'Provenance', 'Reduction', 'ReductionOutcome', 'ReductionContext', 'SearchOutcome', 'Step', 'SymmetricLiftStep', 'TranslationStep', 'Transposition', 'Transvection', 'Undo', 'VanishingWitness', 'VariableFactory', 'VerificationError', 'anchors', 'collision_hull', 'conjugate', 'diagonal_matching', 'enumerate_candidates', 'lowers_the_weight', 'multi_affine_steps', 'field_ring', 'over_field', 'peel', 'reduce_to_degree3', 'reduce_to_multi_affine', 'remaining_excess', 'remaining_weight', 'reserved_names', 'search', 'untargeted_candidates']
 
 ```
 
@@ -1303,6 +1304,68 @@ not affordable; SYM-7 carries the measurement.
 
 ---
 
+## The vanishing witness
+
+A lift together with a collision of its gradient map. By Theorem 3, part 4, of
+arXiv:2608.12543v3 the form `P` of such a lift is a counterexample to Zhao's
+Vanishing Conjecture when the source is cubic. `verify` checks the lift, the
+collision, the hypothesis `Delta^m(P^m) = 0` up to a depth, and
+`Delta(P^2) != 0`:
+
+```python
+>>> from kellermap import VanishingWitness
+>>> collided = examples.thompson24_homogeneous_collision()
+>>> compressed = CompressionStep.build(thompson, collided)
+>>> lifted = SymmetricLiftStep.build(compressed.target)
+>>> witness = VanishingWitness(
+...     lifted, lifted.transport(compressed.transport(collided))
+... )
+>>> witness.depth, lifted.target.dimension
+(2, 40)
+>>> witness.verify() is None
+True
+>>> witness.form == lifted.form
+True
+
+```
+
+The conclusion, `Delta^m(P^(m+1)) != 0` for infinitely many `m`, is VAN-5. It
+follows from the collision through the theorem and is not computed: no finite
+`m` would decide it.
+
+The depth is two unless the caller asks for more. Depth three needs `P^3`,
+which has more than three million monomials here. A depth above the number of
+variables checks nothing more, by Zhao's Theorem 4.3, and is refused:
+
+```python
+>>> VanishingWitness(lifted, witness.collision, depth=41)
+Traceback (most recent call last):
+    ...
+ValueError: The depth is 41. VAN-3 checks Delta^m(P^m) = 0 for m from one to the depth, so a depth below one checks nothing, and above the 40 variables of the lift it checks nothing that depth 40 does not (Zhao, Theorem 4.3).
+
+```
+
+The conjecture is about quartics, so a lift of a quadratic source is refused,
+although it verifies as a lift:
+
+```python
+>>> square = over_field(PolynomialMap((x1, x2), (x1 + x2**2, x2)))
+>>> quadratic = SymmetricLiftStep.build(square)
+>>> quadratic.verify() is None
+True
+>>> points = Collision(((0, 0, 0, 0), (1, 0, 0, 0)), (0, 0, 0, 0))
+>>> VanishingWitness(quadratic, points).verify()
+Traceback (most recent call last):
+    ...
+kellermap.errors.VerificationError: [VAN-1] The source of the lift has degree 2, so the form has degree 3. Part 4 of Theorem 3 and Zhao's conjecture are about the quartic a cubic source gives.
+
+```
+
+The two points are not a collision of anything, and they need not be: VAN-1 is
+checked before VAN-2.
+
+---
+
 ## The descent
 
 `DescentStep(source, index, left, right)` deletes a coordinate that two
@@ -1881,6 +1944,7 @@ True
 | `P` or `Q` that is not a polynomial over the source's ring | `ValueError` |
 | fewer than two collision points, or two equal ones | `ValueError` |
 | a collision whose points and image differ in length | `ValueError` |
+| a witness depth below one or above the number of variables | `ValueError` |
 | an obligation of `contracts.md` failing | `VerificationError` |
 | variables or components of the wrong type | `TypeError` |
 | a source or target of a search that is not a `PolynomialMap` | `TypeError` |

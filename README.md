@@ -72,7 +72,9 @@ record holds.
 - **Compression and the gradient form.** `CompressionStep` restricts a
   homogeneous map to the subspace its collision generates; `SymmetricLiftStep`
   turns the result into the gradient of a quartic over `k(i)`, which is the
-  object Zhao's Vanishing Conjecture is about.
+  object Zhao's Vanishing Conjecture is about. `VanishingWitness` holds that
+  quartic with a collision of its gradient map and checks what a finite
+  computation can check about the conjecture.
 - **The descent.** `DescentStep` deletes a coordinate that two elementary
   changes of determinant one have made triangular. It is the second of the two
   step types that *lower* a dimension, and the only one whose target may have a

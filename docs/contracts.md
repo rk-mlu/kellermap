@@ -54,7 +54,9 @@ whenever it is read, and the milestone paragraphs below carry the history.
 `docs/errata.md` records the stale one.
 
 **Milestone `0.8`, open.** The milestone adds `VanishingWitness`, VAN-1 to
-VAN-5, all marked `[0.8]` and none implemented yet.
+VAN-5, all marked `[0.8]`. Work package 4 implemented all of them but VAN-5,
+which is stated and not checked by design. The markers go with the close of
+the milestone.
 
 Two of the five want a reviewer's attention before the code exists. VAN-3 and
 VAN-4 cannot fail on a lift that verifies, because both follow from Theorem 3,
@@ -2167,13 +2169,20 @@ about quartics. A lift of a source of degree two gives a cubic form that
 witnesses nothing here. A lift of degree four or more gives a form this page
 has no theorem for.
 
+A lift that does not verify is reported as VAN-1, with the obligation of the
+lift that failed named in the message and attached as the cause. The
+implementation made this choice: a caller of the witness branches on the
+witness's obligations, and the lift's own is one step further down.
+
 **VAN-2 — The collision is a collision of the gradient map. [0.8]**
 `collision.verify(lift.target)` passes: the points are distinct and
 `id - grad(P)` sends them to one image.
 
 The witness does not require that the collision came from `lift.transport`. A
 collision found any other way witnesses the same thing, and the obligations of
-`Collision` check it the same way.
+`Collision` check it the same way. A failure is reported as VAN-2, with the
+COL obligation that failed in the message and as the cause, for the reason
+given under VAN-1.
 
 **VAN-3 — The hypothesis holds to the stated depth. [0.8]**
 `Delta^m(P^m) = 0` for `1 <= m <= depth`, checked as polynomial identities.
@@ -2190,7 +2199,10 @@ would be SYM-7, and at a smaller depth it is a truncation of it.
 The default depth is two because depth three needs `P^3`, which has more than
 three million monomials at forty variables. `docs/roadmap.md` has the
 measurement. A depth below one or above `n` is refused with a `ValueError`: the
-first checks nothing, and the second checks nothing more than depth `n`.
+first checks nothing, and the second checks nothing more than depth `n`. A
+depth that is not an integer, a `bool` included, is refused with a
+`TypeError`. Both happen when the witness is constructed, before anything is
+computed.
 
 **VAN-4 — `Delta(P^2)` is not zero. [0.8]** Checked as a polynomial.
 
@@ -2226,7 +2238,11 @@ The vanishing in VAN-3 and the value in VAN-4 cannot fail on a lift that
 verifies. Both follow from Theorem 3 and a verified source, so they are
 cross-checks of this library's arithmetic against Zhao's theorems. Their
 negative controls therefore cannot go through `verify()` on a real lift, in
-the same way as for HOM-12. `docs/roadmap.md` names the form they use.
+the same way as for HOM-12. The two checks are the functions
+`check_hypothesis` and `check_conclusion_at_one` in `kellermap.vanishing`, and
+`verify()` calls them. The controls call them directly: `X^4` fails VAN-3 at
+depth one, `Re (X + i Y)^4` passes depth one and fails depth two, and
+`(X + i Y)^4` passes VAN-3 at every depth and fails VAN-4.
 
 VAN-5 is not checked at all.
 
