@@ -1,0 +1,21 @@
+{
+  "items": {
+    "untargeted from alpoege": {
+      "counts": {
+        "BCWStep.build": 71,
+        "clone_ring": 3924,
+        "dimension reached": 13,
+        "examined": 7,
+        "steps": 7
+      }
+    },
+    "witness of thompson24": {
+      "counts": {
+        "clone_ring": 264,
+        "laplacian": 4,
+        "monomials of P": 350,
+        "monomials of P^2": 46695
+      }
+    }
+  }
+}

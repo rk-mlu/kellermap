@@ -1,5 +1,5 @@
 .PHONY: all format lint typecheck test test-slow test-all coverage docs \
-        reconstruct measure check check-full build-test sdist-test dist-complete \
+        reconstruct measure benchmark check check-full build-test sdist-test dist-complete \
         test-minimum \
         lock-check \
         dist-check release clean
@@ -85,6 +85,18 @@ measure:
 	uv run python scripts/measure_pipeline.py || echo "$$? measure_pipeline.py" >> $(RECORD)/measure
 	uv run python scripts/measure_pivot_search.py --budget 10 || echo "$$? measure_pivot_search.py" >> $(RECORD)/measure
 	uv run python scripts/gate_outcome.py measure --expect "$(EXPECT_MEASURE)"
+
+# The benchmark runner of milestone 0.8. Not a gate and not in the release
+# chain: it runs every item, which takes minutes, and writes a record with the
+# machine and the date under .benchmarks/, which git ignores. Times are not
+# kept in the repository. Compare two records with
+# `python scripts/benchmark.py --compare OLD NEW`. The counts of the cheap
+# items are a gate of the suite, against scripts/benchmark_counts.json.
+BENCHMARKS = .benchmarks
+
+benchmark:
+	mkdir -p $(BENCHMARKS)
+	uv run python scripts/benchmark.py --output $(BENCHMARKS)/$$(date +%Y-%m-%d-%H%M)-$$(hostname).json
 
 # --------------------------------------------------------------------------
 # Collected targets

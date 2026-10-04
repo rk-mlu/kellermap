@@ -3440,8 +3440,11 @@ passes depth one and fails depth two. The library's `laplacian` gives the 8 630
 of the paper on the forty-variable form, a third way beside the two scripts of
 work package 3. The thirty-eight-variable witness is a slow test.
 
-**WP 5** is the benchmark runner. The section below says what it measures
-first.
+**WP 5** is the benchmark runner, `scripts/benchmark.py` and `make benchmark`.
+The section below says what it records and what is a gate. The same package
+writes down in `AGENTS.md` two practices this milestone needed: the coverage
+run in two halves, and new probes run alone against the files that hold their
+controls.
 
 ## A benchmark runner
 
@@ -3459,6 +3462,29 @@ document runtimes. So the runner records machine-independent counts first:
 monomials at each stage, examined maps of a search, calls of the operations
 that dominate. Times are recorded beside them with the date and the machine,
 and compared only on one machine.
+
+What work package 5 built, with the maintainer's agreement:
+
+- **Five items**, each run in a fresh interpreter, because the library caches
+  on objects and a count taken after other work could depend on it. The walk
+  without a target from Alpoege's map, the forty-variable witness, and the
+  three chains of the pipeline as far as their witnesses.
+- **Counts:** dimensions and monomials at the stages, the maps the walk
+  examines, and the calls of `clone_ring`, `BCWStep.build` and `laplacian`.
+  The calls are counted by wrappers that the runner puts in place and takes out
+  again, so the library carries no counting code.
+- **A record** in JSON with the header of `scripts/_report.py`. `make benchmark`
+  writes it under `.benchmarks/`, which git ignores, so times stay out of the
+  repository.
+- **A comparison** of two records, which fails on any changed count and only
+  reports times, and those only when both come from one machine.
+- **A reference** of the counts of the two cheap items, in
+  `scripts/benchmark_counts.json`. `tests/test_scripts.py` takes them again and
+  compares, so a change that doubles the calls of `clone_ring` on the walk fails
+  the suite on any machine. The reference carries no time.
+
+The counts were the same under two hash seeds, which is what makes them a
+property of the code and not of the run.
 
 ## What the old list had that is done
 

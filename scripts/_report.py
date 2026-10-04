@@ -61,6 +61,24 @@ def now() -> str:
     return f"{moment:%Y-%m-%d %H:%M} {moment:%Z} (UTC{moment:%z})"
 
 
+def facts() -> dict[str, str]:
+    """Return what the header prints, as data, for a record that is written out.
+
+    ``scripts/benchmark.py`` stores this beside its figures. A time from a
+    record without it could not be compared with any other.
+    """
+    return {
+        "started": now(),
+        "machine": platform.node(),
+        "platform": platform.platform(),
+        "processors": str(os.cpu_count()),
+        "memory": f"{installed_memory():.1f} GB",
+        "python": platform.python_version(),
+        "sympy": installed("sympy"),
+        "kellermap": installed("kellermap"),
+    }
+
+
 def describe_the_run(asked: str | None = None) -> None:
     """Print the machine, the date and the versions, before anything is spent.
 

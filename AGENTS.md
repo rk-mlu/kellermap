@@ -152,6 +152,16 @@ gives `Error 1`. In both cases `make` itself exits with 2. The source archive la
 `tests/data.py`, so from the archive three scripts are not checked.
 `sdist-test` runs both targets there and requires exactly those three.
 
+`make benchmark` is neither a gate nor in the release chain. It runs every
+item of `scripts/benchmark.py`, in minutes, and writes a record with the
+machine and the date under `.benchmarks/`, which git ignores. Two records are
+compared with `python scripts/benchmark.py --compare OLD NEW`, which fails on a
+changed count and only reports times, and those only when both records come
+from one machine. The counts of the cheap items are a gate of the suite,
+against `scripts/benchmark_counts.json`. A change that is meant to alter one
+rewrites that file with `--reference`, and its commit message says why the
+count moved.
+
 This list is not the authority. The Makefile is, and two tests in
 `tests/test_documentation.py` hold the two against each other: every command
 named here has to be one a target runs, and every `scripts/reconstruct_*.py`
@@ -186,6 +196,14 @@ than it keeps, and a marked test has to be worth running in `pytest -m ""`
 rather than parked there -- is the one to apply the next time a marker is
 wanted.
 
+Since milestone 0.8 the coverage run also passes the assistant's limit per
+command, and a run started in the background is ended with the command that
+started it, without a report. The assistant therefore runs it in two halves:
+the first part of `tests/` with `--cov --cov-fail-under=0`, the rest of
+`tests/` and `docs/` with `--cov --cov-append` and the threshold. That is the
+same measurement over the same tests, taken in two pieces, and the commit
+message says that it was split.
+
 `pytest -m ""` moves because the slow markers are most of it: three tests were
 the bulk of it before `0.7.0rc6` and a fourth was added there. The assistant
 runs the fast suite through `--cov` and says so; a claim about the slow markers
@@ -197,6 +215,12 @@ with the suite at once, and it is past what the assistant's tool budget
 reliably allows. A sweep cut off in the middle reports nothing about the probes
 after the cut. Milestone 0.6 has the case: a sweep was reaped after twenty-two
 of forty-one and the remaining nineteen had to be run again separately.
+
+What the assistant runs instead, when a change adds probes, is the new probes
+alone, each in a copy of the tree, against the test files that hold their
+controls. A probe caught there is caught by the sweep, which runs those files
+too. A probe missed there may still be caught elsewhere, so a miss is reported
+and not concluded from. The commit message names which test files were used.
 
 ### Timings are not figures
 

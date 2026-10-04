@@ -36,3 +36,6 @@ experiments/
 # The record make reconstruct and make measure keep between their lines
 .gate-outcome/
 
+# The records make benchmark writes; times are not kept in the repository
+.benchmarks/
+

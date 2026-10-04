@@ -20,8 +20,11 @@ import re
 import sys
 from pathlib import Path
 from types import ModuleType
+from typing import Any
 
 import pytest
+
+from kellermap import examples
 
 ROOT = Path(__file__).resolve().parent.parent
 
@@ -631,12 +634,12 @@ def test_the_cost_script_runs(
 
 MEASUREMENTS = sorted(
     {path.name for path in (ROOT / "scripts").glob("measure_*.py")}
-    | {"untargeted_space.py"}
+    | {"untargeted_space.py", "benchmark.py"}
 )
-"""Every script that measures: the ``measure_*`` scripts and what ``make
-measure`` runs. ``test_documentation.py`` holds the second half against the
-Makefile; here the list is written out, so that a new measurement that is not
-called ``measure_*`` has to be added by hand."""
+"""Every script that measures: the ``measure_*`` scripts, what ``make
+measure`` runs, and the benchmark runner. ``test_documentation.py`` holds the
+second of these against the Makefile; here the list is written out, so that a
+new measurement that is not called ``measure_*`` has to be added by hand."""
 
 NEEDS_DATA = ("reconstruct_alpoege19", "reconstruct_macfarlane13", "untargeted_space")
 """The scripts that read ``tests/data.py``, which the source archive lacks."""
@@ -798,3 +801,101 @@ def test_a_record_is_opened_read_and_refused_when_missing(
 
     assert outcome.main(["measure", "--start"]) == 0
     assert outcome.main(["measure"]) == 0
+
+
+# --------------------------------------------------------------------------
+# The benchmark runner, scripts/benchmark.py, milestone 0.8.
+# --------------------------------------------------------------------------
+
+
+@pytest.fixture(scope="module")
+def benchmark() -> ModuleType:
+    return load("benchmark")
+
+
+def test_the_reference_counts_still_hold(benchmark: ModuleType) -> None:
+    """The counts of the cheap items, each in a fresh interpreter.
+
+    This is what makes a cost regression visible without a time: twice the
+    calls of ``clone_ring`` on the walk from Alpoege's map fails here on any
+    machine. A change meant to alter a count rewrites the reference with
+    ``python scripts/benchmark.py --reference``, and the diff shows it.
+    """
+    import json
+
+    reference = json.loads(benchmark.REFERENCE.read_text(encoding="utf-8"))
+    taken = benchmark.record("reference")
+
+    assert sorted(taken["items"]) == sorted(reference["items"])
+    assert (
+        benchmark.differences(
+            benchmark.counts_of(reference), benchmark.counts_of(taken)
+        )
+        == []
+    )
+
+
+def test_the_reference_holds_exactly_the_reference_items(benchmark: ModuleType) -> None:
+    import json
+
+    reference = json.loads(benchmark.REFERENCE.read_text(encoding="utf-8"))
+    marked = {item.name for item in benchmark.ITEMS if item.reference}
+
+    assert set(reference["items"]) == marked
+    assert "seconds" not in str(reference) and "header" not in reference
+
+
+def test_a_changed_count_is_reported(benchmark: ModuleType) -> None:
+    """The negative control: one count higher, one missing, one new."""
+    old = {"walk": {"clone_ring": 10, "examined": 7}, "only old": {"a": 1}}
+    new = {"walk": {"clone_ring": 11, "steps": 7}, "only new": {"b": 2}}
+
+    assert benchmark.differences(old, new) == [
+        "walk: clone_ring was 10, is 11",
+        "walk: examined was 7, is absent",
+        "walk: steps was absent, is 7",
+    ]
+    assert benchmark.differences(old, old) == []
+
+
+def record_with(machine: str | None, seconds: float, count: int) -> dict[str, Any]:
+    entry: dict[str, Any] = {"counts": {"n": count}, "seconds": seconds}
+    header = None if machine is None else {"machine": machine}
+    return {"header": header, "items": {"walk": entry}}
+
+
+def test_times_are_compared_only_on_one_machine(
+    benchmark: ModuleType, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """Times are reported and never fail; counts fail."""
+    assert benchmark.compare(record_with("a", 1.0, 3), record_with("a", 9.0, 3)) == 0
+    assert "1.00 s ->     9.00 s" in capsys.readouterr().out
+
+    assert benchmark.compare(record_with("a", 1.0, 3), record_with("b", 1.0, 3)) == 0
+    assert "different machines" in capsys.readouterr().out
+
+    assert benchmark.compare(record_with(None, 0.0, 3), record_with("a", 1.0, 3)) == 0
+    assert "has none" in capsys.readouterr().out
+
+    assert benchmark.compare(record_with("a", 1.0, 3), record_with("a", 1.0, 4)) == 1
+    assert "1 counts changed" in capsys.readouterr().out
+
+
+def test_counting_counts_and_puts_everything_back(benchmark: ModuleType) -> None:
+    """Every patched reference is restored, so a run leaves the library as it was."""
+    import kellermap.context
+    import kellermap.polynomial_map
+    from kellermap.bcw import BCWStep
+
+    original = kellermap.polynomial_map.clone_ring
+    build = BCWStep.__dict__["build"]
+    ring = examples.alpoege().ring
+
+    with benchmark.counting() as calls:
+        kellermap.polynomial_map.clone_ring(ring)
+        kellermap.context.clone_ring(ring)
+
+    assert calls["clone_ring"] == 2
+    assert kellermap.polynomial_map.clone_ring is original
+    assert kellermap.context.clone_ring is original
+    assert BCWStep.__dict__["build"] is build
