@@ -17,6 +17,7 @@ from __future__ import annotations
 import datetime
 import os
 import platform
+import subprocess
 from importlib.metadata import PackageNotFoundError, version
 from pathlib import Path
 
@@ -61,6 +62,38 @@ def now() -> str:
     return f"{moment:%Y-%m-%d %H:%M} {moment:%Z} (UTC{moment:%z})"
 
 
+def tree() -> str:
+    """Return the state of the working tree, as ``git describe`` gives it.
+
+    The version of the package moves only when a milestone closes, so two
+    records from different work packages carry the same version. The tag of
+    the last work package and the number of commits since it tell them apart,
+    and ``-dirty`` says that the tree had uncommitted changes. An unpacked
+    source archive has no repository of its own, and says so.
+    """
+
+    def git(*arguments: str) -> str | None:
+        try:
+            done = subprocess.run(
+                ["git", "-C", str(ROOT), *arguments],
+                capture_output=True,
+                text=True,
+                check=False,
+            )
+        except OSError:
+            return None
+        return done.stdout.strip() if done.returncode == 0 else None
+
+    # git looks upwards for a repository. The source archive is unpacked inside
+    # the repository by sdist-test, and without this it would report the
+    # repository around it as its own.
+    top = git("rev-parse", "--show-toplevel")
+    if top is None or Path(top).resolve() != ROOT.resolve():
+        return "not a git tree"
+
+    return git("describe", "--tags", "--dirty", "--always") or "not a git tree"
+
+
 def facts() -> dict[str, str]:
     """Return what the header prints, as data, for a record that is written out.
 
@@ -76,6 +109,7 @@ def facts() -> dict[str, str]:
         "python": platform.python_version(),
         "sympy": installed("sympy"),
         "kellermap": installed("kellermap"),
+        "tree": tree(),
     }
 
 
@@ -99,6 +133,7 @@ def describe_the_run(asked: str | None = None) -> None:
         f"Versions Python {platform.python_version()}, "
         f"SymPy {installed('sympy')}, kellermap {installed('kellermap')}"
     )
+    print(f"Tree     {tree()}")
     if asked is not None:
         print(f"Asked    {asked}")
     print(flush=True)

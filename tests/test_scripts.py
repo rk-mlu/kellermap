@@ -704,6 +704,33 @@ def test_the_header_names_the_machine_the_date_and_the_versions(
     assert "UTC" in printed
     assert "Python" in printed and "SymPy" in printed and "kellermap" in printed
     assert "Asked    budget 1 s" in printed
+    assert f"Tree     {report.tree()}" in printed
+
+
+def test_the_header_names_the_state_of_the_tree(
+    report: ModuleType, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    """In a repository the tag and the commits since it; elsewhere, a sentence.
+
+    The negative control is a directory that is not a repository, which is
+    what an unpacked source archive is, and a machine without ``git``.
+    """
+    in_place = report.tree()
+    assert in_place and "\n" not in in_place
+
+    monkeypatch.setattr(report, "ROOT", tmp_path)
+    assert report.tree() == "not a git tree"
+
+    inside = ROOT / "tests"
+    monkeypatch.setattr(report, "ROOT", inside)
+    assert report.tree() == "not a git tree", "a subdirectory is not its own tree"
+
+    def no_git(*arguments: object, **keywords: object) -> None:
+        raise FileNotFoundError("git")
+
+    monkeypatch.setattr(report.subprocess, "run", no_git)
+    assert report.tree() == "not a git tree"
+    assert report.facts()["tree"] == "not a git tree"
 
 
 @pytest.mark.parametrize("script", NEEDS_DATA)

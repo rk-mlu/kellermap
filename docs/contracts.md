@@ -21,9 +21,10 @@ description of the current code, and a review of an unfinished milestone should
 read it as such. Obligations without a marker are implemented.
 
 **Status:** every obligation on this page without a milestone marker is
-implemented and the test suite covers every statement of the package, with one
-exception that says so where it stands: SYM-7 is a consequence this library
-states and does not compute. Where
+implemented and the test suite covers every statement of the package, with two
+exceptions that say so where they stand: SYM-7 and VAN-5 are consequences this
+library states and does not compute. SYM-7 is checked in part, by VAN-3 to the
+depth a witness names. Where
 the implementation forced a change, this page was amended deliberately and the
 amendment is visible in the wording — the clearest cases are COL-4 and BCW-3,
 which moved from obligations of `verify()` to constructor invariants, LIN-2,
@@ -53,14 +54,14 @@ number maintained in one place and checked in none does. What it says now holds
 whenever it is read, and the milestone paragraphs below carry the history.
 `docs/errata.md` records the stale one.
 
-**Milestone `0.8`, open.** The milestone adds `VanishingWitness`, VAN-1 to
-VAN-5, all marked `[0.8]`. Work package 4 implemented all of them but VAN-5,
-which is stated and not checked by design. The markers go with the close of
-the milestone.
+**Milestone `0.8`, closed.** The milestone added `VanishingWitness`, VAN-1 to
+VAN-5, the witness to Zhao's Vanishing Conjecture that the symmetric lift
+provides. Their `[0.8]` markers are gone with the close.
 
-Two of the five want a reviewer's attention before the code exists. VAN-3 and
-VAN-4 cannot fail on a lift that verifies, because both follow from Theorem 3,
-so they are cross-checks against Zhao's theorems rather than checks of data.
+Two of the five want a reviewer's attention. VAN-3 and VAN-4 cannot fail on a
+lift that verifies, because both follow from Theorem 3, so they are
+cross-checks against Zhao's theorems rather than checks of data, and their
+negative controls call the two check functions on forms that are not lifts.
 And VAN-5 is the first obligation on this page that no computation could
 finish, as distinct from SYM-7, which is one that did not.
 
@@ -2160,7 +2161,7 @@ not a quartic.
 Write `P` for `form`, `n` for `lift.target.dimension` and `Delta` for the
 Laplacian in the variables of the lift.
 
-**VAN-1 — The lift verifies, and its source is cubic. [0.8]**
+**VAN-1 — The lift verifies, and its source is cubic.**
 `lift.verify()` passes, and the displacement of `lift.source` has degree three. `P` is then a
 homogeneous quartic by SYM-6.
 
@@ -2174,7 +2175,7 @@ lift that failed named in the message and attached as the cause. The
 implementation made this choice: a caller of the witness branches on the
 witness's obligations, and the lift's own is one step further down.
 
-**VAN-2 — The collision is a collision of the gradient map. [0.8]**
+**VAN-2 — The collision is a collision of the gradient map.**
 `collision.verify(lift.target)` passes: the points are distinct and
 `id - grad(P)` sends them to one image.
 
@@ -2184,7 +2185,7 @@ collision found any other way witnesses the same thing, and the obligations of
 COL obligation that failed in the message and as the cause, for the reason
 given under VAN-1.
 
-**VAN-3 — The hypothesis holds to the stated depth. [0.8]**
+**VAN-3 — The hypothesis holds to the stated depth.**
 `Delta^m(P^m) = 0` for `1 <= m <= depth`, checked as polynomial identities.
 
 Zhao's Theorem 4.3: the Hessian of `P` is nilpotent if and only if this holds
@@ -2204,7 +2205,7 @@ depth that is not an integer, a `bool` included, is refused with a
 `TypeError`. Both happen when the witness is constructed, before anything is
 computed.
 
-**VAN-4 — `Delta(P^2)` is not zero. [0.8]** Checked as a polynomial.
+**VAN-4 — `Delta(P^2)` is not zero.** Checked as a polynomial.
 
 By Zhao's Corollary 3.9, a Hessian-nilpotent `P` with `Delta(P^2) = 0` has
 `Q_t = P`. The formal inverse of `z - grad(P)` is then `z + grad(P)`, which is
@@ -2217,7 +2218,7 @@ The number of monomials of `Delta(P^2)` is not an obligation. It depends on the
 coordinates. For the forty-variable lift of Thompson's map it is 8 630, the
 figure Section 4 of arXiv:2608.12543v3 states, and the gates hold it there.
 
-**VAN-5 — The conclusion fails, and it is not checked. [0.8]**
+**VAN-5 — The conclusion fails, and it is not checked.**
 `Delta^m(P^(m+1)) != 0` for infinitely many `m`. This follows from VAN-1 and
 VAN-2 by Theorem 3, part 4, of arXiv:2608.12543v3, which rests on Zhao's
 Theorems 3.4 and 4.3. `verify()` does not compute it.

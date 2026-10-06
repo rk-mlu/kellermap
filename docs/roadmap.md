@@ -3486,6 +3486,33 @@ What work package 5 built, with the maintainer's agreement:
 The counts were the same under two hash seeds, which is what makes them a
 property of the code and not of the run.
 
+## Where the milestone stands
+
+All five packages are done. WP 1 set out the plan and the obligations, WP 2
+made the scripts report what they lack and when they ran, WP 3 put the
+Laplacian figures under gates, WP 4 implemented the witness, and WP 5 added
+the benchmark runner.
+
+The witness is in the library and verifies on the forty-variable form of the
+paper and on the thirty-eight-variable form of this project. On the first, the
+library's Laplacian and two scripts reach the paper's 8 630 by three methods.
+On `paddy4`, the forty-variable form passes depth three of the hypothesis, so
+the parts of degrees two, four and six of the determinant of its lift vanish.
+
+Three things stay as they are, and the milestone does not count them as
+undone. VAN-5 is stated and not checked, because no finite computation could
+check it. SYM-7 is checked to a depth and not in full: depth forty would need
+`P^40`. And depth three is a deliberate run and not the default, at about four
+gigabytes.
+
+The first record of `make benchmark` was taken on `paddy4` on 4 October 2026,
+before the version moved. A record after the release should agree with it in
+every count.
+
+`0.8.0rc1` is to be tagged from here. The `[0.8]` markers are gone from
+`docs/contracts.md`, and the milestone paragraph there says which of the five
+new obligations a reviewer should weigh differently.
+
 ## What the old list had that is done
 
 Independent certificate replay: eight `reconstruct_*` scripts, none of which
