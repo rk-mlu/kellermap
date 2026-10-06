@@ -36,15 +36,16 @@ machine-checkable certificate.
 
 ## Project Status
 
-Current version: **0.7.0**
+Current version: **0.8.0rc1**
 
 DOI: [10.5281/zenodo.22924138](https://doi.org/10.5281/zenodo.22924138). That
-is the DOI of the version above, reserved on Zenodo before the release.
-Through the thirteen candidates for `0.7.0` it named `0.6.0` instead, because a
-release candidate is not deposited and has none of its own; `CITATION.cff`
-carries the same number and a test holds the two against each other. The
-sentence used to name the candidate it was written for and went stale at the
-next one, which is why it names none.
+is the DOI of the newest release, reserved on Zenodo before that release. A
+release candidate is not deposited and has none of its own, so while the
+candidates for a release run, the DOI names the release before them: `0.6.0`
+through the candidates for `0.7.0`, and `0.7.0` through those for `0.8.0`.
+`CITATION.cff` carries the same number and a test holds the two against each
+other. The sentence used to name the candidate it was written for and went
+stale at the next one, which is why it names none.
 
 Concept DOI: [10.5281/zenodo.22299351](https://doi.org/10.5281/zenodo.22299351).
 That one resolves to the newest version. Cite it for the software, and the

@@ -13,11 +13,13 @@ authors:
     country: DE
 license: MIT
 repository-code: "https://github.com/rk-mlu/kellermap"
-version: 0.7.0
-# The DOI of the version above, reserved on Zenodo before the release. It
-# carried the DOI of 0.6.0 while the candidates for 0.7.0 ran, because a
-# release candidate is not deposited and has none of its own. The README says
-# the same in prose, and a test holds the two against each other.
+version: 0.8.0rc1
+# The DOI of the newest release, reserved on Zenodo before that release. A
+# release candidate is not deposited and has none of its own, so while the
+# candidates for a release run, this names the release before them: it named
+# 0.6.0 through the candidates for 0.7.0, and names 0.7.0 through those for
+# 0.8.0. The README says the same in prose, and a test holds the two against
+# each other.
 doi: 10.5281/zenodo.22924138
 keywords:
   - Keller maps

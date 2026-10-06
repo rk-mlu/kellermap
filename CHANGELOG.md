@@ -4,6 +4,78 @@ Notable changes per release. The milestone plan and its reasoning live in
 `docs/roadmap.md`, the binding obligations of the verification surface in
 `docs/contracts.md`.
 
+## 0.8.0rc1
+
+The milestone added the last link of the chain: a witness to Zhao's Vanishing
+Conjecture, built from the symmetric lift, with the finite checks that can be
+made on it. It also made the scripts say what they lack and when they ran, and
+added a runner that compares the cost of the pipeline across releases.
+
+### The witness
+
+`VanishingWitness` takes a `SymmetricLiftStep` of a cubic homogeneous Keller
+map, a collision of its gradient map, and a depth, VAN-1 to VAN-5. By Theorem 3,
+part 4, of arXiv:2608.12543v3 its form is a counterexample to the conjecture.
+`verify()` checks the lift and the collision, the hypothesis
+`Delta^m(P^m) = 0` up to the depth, two by default, and `Delta(P^2) != 0`. The
+conclusion, `Delta^m(P^(m+1)) != 0` for infinitely many `m`, is VAN-5. It is
+stated and not computed, because no finite `m` decides it.
+
+VAN-3 and VAN-4 cannot fail on a lift that verifies. They are cross-checks of
+this library's arithmetic against Zhao's Theorem 4.3 and Corollary 3.9, and
+their negative controls call the two check functions on forms that are not
+lifts. Depth `k` of VAN-3 is the vanishing of the parts of degrees `2` to `2k`
+of the determinant of the lift, so it checks SYM-7 to that depth. That step is
+this project's derivation and is marked as one.
+
+### Figures
+
+`Delta(P^2)` of the forty-variable lift of Thompson's map has 8 630 monomials,
+the figure Section 4 of the paper states. The library's `laplacian`,
+`scripts/reconstruct_prellberg40.py` without the library, and
+`scripts/measure_pipeline.py` reach it by three methods. The three chains of
+the pipeline give 8 999, 11 446 and 12 709 for their own lifts, which have
+nothing published to be compared with. On the maintainer's machine the
+forty-variable form passes depth three: `P^3` has 3 369 739 monomials and
+`Delta^3(P^3) = 0`.
+
+### Scripts
+
+From the source archive, which is the Zenodo deposit, three scripts failed in
+three different ways for lack of `tests/data.py`. They now report "not
+checked" and exit with 3. `make reconstruct` and `make measure` run every
+script and end with a summary, and `sdist-test` runs both from the archive and
+requires exactly those three not to be checked.
+
+Every measurement prints its machine, its date, the versions and the state of
+the working tree, through `scripts/_report.py`.
+
+`scripts/benchmark.py` and `make benchmark` record counts that do not depend
+on the machine, and times beside them. A comparison of two records fails on a
+changed count and only reports times, and those only for one machine. The
+counts of the two cheap items are a gate of the suite.
+
+### Corrected
+
+The roadmap had stated the Vanishing Conjecture with its hypothesis in place
+of its conclusion, and set a target that cannot exist. `docs/errata.md`
+records it. A roadmap delivered within work package 1 carried a whole
+milestone twice; it never reached the repository, and a test now requires
+every top-level heading of that page to occur once.
+
+### Evidence
+
+78 mutation probes, seven of them new for the witness. Five tables in the
+documentation are held against the scripts that recompute them row by row; the
+new one is the Laplacian table, whose first row comes from the script without
+the library and the others from the one with it.
+
+`docs/errata.md` holds 28 entries at this release. The new one is about a
+theorem stated without its source at hand.
+
+[To be completed after the audits: the release candidates, the audits, and
+what they found.]
+
 ## 0.7.0
 
 The milestone finished the half of the Reduction Theorem the homogenization
