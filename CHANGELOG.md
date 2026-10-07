@@ -4,7 +4,7 @@ Notable changes per release. The milestone plan and its reasoning live in
 `docs/roadmap.md`, the binding obligations of the verification surface in
 `docs/contracts.md`.
 
-## 0.8.0rc1
+## 0.8.0rc2
 
 The milestone added the last link of the chain: a witness to Zhao's Vanishing
 Conjecture, built from the symmetric lift, with the finite checks that can be
@@ -19,7 +19,10 @@ part 4, of arXiv:2608.12543v3 its form is a counterexample to the conjecture.
 `verify()` checks the lift and the collision, the hypothesis
 `Delta^m(P^m) = 0` up to the depth, two by default, and `Delta(P^2) != 0`. The
 conclusion, `Delta^m(P^(m+1)) != 0` for infinitely many `m`, is VAN-5. It is
-stated and not computed, because no finite `m` decides it.
+derived from the verified lift and the collision and not computed. Values at
+small `m` do not decide it. A non-zero value beyond the bound on the degree of
+a polynomial inverse would, but at forty variables that bound has nineteen
+digits.
 
 VAN-3 and VAN-4 cannot fail on a lift that verifies. They are cross-checks of
 this library's arithmetic against Zhao's Theorem 4.3 and Corollary 3.9, and
@@ -70,8 +73,9 @@ documentation are held against the scripts that recompute them row by row; the
 new one is the Laplacian table, whose first row comes from the script without
 the library and the others from the one with it.
 
-`docs/errata.md` holds 28 entries at this release. The new one is about a
-theorem stated without its source at hand.
+`docs/errata.md` holds 29 entries at this release. The two new ones are about
+the conjecture: a theorem stated without its source at hand, and then a claim
+about it stated more strongly than its own figure allowed.
 
 [To be completed after the audits: the release candidates, the audits, and
 what they found.]

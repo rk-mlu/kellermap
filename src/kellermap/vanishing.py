@@ -11,9 +11,11 @@ What this module checks, and what it does not
 ---------------------------------------------
 
 The witness is the lift and a collision of its gradient map. Its strength
-comes from those two and from the theorems, not from a computation, because no
-finite computation decides the conclusion: values at finitely many ``m`` are
-consistent with the conjecture. ``docs/roadmap.md`` under "Version 0.8" says
+comes from those two and from the theorems, not from a computation. The values
+of ``Delta^m(P^(m+1))`` at small ``m`` do not decide eventual vanishing. A
+non-zero value beyond the bound on the degree of a polynomial inverse would
+refute it, but that bound is ``(3^(n-1) - 3) / 2``, and the computation is out
+of reach in these dimensions. ``docs/roadmap.md`` under "Version 0.8" says
 what each finite check is worth.
 
 ``verify()`` checks the lift and the collision, which can fail on supplied

@@ -62,8 +62,10 @@ Two of the five want a reviewer's attention. VAN-3 and VAN-4 cannot fail on a
 lift that verifies, because both follow from Theorem 3, so they are
 cross-checks against Zhao's theorems rather than checks of data, and their
 negative controls call the two check functions on forms that are not lifts.
-And VAN-5 is the first obligation on this page that no computation could
-finish, as distinct from SYM-7, which is one that did not.
+And VAN-5 is the first obligation on this page whose deciding computation is
+out of reach by construction and not by measurement: the first index that
+could decide it has eighteen digits at the smallest witness, while SYM-7 is a computation that did not
+finish in eight hours.
 
 **Milestone `0.7`, closed.** The milestone finished Theorem 2.1(b), HOM-11 and
 HOM-12 for the property and UNT-12 for the walk that reaches it, and added the
@@ -2223,11 +2225,19 @@ figure Section 4 of arXiv:2608.12543v3 states, and the gates hold it there.
 VAN-2 by Theorem 3, part 4, of arXiv:2608.12543v3, which rests on Zhao's
 Theorems 3.4 and 4.3. `verify()` does not compute it.
 
-It is left out for a different reason than SYM-7. SYM-7 is a finite statement
-that did not finish. VAN-5 cannot be finished. Non-zero values at finitely many
-`m` are consistent with the conjecture. Zhao's Proposition 7.4 puts every `m`
-that could decide it above `(3^(n-1) - 3) / 2`, which at `n = 38` has eighteen
-digits.
+It is left out for a different reason than SYM-7. SYM-7 is a computation that
+was measured and did not finish. VAN-5 is one that is out of reach before any
+measurement. Values at small `m` do not decide eventual vanishing. A non-zero
+value at one `m` above `B_n = (3^(n-1) - 3) / 2` would refute it, because a
+polynomial inverse of a cubic map has degree at most `3^(n-1)` (Bass, Connell
+and Wright, Chapter I, Corollary (1.4), p. 292), and `Delta^m(P^(m+1))`
+contributes a term of degree `2m + 3` to the inverse. That is the argument of
+Zhao's proof of Proposition 7.4. At `n = 38`, `B_n` has eighteen digits.
+VAN-5 is therefore derived from the verified lift and the collision.
+
+Until `0.8.0rc2` this paragraph said that VAN-5 cannot be finished. An audit
+of `0.8.0rc1` showed that this is too strong, and `docs/errata.md` records
+it.
 
 ### Which of these can fail on supplied data
 

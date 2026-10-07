@@ -3285,12 +3285,23 @@ inverse, and `id - grad(P)` would be injective.
 
 ## What a finite computation can and cannot show
 
-No finite `m` decides the conclusion. A non-zero value at finitely many `m` is
-consistent with the conjecture, which only asks for zeros from some point on.
-Zhao's Proposition 7.4 says where that point would lie: under the Jacobian
-Conjecture, `Delta^m(P^(m+1)) = 0` for every `m > (3^(n-1) - 3) / 2`. The
-values that could matter all lie beyond that bound. At `n = 38` it is a number
-with eighteen digits, and at `n = 40` one with nineteen.
+The values at small `m` do not decide the conclusion. A non-zero value at a
+small `m` is consistent with the conjecture, which only asks for zeros from
+some point on. Zhao's Proposition 7.4 says where that point would lie: under
+the Jacobian Conjecture, `Delta^m(P^(m+1)) = 0` for every
+`m > B_n = (3^(n-1) - 3) / 2`.
+
+The same argument makes one finite value decisive. The formal inverse of
+`z - grad(P)` is `z + grad(Q)`, and `Q` is a sum of the `Delta^m(P^(m+1))` up
+to constants. The term of index `m` is homogeneous of degree `2m + 4`, so its
+gradient has degree `2m + 3`, and different indices cannot cancel. A
+polynomial inverse of a cubic map has degree at most `3^(n-1)` (Bass, Connell
+and Wright, Chapter I, Corollary (1.4), p. 292). So a non-zero value at a
+single `m > B_n` refutes eventual vanishing. At `n = 38`, `B_n` is a number
+with eighteen digits, and at `n = 40` one with nineteen. The computation is out
+of reach, which is why VAN-5 is derived and not computed. An audit of
+`0.8.0rc1` pointed this out; until then this section said that no finite `m`
+decides the conclusion, which is too strong.
 
 Three kinds of finite statement remain, and they are worth different things.
 
@@ -3500,8 +3511,8 @@ On `paddy4`, the forty-variable form passes depth three of the hypothesis, so
 the parts of degrees two, four and six of the determinant of its lift vanish.
 
 Three things stay as they are, and the milestone does not count them as
-undone. VAN-5 is stated and not checked, because no finite computation could
-check it. SYM-7 is checked to a depth and not in full: depth forty would need
+undone. VAN-5 is stated and not checked, because the computation that could
+check it starts at an index with at least eighteen digits. SYM-7 is checked to a depth and not in full: depth forty would need
 `P^40`. And depth three is a deliberate run and not the default, at about four
 gigabytes.
 
@@ -3509,9 +3520,14 @@ The first record of `make benchmark` was taken on `paddy4` on 4 October 2026,
 before the version moved. A record after the release should agree with it in
 every count.
 
-`0.8.0rc1` is to be tagged from here. The `[0.8]` markers are gone from
-`docs/contracts.md`, and the milestone paragraph there says which of the five
-new obligations a reviewer should weigh differently.
+`0.8.0rc1` was tagged from here. Its audit found no defect in the witness and
+three things to correct: the claim that no finite computation could decide the
+conclusion, a comparison of benchmark records with no item in common that
+reported agreement, and a record dated at its end instead of its start.
+`0.8.0rc2` carries the corrections, and `docs/errata.md` the first of them.
+The `[0.8]` markers are gone from `docs/contracts.md`, and the milestone
+paragraph there says which of the five new obligations a reviewer should weigh
+differently.
 
 ## What the old list had that is done
 

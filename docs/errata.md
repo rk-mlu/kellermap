@@ -745,11 +745,12 @@ compute `Delta^m(P^m)` for the smallest `m` that decides it.
 equivalent to the nilpotent Hessian (Zhao, Theorem 4.3). The conclusion is
 about the other sequence: `Delta^m(P^(m+1)) = 0` for all large `m`. For a
 Hessian-nilpotent `P` the first sequence vanishes by the theorem, so computing
-it could never have shown a counterexample. For the second, no finite `m`
-decides anything: a counterexample needs non-zero values for infinitely many
-`m`, and Theorem 3, part 4, of arXiv:2608.12543 gets that from the collision
-and not from a computation. So "the smallest `m` that decides it" does not
-exist.
+it could never have shown a counterexample. For the second, the small values
+decide nothing, and Theorem 3, part 4, of arXiv:2608.12543 gets the conclusion
+from the collision and not from a computation. This paragraph went on to say
+that no finite `m` decides anything; that is too strong, and the entry
+"The pages said that no finite computation could decide the conclusion" below
+corrects it.
 
 The same section cited version 1 of that paper for the term count of
 `Delta(P^2)`, which was then at version 2 and is now at version 3.
@@ -766,3 +767,33 @@ worth. `README.md` says what 0.8 is for without restating the conjecture.
 **Worth keeping:** the sentence named no theorem, and the project did not hold
 Zhao's paper, so nothing could be checked against it. A statement of somebody
 else's theorem is a citation, and it needs the number like any other.
+
+## The pages said that no finite computation could decide the conclusion
+
+**Said, from `0.8.0rc1`, in `src/kellermap/vanishing.py`, `docs/contracts.md`
+under VAN-5 and in its milestone paragraph, `docs/api.md`, `docs/roadmap.md`
+under "Version 0.8", `CHANGELOG.md`, and the entry above:** that no finite `m`,
+or no finite computation, decides whether `Delta^m(P^(m+1))` vanishes
+eventually, and that VAN-5 therefore cannot be finished.
+
+**True:** small values decide nothing, but one value beyond a known bound
+does. The formal inverse of `z - grad(P)` is `z + grad(Q)`, where `Q` is a sum
+of the `Delta^m(P^(m+1))` up to constants (Zhao, Theorem 3.4). The term of
+index `m` has degree `2m + 4`, so its gradient has degree `2m + 3`, and terms
+of different index cannot cancel. A polynomial inverse of a cubic map has
+degree at most `3^(n-1)` (Bass, Connell and Wright, Chapter I,
+Corollary (1.4), p. 292). So a non-zero value at one `m` above
+`(3^(n-1) - 3) / 2` refutes eventual vanishing. That is the argument of Zhao's
+proof of Proposition 7.4, which these pages cited for the bound and not for
+its consequence. At thirty-eight variables the bound has eighteen digits, so
+the computation is out of reach, and deriving VAN-5 from the lift and the
+collision remains the right choice. Only the reason given for it was wrong.
+
+**Found** by the audit of `0.8.0rc1`.
+
+**Now:** each of those places says that small values do not decide eventual
+vanishing, and that a value beyond the bound would but is out of reach.
+
+**Worth keeping:** "cannot in principle" and "cannot in practice" are two
+claims, and the second needs the figure that makes it true. The figure was on
+the page, one sentence away from the stronger claim.

@@ -13,7 +13,7 @@ authors:
     country: DE
 license: MIT
 repository-code: "https://github.com/rk-mlu/kellermap"
-version: 0.8.0rc1
+version: 0.8.0rc2
 # The DOI of the newest release, reserved on Zenodo before that release. A
 # release candidate is not deposited and has none of its own, so while the
 # candidates for a release run, this names the release before them: it named

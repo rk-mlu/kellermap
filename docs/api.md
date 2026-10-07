@@ -1330,8 +1330,8 @@ True
 ```
 
 The conclusion, `Delta^m(P^(m+1)) != 0` for infinitely many `m`, is VAN-5. It
-follows from the collision through the theorem and is not computed: no finite
-`m` would decide it.
+follows from the collision through the theorem and is not computed. Small `m`
+would not decide it, and the first `m` that could has nineteen digits here.
 
 The depth is two unless the caller asks for more. Depth three needs `P^3`,
 which has more than three million monomials here. A depth above the number of

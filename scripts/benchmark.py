@@ -60,7 +60,7 @@ from typing import Any
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-from _report import ROOT, describe_the_end, describe_the_run, facts  # noqa: E402
+from _report import ROOT, describe_the_end, describe_the_run, facts, now  # noqa: E402
 
 REFERENCE = Path(__file__).resolve().parent / "benchmark_counts.json"
 
@@ -273,12 +273,18 @@ def run_isolated(name: str) -> dict[str, Any]:
 def record(selection: str) -> dict[str, Any]:
     """Run the selected items and return the record of the run."""
     chosen = [item for item in ITEMS if selection == "all" or item.reference]
+    # The header is taken before the first item, so that "started" is the
+    # start and "tree" the tree the items ran in. Until 0.8.0rc2 it was taken
+    # after the last one; an audit of 0.8.0rc1 found it.
+    header = facts()
     items = {}
     for item in chosen:
         items[item.name] = run_isolated(item.name)
         print(f"  {item.name:<26} {items[item.name]['seconds']:8.2f} s", flush=True)
 
-    return {"header": facts(), "items": items}
+    header["finished"] = now()
+
+    return {"header": header, "items": items}
 
 
 def counts_of(record_: dict[str, Any]) -> dict[str, dict[str, int]]:
@@ -318,7 +324,23 @@ def compare(old: dict[str, Any], new: dict[str, Any]) -> int:
 
     The reference carries counts only. Against it, times are not compared at
     all, which is the point of keeping it free of them.
+
+    Only the items both records carry are compared, so that the reference can
+    be held against a record of every item. The items left out are named, and
+    two records with no item in common fail: nothing was compared, and saying
+    "counts agree" would report a comparison that did not happen. Until
+    0.8.0rc2 they passed; an audit of 0.8.0rc1 found it.
     """
+    common = sorted(set(old["items"]) & set(new["items"]))
+    if not common:
+        print("  no item in common, so no count was compared")
+        return 1
+    print(f"  compared: {', '.join(common)}")
+    for label, record_, other in (("old", old, new), ("new", new, old)):
+        left_out = sorted(set(record_["items"]) - set(other["items"]))
+        if left_out:
+            print(f"  only in the {label} record: {', '.join(left_out)}")
+
     changed = differences(counts_of(old), counts_of(new))
     for line in changed:
         print(f"  count changed  {line}")

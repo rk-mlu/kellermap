@@ -926,3 +926,60 @@ def test_counting_counts_and_puts_everything_back(benchmark: ModuleType) -> None
     assert kellermap.polynomial_map.clone_ring is original
     assert kellermap.context.clone_ring is original
     assert BCWStep.__dict__["build"] is build
+
+
+def test_records_with_no_item_in_common_do_not_agree(
+    benchmark: ModuleType, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """Nothing compared is not agreement. The finding of the audit of rc1."""
+    old = {"items": {"walk": {"counts": {"n": 1}}}}
+
+    assert benchmark.compare(old, {"items": {}}) == 1
+    assert "no count was compared" in capsys.readouterr().out
+    assert benchmark.compare(old, {"items": {"other": {"counts": {"n": 100}}}}) == 1
+    assert "no count was compared" in capsys.readouterr().out
+
+
+def test_a_partial_comparison_names_what_it_left_out(
+    benchmark: ModuleType, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """The reference against a record of every item: allowed, and said."""
+    reference = {"items": {"walk": {"counts": {"n": 1}}}}
+    full = {
+        "header": {"machine": "a"},
+        "items": {
+            "walk": {"counts": {"n": 1}, "seconds": 1.0},
+            "chain": {"counts": {"m": 2}, "seconds": 2.0},
+        },
+    }
+
+    assert benchmark.compare(reference, full) == 0
+    printed = capsys.readouterr().out
+    assert "compared: walk" in printed
+    assert "only in the new record: chain" in printed
+    assert "counts agree" in printed
+
+
+def test_the_header_of_a_record_is_taken_before_the_items(
+    benchmark: ModuleType, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """``started`` is the start. The other finding of the audit of rc1."""
+    order: list[str] = []
+
+    def facts() -> dict[str, str]:
+        order.append("facts")
+        return {"started": "start"}
+
+    def run(name: str) -> dict[str, Any]:
+        order.append(name)
+        return {"counts": {}, "seconds": 0.0}
+
+    monkeypatch.setattr(benchmark, "facts", facts)
+    monkeypatch.setattr(benchmark, "run_isolated", run)
+    monkeypatch.setattr(benchmark, "now", lambda: "end")
+
+    taken = benchmark.record("reference")
+    names = [item.name for item in benchmark.ITEMS if item.reference]
+
+    assert order == ["facts", *names]
+    assert taken["header"] == {"started": "start", "finished": "end"}
