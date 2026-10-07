@@ -13,10 +13,13 @@ What this module checks, and what it does not
 The witness is the lift and a collision of its gradient map. Its strength
 comes from those two and from the theorems, not from a computation. The values
 of ``Delta^m(P^(m+1))`` at small ``m`` do not decide eventual vanishing. A
-non-zero value beyond the bound on the degree of a polynomial inverse would
-refute it, but that bound is ``(3^(n-1) - 3) / 2``, and the computation is out
-of reach in these dimensions. ``docs/roadmap.md`` under "Version 0.8" says
-what each finite check is worth.
+non-zero value at any ``m`` above ``B_n = (3^(n-1) - 3) / 2`` would refute it.
+``B_n`` is a bound on the index. It comes from the bound ``3^(n-1)`` on the
+degree of a polynomial inverse, because the term of index ``m`` has a gradient
+of degree ``2m + 3``. The bound is sufficient. That no smaller index could
+decide the question is not shown. Above ``B_n`` the computation is out of
+reach in these dimensions. ``docs/roadmap.md`` under "Version 0.8" says what
+each finite check is worth.
 
 ``verify()`` checks the lift and the collision, which can fail on supplied
 data, and two consequences of the theorems that cannot fail on a lift that

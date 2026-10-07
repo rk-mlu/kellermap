@@ -847,6 +847,11 @@ def test_the_reference_counts_still_hold(benchmark: ModuleType) -> None:
     calls of ``clone_ring`` on the walk from Alpoege's map fails here on any
     machine. A change meant to alter a count rewrites the reference with
     ``python scripts/benchmark.py --reference``, and the diff shows it.
+
+    Through ``compare``, the function ``--compare`` calls, so that this gate
+    and the command line apply one rule. Until 0.8.0rc3 it called
+    ``differences`` directly, which passes on a reference whose items carry no
+    counts.
     """
     import json
 
@@ -854,12 +859,7 @@ def test_the_reference_counts_still_hold(benchmark: ModuleType) -> None:
     taken = benchmark.record("reference")
 
     assert sorted(taken["items"]) == sorted(reference["items"])
-    assert (
-        benchmark.differences(
-            benchmark.counts_of(reference), benchmark.counts_of(taken)
-        )
-        == []
-    )
+    assert benchmark.compare(reference, taken) == 0
 
 
 def test_the_reference_holds_exactly_the_reference_items(benchmark: ModuleType) -> None:
@@ -983,3 +983,49 @@ def test_the_header_of_a_record_is_taken_before_the_items(
 
     assert order == ["facts", *names]
     assert taken["header"] == {"started": "start", "finished": "end"}
+
+
+def test_common_items_without_counts_do_not_agree(
+    benchmark: ModuleType, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """A common name is not a compared count. The finding of the audit of rc2.
+
+    Both records carry ``walk`` and neither has a count in it, alone and beside
+    an item with counts that only one record carries.
+    """
+    empty = {"items": {"walk": {"counts": {}}}}
+
+    assert benchmark.compare(empty, empty) == 1
+    assert "no count in either record for walk" in capsys.readouterr().out
+
+    beside = {"items": {"walk": {"counts": {}}, "chain": {"counts": {"n": 5}}}}
+
+    assert benchmark.compare(empty, beside) == 1
+    assert "nothing was compared there" in capsys.readouterr().out
+
+
+def test_one_empty_common_item_fails_beside_a_compared_one(
+    benchmark: ModuleType, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """Stricter than the audit asked: ``walk`` would be listed as compared."""
+    old = {"items": {"walk": {"counts": {}}, "chain": {"counts": {"n": 5}}}}
+
+    assert benchmark.compare(old, old) == 1
+    assert "for walk," in capsys.readouterr().out
+
+
+def test_a_count_of_zero_is_a_count(
+    benchmark: ModuleType, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """The permitted shape beside the two controls above."""
+    zero = {"items": {"walk": {"counts": {"descent": 0}}}}
+
+    assert benchmark.compare(zero, zero) == 0
+    printed = capsys.readouterr().out
+    assert "compared: walk (1 count)" in printed
+    assert "counts agree" in printed
+
+    gone = {"items": {"walk": {"counts": {}}}}
+
+    assert benchmark.compare(zero, gone) == 1
+    assert "descent was 0, is absent" in capsys.readouterr().out

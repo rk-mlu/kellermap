@@ -62,9 +62,10 @@ Two of the five want a reviewer's attention. VAN-3 and VAN-4 cannot fail on a
 lift that verifies, because both follow from Theorem 3, so they are
 cross-checks against Zhao's theorems rather than checks of data, and their
 negative controls call the two check functions on forms that are not lifts.
-And VAN-5 is the first obligation on this page whose deciding computation is
-out of reach by construction and not by measurement: the first index that
-could decide it has eighteen digits at the smallest witness, while SYM-7 is a computation that did not
+And VAN-5 is the first obligation on this page that is out of reach by
+construction and not by measurement. A non-zero value at any index above a
+known bound would decide it, and at the smallest witness the first integer
+above that bound has eighteen digits. SYM-7 is a computation that did not
 finish in eight hours.
 
 **Milestone `0.7`, closed.** The milestone finished Theorem 2.1(b), HOM-11 and
@@ -2232,8 +2233,10 @@ value at one `m` above `B_n = (3^(n-1) - 3) / 2` would refute it, because a
 polynomial inverse of a cubic map has degree at most `3^(n-1)` (Bass, Connell
 and Wright, Chapter I, Corollary (1.4), p. 292), and `Delta^m(P^(m+1))`
 contributes a term of degree `2m + 3` to the inverse. That is the argument of
-Zhao's proof of Proposition 7.4. At `n = 38`, `B_n` has eighteen digits.
-VAN-5 is therefore derived from the verified lift and the collision.
+Zhao's proof of Proposition 7.4. The bound is sufficient. That no smaller
+index could decide the question is not shown, and this page does not claim it.
+At `n = 38`, `B_n` has eighteen digits. VAN-5 is therefore derived from the
+verified lift and the collision.
 
 Until `0.8.0rc2` this paragraph said that VAN-5 cannot be finished. An audit
 of `0.8.0rc1` showed that this is too strong, and `docs/errata.md` records

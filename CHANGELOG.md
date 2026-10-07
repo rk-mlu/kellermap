@@ -4,12 +4,48 @@ Notable changes per release. The milestone plan and its reasoning live in
 `docs/roadmap.md`, the binding obligations of the verification surface in
 `docs/contracts.md`.
 
-## 0.8.0rc2
+## 0.8.0rc3
 
 The milestone added the last link of the chain: a witness to Zhao's Vanishing
 Conjecture, built from the symmetric lift, with the finite checks that can be
 made on it. It also made the scripts say what they lack and when they ran, and
 added a runner that compares the cost of the pipeline across releases.
+
+The two sections that follow record what each audit of a candidate found and
+what the next candidate changed. They are for the audits, and they go when the
+entry for `0.8.0` is written. `0.8.0rc2` carried no such section; it is added
+here.
+
+### Changes in 0.8.0rc3
+
+The audit of `0.8.0rc2` found no defect in the witness and two smaller points.
+
+- `scripts/benchmark.py --compare` reported agreement for two records that
+  share an item in which neither has a count, so that nothing was compared. It
+  now fails for every common item without a count. The reference gate in
+  `tests/test_scripts.py` calls the same `compare` and no longer checks with a
+  weaker rule of its own.
+- The correction of `0.8.0rc2` called the first integer above the index bound
+  the first index that could decide the conclusion. The bound is sufficient and
+  is not shown to be the least. The module docstring of `kellermap.vanishing`
+  also called the index bound a degree bound. Both are corrected in five
+  places, and the entry in `docs/errata.md` records it beside the error it was
+  correcting.
+
+### Changes in 0.8.0rc2
+
+The audit of `0.8.0rc1` found no defect in the witness and three things to
+correct.
+
+- The pages said that no finite computation could decide the conclusion. A
+  non-zero value above the index bound would; the computation is out of reach.
+  `docs/errata.md` records it.
+- `scripts/benchmark.py --compare` reported agreement for two records with no
+  item in common. It now fails there, and a partial comparison names what it
+  compared and what it left out.
+- A benchmark record took its header after the last item, so `started` was the
+  end of the run. The header is taken before the first item, and `finished` is
+  added.
 
 ### The witness
 
@@ -20,9 +56,9 @@ part 4, of arXiv:2608.12543v3 its form is a counterexample to the conjecture.
 `Delta^m(P^m) = 0` up to the depth, two by default, and `Delta(P^2) != 0`. The
 conclusion, `Delta^m(P^(m+1)) != 0` for infinitely many `m`, is VAN-5. It is
 derived from the verified lift and the collision and not computed. Values at
-small `m` do not decide it. A non-zero value beyond the bound on the degree of
-a polynomial inverse would, but at forty variables that bound has nineteen
-digits.
+small `m` do not decide it. A non-zero value at any `m` above the index bound
+`(3^(n-1) - 3) / 2` would. That bound comes from the bound `3^(n-1)` on the
+degree of a polynomial inverse, and at forty variables it has nineteen digits.
 
 VAN-3 and VAN-4 cannot fail on a lift that verifies. They are cross-checks of
 this library's arithmetic against Zhao's Theorem 4.3 and Corollary 3.9, and

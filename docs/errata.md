@@ -789,11 +789,24 @@ its consequence. At thirty-eight variables the bound has eighteen digits, so
 the computation is out of reach, and deriving VAN-5 from the lift and the
 collision remains the right choice. Only the reason given for it was wrong.
 
-**Found** by the audit of `0.8.0rc1`.
+**Then, in `0.8.0rc2`:** the correction overreached in its turn. In four
+places it called the first integer above the bound the first index that could
+decide the question. The argument shows that the bound is sufficient. It does
+not show that no smaller index could decide it, so that is a claim of
+minimality nobody made. The module docstring also called the index bound a
+bound on the degree of the inverse; the degree bound is `3^(n-1)`, and the
+index bound is derived from it.
+
+**Found** by the audit of `0.8.0rc1`, and the overreach of its correction by
+the audit of `0.8.0rc2`.
 
 **Now:** each of those places says that small values do not decide eventual
-vanishing, and that a value beyond the bound would but is out of reach.
+vanishing, and that a value at any index above the bound would but is out of
+reach. `docs/contracts.md` under VAN-5 says once that the bound is sufficient
+and is not shown to be the least.
 
 **Worth keeping:** "cannot in principle" and "cannot in practice" are two
 claims, and the second needs the figure that makes it true. The figure was on
-the page, one sentence away from the stronger claim.
+the page, one sentence away from the stronger claim. And a correction is a
+claim of its own: "the first index that could" replaced "no index can" with a
+second statement that the argument did not give either.

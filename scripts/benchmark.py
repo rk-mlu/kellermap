@@ -326,22 +326,46 @@ def compare(old: dict[str, Any], new: dict[str, Any]) -> int:
     all, which is the point of keeping it free of them.
 
     Only the items both records carry are compared, so that the reference can
-    be held against a record of every item. The items left out are named, and
-    two records with no item in common fail: nothing was compared, and saying
-    "counts agree" would report a comparison that did not happen. Until
-    0.8.0rc2 they passed; an audit of 0.8.0rc1 found it.
+    be held against a record of every item. The items left out are named.
+
+    A comparison fails where nothing was compared, because saying "counts
+    agree" would then report a comparison that did not happen. That holds at
+    two levels: two records with no item in common, and an item both records
+    carry with no count in either. Every item of this runner produces counts,
+    so the second case is a record written or edited by hand. A count of zero
+    is a count. The audit of 0.8.0rc1 found the first case and the audit of
+    0.8.0rc2 the second.
     """
     common = sorted(set(old["items"]) & set(new["items"]))
     if not common:
         print("  no item in common, so no count was compared")
         return 1
-    print(f"  compared: {', '.join(common)}")
+
+    old_counts, new_counts = counts_of(old), counts_of(new)
+    sizes = {
+        name: len(set(old_counts[name]) | set(new_counts[name])) for name in common
+    }
+    empty = [name for name in common if not sizes[name]]
+    if empty:
+        print(
+            f"  no count in either record for {', '.join(empty)}, so nothing "
+            "was compared there"
+        )
+        return 1
+
+    print(
+        "  compared: "
+        + ", ".join(
+            f"{name} ({sizes[name]} count{'s' if sizes[name] != 1 else ''})"
+            for name in common
+        )
+    )
     for label, record_, other in (("old", old, new), ("new", new, old)):
         left_out = sorted(set(record_["items"]) - set(other["items"]))
         if left_out:
             print(f"  only in the {label} record: {', '.join(left_out)}")
 
-    changed = differences(counts_of(old), counts_of(new))
+    changed = differences(old_counts, new_counts)
     for line in changed:
         print(f"  count changed  {line}")
 
