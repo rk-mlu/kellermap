@@ -54,6 +54,13 @@ number maintained in one place and checked in none does. What it says now holds
 whenever it is read, and the milestone paragraphs below carry the history.
 `docs/errata.md` records the stale one.
 
+**Milestone `0.9`, open.** Three obligations are stated and not implemented:
+LIN-7, TRA-9 and UNI-13. With HOM-12 they make the conditional chain of
+Theorem 2.1(b) explicit for every step type that can lie between
+`reduce_to_multi_affine` and the homogenization. All three are self-checks:
+none can fail after the identity of its step. `docs/roadmap.md` gives the
+reason for stating them anyway.
+
 **Milestone `0.8`, closed.** The milestone added `VanishingWitness`, VAN-1 to
 VAN-5, the witness to Zhao's Vanishing Conjecture that the symmetric lift
 provides. Their `[0.8]` markers are gone with the close.
@@ -1020,6 +1027,15 @@ insert a translation of its own. Proposition (1.1) has three factors and a
 `Reduction` shows all three, rather than folding two of them into one step
 whose name mentions only one.
 
+**LIN-7 — A multi-affine source gives a multi-affine target. [0.9]** If no
+variable occurs squared in any monomial of `source - X`, then no variable occurs
+squared in any monomial of `target - X`.
+
+By LIN-1 each component of the target is a linear combination of components of
+the source, so `target - X` is the transformation applied to `source - X` plus
+a linear map. Neither creates a square. The obligation is conditional, as
+HOM-12 is, and says nothing about a source that is not multi-affine.
+
 ### Which of these can fail on supplied data
 
 LIN-1, and of LIN-6 the `MA^0` clause, the unit determinant and the product: a
@@ -1030,7 +1046,7 @@ can only fail if the library is wrong about its own arithmetic, and so does the
 `MA^1` clause of LIN-6: under LIN-1 the linear part of the target is the
 product the clause before it checks. They are retained as cheap self-checks,
 and a review should weigh them as such rather than as evidence about a supplied
-target.
+target. LIN-7 follows from LIN-1 in the same way.
 
 ---
 
@@ -1130,6 +1146,10 @@ the origin.
 reading: an integrity marker against mislabelling by accident, not a security
 boundary.
 
+**TRA-9 — A multi-affine source gives a multi-affine target. [0.9]** As LIN-7.
+By TRA-1 the displacement of the target is that of the source minus a constant,
+and a constant is no square.
+
 ### Which of these can fail on supplied data
 
 TRA-1 and the first clause of TRA-6, which compares the shift against `F(0)`.
@@ -1140,8 +1160,8 @@ clause follows from TRA-1 together with the first clause: if the target is the
 source translated by `F(0)`, it vanishes at the origin. It is retained as a
 self-check and carries `# pragma: no cover`.
 
-TRA-3 and TRA-4 follow from TRA-1 in the same way and can only fail if the
-library is wrong about its own arithmetic. TRA-2 is a constructor invariant and
+TRA-3, TRA-4 and TRA-9 follow from TRA-1 in the same way and can only fail if
+the library is wrong about its own arithmetic. TRA-2 is a constructor invariant and
 is not reachable by `verify()` at all. TRA-5 is a property of the type rather
 than a check.
 
@@ -1360,6 +1380,16 @@ points, and the three points of Alpoege's collision stay three.
 the same reading: an integrity marker against mislabelling by accident, not a
 security boundary.
 
+**UNI-13 — A multi-affine source gives a multi-affine target. [0.9]** If no
+variable occurs squared in any monomial of `source - X`, then no variable occurs
+squared in any monomial of `target - X`.
+
+Under UNI-1 the target is `(F_(2) + Y, -F_(3))` composed with the elementary
+factors, built from homogeneous parts of the source's displacement and one
+linear block. The fresh variables `Y` occur only linearly. So the step creates
+no square it was not given, and no variable is exempt, unlike the parameter of
+HOM-12.
+
 ### Which of these can fail on supplied data
 
 UNI-1 for a supplied target, and UNI-2, UNI-3 and UNI-4 always.
@@ -1372,7 +1402,7 @@ A `CONSTRUCTED` `UnipotentStep` is therefore evidence about its source in a way
 that a `CONSTRUCTED` `BCWStep` is not evidence about anything.
 
 UNI-5 in its freshness and counting half is a constructor invariant and is not
-reachable by `verify()`. UNI-6, UNI-9 and UNI-10 follow from UNI-1 and are
+reachable by `verify()`. UNI-6, UNI-9, UNI-10 and UNI-13 follow from UNI-1 and are
 retained as self-checks that localize an error to the step that made it.
 UNI-7 and UNI-8 are properties of the type rather than checks on data.
 
@@ -1554,14 +1584,13 @@ towards the gradient form, which runs through this step and does not want the
 property; `docs/architecture.md` records why the two ends of the pipeline fork
 here.
 
-Two stages of the chain lie between the refinement and this step, and neither
-carries an obligation of its own for the property. `LinearStep.normalize`
-composes a constant matrix on the left, so each component of the target is a
-linear combination of components of the source. `UnipotentStep` builds
-`(F_(2) + Y, -F_(3))` out of homogeneous parts of the source's displacement and
-one linear block. Both preserve the property by inspection and neither is held
-to it. Whether UNI wants an obligation of its own is open and recorded in
-`docs/roadmap.md` under WP 2 of milestone `0.7`.
+Two stages of the chain lie between the refinement and this step: the
+normalization, which is a `TranslationStep` and a `LinearStep`, and the
+`UnipotentStep`. Each preserves the property, and LIN-7, TRA-9 and UNI-13 say
+so. *Amended when milestone 0.9 opened.* Until then this paragraph said that
+both stages preserve the property by inspection and that neither is held to
+it, and it left open whether UNI wants an obligation of its own. The decision
+is in `docs/roadmap.md` under "Version 0.9".
 
 ### Which of these can fail on supplied data
 

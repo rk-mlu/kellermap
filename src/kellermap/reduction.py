@@ -24,7 +24,7 @@ because a translation is affine and not linear -- it is no element of
 two things that type exists for, its matrix and its structural determinant.
 
 See ``docs/contracts.md`` for the obligations, STEP-1 to STEP-5, LIN-1 to
-LIN-6, TRA-1 to TRA-8 and RED-1 to RED-8.
+LIN-7, TRA-1 to TRA-9 and RED-1 to RED-8.
 """
 
 from __future__ import annotations

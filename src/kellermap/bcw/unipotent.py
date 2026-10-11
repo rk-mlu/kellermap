@@ -35,7 +35,7 @@ factors, ``LinearStep`` a matrix, ``TranslationStep`` a shift, and
 the names of the fresh generators. So are the homogenization and the symmetric
 lift, both written after it.
 
-See ``docs/contracts.md``, UNI-1 to UNI-12.
+See ``docs/contracts.md``, UNI-1 to UNI-13.
 """
 
 from __future__ import annotations
