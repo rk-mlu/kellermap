@@ -40,7 +40,7 @@ thing, and avoiding it costs one click in the right order.
 This page said to write the DOI in afterwards, which would have meant a commit
 after the tag, an archive naming no record, and a repository whose newest
 commit is not the one that was deposited. The order below is the one used for
-`0.6.0` and again for `0.7.0`.
+`0.6.0`, `0.7.0` and `0.8.0`.
 
 That is the version DOI, and each version gets its own. The concept DOI is
 not reservable and is not per version: Zenodo assigned it when the first
@@ -87,7 +87,7 @@ below and `docs/provenance.md` for why.
 *Version:* the version of the archive, which is the number `pyproject.toml`
 carries.
 
-*DOI:* the reserved one, `10.5281/zenodo.22924138` for `0.7.0`. It is already
+*DOI:* the reserved one, `10.5281/zenodo.23295965` for `0.8.0`. It is already
 in `CITATION.cff` and `README.md`; the form only has to keep it.
 
 *Related identifiers:* the GitHub release tag, and the PyPI release of the same
@@ -107,7 +107,17 @@ its own obligations; verification names the obligation that failed rather than
 returning a boolean, and a collision is transported across each step and
 re-verified, so that a reduction of a counterexample is still a counterexample.
 
-Version 0.7 adds the multi-affine normal form of Theorem 2.1(b), a descent
+Version 0.8 adds a witness to Zhao's Vanishing Conjecture. It holds the
+gradient form of a symmetric lift together with a collision of its gradient
+map, which by Theorem 3, part 4, of arXiv:2608.12543v3 makes the form a
+counterexample to the conjecture. It checks the lift, the collision, the
+hypothesis Delta^m(P^m) = 0 up to a chosen depth, and Delta(P^2) != 0. The
+conclusion is derived from the verified lift and is not computed. On the
+forty-variable form of that paper, Delta(P^2) has the 8 630 monomials the
+paper states, and the library and a script that does not use it reach that
+figure by two different methods.
+
+Version 0.7 added the multi-affine normal form of Theorem 2.1(b), a descent
 step that deletes a coordinate two elementary changes have made triangular,
 and the arithmetic that makes the library correct over coefficient rings that
 are not fields: elimination to a unit pivot rather than to a non-zero one, and
@@ -116,7 +126,8 @@ third stages of the Bass-Connell-Wright Reduction Theorem, collision-hull
 compression, and the symmetric lift to the gradient form of a quartic over a
 field containing i. Applied in sequence to the smallest degree-three map this
 project holds, the chain runs 11, 22, 23, 19, 38 variables with every step
-verified and the collision arriving at the far end.
+verified and the collision arriving at the far end, and version 0.8 builds the
+witness on the form at that end.
 
 The constructions are other people's. What this project contributes is the
 composition of them, the certificates, and eight reconstruction scripts that
@@ -128,9 +139,10 @@ of what this project claimed too widely and corrected is in `docs/errata.md`.
 Generative AI tools were used in two roles: one model wrote code, tests and
 documentation in conversation with the maintainer, and a different model
 audited the release candidates. `docs/provenance.md` names the tools and says
-what each did. Every audit of this milestone found faults that the test suite,
-the coverage requirement and the mutation sweep had all passed, and more than
-once the fault was in a repair made for the previous audit. Neither model is an
+what each did. Every audit of this milestone found something that the test
+suite, the coverage requirement and the mutation sweep had all passed, and
+twice it was in a repair made for the previous audit. None of them found a
+defect in the witness or in the arithmetic of the library. Neither model is an
 author. The maintainer set the tasks, ran the gates, read the deliveries and
 decided what entered the repository.
 
@@ -164,6 +176,6 @@ concept DOI stands in one place, so nothing can compare it with a second copy;
 what is checked is that it is not the version DOI, since a number pasted from a
 browser after the release is the one that can end up as a duplicate.
 
-For `0.7.0` the two are `10.5281/zenodo.22924138` for the version and
+For `0.8.0` the two are `10.5281/zenodo.23295965` for the version and
 `10.5281/zenodo.22299351` for the concept. For `0.6.0` they differed in a
 single digit, which is where the check above comes from.

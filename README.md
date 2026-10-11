@@ -23,6 +23,13 @@ The first goal is the degree reduction introduced by
 > *The Jacobian Conjecture: Reduction of Degree and Formal Expansion of the Inverse*,
 > Bull. Amer. Math. Soc., 1982.
 
+The library follows the reduction past that paper. Prellberg's collision-hull
+compression and the symmetric lift of de Bondt and van den Essen take the
+cubic homogeneous map to the gradient of a quartic form. By Prellberg,
+arXiv:2608.12543v3, that form is a counterexample to Zhao's Vanishing
+Conjecture, and `VanishingWitness` holds it together with the collision that
+makes it one. `docs/references.md` gives the sources.
+
 The implementation is intended as both
 
 - a research tool for experiments related to the Jacobian Conjecture,
@@ -36,9 +43,9 @@ machine-checkable certificate.
 
 ## Project Status
 
-Current version: **0.8.0rc3**
+Current version: **0.8.0**
 
-DOI: [10.5281/zenodo.22924138](https://doi.org/10.5281/zenodo.22924138). That
+DOI: [10.5281/zenodo.23295965](https://doi.org/10.5281/zenodo.23295965). That
 is the DOI of the newest release, reserved on Zenodo before that release. A
 release candidate is not deposited and has none of its own, so while the
 candidates for a release run, the DOI names the release before them: `0.6.0`
@@ -99,60 +106,44 @@ record holds.
   makes is written in `docs/contracts.md` under a stable identifier, and the
   exception that fails cites it.
 
-### This milestone, 0.7
+### This milestone, 0.8
 
-What the Reduction Theorem still owed, and the first questions about the search
-that were worth asking.
+The last link of the chain this project follows: Jacobian Conjecture, BCW
+reduction, gradient form, Zhao's Vanishing Conjecture.
 
-**Theorem 2.1(b).** Milestone 0.6 produced the cubic homogeneous form, which is
-the corollary the literature usually quotes. The theorem asks for more: a form
-linear in every variable except the homogenizing parameter, and quadratic only
-in that parameter. `reduce_to_multi_affine` reaches the first, HOM-11 and
-HOM-12 say at the end of the chain that it arrived, and UNT-12 states the walk.
-The route, every step verified:
+**The witness.** `VanishingWitness` holds the gradient form of a symmetric lift
+together with a collision of its gradient map. By Theorem 3, part 4, of
+arXiv:2608.12543v3 that form is a counterexample to Zhao's Vanishing
+Conjecture. `verify()` checks the lift, the collision, the hypothesis
+`Delta^m(P^m) = 0` up to a depth, and `Delta(P^2) != 0`. On the forty-variable
+form of the paper, `Delta(P^2)` has the 8 630 monomials the paper states. The
+library and a reconstruction script that does not use the library reach that
+figure by two different methods.
 
-| | | |
-| --- | ---: | --- |
-| `examples.alpoege13` | 13 | degree three |
-| `reduce_to_multi_affine` | 19 | no variable occurs squared |
-| `UnipotentStep` | 38 | Jacobian of the displacement nilpotent |
-| `HomogenizationStep` | 39 | the normal form of Theorem 2.1(b) |
+The conclusion is derived and not computed. A non-zero value of
+`Delta^m(P^(m+1))` at any index above a known bound would decide it, and for
+the forms here that bound has at least eighteen digits. VAN-5 says so.
 
-The refinement is a branch and not a stage. The symmetric lift does not carry
-the property, nothing between the gradient form and Zhao's Vanishing Conjecture
-asks for it, and carrying it there would cost about 130 variables against 38.
-`docs/architecture.md` says so under "Where the pipeline forks".
+**The scripts.** A script whose data the source archive does not carry now
+says that it is not checked, instead of failing. Every measurement prints the
+machine, the date and the state of the tree. `make benchmark` records counts
+that do not depend on the machine, so that the cost of the pipeline can be
+compared between releases.
 
-**The descent.** `DescentStep` deletes a coordinate that two elementary changes
-have made triangular, DSC-1 to DSC-7. It is the fourth move of the two
-published derivations at degree three and the one this library had no step type
-for. It verifies a claim a caller supplies; searching for the two changes is a
-separate question and there is no `build` for it yet.
+### Next, 0.9
 
-**And the search does not reach eleven.** `reduce_to_degree3` arrives at
-dimension 13 from Alpoege's map without ever spending its budget, and started
-on the published eleven-variable chain's own maps it leaves them every time,
-including one step from the end. Searched exhaustively under a hard bound of
-eleven, the offer runs out with nothing to find from five of the six maps of
-that chain, and an external beam search reached the same answer from the sixth.
-Widening the offer was measured and does not pay: the cheapest of the three
-ways multiplies a space that already grows by nine per coordinate by twenty to
-fifty more, and reaches nothing new from any map where the answer is known.
+Certificates outside the running process. Today a certificate exists only as
+an object in memory, and it is checked independently only by eight
+reconstruction scripts written by hand, one per chain. Milestone 0.9 gives a
+certified chain and its witness a file format, stated as obligations first,
+and an exporter. An independent checker that does not import the library
+checks such a file. The eight reconstructions stay as its controls. A LaTeX
+export is the first view of a certificate, and a small command line runs both.
 
-Two negative answers, and they are the result rather than a shortfall. What
-would have to change for the question to become askable is now measured instead
-of guessed, and `docs/roadmap.md` carries the figures.
-
-### Next, 0.8
-
-The last link of the chain: a witness to Zhao's Vanishing Conjecture, built
-from the gradient form, with the finite checks that can be made on it. And a
-benchmark runner, so that the cost of the pipeline can be compared across
-releases rather than read once.
-
-`docs/roadmap.md` carries the plan and the measurements behind it.
-`CHANGELOG.md` lists what each release changed, and the milestones before this
-one are there rather than here.
+The research questions milestone 0.7 left open go to a milestone of their own.
+The plan is agreed and goes into `docs/roadmap.md` when the milestone opens.
+`CHANGELOG.md` lists what each release changed, and the milestones before
+this one are there rather than here.
 
 ---
 

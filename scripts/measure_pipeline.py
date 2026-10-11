@@ -177,8 +177,12 @@ def check(
 def laplacian(polynomial: Any) -> Any:
     """Return the Laplacian of a ``PolyElement`` in one pass over its terms.
 
-    ``scripts/reconstruct_prellberg40.py`` takes eighty derivatives instead, so
-    on the forty-variable form the two agree only if both are right.
+    The same method as ``kellermap.vanishing.laplacian``, written here before
+    that function existed. It runs on the three chains of this script and on no
+    other form. On the lift of ``spacerat11`` the slow test of the witness holds
+    the library's function to the same 8,999. ``reconstruct_prellberg40.py``
+    takes derivatives on Thompson's form, which this script does not build, so
+    it is not compared with this copy.
     """
     ring = polynomial.ring
     out: dict[tuple[int, ...], Any] = {}

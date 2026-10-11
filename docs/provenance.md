@@ -20,6 +20,16 @@ corrected.
 The library is MIT. Several pieces of mathematics in it are not this project's
 and carry their own terms.
 
+`kellermap.examples.alpoege` and `alpoege_collision` are the three-dimensional
+counterexample that Alpöge announced on X on 20 July 2026. Every chain in this
+repository starts from it, and seven reconstruction scripts and several tests
+hold their own copy. The announcement carries no licence. Section 3 of
+arXiv:2608.05392v1, licensed CC BY 4.0, prints the same map in the same
+coordinates and component order, in equation (1), and the same three points in
+Proposition 3.1. The values here agree with that presentation as polynomials.
+Section 3.4 of arXiv:2608.00222v1, also CC BY 4.0, writes the map out as well.
+`docs/references.md` records the source under "The counterexample".
+
 `kellermap.examples.gao_quartic` and `gao_quartic_collision` are from Shuhong
 Gao, arXiv:2608.00222v1, licensed CC BY 4.0. Attribution, the licence link and
 a statement of changes are in the docstring of the map and in
@@ -71,11 +81,6 @@ make it this project's: `peel` is given its target, so deriving the map needs
 the map. It is somebody else's, and the reconstruction is a check and not a
 claim of authorship.
 
-Nothing else in the repository is somebody else's. This list was one entry
-short until an audit of `0.6.0rc1`: `spacerat11` arrived in work package 6 with
-its attribution in its docstring, and this page was not extended with it, which
-is an inventory gap and not a licence fault.
-
 ---
 
 ## How this repository was written
@@ -85,28 +90,30 @@ of the Zenodo record both point here rather than repeating it, because a
 statement kept in three places diverges, and this repository has an errata page
 that says so four times over.
 
-**Tools.** Two generative models were used, in two separate roles.
+**Tools.** Generative models were used in two separate roles. Each role had
+one model per milestone, and both models changed with milestone 0.8.
 
-| role | model |
-| --- | --- |
-| writing the code, the tests and the documentation | Claude Opus 5 |
-| auditing the release candidates | ChatGPT 5.6 Sol |
+| milestones | writing the code, the tests and the documentation | auditing the release candidates |
+| --- | --- | --- |
+| up to 0.7 | Claude Opus 5 | ChatGPT 5.6 Sol |
+| 0.8 | Claude Opus 5.5 | ChatGPT 6.1 Sol |
 
-**What each did.** The first drafted source, tests, documentation and commit
-messages in a conversation with the maintainer, milestone by milestone and work
-package by work package, under the working agreement in `AGENTS.md`. The second
-was given a release candidate and asked to find what was wrong with it; the
-findings of milestone 0.6 are in `docs/errata.md`, under the release candidate
-that carried them.
+**What each did.** The writing model drafted source, tests, documentation and
+commit messages in a conversation with the maintainer, milestone by milestone
+and work package by work package, under the working agreement in `AGENTS.md`.
+The auditing model was given a release candidate and asked to find what was
+wrong with it; the findings of milestone 0.6 are in `docs/errata.md`, under the
+release candidate that carried them.
 
 **Why two.** An audit by the model that wrote the code would not be one. The
 two are not independent in the way two people are -- overlapping training data,
 related failure modes, neither deterministic -- so what the arrangement gives
 is better than nothing and less than independence. What it gave is on record
 rather than in a count: each audit is named in the clause, the errata entry or
-the changelog entry that carries its finding. Every audit of milestone 0.7
-found something the suite, the coverage and the mutation probe had all passed,
-and more than once the fault was in a repair made for the previous audit.
+the changelog entry that carries its finding. Every audit of milestones 0.7
+and 0.8 found something the suite, the coverage and the mutation probe had all
+passed, and in both milestones more than once the fault was in a repair made
+for the previous audit.
 
 A number of audits stood here and was kept by adding to it. It went stale, as
 the count of mutation probes on this page did and the carrier figures of

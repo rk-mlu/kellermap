@@ -13,14 +13,14 @@ authors:
     country: DE
 license: MIT
 repository-code: "https://github.com/rk-mlu/kellermap"
-version: 0.8.0rc3
+version: 0.8.0
 # The DOI of the newest release, reserved on Zenodo before that release. A
 # release candidate is not deposited and has none of its own, so while the
 # candidates for a release run, this names the release before them: it named
-# 0.6.0 through the candidates for 0.7.0, and names 0.7.0 through those for
-# 0.8.0. The README says the same in prose, and a test holds the two against
-# each other.
-doi: 10.5281/zenodo.22924138
+# 0.6.0 through the candidates for 0.7.0, and 0.7.0 through those for 0.8.0.
+# The README says the same in prose, and a test holds the two against each
+# other.
+doi: 10.5281/zenodo.23295965
 keywords:
   - Keller maps
   - Jacobian conjecture
@@ -36,15 +36,17 @@ abstract: >-
   transported across each step and re-verified, so a reduction of a
   counterexample is still a counterexample.
 
-  Milestone 0.7 completes the Bass-Connell-Wright Reduction Theorem, including
-  the multi-affine normal form of its part (b), and adds a descent that deletes
-  a coordinate two determinant-one changes have made triangular. Milestone 0.6
-  had implemented the second and third stages of that theorem, collision-hull
-  compression, and the symmetric lift to the gradient form of a quartic. The
-  constructions are other people's; what
-  this project contributes is the composition of them, the certificates, and
-  eight independent reconstruction scripts that recompute the published results
-  without using the library. No minimality and no priority is claimed for any
+  Milestone 0.8 adds a witness to Zhao's Vanishing Conjecture: the gradient
+  form of a symmetric lift, held together with a collision of its gradient map,
+  and the finite checks that can be made on it. Milestone 0.7 completed the
+  Bass-Connell-Wright Reduction Theorem, including the multi-affine normal form
+  of its part (b), and added a descent that deletes a coordinate two
+  determinant-one changes have made triangular. Milestone 0.6 had implemented
+  the second and third stages of that theorem, collision-hull compression, and
+  the symmetric lift to the gradient form of a quartic. The constructions are
+  other people's; what this project contributes is the composition of them,
+  the certificates, and eight independent reconstruction scripts that
+  recompute the published results without using the library. No minimality and no priority is claimed for any
   figure it reaches: docs/references.md states what each comparison does and
   does not establish, and docs/errata.md records what this project reported
   wrongly and corrected.

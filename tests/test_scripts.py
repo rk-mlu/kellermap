@@ -849,9 +849,7 @@ def test_the_reference_counts_still_hold(benchmark: ModuleType) -> None:
     ``python scripts/benchmark.py --reference``, and the diff shows it.
 
     Through ``compare``, the function ``--compare`` calls, so that this gate
-    and the command line apply one rule. Until 0.8.0rc3 it called
-    ``differences`` directly, which passes on a reference whose items carry no
-    counts.
+    and the command line apply one rule.
     """
     import json
 

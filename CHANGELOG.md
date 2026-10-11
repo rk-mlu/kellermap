@@ -4,48 +4,13 @@ Notable changes per release. The milestone plan and its reasoning live in
 `docs/roadmap.md`, the binding obligations of the verification surface in
 `docs/contracts.md`.
 
-## 0.8.0rc3
+## 0.8.0
 
 The milestone added the last link of the chain: a witness to Zhao's Vanishing
 Conjecture, built from the symmetric lift, with the finite checks that can be
 made on it. It also made the scripts say what they lack and when they ran, and
-added a runner that compares the cost of the pipeline across releases.
-
-The two sections that follow record what each audit of a candidate found and
-what the next candidate changed. They are for the audits, and they go when the
-entry for `0.8.0` is written. `0.8.0rc2` carried no such section; it is added
-here.
-
-### Changes in 0.8.0rc3
-
-The audit of `0.8.0rc2` found no defect in the witness and two smaller points.
-
-- `scripts/benchmark.py --compare` reported agreement for two records that
-  share an item in which neither has a count, so that nothing was compared. It
-  now fails for every common item without a count. The reference gate in
-  `tests/test_scripts.py` calls the same `compare` and no longer checks with a
-  weaker rule of its own.
-- The correction of `0.8.0rc2` called the first integer above the index bound
-  the first index that could decide the conclusion. The bound is sufficient and
-  is not shown to be the least. The module docstring of `kellermap.vanishing`
-  also called the index bound a degree bound. Both are corrected in five
-  places, and the entry in `docs/errata.md` records it beside the error it was
-  correcting.
-
-### Changes in 0.8.0rc2
-
-The audit of `0.8.0rc1` found no defect in the witness and three things to
-correct.
-
-- The pages said that no finite computation could decide the conclusion. A
-  non-zero value above the index bound would; the computation is out of reach.
-  `docs/errata.md` records it.
-- `scripts/benchmark.py --compare` reported agreement for two records with no
-  item in common. It now fails there, and a partial comparison names what it
-  compared and what it left out.
-- A benchmark record took its header after the last item, so `started` was the
-  end of the run. The header is taken before the first item, and `finished` is
-  added.
+added a runner that compares the cost of the pipeline across releases. Three
+audits over three release candidates found no defect in the witness.
 
 ### The witness
 
@@ -70,13 +35,12 @@ this project's derivation and is marked as one.
 ### Figures
 
 `Delta(P^2)` of the forty-variable lift of Thompson's map has 8 630 monomials,
-the figure Section 4 of the paper states. The library's `laplacian`,
-`scripts/reconstruct_prellberg40.py` without the library, and
-`scripts/measure_pipeline.py` reach it by three methods. The three chains of
-the pipeline give 8 999, 11 446 and 12 709 for their own lifts, which have
-nothing published to be compared with. On the maintainer's machine the
-forty-variable form passes depth three: `P^3` has 3 369 739 monomials and
-`Delta^3(P^3) = 0`.
+the figure Section 4 of the paper states. Two methods reach it: the library's
+`laplacian`, and the derivatives of `scripts/reconstruct_prellberg40.py`, which
+does not use the library. The three chains of the pipeline give 8 999, 11 446
+and 12 709 for their own lifts, which have nothing published to be compared
+with. On the maintainer's machine the forty-variable form passes depth three:
+`P^3` has 3 369 739 monomials and `Delta^3(P^3) = 0`.
 
 ### Scripts
 
@@ -91,8 +55,10 @@ the working tree, through `scripts/_report.py`.
 
 `scripts/benchmark.py` and `make benchmark` record counts that do not depend
 on the machine, and times beside them. A comparison of two records fails on a
-changed count and only reports times, and those only for one machine. The
-counts of the two cheap items are a gate of the suite.
+changed count, and it fails where nothing was compared: with no item in
+common, or with a common item that has no count in either record. It only
+reports times, and those only for two records of one machine. The counts of the
+two cheap items are a gate of the suite, through the same comparison.
 
 ### Corrected
 
@@ -109,12 +75,20 @@ documentation are held against the scripts that recompute them row by row; the
 new one is the Laplacian table, whose first row comes from the script without
 the library and the others from the one with it.
 
-`docs/errata.md` holds 29 entries at this release. The two new ones are about
-the conjecture: a theorem stated without its source at hand, and then a claim
-about it stated more strongly than its own figure allowed.
+`docs/errata.md` holds 31 entries at this release. Two of the four new ones
+are about the conjecture: a theorem stated without its source at hand, and
+then a claim about it stated more strongly than its own figure allowed. The
+third counted a computation of the published figure that does not exist. The
+fourth is about `docs/provenance.md`: its list of third-party material had
+left out Alpöge's map since milestone 0.6.
 
-[To be completed after the audits: the release candidates, the audits, and
-what they found.]
+Three release candidates and three external audits. None of them found a
+defect in the witness or in the arithmetic of the library. What they found was
+in what the pages said a finite computation can decide, and in when the
+benchmark comparison reports agreement. The first is recorded in
+`docs/errata.md`, and the second is the rule stated under Scripts. The audit of
+`0.8.0rc3` recommended the release. The third and fourth new entries of the
+errata were found after it, while the release was prepared.
 
 ## 0.7.0
 

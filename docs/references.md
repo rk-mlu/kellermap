@@ -67,6 +67,12 @@ with `det J(F) = -2` identically, and the three collision points
 all mapping to `(-1/4, 0, 0)`. Degree 7, dimension 3. The test suite recomputes
 the determinant and all three images rather than asserting them from the source.
 
+The announcement carries no licence. The licensed presentation the values were
+checked against is Section 3 of arXiv:2608.05392v1, licensed CC BY 4.0. Its
+equation (1) is the same map in the same coordinates and component order, and
+its Proposition 3.1 gives the same three points. Section 3.4 of
+arXiv:2608.00222v1, also CC BY 4.0, writes the map out as well.
+
 Akhil Mathew suggested the problem; the announcement credits Anthropic's Claude
 Fable 5 with finding the map. The conjecture is thereby false for every
 dimension `n >= 3` — append identity coordinates — while `n = 2` remains open.

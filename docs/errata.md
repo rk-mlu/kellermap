@@ -326,6 +326,39 @@ archive all lie outside what those controls examine. Two of the three code
 faults are about a *value* rather than a *branch*, and a branch-based control
 cannot see them.
 
+## Alpöge's map was missing from the list of third-party material
+
+**Said, in `docs/provenance.md` from milestone 0.6 to `0.8.0rc3`:** a list of
+the third-party material in the repository, closed by the sentence that nothing
+else in it is somebody else's. The list did not name Alpöge's map. **Said also,
+in the docstring of `examples.alpoege`:** that `docs/references.md` records the
+licensed presentation the values were checked against. That page named the
+announcement and no licensed presentation.
+
+**True:** the map and its three collision points are somebody else's. Every
+chain in the repository starts from them, they are in the distribution as
+`examples.alpoege` and `alpoege_collision`, and seven reconstruction scripts
+and several tests hold their own copy. The announcement on X carries no
+licence. Section 3 of arXiv:2608.05392v1, licensed CC BY 4.0, prints the same
+map in the same coordinates and component order in equation (1), and the same
+three points in Proposition 3.1. Section 3.4 of arXiv:2608.00222v1, also
+CC BY 4.0, writes the map out as well.
+
+**Found** while the release of `0.8.0` was prepared. The maintainer asked for
+the closing paragraph of the list to be removed, because it told the history of
+the gap the audit of `0.6.0rc1` found. Removing it showed that its first
+sentence was false for a second reason.
+
+**Now:** the list names Alpöge's map first, with the announcement, the licensed
+presentation and what was compared. `docs/references.md` names the licensed
+presentation under "The counterexample", which is what the docstring said it
+did. The closing sentence is gone: a claim that a list is complete is a claim
+nothing checks.
+
+**Worth keeping:** the oldest piece of third-party material was the one
+missing. It was in the repository before the list existed, so no work package
+that brought material in had a reason to add it.
+
 ## Five findings of the audit of `0.6.0rc2`
 
 **`make release` deleted the wheel it had just checked.** `sdist-test` began
@@ -810,3 +843,31 @@ claims, and the second needs the figure that makes it true. The figure was on
 the page, one sentence away from the stronger claim. And a correction is a
 claim of its own: "the first index that could" replaced "no index can" with a
 second statement that the argument did not give either.
+
+## A third computation of the published figure was counted that does not exist
+
+**Said, from `0.8.0rc1`, in `CHANGELOG.md`, in two places of `docs/roadmap.md`
+under "Version 0.8", and in the docstrings of the Laplacian in
+`scripts/measure_pipeline.py` and `scripts/reconstruct_prellberg40.py`:** that
+three methods reach the 8 630 monomials of `Delta(P^2)` that the paper states
+for the forty-variable form, and that the pipeline script and the
+reconstruction agree on that form.
+
+**True:** two methods reach it. `kellermap.vanishing.laplacian` is held to it
+by `tests/test_vanishing.py`, and `scripts/reconstruct_prellberg40.py` reaches
+it by derivatives, without the library. `scripts/measure_pipeline.py` carries a
+copy of the one-pass method, but it runs that copy on the three chains of the
+pipeline and never on Thompson's form. So it is not compared with the
+reconstruction on any form. What it is compared with is the library's
+function, on the lift of `spacerat11`, where the slow test of the witness
+reaches the same 8 999.
+
+**Found** after the audit of `0.8.0rc3`, while the entry for the release was
+drafted, by asking which form each of the named scripts computes.
+
+**Now:** each of those places names the two methods, and the copy in the
+pipeline script says what it is compared with.
+
+**Worth keeping:** a count of independent checks is a figure like any other.
+Each check the sentence named existed, which is why it read as true; one of
+them ran on a different object.

@@ -3449,8 +3449,10 @@ are module functions, and their controls call them on small forms that are not
 lifts. `(x + i y)^4` is one: its Hessian is nilpotent, `Delta` of its square is
 zero, and its gradient map is invertible. `Re (x + i y)^4` is the other, which
 passes depth one and fails depth two. The library's `laplacian` gives the 8 630
-of the paper on the forty-variable form, a third way beside the two scripts of
-work package 3. The thirty-eight-variable witness is a slow test.
+of the paper on the forty-variable form, as the reconstruction of work package 3
+does by derivatives. The thirty-eight-variable witness is a slow test, and it
+holds the library's `laplacian` to the 8 999 that `scripts/measure_pipeline.py`
+states for that form.
 
 **WP 5** is the benchmark runner, `scripts/benchmark.py` and `make benchmark`.
 The section below says what it records and what is a gate. The same package
@@ -3507,7 +3509,8 @@ the benchmark runner.
 
 The witness is in the library and verifies on the forty-variable form of the
 paper and on the thirty-eight-variable form of this project. On the first, the
-library's Laplacian and two scripts reach the paper's 8 630 by three methods.
+library's Laplacian and the reconstruction script, which does not use the
+library, reach the paper's 8 630 by two methods.
 On `paddy4`, the forty-variable form passes depth three of the hypothesis, so
 the parts of degrees two, four and six of the determinant of its lift vanish.
 
@@ -3533,6 +3536,15 @@ first point called a sufficient bound the least one. `0.8.0rc3` carries both.
 The `[0.8]` markers are gone from `docs/contracts.md`, and the milestone
 paragraph there says which of the five new obligations a reviewer should weigh
 differently.
+
+The audit of `0.8.0rc3` recommended the release. It noted one false sentence:
+a docstring of the suite said that the earlier reference gate would have
+passed a reference without counts, and it would not have. While the release
+was prepared, two more errors were found. The pages said that three methods
+reach the 8 630 of the paper, and two do. And the list of third-party material
+in `docs/provenance.md` had left out Alpöge's map. `docs/errata.md` records
+both. `0.8.0` corrects all three and is released after three candidates and
+three audits.
 
 ## What the old list had that is done
 

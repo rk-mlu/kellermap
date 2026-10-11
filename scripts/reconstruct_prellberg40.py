@@ -414,8 +414,9 @@ def laplacian_checks(lift: sp.Expr, variables: list[sp.Symbol]) -> list[bool]:
     """Check ``Delta(P)``, ``Delta(P^2)`` and ``Delta^2(P^2)``.
 
     In a sparse ring over ``Q(i)``, by eighty derivatives per Laplacian. The
-    library's measurement script sums the second derivatives in one pass over
-    the monomials instead, so the two agree only if both are right.
+    library's ``kellermap.vanishing.laplacian`` sums the second derivatives in
+    one pass over the monomials instead, and ``tests/test_vanishing.py`` holds it
+    to the same 8,630 on the same form. So the two agree only if both are right.
     """
     ring, *generators = sp.ring(variables, sp.QQ_I)
     form = ring(lift)
