@@ -810,18 +810,17 @@ def test_the_representation_names_the_dimensions(lifted: SymmetricLiftStep) -> N
 # --------------------------------------------------------------------------
 
 
-def test_the_lift_of_thompsons_twenty_has_the_published_form() -> None:
+def test_the_lift_of_thompsons_twenty_has_the_published_form(
+    thompson_lift: SymmetricLiftStep,
+) -> None:
     """350 monomials, which is Theorem 3's figure and not this project's.
 
     The compression reaches the published twenty-dimensional map, and the lift
     of it has to reach the published quartic. The count is what the ancillary
     file reports and what ``scripts/reconstruct_prellberg40.py`` recomputes.
+    The two steps are built once per session in ``tests/conftest.py``.
     """
-    compressed = CompressionStep.build(
-        over_field(examples.thompson24_homogeneous()),
-        examples.thompson24_homogeneous_collision(),
-    )
-    step = SymmetricLiftStep.build(compressed.target)
+    step = thompson_lift
 
     assert step.verify() is None
     assert step.target.dimension == 40

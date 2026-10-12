@@ -14,11 +14,13 @@ Error messages cite the identifier that failed, so that an independent review
 can address findings to a numbered obligation rather than to a line of code.
 Identifiers are never reused; a withdrawn obligation stays listed as withdrawn.
 
-An obligation marked with a milestone number is stated but not yet
-implemented, and the marker is removed when the milestone closes. It is a
-statement of intent that the implementation is measured against, not a
-description of the current code, and a review of an unfinished milestone should
-read it as such. Obligations without a marker are implemented.
+An obligation marked with a milestone number belongs to a release that has not
+been published. The marker stays through the release candidates, which are not
+published on PyPI or Zenodo, and is removed in the release commit. A marked
+obligation may already be implemented; the milestone paragraph below says which
+are. Until it is, it is a statement of intent that the implementation is
+measured against, and a review of an unfinished milestone should read it as
+such. Obligations without a marker are implemented.
 
 **Status:** every obligation on this page without a milestone marker is
 implemented and the test suite covers every statement of the package, with two
@@ -34,11 +36,11 @@ route by which it takes a determinant.
 An audit of `0.7.0rc10` found two release blockers, and for them this page was
 changed before the code, which is the order this section states. LIN-6, FAC-1,
 WID-1 and WID-2 were stated that way and are implemented since `0.7.0rc11`.
-They carried no `[0.7]` marker in between: a marker names a milestone that has
-not been released, and the test that removes markers reads `0.7.0rc10` as
-released. Whether the convention should have room for an obligation added
-during a release-candidate cycle is an open question and not a decision this
-page takes.
+They carried no `[0.7]` marker in between: the test that holds the markers to
+the version read `0.7.0rc10` as released. That is settled since milestone 0.9.
+A candidate is now read as below its release, and an obligation added during
+the candidates carries the marker. `docs/roadmap.md` records the decision under
+"Version 0.9".
 
 An audit of `0.7.0rc11` found two more, and three clauses are ahead of the
 implementation for them, by the same order and without markers for the same
@@ -54,8 +56,8 @@ number maintained in one place and checked in none does. What it says now holds
 whenever it is read, and the milestone paragraphs below carry the history.
 `docs/errata.md` records the stale one.
 
-**Milestone `0.9`, open.** Three obligations are stated and not implemented:
-LIN-7, TRA-9 and UNI-13. With HOM-12 they make the conditional chain of
+**Milestone `0.9`, open.** Three obligations are marked, and none of them is
+implemented yet: LIN-7, TRA-9 and UNI-13. With HOM-12 they make the conditional chain of
 Theorem 2.1(b) explicit for every step type that can lie between
 `reduce_to_multi_affine` and the homogenization. All three are self-checks:
 none can fail after the identity of its step. `docs/roadmap.md` gives the

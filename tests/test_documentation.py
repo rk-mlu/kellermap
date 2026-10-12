@@ -613,27 +613,59 @@ def test_no_formula_writes_G_without_its_coefficient(path: Path) -> None:
     assert not unweighted, f"{path.name} writes G unweighted: {unweighted[:3]}"
 
 
-def test_no_milestone_marker_outlives_its_milestone() -> None:
-    """``AGENTS.md`` says the marker goes when the milestone closes.
+def outlived_markers(declared: str, page: str) -> list[str]:
+    """Return the milestone markers of ``page`` that ``declared`` has released.
 
-    It said so and nothing checked it. A marker names a milestone that has not
-    been released, so the declared version has to be below it. Once
-    ``pyproject.toml`` moves to ``0.5.0``, every ``[0.5]`` on this page fails
-    here, which is what makes the removal a step somebody has to take rather
-    than one somebody has to remember.
+    A marker names a milestone that has no published release. A release
+    candidate is not published, so ``0.9.0rc2`` releases nothing of ``[0.9]``
+    and ``0.9.0`` releases all of it. The candidate is read as below its
+    release, which is the convention agreed when milestone 0.9 opened.
     """
-    declared = only_match(DECLARED_VERSION, ROOT / "pyproject.toml")
-    released = tuple(int(part) for part in declared.split("rc")[0].split("."))
+    number, _, candidate = declared.partition("rc")
+    major, minor, patch = (int(part) for part in number.split("."))
+    released = (major, minor, patch) if not candidate else (major, minor, patch - 1)
 
-    outlived = sorted(
+    return sorted(
         {
-            f"[{major}.{minor}]"
-            for major, minor in MILESTONE_MARKER.findall(CONTRACTS)
-            if (int(major), int(minor), 0) <= released
+            f"[{marked_major}.{marked_minor}]"
+            for marked_major, marked_minor in MILESTONE_MARKER.findall(page)
+            if (int(marked_major), int(marked_minor), 0) <= released
         }
     )
 
+
+def test_no_milestone_marker_outlives_its_milestone() -> None:
+    """``AGENTS.md`` says the marker goes with the release of its milestone.
+
+    It said so and nothing checked it. Once ``pyproject.toml`` moves to
+    ``0.9.0``, every ``[0.9]`` on this page fails here, which is what makes the
+    removal a step somebody has to take rather than one somebody has to
+    remember.
+
+    Until milestone 0.9 the marker went at the first release candidate,
+    because this test read ``0.8.0rc1`` as ``0.8.0``. An obligation added
+    during the candidates then had no marker it could carry. The marker now
+    stays until the release, and the controls below hold both sides of that.
+    """
+    declared = only_match(DECLARED_VERSION, ROOT / "pyproject.toml")
+    outlived = outlived_markers(declared, CONTRACTS)
+
     assert not outlived, f"the page still carries {outlived} at version {declared}"
+
+
+MARKED = "**LIN-7 \u2014 A marked obligation. [0.9]**"
+
+
+@pytest.mark.parametrize("declared", ["0.8.0", "0.9.0rc1", "0.9.0rc2"])
+def test_a_marker_survives_until_its_release(declared: str) -> None:
+    """Every release candidate of 0.9 and everything before it keeps ``[0.9]``."""
+    assert outlived_markers(declared, MARKED) == []
+
+
+@pytest.mark.parametrize("declared", ["0.9.0", "0.9.1", "0.10.0rc1", "1.0.0"])
+def test_a_marker_after_its_release_is_found(declared: str) -> None:
+    """The release itself, and anything after it, finds ``[0.9]``."""
+    assert outlived_markers(declared, MARKED) == ["[0.9]"]
 
 
 def test_the_contents_and_the_page_are_in_the_same_order() -> None:

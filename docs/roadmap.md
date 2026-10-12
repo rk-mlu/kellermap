@@ -3639,7 +3639,8 @@ check.
 - The fast suite is profiled again, as at `0.7.0rc6`. The coverage run passes
   the assistant's limit per command since 0.8 and is run in two halves. The
   profile says whether a test should take the slow marker under the rule
-  "What the fast suite costs" states, and if not, why the halves stay.
+  "What the fast suite costs" states, and if not, what else helps. The section
+  "What the fast suite costs at 0.8.0" below has the result.
 - The convention for milestone markers in `docs/contracts.md` changes, as
   agreed below. The test that holds the markers to the version changes with it.
 - LIN-7, TRA-9 and UNI-13 are stated in `docs/contracts.md`, marked `[0.9]`.
@@ -3710,10 +3711,10 @@ that an obligation is unimplemented. It means that no published release has it.
 The milestone paragraph of `docs/contracts.md` says which of the marked
 obligations are implemented.
 
-The test that holds the markers to the version reads `0.8.0rc1` as `0.8.0`
-today, and that is why the markers of 0.8 went at the first candidate. It will
-read a candidate as below its release, so that `[0.9]` passes at `0.9.0rc2` and
-fails at `0.9.0`. Both cases get a control.
+The test that holds the markers to the version read `0.8.0rc1` as `0.8.0`, and
+that is why the markers of 0.8 went at the first candidate. It now reads a
+candidate as below its release, so that `[0.9]` passes at `0.9.0rc2` and fails
+at `0.9.0`. Both sides have a control.
 
 ## The conditional chain of Theorem 2.1(b)
 
@@ -3778,6 +3779,57 @@ half a minute on the assistant's machine, most of it in the compression, which
 would double the script. They become one slow test in WP 1.1, which holds the
 five dimensions of each row and the 440 monomials. It runs in `pytest -m ""`
 and in `make release`, and not in the fast suite, so not in any mutation probe.
+
+## What the fast suite costs at 0.8.0
+
+Profiled when the milestone opened, on 11 October 2026, on the assistant's
+machine `vm`, with two processors and seven gigabytes. `AGENTS.md` says under
+"Timings are not figures" why seconds stand only on this page. They are a
+record of these runs and not a statement about the present. What matters is
+the comparison, and every run below is on the same machine on the same
+evening.
+
+| tree | fast suite, seconds |
+| --- | ---: |
+| `v0.7.0` | 204 |
+| `v0.8.0` | 265 |
+| this work package | 222 |
+
+The profile of `0.7.0rc6` gave 84 seconds for the fast suite. The machine has
+probably changed since: the three multi-affine chains took 8.4 seconds in that
+profile and 18 seconds on `v0.7.0` here. A comparison across days is not worth
+making. The machine also varies within a day. Two coverage runs of trees that differed only in their
+documentation took 238 and 417 seconds this afternoon. A figure from one run
+says little, and the table above compares runs taken one after another.
+
+Milestone 0.8 added nearly a third to the suite. Most of it is in three
+places: the example of the witness in `docs/api.md`, the fixture of the witness
+in `tests/test_vanishing.py`, and the gate on the benchmark counts.
+
+| | seconds | what was done |
+| --- | ---: | --- |
+| the doctests of `docs/api.md` | 29 | stays; every public feature has an example |
+| the three multi-affine chains | 19 | stays, as at `0.7.0rc6` |
+| the gate on the benchmark counts | 18 | stays; `CHANGELOG.md` promises it as a gate of the suite |
+| the two weighted cases of SEA-14 | 18 | stays, as at `0.7.0rc6` |
+| Thompson's map compressed, three times | 21 | built once per session in `tests/conftest.py` |
+| the corpus checks of `scripts/` | 35 | the whole vocabulary is read once per module, not five times |
+
+The last two rows were repeated work. The compression of Thompson's map was
+built in `test_compression.py`, `test_lift.py` and `test_vanishing.py`, and
+each is the same value. The corpus tests read the whole tree four times for
+each of four files, and one of the four reads was always the same. Neither
+change alters what a test checks.
+
+No test earns the slow marker under the rule of `0.7.0rc6`. The largest is the
+file of doctests, which cannot be marked in part. The next three are each the
+only check of something a page states. The doctest of the witness and the
+fixture of `tests/test_vanishing.py` still verify the same witness twice, once
+as an example a reader runs and once as the subject of VAN-1 to VAN-5. They
+stay apart, because an example in `docs/api.md` has to run without a fixture.
+
+The coverage run is now taken in three parts and not in two. `AGENTS.md` says
+how it is cut.
 
 ## What the old list had
 

@@ -85,8 +85,11 @@ not what — the diff already says what. It should record:
   that order. A failure in the second must not be able to have its cause in the
   first.
 - **Contracts are written before the implementation.** New obligations go into
-  `docs/contracts.md` first, marked `[0.n]` while unimplemented, and the marker
-  is removed when the milestone closes.
+  `docs/contracts.md` first, marked `[0.n]`. The marker says that no published
+  release has the obligation yet, so it stays through the release candidates,
+  which are not published, and is removed in the release commit. An obligation
+  added during the candidates carries it too. Whether a marked obligation is
+  implemented is said in the milestone paragraph of that page.
 - A milestone ends with release candidates and **external audits**. The version
   moves to the final number only after an audit and a green release chain.
 
@@ -198,11 +201,15 @@ wanted.
 
 Since milestone 0.8 the coverage run also passes the assistant's limit per
 command, and a run started in the background is ended with the command that
-started it, without a report. The assistant therefore runs it in two halves:
-the first part of `tests/` with `--cov --cov-fail-under=0`, the rest of
-`tests/` and `docs/` with `--cov --cov-append` and the threshold. That is the
-same measurement over the same tests, taken in two pieces, and the commit
-message says that it was split.
+started it, without a report. The assistant therefore runs it in three parts.
+The test modules of `tests/` are taken in alphabetical order and cut into
+thirds. The first third runs with `--cov --cov-fail-under=0`, the second with
+`--cov --cov-append --cov-fail-under=0`, and the last third with `docs/` and
+`--cov --cov-append` and the threshold. That is the same measurement over the
+same tests, taken in pieces, and the commit message says that it was split.
+Two halves were enough during 0.8. When 0.9 opened, the second of them used
+more than half the limit, and the run time on the assistant's machine varies
+by more than half between runs of the same tree.
 
 `pytest -m ""` moves because the slow markers are most of it: three tests were
 the bulk of it before `0.7.0rc6` and a fourth was added there. The assistant

@@ -411,6 +411,18 @@ def foreign() -> ModuleType:
     return load("foreign_words")
 
 
+@pytest.fixture(scope="module")
+def whole_corpus(foreign: ModuleType) -> frozenset[str]:
+    """Return the vocabulary of every English source, with nothing left out.
+
+    Each call of ``english`` reads the whole tree. The tests below compare
+    against this set five times, and it is the same set each time, so it is
+    read once. The profile of milestone 0.9 found the corpus tests a seventh of
+    the fast suite.
+    """
+    return frozenset(foreign.english(set()))
+
+
 def test_the_default_file_set_is_the_remainder(foreign: ModuleType) -> None:
     """The path that was never tried, and therefore never ran.
 
@@ -486,6 +498,7 @@ def test_the_script_reports_on_a_named_module(
 )
 def test_the_file_under_review_is_not_its_own_corpus(
     foreign: ModuleType,
+    whole_corpus: frozenset[str],
     name: str,
 ) -> None:
     """Two defects, and the second was hidden by a test that covered one case.
@@ -502,32 +515,33 @@ def test_the_file_under_review_is_not_its_own_corpus(
     """
     relative = Path(name)
     absolute = ROOT / name
+    known = foreign.english({relative})
 
-    assert foreign.english({relative}) == foreign.english({absolute})
+    assert known == foreign.english({absolute})
 
     # Taking the file out of the corpus has to remove words, otherwise the line
     # above compares two equal defects.
-    assert foreign.english({absolute}) < foreign.english(set())
+    assert known < whole_corpus
 
     # The report on an examined file is therefore not empty.
-    known = foreign.english({relative})
     words = {word.lower() for word in foreign.WORD.findall(foreign.prose(absolute))}
 
     assert words - known
 
 
-def test_the_corpus_holds_every_english_source(foreign: ModuleType) -> None:
+def test_the_corpus_holds_every_english_source(
+    foreign: ModuleType, whole_corpus: frozenset[str]
+) -> None:
     """The module says which files it reads, and it left one out.
 
     ``CONTRIBUTING.md`` is named in the description and was not in the list.
     """
-    known = foreign.english(set())
     contributing = {
         word.lower()
         for word in foreign.WORD.findall(foreign.prose(ROOT / "CONTRIBUTING.md"))
     }
 
-    assert contributing <= known
+    assert contributing <= whole_corpus
 
 
 def test_prose_excludes_code_and_quoted_code(foreign: ModuleType) -> None:

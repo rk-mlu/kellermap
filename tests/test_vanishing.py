@@ -33,12 +33,12 @@ RING, X, Y, Z = sp.ring("X Y Z", sp.QQ_I)
 
 
 @pytest.fixture(scope="module")
-def compressed() -> CompressionStep:
-    """Return Thompson's map compressed along its collision, 20 variables."""
-    return CompressionStep.build(
-        over_field(examples.thompson24_homogeneous()),
-        examples.thompson24_homogeneous_collision(),
-    )
+def compressed(thompson_compressed: CompressionStep) -> CompressionStep:
+    """Return Thompson's map compressed along its collision, 20 variables.
+
+    Built once per session in ``tests/conftest.py``, which says why.
+    """
+    return thompson_compressed
 
 
 @pytest.fixture(scope="module")
@@ -48,9 +48,9 @@ def pair(compressed: CompressionStep) -> Collision:
 
 
 @pytest.fixture(scope="module")
-def lift(compressed: CompressionStep) -> SymmetricLiftStep:
+def lift(thompson_lift: SymmetricLiftStep) -> SymmetricLiftStep:
     """Return the lift of the compression, 40 variables."""
-    return SymmetricLiftStep.build(compressed.target)
+    return thompson_lift
 
 
 @pytest.fixture(scope="module")

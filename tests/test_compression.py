@@ -70,12 +70,12 @@ def published() -> object:
 
 
 @pytest.fixture(scope="module")
-def compressed() -> CompressionStep:
-    """Return Thompson's map compressed along its collision."""
-    return CompressionStep.build(
-        over_field(examples.thompson24_homogeneous()),
-        examples.thompson24_homogeneous_collision(),
-    )
+def compressed(thompson_compressed: CompressionStep) -> CompressionStep:
+    """Return Thompson's map compressed along its collision.
+
+    Built once per session in ``tests/conftest.py``, which says why.
+    """
+    return thompson_compressed
 
 
 # --------------------------------------------------------------------------
