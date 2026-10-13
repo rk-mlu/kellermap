@@ -292,7 +292,7 @@ def determinant_without_division(
     the coefficient that cancels to almost nothing while the ones in the
     middle do not: on the six-by-six complement of the ``spacerat11`` chain
     the determinant has one term and the largest middle coefficient has 147.
-    ``docs/roadmap.md`` records what the difference costs on the lift.
+    ``docs/milestones.md`` records what the difference costs on the lift.
     """
     size = len(block)
     if not size:

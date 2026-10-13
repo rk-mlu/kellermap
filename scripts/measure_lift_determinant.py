@@ -33,7 +33,7 @@ polynomial are the expensive ones: on the six-by-six complement of the same
 chain, the determinant has one term and the largest middle coefficient has
 147. Asking for the whole polynomial to read one coefficient off the end is
 what made the first version of this script exhaust the maintainer's machine,
-and ``docs/roadmap.md`` has the dated run that shows the difference.
+and ``docs/milestones.md`` has the dated run that shows the difference.
 
 The parts on the complement run in a forked child, because none of the three
 can be interrupted from inside. The child inherits the complement rather than

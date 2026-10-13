@@ -8,7 +8,7 @@ surface, and compares what comes out with what the page says.
 
 It also recomputes what the Schur reduction leaves at each stage, which is
 what SYM-7 rests its explanation on, and compares it with ``CARRIERS``, the
-table ``docs/roadmap.md`` carries under work package 1. And since milestone 0.8
+table ``docs/milestones.md`` carries under work package 1. And since milestone 0.8
 it takes the Laplacian of each lift and compares it with ``LAPLACIANS``, the
 first table under "A first measurement" in the 0.8 section of that page.
 
@@ -68,7 +68,7 @@ from _report import describe_the_end, describe_the_run  # noqa: E402
 
 @dataclass(frozen=True)
 class Carrier:
-    """What ``docs/roadmap.md`` states about one stage of one chain.
+    """What ``docs/milestones.md`` states about one stage of one chain.
 
     The complement is what ``determinant()`` is left with after the Schur
     reduction, and it is the quantity SYM-7 rests its explanation on. It was
@@ -108,7 +108,7 @@ TABLE: tuple[Row, ...] = (
 
 @dataclass(frozen=True)
 class Laplacian:
-    """What ``docs/roadmap.md`` states about the Laplacian of one lift.
+    """What ``docs/milestones.md`` states about the Laplacian of one lift.
 
     Under "Version 0.8", in the table of the first measurement. ``Delta(P)``
     and ``Delta^2(P^2)`` are zero for every lift, which the page says in one
@@ -199,20 +199,20 @@ def laplacian(polynomial: Any) -> Any:
 
 
 def check_laplacian(name: str, symmetric: SymmetricLiftStep) -> None:
-    """Check the Laplacian figures of one lift against ``docs/roadmap.md``."""
+    """Check the Laplacian figures of one lift against ``docs/milestones.md``."""
     stated = LAPLACIANS[name]
     form = symmetric._form()  # noqa: SLF001
     square = form**2
     once = laplacian(square)
 
-    check("Delta(P) = 0", laplacian(form) == 0, True, "roadmap")
-    check("monomials in P^2", len(square), stated.square, "roadmap")
-    check("monomials in Delta(P^2)", len(once), stated.once, "roadmap")
-    check("Delta^2(P^2) = 0", laplacian(once) == 0, True, "roadmap")
+    check("Delta(P) = 0", laplacian(form) == 0, True, "milestones")
+    check("monomials in P^2", len(square), stated.square, "milestones")
+    check("monomials in Delta(P^2)", len(once), stated.once, "milestones")
+    check("Delta^2(P^2) = 0", laplacian(once) == 0, True, "milestones")
 
 
 def check_carrier(name: str, stage: str, target: PolynomialMap) -> None:
-    """Check the carrier of one stage against ``docs/roadmap.md``."""
+    """Check the carrier of one stage against ``docs/milestones.md``."""
     stated = next(row for row in CARRIERS[name] if row.stage == stage)
     rows = target._jacobian_polynomials  # noqa: SLF001
     ones = sum(
@@ -220,14 +220,14 @@ def check_carrier(name: str, stage: str, target: PolynomialMap) -> None:
     )
     carried = len(target.carrier_indices)
 
-    check(f"{stage}: dimension", target.dimension, stated.dimension, "roadmap")
-    check(f"{stage}: diagonal ones", ones, stated.diagonal_ones, "roadmap")
-    check(f"{stage}: carried", carried, stated.carrier, "roadmap")
+    check(f"{stage}: dimension", target.dimension, stated.dimension, "milestones")
+    check(f"{stage}: diagonal ones", ones, stated.diagonal_ones, "milestones")
+    check(f"{stage}: carried", carried, stated.carrier, "milestones")
     check(
         f"{stage}: complement",
         target.dimension - carried,
         stated.dimension - stated.carrier,
-        "roadmap",
+        "milestones",
     )
 
 
@@ -302,7 +302,7 @@ def run(row: Row) -> None:
             "monomials in the complement of the lift",
             sum(len(entry.to_dict()) for line in complement for entry in line),
             LIFT_COMPLEMENT_MONOMIALS,
-            "roadmap",
+            "milestones",
         )
 
     print(f"  {time.perf_counter() - started:.1f} s")
@@ -312,14 +312,14 @@ def main() -> int:
     describe_the_run()
     print(
         "The pipeline of milestone 0.6, against docs/references.md, and what "
-        "the\nSchur reduction leaves at each stage, against docs/roadmap.md."
+        "the\nSchur reduction leaves at each stage, against docs/milestones.md."
     )
     for row in TABLE:
         run(row)
 
     print(
         "\nEvery figure agrees with the tables in this script. The tests hold "
-        "those\nagainst docs/references.md and docs/roadmap.md row by row."
+        "those\nagainst docs/references.md and docs/milestones.md row by row."
     )
     describe_the_end()
 

@@ -28,7 +28,7 @@ is worth reading whether or not you use one.
 - New mathematics beyond the milestone in progress. `docs/roadmap.md` says what
   each version is for. A change that belongs to a later milestone is not
   refused, but it will wait.
-- Performance work without a measurement. `docs/roadmap.md` records where a
+- Performance work without a measurement. `docs/milestones.md` records where a
   peel spends its time, under `cProfile`. A change that is faster in principle
   is not yet a change that is faster.
 - Anything that makes a certificate an assertion. The library stores

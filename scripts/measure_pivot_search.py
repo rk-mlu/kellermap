@@ -53,7 +53,7 @@ PARAMETER = sp.Symbol("T")
 MODULI = (4, 6, 8, 9, 10, 12)
 
 INVERTIBLE: dict[int, int] = {4: 96, 6: 288, 8: 1536, 9: 3888, 10: 2880, 12: 4608}
-"""How many invertible ``2x2`` matrices each ring has, as ``docs/roadmap.md`` states.
+"""How many invertible ``2x2`` matrices each ring has, as ``docs/milestones.md`` states.
 
 The order of ``GL_2(Z/nZ)``, a property of the ring and not of this library,
 so a count that disagrees is a defect in the enumeration rather than a finding.
@@ -282,7 +282,7 @@ def main() -> int:
 
     print(
         "Every part agrees with what this script expects. The tests hold its\n"
-        "table against docs/roadmap.md row by row."
+        "table against docs/milestones.md row by row."
     )
     describe_the_end()
 

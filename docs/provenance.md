@@ -238,4 +238,4 @@ The order the coordinates were introduced in is
 which is not the numbering of the published map. That numbering is a valid
 topological order of the final carrier values and not a chronology; this page
 said otherwise until the chain settled it, and the paragraph that did is left
-standing in `roadmap.md`, withdrawn rather than deleted.
+standing in `milestones.md`, withdrawn rather than deleted.

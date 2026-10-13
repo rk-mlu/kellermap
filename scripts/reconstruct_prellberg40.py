@@ -46,9 +46,9 @@ collision over ``Q(i)``, and four statements about the Laplacian ``Delta`` in
 the forty variables: ``Delta(P) = 0``, ``P^2`` has 46,695 monomials,
 ``Delta(P^2)`` has 8,630, and ``Delta^2(P^2) = 0``. Milestone 0.8 added the
 last four. The count of ``P^2`` is not a figure of the paper; it is held so
-that ``docs/roadmap.md`` can state it.
+that ``docs/milestones.md`` can state it.
 
-What they are worth is in ``docs/roadmap.md`` under "Version 0.8". In short:
+What they are worth is in ``docs/milestones.md`` under "Version 0.8". In short:
 ``Delta^m(P^m) = 0`` for ``m = 1, 2`` is the hypothesis of Zhao's Vanishing
 Conjecture up to depth two, and ``Delta(P^2) != 0`` is necessary for the
 collision by his Corollary 3.9. The count of monomials is a property of the

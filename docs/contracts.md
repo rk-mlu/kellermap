@@ -1989,7 +1989,7 @@ This is a departure from UNI-10, HOM-7 and CHC-6, which all keep the
 determinant as a cheap self-check, and it is a departure on a measurement
 rather than on a preference. On the thirty-eight-variable lift of
 `spacerat11`, `determinant()` was stopped after nineteen hours and
-forty-eight minutes without returning. `docs/roadmap.md` under work package 1
+forty-eight minutes without returning. `docs/milestones.md` under work package 1
 of milestone 0.7 records the runs and the machines they were made on.
 
 That run used the fraction-free elimination of `DomainMatrix.det()`, which
@@ -2001,8 +2001,8 @@ of them returned. The fraction-free elimination spent the whole budget without
 reaching the memory limit; both division-free routes reached the limit, the one
 through the characteristic polynomial first. So the elimination is not what the
 cost rests on, and the departure stands on a measurement that now covers the
-route this library takes as well as the one it took. `docs/roadmap.md` records
-that run, dated and with the machine it was made on, under what the
+route this library takes as well as the one it took. `docs/milestones.md`
+records that run, dated and with the machine it was made on, under what the
 determinant costs on the lift.
 
 The failure differs even though the outcome does not. A caller who asks this
@@ -2026,7 +2026,7 @@ Those figures are recomputed by `scripts/measure_pipeline.py`, which `make
 measure` runs, since `0.7.0rc12`. This paragraph said four at every
 BCW-reduced stage and 29 by 29 at the lift until then, which was right for
 neither, and nothing recomputed the column it rested on. `docs/errata.md`
-records it; `docs/roadmap.md` carries the table for all three chains.
+records it; `docs/milestones.md` carries the table for all three chains.
 
 This paragraph named dimension six against dimension forty until `0.7`, and
 read as a statement about size. Size is what it is not. The lift is the one
@@ -2167,7 +2167,7 @@ lift, a collision of its gradient map, and the finite checks that can be made
 on the two. Theorem 3, part 4, of arXiv:2608.12543v3 says what it witnesses.
 W. Zhao, *Hessian nilpotent polynomials and the Jacobian conjecture*, Trans.
 Amer. Math. Soc. 359 (2007), 249-274, gives the theorems it is checked
-against. `docs/roadmap.md` under "Version 0.8" states the conjecture and says
+against. `docs/milestones.md` under "Version 0.8" states the conjecture and says
 what each finite check is worth.
 
 ```python
@@ -2232,7 +2232,7 @@ last step is this page's derivation and not Zhao's. So VAN-3 at depth `n`
 would be SYM-7, and at a smaller depth it is a truncation of it.
 
 The default depth is two because depth three needs `P^3`, which has more than
-three million monomials at forty variables. `docs/roadmap.md` has the
+three million monomials at forty variables. `docs/milestones.md` has the
 measurement. A depth below one or above `n` is refused with a `ValueError`: the
 first checks nothing, and the second checks nothing more than depth `n`. A
 depth that is not an integer, a `bool` included, is refused with a
@@ -3751,7 +3751,7 @@ of the time `alpoege13` needs at 66 coordinates and 272 monomials. The domain
 is not the reason; the figures are over `QQ` throughout. What UNI-9 spends is a
 determinant, and work package 1 of milestone `0.7` found that a determinant
 follows the carrier and not the size. That is a hypothesis here and not a
-measurement, and it is recorded in `docs/roadmap.md` rather than claimed.
+measurement, and it is recorded in `docs/milestones.md` rather than claimed.
 
 ### What the dimension thirteen does and does not establish
 
@@ -3911,7 +3911,7 @@ commutative ring, so there is nothing for a predicate to decide, and a
 predicate here would be the defect WID-1 was amended for a second time. It is
 also not slower on a block that fits: on dense polynomial blocks the
 division-free expansion is faster than the fraction-free elimination, and the
-gap grows with the size of the block. `docs/roadmap.md` carries the dated
+gap grows with the size of the block. `docs/milestones.md` carries the dated
 profile, which `scripts/measure_lift_determinant.py` prints before anything
 else.
 
@@ -3994,7 +3994,7 @@ It is one boundary and not two: `0.7.0rc9` inverted through
 `domain.get_field()`, which for `Z/nZ` returns that ring again and raised
 `DMNotAField` on a shear of unit determinant.
 
-The bound is measured and recorded in `docs/roadmap.md`, by
+The bound is measured and recorded in `docs/milestones.md`, by
 `scripts/measure_pivot_search.py`, which `make measure` runs. It reaches a unit
 pivot for every invertible `2x2` over `Z/4`, `Z/6`, `Z/8`, `Z/9`, `Z/10` and
 `Z/12` — 13296 matrices — for a sample of random invertible `3x3` over `Z/6Z`,

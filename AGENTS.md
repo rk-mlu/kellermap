@@ -105,6 +105,37 @@ not what — the diff already says what. It should record:
   which are self-checks of the library's own arithmetic. A review should weigh
   them differently.
 
+### Where a statement lives
+
+A statement kept in two places is maintained in two places, and this project
+has seen such copies diverge several times. The last case was the claim that
+three methods reach a published figure: it stood in the changelog, in two
+places of the roadmap and in two docstrings. So each kind of statement has one
+home.
+
+- **A figure, a measurement and the reason for a decision** live in the
+  milestone that produced them: `docs/roadmap.md` while it is open,
+  `docs/milestones.md` after its release. A figure about the literature lives
+  in `docs/references.md`. Where a script recomputes a figure, a test holds
+  that one place against the script. Other pages point to it and do not repeat
+  the number.
+- **`CHANGELOG.md`** says what changed for a user, one entry per release. It
+  names the result and points to where the figures and the reasons stand. It
+  carries no figure that a table in `docs/` holds.
+  `tests/test_documentation.py` checks that for the large figures of every
+  entry from 0.9 on. During the
+  release candidates it has one section per candidate, as before. The entry is
+  written in the release commit and not changed afterwards.
+- **`README.md`** says what the library is and does now. Its section on the
+  milestone is a short description with pointers, without figures.
+- **A released milestone** in `docs/milestones.md` is not edited. A correction
+  goes to `docs/errata.md`, which names the section it corrects. In the release
+  commit the section of the milestone moves from the roadmap to that page, and
+  its "Where the milestone stands" becomes a pointer to the changelog entry.
+
+These rules hold from milestone 0.9 on. Entries and sections written before
+stay as they were released; changing them now would rewrite a record.
+
 ---
 
 ## Quality gates
@@ -191,10 +222,10 @@ first and costs a multiple of it, so running both spends the larger of the two
 again to learn what it already said.
 
 The coverage run grew past what the assistant's tool budget allows at
-`0.7.0rc6`. `docs/roadmap.md` carries the profile that followed under "What the
-fast suite costs": one test was a third of the suite and is marked slow, and
-the page says of every other candidate why it stays. The rule that came out of
-it -- a test earns the marker when the fast suite would otherwise lose more
+`0.7.0rc6`. `docs/milestones.md` carries the profile that followed under "What
+the fast suite costs": one test was a third of the suite and is marked slow,
+and the page says of every other candidate why it stays. The rule that came out
+of it -- a test earns the marker when the fast suite would otherwise lose more
 than it keeps, and a marked test has to be worth running in `pytest -m ""`
 rather than parked there -- is the one to apply the next time a marker is
 wanted.
@@ -252,8 +283,9 @@ it serves does not turn on the number.
 A figure that is itself the subject of the sentence, where the measurement is
 the point rather than an aside: why one test earns the slow marker, or whether
 a strategy is worth its complexity. Those say when they were taken, and the
-profile they come from lives in `docs/roadmap.md` under "What the fast suite
-costs", dated and naming the machine.
+profile they come from lives under "What the fast suite costs", dated and
+naming the machine: in `docs/roadmap.md` for the open milestone, and in
+`docs/milestones.md` once it is released.
 
 Not allowed: a runtime mentioned in passing, a figure precise enough to go
 stale where nothing turns on its precision, and any sum derived from a column

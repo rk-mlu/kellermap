@@ -116,13 +116,13 @@ together with a collision of its gradient map. By Theorem 3, part 4, of
 arXiv:2608.12543v3 that form is a counterexample to Zhao's Vanishing
 Conjecture. `verify()` checks the lift, the collision, the hypothesis
 `Delta^m(P^m) = 0` up to a depth, and `Delta(P^2) != 0`. On the forty-variable
-form of the paper, `Delta(P^2)` has the 8 630 monomials the paper states. The
-library and a reconstruction script that does not use the library reach that
-figure by two different methods.
+form of the paper, the library and a reconstruction script that does not use
+it reach the count of `Delta(P^2)` that the paper states, by two different
+methods. `docs/milestones.md` under "Version 0.8" has the figures.
 
 The conclusion is derived and not computed. A non-zero value of
 `Delta^m(P^(m+1))` at any index above a known bound would decide it, and for
-the forms here that bound has at least eighteen digits. VAN-5 says so.
+the forms here that bound is far beyond any computation. VAN-5 says so.
 
 **The scripts.** A script whose data the source archive does not carry now
 says that it is not checked, instead of failing. Every measurement prints the
@@ -141,7 +141,7 @@ checks such a file. The eight reconstructions stay as its controls. A LaTeX
 export is the first view of a certificate, and a small command line runs both.
 
 The research questions milestone 0.7 left open go to a milestone of their own.
-The plan is agreed and goes into `docs/roadmap.md` when the milestone opens.
+The plan is in `docs/roadmap.md`.
 `CHANGELOG.md` lists what each release changed, and the milestones before
 this one are there rather than here.
 
@@ -283,7 +283,8 @@ provenance.md     where the fixed data came from, and how this repository
 errata.md         what this project reported wrongly, and the correction
 deposit.md        what goes into the Zenodo record, and why not the
                   automatic route
-roadmap.md        milestones
+roadmap.md        the open milestone and the long-term goals
+milestones.md     the plans of the released milestones
 ```
 
 `CHANGELOG.md` and `CITATION.cff` sit at the repository root.

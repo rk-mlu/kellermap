@@ -808,7 +808,7 @@ _PIVOT_ROUNDS = 4
 """How many passes the bounded search makes over the pairs of a column.
 
 A bound and not a proof. Four was chosen against a measurement recorded in
-``docs/roadmap.md``: it reaches a unit pivot for every invertible ``2x2`` over
+``docs/milestones.md``: it reaches a unit pivot for every invertible ``2x2`` over
 ``Z/4``, ``Z/6``, ``Z/8``, ``Z/9``, ``Z/10`` and ``Z/12``, and for the
 ``ZZ[T]`` matrix an audit of ``0.7.0rc9`` gave. Raising it costs a pass and
 claims nothing more, because the search is incomplete at any bound.
@@ -955,7 +955,7 @@ def _search_unit_pivot(
     loop did before at every pair, so this search accepts everything the
     previous one accepted: candidate ``one`` reproduces the old step exactly,
     and the two additional candidates can only add a success. The measurement
-    in ``docs/roadmap.md`` is the check on that argument and not a restatement
+    in ``docs/milestones.md`` is the check on that argument and not a restatement
     of it.
 
     Bounded and therefore incomplete, and that is the supported boundary of

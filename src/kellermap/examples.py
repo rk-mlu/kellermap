@@ -4,7 +4,7 @@ Two criteria decide what is here, and both are counted rather than judged. A
 map belongs in this module if it is written out in more than one place, and if
 it is a Keller map -- its Jacobian determinant is a non-zero constant. Work
 package 8 of milestone 0.5 counted the tree against both, and
-``docs/roadmap.md`` records what it found then, which is fewer maps than stand
+``docs/milestones.md`` records what it found then, which is fewer maps than stand
 here now. The figures are not repeated here: a
 count in a docstring that nothing recomputes goes stale without saying so, and
 this one had.

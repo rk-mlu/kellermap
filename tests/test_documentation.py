@@ -40,6 +40,12 @@ from kellermap.bcw import BCWStep
 ROOT = Path(__file__).resolve().parent.parent
 CONTRACTS = (ROOT / "docs" / "contracts.md").read_text(encoding="utf-8")
 
+# The open milestone and the long-term goals stand on the roadmap. The plans of
+# released milestones moved to their own page in work package 1 of 0.9, and
+# the tables the scripts are held against moved with them.
+ROADMAP = ROOT / "docs" / "roadmap.md"
+MILESTONES = ROOT / "docs" / "milestones.md"
+
 # ``CONTRIBUTING.md`` stands here because it cites obligations. A stale
 # identifier in a guide is the same defect as one in ``contracts.md``, and the
 # guide is what a newcomer reads.
@@ -825,12 +831,12 @@ def references_section() -> str:
 
 
 def carrier_section() -> str:
-    """Return the work package 1 section of the roadmap, without emphasis.
+    """Return the work package 1 section of milestone 0.6, without emphasis.
 
     The table sets the complement of each lift in bold, which is emphasis on
     the page and not part of the figure, so it is taken off before comparing.
     """
-    page = (ROOT / "docs" / "roadmap.md").read_text(encoding="utf-8")
+    page = MILESTONES.read_text(encoding="utf-8")
     section = page[page.index("### WP 1, and what it found") :]
 
     return section[: section.index("\n## ")].replace("**", "")
@@ -900,8 +906,8 @@ def laplacian_rows(pipeline: ModuleType, reconstruction: ModuleType) -> list[str
 
 
 def laplacian_section() -> str:
-    """Return the section of the roadmap that holds the Laplacian table."""
-    page = (ROOT / "docs" / "roadmap.md").read_text(encoding="utf-8")
+    """Return the section of milestone 0.8 that holds the Laplacian table."""
+    page = MILESTONES.read_text(encoding="utf-8")
     section = page[page.index("# Version 0.8") :]
     section = section[section.index("## A first measurement") :]
 
@@ -959,7 +965,7 @@ def test_the_pivot_search_table_agrees_with_the_measurement_script() -> None:
     sys.modules[spec.name] = module
     spec.loader.exec_module(module)
 
-    page = (ROOT / "docs" / "roadmap.md").read_text(encoding="utf-8")
+    page = MILESTONES.read_text(encoding="utf-8")
     section = page[page.index("## What the pivot search reaches") :]
     section = section[: section.index("\n## ", 1)]
     expected = [
@@ -1360,12 +1366,65 @@ def test_every_milestone_of_the_roadmap_appears_once() -> None:
     lines stood twice: a replacement had found the end of the section it was
     replacing in an earlier milestone. Every table in both copies was correct,
     so every gate passed, and the maintainer found it by reading.
+
+    Since work package 1 of 0.9 the milestones stand on two pages. A milestone
+    copied to the second page and left on the first is the same defect, so the
+    two pages are read as one.
     """
-    page = (ROOT / "docs" / "roadmap.md").read_text(encoding="utf-8")
+    page = MILESTONES.read_text(encoding="utf-8") + ROADMAP.read_text(encoding="utf-8")
 
     assert not repeated_titles(page), (
-        f"repeated in the roadmap: {repeated_titles(page)}"
+        f"repeated across the two pages: {repeated_titles(page)}"
     )
+
+
+def milestones_on(page: Path) -> list[tuple[int, int]]:
+    """Return the versions of the milestone sections of ``page``, in order."""
+    versions = []
+    for line in page.read_text(encoding="utf-8").splitlines():
+        if line.startswith("# Version "):
+            major, minor = line.split()[2].split(".")
+            versions.append((int(major), int(minor)))
+
+    return versions
+
+
+def open_milestone(declared: str) -> tuple[int, int]:
+    """Return the milestone a declared version is working towards.
+
+    ``0.8.0`` is released, so the work after it is 0.9. ``0.9.0rc2`` is not,
+    so the work is still 0.9.
+    """
+    number, _, candidate = declared.partition("rc")
+    major, minor, _ = (int(part) for part in number.split("."))
+
+    return (major, minor) if candidate else (major, minor + 1)
+
+
+def test_every_milestone_stands_on_the_page_its_state_asks_for() -> None:
+    """Released milestones on one page, the open one on the other, none lost.
+
+    The repetition test above cannot see a milestone that went missing, and a
+    move between two pages is where one could. A milestone moves in its release
+    commit: once ``pyproject.toml`` carries ``0.9.0``, the section of 0.9 has to
+    stand on ``docs/milestones.md``.
+    """
+    declared = only_match(DECLARED_VERSION, ROOT / "pyproject.toml")
+    current = open_milestone(declared)
+
+    assert milestones_on(MILESTONES) == [(0, minor) for minor in range(1, current[1])]
+    assert all(version >= current for version in milestones_on(ROADMAP))
+
+
+@pytest.mark.parametrize(
+    ("declared", "expected"),
+    [("0.8.0", (0, 9)), ("0.9.0rc1", (0, 9)), ("0.9.0rc3", (0, 9)), ("0.9.0", (0, 10))],
+)
+def test_the_open_milestone_follows_the_declared_version(
+    declared: str, expected: tuple[int, int]
+) -> None:
+    """A candidate works towards its own release, and a release towards the next."""
+    assert open_milestone(declared) == expected
 
 
 def test_a_repeated_milestone_is_found() -> None:
@@ -1384,3 +1443,90 @@ def test_a_repeated_milestone_is_found() -> None:
     )
 
     assert repeated_titles(page) == ["# Version 0.7"]
+
+
+# ----------------------------------------------------------------------
+# One home for a figure
+# ----------------------------------------------------------------------
+
+# A figure of three or more digits, written plainly or in groups of three
+# separated by a space, as this repository writes 8 630. A version number, an
+# arXiv identifier and the digits of a DOI touch a dot and are not figures. A
+# page of a paper, written ``p. 303``, is a citation, and a percentage is the
+# coverage threshold more often than a measurement. Four-digit years are left
+# out as well, since a date in a table and a date in the changelog are not a
+# copy of a measurement.
+LARGE_FIGURE = re.compile(
+    r"(?<![\d.])(?<!p\. )(?:\d{1,3}(?: \d{3})+|\d{3,})(?![\d.])(?! per cent|%)"
+)
+YEAR = re.compile(r"(?:19|20)\d\d")
+RELEASE_HEADING = re.compile(r"^## (\d+)\.(\d+)\.\S*$", re.MULTILINE)
+
+
+def large_figures(text: str) -> set[str]:
+    """Return the figures of ``text`` that are large enough to be checked."""
+    return {
+        figure for figure in LARGE_FIGURE.findall(text) if not YEAR.fullmatch(figure)
+    }
+
+
+def table_figures() -> set[str]:
+    """Return the large figures that a table in ``docs/`` holds."""
+    figures: set[str] = set()
+    for path in sorted((ROOT / "docs").glob("*.md")):
+        for line in path.read_text(encoding="utf-8").splitlines():
+            if line.startswith("|"):
+                figures |= large_figures(line)
+
+    return figures
+
+
+def figures_repeated_in_changelog(
+    changelog: str, tables: set[str], since: tuple[int, int]
+) -> dict[str, list[str]]:
+    """Return, per entry from ``since`` on, the table figures the entry repeats."""
+    headings = list(RELEASE_HEADING.finditer(changelog))
+    repeated: dict[str, list[str]] = {}
+    for index, heading in enumerate(headings):
+        if (int(heading[1]), int(heading[2])) < since:
+            continue
+        end = headings[index + 1].start() if index + 1 < len(headings) else None
+        found = sorted(large_figures(changelog[heading.end() : end]) & tables)
+        if found:
+            repeated[heading[0][3:]] = found
+
+    return repeated
+
+
+def test_the_changelog_repeats_no_figure_a_table_holds() -> None:
+    """``AGENTS.md``, "Where a statement lives": a figure has one home.
+
+    The rule holds for every figure. This test holds the large ones, which are
+    the ones a reader copies and the ones that went stale before. Entries before
+    0.9 were written under the old practice and stay as they were released.
+    """
+    changelog = (ROOT / "CHANGELOG.md").read_text(encoding="utf-8")
+
+    assert figures_repeated_in_changelog(changelog, table_figures(), (0, 9)) == {}
+
+
+def test_a_figure_repeated_in_the_changelog_is_found() -> None:
+    """The negative control, on the real entry of 0.8, which predates the rule.
+
+    That entry repeats the count of the Laplacian table. Read as if the rule
+    had held then, it has to be reported.
+    """
+    changelog = (ROOT / "CHANGELOG.md").read_text(encoding="utf-8")
+    repeated = figures_repeated_in_changelog(changelog, table_figures(), (0, 8))
+
+    assert "8 630" in repeated["0.8.0"]
+
+
+def test_a_version_an_identifier_and_a_year_are_not_figures() -> None:
+    """The cases the pattern leaves out on purpose, and one it must keep."""
+    text = (
+        "0.9.0, arXiv:2608.12543v3, 10.5281/zenodo.23295965, 2026, p. 303, "
+        "100 per cent, 100%, 3 369 739 and 440"
+    )
+
+    assert large_figures(text) == {"3 369 739", "440"}

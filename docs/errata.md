@@ -58,7 +58,7 @@ introduced value in its place, every dependency points to a smaller index.
 
 **Where:** `tests/data.py` holds the values and `tests/test_alpoege19.py`
 records both readings. The paragraph that made the claim is left standing in
-`docs/roadmap.md`, withdrawn rather than deleted.
+`docs/milestones.md`, withdrawn rather than deleted.
 
 ## One table row for three pages
 
@@ -792,7 +792,7 @@ The same section cited version 1 of that paper for the term count of
 Theorem 3 of arXiv:2608.12543v2 against the roadmap, and then Zhao's paper
 itself, which the project had not read before.
 
-**Now:** `docs/roadmap.md` under "What the conjecture says" states the
+**Now:** `docs/milestones.md` under "What the conjecture says" states the
 hypothesis and the conclusion with the numbered results they come from, and
 "What a finite computation can and cannot show" says what each finite check is
 worth. `README.md` says what 0.8 is for without restating the conjecture.

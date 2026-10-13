@@ -129,7 +129,7 @@ def undo(
     # examined state. On the published nineteen-dimensional map that was 2840
     # calls, and the peel took about four fifths as long without them. The
     # measurement, and why it is a pair of runs rather than one number, is
-    # under "Where the time goes" in ``docs/roadmap.md``.
+    # under "Where the time goes" in ``docs/milestones.md``.
     # ``to_polynomials`` and not the map's own elements, because that is the
     # public route to them. It is not load-bearing here: ring addition returns
     # a new element rather than changing one, measured, so working on the map's
@@ -212,7 +212,7 @@ def factor(
     every dropped coordinate to have gone.
 
     Until 0.4 this tried ``+1`` and ``-1``. That was too narrow -- see
-    ``conjugate`` and ``roadmap.md`` -- and solving costs less than trying two.
+    ``conjugate`` and ``milestones.md`` -- and solving costs less than trying two.
     """
     ring = current.ring
     domain = ring.domain

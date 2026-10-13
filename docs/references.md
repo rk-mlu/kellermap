@@ -255,7 +255,7 @@ Every step is verified: the identity of each certificate, the determinant where
 it is affordable, the homogeneity, and the collision carried through. The
 exception is the determinant of the gradient form, which SYM-7 states as a
 consequence and does not compute, for the reason measured under work package 7
-of `docs/roadmap.md`.
+of `docs/milestones.md`.
 
 ### Against the published figures
 
@@ -303,7 +303,7 @@ by a chain of five constructions none of which is its own.
 
 It establishes nothing about minimality. The number depends on the map the
 pipeline starts from, and `spacerat11` is the smallest degree-three map this
-project knows of rather than the smallest that exists. `docs/roadmap.md`
+project knows of rather than the smallest that exists. `docs/milestones.md`
 records the open question of whether the dimension at degree three is even the
 right thing to minimize; three data points say it is monotone and three data
 points are not a theorem.
@@ -480,7 +480,7 @@ in plain SymPy and without this library:
 
 Since milestone 0.8 the script also checks `Delta(P) = 0` and
 `Delta^2(P^2) = 0`, which the paper does not report. Both are the hypothesis of
-Zhao's conjecture at small depth, and `docs/roadmap.md` under "Version 0.8"
+Zhao's conjecture at small depth, and `docs/milestones.md` under "Version 0.8"
 says what they are worth.
 
 Not recomputed: the nilpotency index of `J h`, which costs matrix powers over a
@@ -497,7 +497,7 @@ dimension stops growing.
 It applies to homogeneous maps. Everything this project produces at degree
 three is not homogeneous — the maps carry quadratic terms as well — so the
 construction sits after the homogenization and not before it. That is the order
-`docs/roadmap.md` had already chosen for 0.6, and this is the reason for it
+`docs/milestones.md` had already chosen for 0.6, and this is the reason for it
 rather than a preference.
 
 Part 3 also writes out the step that has been recorded here as architecturally
@@ -533,7 +533,7 @@ round.
 Theorem 3, part 4, of arXiv:2608.12543 applies Theorems 3.4 and 4.3 to the
 symmetric lift, and that is the route by which a lift with a collision becomes
 a counterexample. `docs/contracts.md` under VanishingWitness states what this
-library checks about it, and `docs/roadmap.md` under "Version 0.8" what a
+library checks about it, and `docs/milestones.md` under "Version 0.8" what a
 finite computation can show.
 
 ---
@@ -677,7 +677,7 @@ fixes the domain of everything reachable from it. Normalizing first is
 therefore a choice about the search space and not only about the shape of the
 first step: over `ZZ` a step coefficient must be an integer, over `QQ` it need
 not. Milestone 0.5 searches without a fixed target and has to make that choice
-deliberately; `roadmap.md` records it.
+deliberately; `milestones.md` records it.
 
 The column does not make the dimensions incomparable. The normalization is a
 linear step, so it changes neither the dimension nor the degree. On
@@ -997,7 +997,7 @@ alone, so the collision survives with all its points.
 `0.7.0rc7`.** It said the library has no form for the move, that a step which
 lowers the dimension is something every step type here raises or leaves alone,
 and that whether such a step belongs is a question for the roadmap. All three
-are now wrong. `DescentStep` is exactly this move -- `docs/roadmap.md` carries
+are now wrong. `DescentStep` is exactly this move. `docs/milestones.md` carries
 work package 4, which measured that it was missing rather than assuming it from
 a reading of two derivations, and work package 5, which added `DSC-1` to
 `DSC-7`. And the dimension claim does not hold for a second, independent
@@ -1096,7 +1096,7 @@ bound.
 It is not a claim of priority, and the section above says who was earlier. It
 is not a claim of minimality either; the reasons are under "What it does not
 establish" in the section on `alpoege13`, and the measurement behind them is in
-`docs/roadmap.md` under WP 12.
+`docs/milestones.md` under WP 12.
 
 What the second arrival is worth is a different thing and worth stating: two
 routes that share no construction reached the same count, one by compressing a
