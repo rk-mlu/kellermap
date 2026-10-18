@@ -106,6 +106,11 @@ VAN-3 is the one that matters most: depth one passes on a harmonic form whose
 Hessian is not nilpotent, and only the control at depth two sees the
 difference.
 
+Milestone 0.9 added three, LIN-7, TRA-9 and UNI-13, and none of them is here.
+Each cannot fail after the identity of its step, for the reason HOM-11 and
+HOM-12 cannot. Their hypothesis is code, and its control is a test in
+``tests/test_multi_affine.py`` that calls it directly.
+
 They do **not** reproduce the ten misses of the first run, and until
 ``0.4.0rc14`` this file and ``CHANGELOG.md`` said they did. Two reasons. The
 misses were fixed in ``0.4.0rc13``, so those twelve probes against the current

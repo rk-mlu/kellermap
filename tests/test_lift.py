@@ -14,6 +14,7 @@ The small sources here are not Keller maps and say so where it matters.
 known.
 """
 
+import importlib.util
 import math
 import os
 import subprocess
@@ -864,3 +865,128 @@ def test_spacerat11_reaches_a_quartic_form_in_thirty_eight_variables() -> None:
 
     assert len(moved.points) == 2
     assert sp.Poly(lift.form, *lift.variables).total_degree() == 4
+
+
+# --------------------------------------------------------------------------
+# Two more rows through the four stages
+# --------------------------------------------------------------------------
+
+FOUR_STAGES = "## Two more rows through the four stages"
+
+
+def four_stage_section() -> str:
+    """Return the section of milestone 0.9 that holds the five rows.
+
+    It stands on the roadmap while 0.9 is open and moves to
+    ``docs/milestones.md`` with the release, so both pages are read.
+    """
+    for name in ("roadmap.md", "milestones.md"):
+        page = (ROOT / "docs" / name).read_text(encoding="utf-8")
+        if FOUR_STAGES in page:
+            section = page[page.index(FOUR_STAGES) :]
+            return section[: section.index("\n## ", 1)]
+
+    raise AssertionError(f"neither page carries {FOUR_STAGES!r}")
+
+
+def four_stage_rows(section: str | None = None) -> dict[str, tuple[int, ...]]:
+    """Return the table of that section, as five dimensions per map."""
+    rows = {}
+    text = four_stage_section() if section is None else section
+    for line in text.splitlines():
+        cells = [cell.strip() for cell in line.strip("|").split("|")]
+        if len(cells) == 6 and cells[0].startswith("`"):
+            rows[cells[0].strip("`")] = tuple(int(cell) for cell in cells[1:])
+
+    return rows
+
+
+def pipeline_dimensions(row: object) -> tuple[int, ...]:
+    """Return the five dimensions of a row of ``scripts/measure_pipeline.py``."""
+    return tuple(
+        getattr(row, field)
+        for field in (
+            "degree_three",
+            "unipotent",
+            "homogeneous",
+            "compressed",
+            "quartic",
+        )
+    )
+
+
+def test_the_first_three_rows_are_those_of_the_pipeline_script() -> None:
+    """The rows the section takes from ``scripts/measure_pipeline.py``.
+
+    Held against the script's table, which the references page is held
+    against in turn, so that the section repeats them under a test.
+    """
+    path = ROOT / "scripts" / "measure_pipeline.py"
+    spec = importlib.util.spec_from_file_location("pipeline_rows", path)
+    assert spec is not None and spec.loader is not None
+    module = importlib.util.module_from_spec(spec)
+    sys.modules[spec.name] = module
+    spec.loader.exec_module(module)
+
+    rows = four_stage_rows()
+    for row in module.TABLE:
+        assert rows[row.name] == pipeline_dimensions(row)
+
+    # The negative control: one cell changed to a value the table holds
+    # elsewhere, which a search for the number would not see.
+    changed = four_stage_section().replace(
+        "| `spacerat11` | 11 | 22 | 23 | 19 | 38 |",
+        "| `spacerat11` | 11 | 22 | 23 | 20 | 38 |",
+    )
+    first = module.TABLE[0]
+
+    assert four_stage_rows(changed)[first.name] != pipeline_dimensions(first)
+
+
+@pytest.mark.slow
+@pytest.mark.parametrize("name", ["alpoege15", "bcw17"])
+def test_the_two_new_rows_reach_their_lift(name: str) -> None:
+    """The two rows of milestone 0.9, every step verified, against the page.
+
+    About half a minute each, most of it in the compression, which is why the
+    rows are a slow test and not lines of ``scripts/measure_pipeline.py``. The
+    witness is verified as well, since the section says that it verifies.
+    """
+    from kellermap import LinearStep, VanishingWitness
+
+    source = over_field(getattr(examples, name)())
+    collision = getattr(examples, f"{name}_collision")()
+    dimensions = [source.dimension]
+
+    steps: list[Step] = []
+    if not source.is_in_MA(1):
+        normalization = LinearStep.normalize(source)
+        steps.append(normalization)
+        source, collision = normalization.target, normalization.transport(collision)
+
+    for stage in (UnipotentStep, HomogenizationStep):
+        step = stage.build(source)
+        steps.append(step)
+        source, collision = step.target, step.transport(collision)
+        dimensions.append(source.dimension)
+
+    compression = CompressionStep.build(source, collision)
+    steps.append(compression)
+    collision = compression.transport(collision)
+    dimensions.append(compression.target.dimension)
+
+    lift = SymmetricLiftStep.build(compression.target)
+    dimensions.append(lift.target.dimension)
+
+    assert Reduction(steps).verify() is None
+    assert lift.verify() is None
+
+    pair = Collision(collision.points[:2], collision.image)
+    witness = VanishingWitness(lift, lift.transport(pair))
+
+    assert witness.verify() is None
+    assert tuple(dimensions) == four_stage_rows()[name]
+    assert (
+        f"a form of {len(sp.Poly(lift.form, *lift.variables).terms())} monomials"
+        in " ".join(four_stage_section().split())
+    )

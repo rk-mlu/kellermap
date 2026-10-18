@@ -18,9 +18,13 @@ import pytest
 import sympy as sp
 
 from kellermap import (
+    LinearAutomorphism,
     LinearStep,
     PolynomialMap,
     Reduction,
+    TranslationStep,
+    Transposition,
+    Transvection,
     examples,
     over_field,
     peel,
@@ -40,7 +44,7 @@ x, y, z, w = sp.symbols("x y z w")
 
 
 def cube() -> PolynomialMap:
-    """The smallest case of the refinement, and the one the roadmap names."""
+    """The smallest case of the refinement, and the one milestone 0.7 names."""
     return over_field(PolynomialMap((x, y), (x + y**3, y)))
 
 
@@ -388,7 +392,7 @@ def test_a_carrier_inside_the_other_factor_is_passed_over() -> None:
 def test_the_smallest_case_arrives_and_verifies() -> None:
     """``(x + y**3, y)`` is the case Theorem 2.1(b) is smallest on.
 
-    Three steps to dimension six, which is the chain ``docs/roadmap.md``
+    Three steps to dimension six, which is the chain ``docs/milestones.md``
     writes out. Until the carrier selector was corrected the walk took the
     same three steps to dimension seven, because it kept one coordinate per
     value and the one it kept was unusable at the third.
@@ -471,6 +475,75 @@ def test_a_negative_budget_is_refused() -> None:
 def test_a_source_that_is_not_a_map_is_refused() -> None:
     with pytest.raises(TypeError):
         reduce_to_multi_affine("not a map")  # type: ignore[arg-type]
+
+
+# ----------------------------------------------------------------------
+# LIN-7, TRA-9 and UNI-13: the stages between the walk and HOM-12
+# ----------------------------------------------------------------------
+#
+# None of the three can fail after the identity of its step, so there is no
+# negative control through verify(), for the reason HOM-12 has none. What is
+# checked here is the property from outside, on each step type, and the
+# hypothesis that decides whether the check speaks at all.
+
+
+def flat_keller() -> PolynomialMap:
+    """``(x + y z, y, z)``: multi-affine, Keller, and in ``MA^1``."""
+    return over_field(PolynomialMap((x, y, z), (x + y * z, y, z)))
+
+
+def test_a_linear_step_keeps_a_multi_affine_source_multi_affine() -> None:
+    """LIN-7 on a transformation that is not a normalization.
+
+    A transvection and a transposition, so that components are mixed and
+    moved, which is the general case of LIN-1 and not the inverse of a
+    linear part.
+    """
+    source = flat_keller()
+    transformation = LinearAutomorphism(
+        [Transvection(source.ring, 0, 1, 3), Transposition(source.ring, 1, 2)]
+    )
+    step = LinearStep.build(source, transformation)
+
+    assert step.verify() is None
+    assert squared_terms(source) == ()
+    assert squared_terms(step.target) == ()
+
+
+def test_a_translation_keeps_a_multi_affine_source_multi_affine() -> None:
+    """TRA-9. The constants of the shift are the only change."""
+    source = over_field(PolynomialMap((x, y, z), (x + y * z + 1, y + 2, z)))
+    step = TranslationStep.normalize(source)
+
+    assert step.verify() is None
+    assert squared_terms(source) == ()
+    assert squared_terms(step.target) == ()
+
+
+def test_the_unipotent_step_keeps_a_multi_affine_source_multi_affine() -> None:
+    """UNI-13, with no variable exempt: the fresh ones occur linearly."""
+    refined = reduce_to_multi_affine(cube()).reduction
+    assert refined is not None
+    step = UnipotentStep.build(LinearStep.normalize(refined.target).target)
+
+    assert step.verify() is None
+    assert squared_terms(step.source) == ()
+    assert squared_terms(step.target) == ()
+
+
+def test_the_hypothesis_of_lin7_and_tra9_decides_whether_they_speak() -> None:
+    """The part of LIN-7 and TRA-9 that is code and not arithmetic.
+
+    A source that squares a variable silences the check, whatever the target
+    holds. A multi-affine source makes the squares of the target the answer.
+    """
+    from kellermap.reduction import _new_squares
+
+    squaring = over_field(PolynomialMap((x, y, z), (x + y**2, y, z)))
+
+    assert _new_squares(squaring, squaring) == ()
+    assert _new_squares(flat_keller(), squaring) == squared_terms(squaring)
+    assert _new_squares(flat_keller(), flat_keller()) == ()
 
 
 # ----------------------------------------------------------------------

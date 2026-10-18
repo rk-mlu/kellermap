@@ -174,6 +174,16 @@ squares a coordinate. Each family's ranges in the docstrings of the package
 move to the new last obligation, and the open-range test will find any that do
 not.
 
+*Done in WP 1.1.* One thing differs from this plan. LIN-7 and TRA-9 read
+`squared_terms` through a helper in `kellermap.reduction` that imports it
+inside the function. The function lives in `kellermap.bcw.grading`, importing
+that package runs the step types there, and they import `Provenance` from
+`kellermap.reduction`. A copy of the function would remove the cycle and add a
+second implementation, so the import is local and says why. Moving the
+function to a module outside `kellermap.bcw` would be the clean fix; it is a
+restructuring and not part of this package. The hypothesis of the two checks
+is code, so it has a control of its own that calls the helper directly.
+
 ## Two more rows through the four stages
 
 Since 0.6 the roadmap had named a measurement as the next step and never run
@@ -203,6 +213,12 @@ half a minute on the assistant's machine, most of it in the compression, which
 would double the script. They become one slow test in WP 1.1, which holds the
 five dimensions of each row and the 440 monomials. It runs in `pytest -m ""`
 and in `make release`, and not in the fast suite, so not in any mutation probe.
+
+*Done in WP 1.1.* `tests/test_lift.py` reads the table from this section and
+holds the last two rows by computing them, with every step and both witnesses
+verified. The first three rows repeat figures of the references page, so a
+fast test holds them against the table of `scripts/measure_pipeline.py`, with
+a control that changes one cell.
 
 ## One home for a statement
 

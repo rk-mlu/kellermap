@@ -56,12 +56,12 @@ number maintained in one place and checked in none does. What it says now holds
 whenever it is read, and the milestone paragraphs below carry the history.
 `docs/errata.md` records the stale one.
 
-**Milestone `0.9`, open.** Three obligations are marked, and none of them is
-implemented yet: LIN-7, TRA-9 and UNI-13. With HOM-12 they make the conditional chain of
-Theorem 2.1(b) explicit for every step type that can lie between
-`reduce_to_multi_affine` and the homogenization. All three are self-checks:
-none can fail after the identity of its step. `docs/roadmap.md` gives the
-reason for stating them anyway.
+**Milestone `0.9`, open.** Three obligations are marked, and all three are
+implemented since work package 1.1: LIN-7, TRA-9 and UNI-13. With HOM-12 they
+make the conditional chain of Theorem 2.1(b) explicit for every step type that
+can lie between `reduce_to_multi_affine` and the homogenization. All three are
+self-checks: none can fail after the identity of its step. `docs/roadmap.md`
+gives the reason for stating them anyway.
 
 **Milestone `0.8`, closed.** The milestone added `VanishingWitness`, VAN-1 to
 VAN-5, the witness to Zhao's Vanishing Conjecture that the symmetric lift

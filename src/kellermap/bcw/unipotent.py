@@ -53,7 +53,7 @@ from ..errors import VerificationError
 from ..polynomial_map import PolynomialMap
 from ..reduction import Provenance
 from ..variables import FixedVariableFactory, VariableFactory, reserved_names
-from .grading import homogeneous_part, scaled_displacement
+from .grading import homogeneous_part, scaled_displacement, squared_terms
 
 FILTRATION_LEVEL = 0
 """The ``EA`` level the step establishes. See UNI-7."""
@@ -283,7 +283,7 @@ class UnipotentStep:
     # ----------------------------------------------------------------------
 
     def verify(self) -> None:
-        """Check UNI-1 to UNI-10, or raise ``VerificationError``.
+        """Check UNI-1 to UNI-10 and UNI-13, or raise ``VerificationError``.
 
         The source is checked first. UNI-2, UNI-3 and UNI-4 are the reason the
         step applies at all, and a failure there is a statement about the
@@ -300,6 +300,7 @@ class UnipotentStep:
         self._verify_filtration()
         self._verify_nilpotence()
         self._verify_determinant()
+        self._verify_multi_affine()
 
         object.__setattr__(self, "_verified", True)
 
@@ -346,6 +347,28 @@ class UnipotentStep:
                 "UNI-5",
                 "The target does not carry the variables of the source "
                 "followed by the fresh ones, in order.",
+            )
+
+    def _verify_multi_affine(self) -> None:
+        """UNI-13.
+
+        Conditional, as HOM-12 is. By UNI-1 the target is
+        ``(X + F_(2) + Y, Y - F_(3))``: homogeneous parts of the source's
+        displacement, and the fresh variables to the first power. No variable
+        is exempt, unlike the parameter of HOM-12.
+        """
+        if squared_terms(self._source):
+            return
+
+        offending = squared_terms(self._target)
+        if offending:  # pragma: no cover - implied by UNI-1
+            index, monomial = offending[0]
+            raise VerificationError(
+                "UNI-13",
+                f"The source is multi-affine and component {index} of the "
+                f"target squares a variable, in the monomial {monomial}. The "
+                "construction takes homogeneous parts of the source and adds "
+                "the fresh variables linearly.",
             )
 
     def _verify_identity(self) -> None:

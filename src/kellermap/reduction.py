@@ -200,6 +200,26 @@ class Step(Protocol):
         """Carry a collision of ``source`` to one of ``target``."""
 
 
+def _new_squares(
+    source: PolynomialMap, target: PolynomialMap
+) -> tuple[tuple[int, tuple[int, ...]], ...]:
+    """Return the squares in ``target`` when ``source`` has none, else nothing.
+
+    The hypothesis of LIN-7 and TRA-9, and the reading of their conclusion.
+
+    The import is local. ``squared_terms`` lives in ``kellermap.bcw.grading``,
+    importing that module runs ``kellermap.bcw``, and the step types there
+    import ``Provenance`` from this module, which would not exist yet at the
+    top of it. The function stays in one place rather than being copied here.
+    """
+    from .bcw.grading import squared_terms
+
+    if squared_terms(source):
+        return ()
+
+    return squared_terms(target)
+
+
 @dataclass(frozen=True, eq=False)
 class LinearStep:
     """``target = transformation o source`` for an element of ``GL_n(k)``.
@@ -406,13 +426,14 @@ class LinearStep:
     # ----------------------------------------------------------------------
 
     def verify(self) -> None:
-        """Check LIN-1 to LIN-3, and LIN-6 where it is claimed."""
+        """Check LIN-1 to LIN-3 and LIN-7, and LIN-6 where it is claimed."""
         if self._verified:
             return
 
         self._verify_identity()
         self._verify_factorization()
         self._verify_determinant()
+        self._verify_multi_affine()
         if self._normalizing:
             self._verify_normalization()
 
@@ -431,6 +452,24 @@ class LinearStep:
             raise VerificationError(
                 "LIN-1",
                 "The target is not the transformation applied to the source.",
+            )
+
+    def _verify_multi_affine(self) -> None:
+        """LIN-7.
+
+        Conditional, as HOM-12 is: a source that squares a variable makes the
+        hypothesis false and the check silent. By LIN-1 the displacement of
+        the target is the transformation applied to that of the source plus a
+        linear map, and neither creates a square.
+        """
+        offending = _new_squares(self._source, self._target)
+        if offending:  # pragma: no cover - implied by LIN-1
+            index, monomial = offending[0]
+            raise VerificationError(
+                "LIN-7",
+                f"The source is multi-affine and component {index} of the "
+                f"target squares a variable, in the monomial {monomial}. A "
+                "linear combination of square-free monomials has none.",
             )
 
     def _verify_factorization(self) -> None:
@@ -782,13 +821,14 @@ class TranslationStep:
     # ----------------------------------------------------------------------
 
     def verify(self) -> None:
-        """Check TRA-1, TRA-3 and TRA-4, and TRA-6 where it is claimed."""
+        """Check TRA-1, TRA-3, TRA-4 and TRA-9, and TRA-6 where it is claimed."""
         if self._verified:
             return
 
         self._verify_identity()
         self._verify_factorization()
         self._verify_determinant()
+        self._verify_multi_affine()
         if self._normalizing:
             self._verify_normalization()
 
@@ -799,6 +839,18 @@ class TranslationStep:
             raise VerificationError(
                 "TRA-1",
                 "The target is not the source translated by the shift.",
+            )
+
+    def _verify_multi_affine(self) -> None:
+        """TRA-9. As LIN-7: by TRA-1 the displacements differ by a constant."""
+        offending = _new_squares(self._source, self._target)
+        if offending:  # pragma: no cover - implied by TRA-1
+            index, monomial = offending[0]
+            raise VerificationError(
+                "TRA-9",
+                f"The source is multi-affine and component {index} of the "
+                f"target squares a variable, in the monomial {monomial}. A "
+                "translation changes the displacement by a constant only.",
             )
 
     def _verify_factorization(self) -> None:

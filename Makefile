@@ -26,10 +26,11 @@ typecheck:
 test:
 	uv run pytest
 
-# Only the slow tests. The marker carries seventeen of them; AGENTS.md states
-# the rule a test earns it under, and docs/milestones.md the profile behind the
-# rule. The count stood at one in this comment until 0.7.0rc8 and had not been
-# revised as the marker was applied.
+# Only the slow tests. AGENTS.md states the rule a test earns the marker under,
+# and docs/milestones.md the profile behind the rule. How many carry it is what
+# `pytest -m slow --collect-only -q` says. This comment stated a count twice,
+# and both times it went stale: it said one until 0.7.0rc8, and seventeen
+# from then until 0.9, when eighteen carried the marker.
 test-slow:
 	uv run pytest -m slow
 
