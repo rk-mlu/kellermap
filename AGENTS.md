@@ -437,7 +437,8 @@ should keep them intact.
   an unlicensed map inside it, and the Zenodo GitHub integration would have
   published `tests/data.py`, which the archive excludes and version control
   does not. `docs/deposit.md` records the check for the channel that came
-  third.
+  third. The certificate files of milestone 0.9 are the fourth, and
+  `docs/contracts.md` records their check under "Files and the licence rule".
 
 ---
 

@@ -245,6 +245,57 @@ figures to a pointer.
 
 The entries and sections written before 0.9 stay as they were released.
 
+## The certificate file
+
+Agreed when work package 2 was written. Four questions decided the shape of
+the obligations, and the maintainer chose one answer to each.
+
+- **How a file writes coefficients.** JSON, with every coefficient written in
+  the structure of its domain: an integer or a rational as a string, an element
+  of `QQ_I` as a pair, a polynomial as a list of exponent vectors and
+  coefficients. Two alternatives were considered. Polynomials written as SymPy
+  expressions are easier to read, but they need a parser, and the parser would
+  be a second place for errors in a checker meant to have few. TOML needs
+  `tomllib`, which Python has from 3.11, and the lower bound is 3.10.
+- **Whether a chain writes every map or only its two ends.** Every map, once.
+  With only the two ends, reading a file back would compute each target in the
+  library. A step whose target the library computed is not `SUPPLIED` in the
+  sense of BCW-9, so the label would be wrong. With every map written, the
+  label is right, and BCW-1 and the other identities can fail on a file.
+- **Where the checker lives.** In a package of its own, `kellermap_check`, in
+  the wheel beside `kellermap`. A directory under `scripts/` would separate
+  the two more visibly, but the command line of WP 6 could then not call the
+  checker from an installed package. A module inside `kellermap` would make the
+  independence a convention that nothing in the layout shows.
+- **Which coefficient domains.** The ones the chains of this project use, and
+  no others. Finite fields are left out: a chain over `GF(p)` carries no
+  collision and no witness.
+
+*Done in WP 2.* FMT-1 to FMT-12 and CHK-1 to CHK-8 stand in
+`docs/contracts.md`, each with the marker of this milestone. Three things
+differ from the plan or from the answers above.
+
+The answer on domains named algebraic fields. FMT-5 admits quadratic fields
+only, and only for collisions. Two measurements made while the obligation was
+written are the reason, and the paragraph under FMT-5 gives both. In short,
+SymPy compares algebraic fields by the expression that generated them, and
+`kellermap.canonical` does not decide coordinates written through `CRootOf`. A
+quadratic field avoids both problems and covers the one collision that needs an
+extension.
+
+The plan said documentation only. One test changed with it:
+`tests/test_documentation.py` lists the families it checks and requires the
+list to be the families the page defines, so FMT and CHK entered that list.
+
+Four obligations the checker checks take a determinant. The library affords
+them through the Schur complement of MAP-4, and whether the checker can is not
+known. WP 4 measures it, and CHK-4 says what happens if it cannot.
+
+The format is a new way for values to leave the repository, so it was checked
+against the licence rule before anything was written. The result stands in
+`docs/contracts.md` under "Files and the licence rule": the repository holds no
+certificate file, and a test of WP 3 holds it to that.
+
 ## What the fast suite costs at 0.8.0
 
 Profiled when the milestone opened, on 11 October 2026, on the assistant's

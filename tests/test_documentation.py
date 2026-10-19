@@ -118,11 +118,13 @@ UNWEIGHTED_G = re.compile(
 FAMILIES = {
     "BCW",
     "CHC",
+    "CHK",
     "CNJ",
     "COL",
     "DSC",
     "DOM",
     "FAC",
+    "FMT",
     "HOM",
     "LIN",
     "MAP",
