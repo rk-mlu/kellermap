@@ -72,6 +72,11 @@ domains a file can hold, and the paragraph under it gives the measurement that
 forced the narrowing. CHK-8 is the only evidence that the checker checks
 anything, and the other seven say what it checks.
 
+An audit of work package 2 read the twenty before any of them was implemented.
+Work package 2.1 amended twelve of them, and each amendment says so where it
+stands. The two that changed most are CHK-6, which now has three verdicts, and
+CHK-8, whose first wording promised more than a control can show.
+
 **Milestone `0.8`, closed.** The milestone added `VanishingWitness`, VAN-1 to
 VAN-5, the witness to Zhao's Vanishing Conjecture that the symmetric lift
 provides. Their `[0.8]` markers are gone with the close.
@@ -2681,6 +2686,16 @@ for it and no others. `format` is `"kellermap-certificate"` and `version` is
 An unknown key may carry a meaning that a later version gives it. A reader that
 skipped it would accept a file it does not understand.
 
+A reader also refuses an object that has one key twice, a value of the wrong
+JSON type, and the constants `NaN`, `Infinity` and `-Infinity`. `true` and
+`false` stand only where a boolean is asked for, which is `normalizing`. A
+boolean where an integer is asked for is refused.
+
+*Amended in work package 2.1, after an audit of work package 2.* The paragraph
+above was added. Python's `json` module keeps the last of two equal keys and
+accepts `NaN`. It reads `true` as `True`, which Python treats as an integer
+equal to `1`. The first wording excluded none of the three.
+
 **FMT-2 — Every map once, every step between two maps. [0.9]** `maps` has one
 entry more than `steps`. Step `i` takes the map at position `i` to the map at
 position `i + 1`. A map that is the target of one step and the source of the
@@ -2728,6 +2743,12 @@ Every domain on it has characteristic zero, so COL-7 holds for every collision
 a file can hold. The value `-1` is excluded because that field is `QQ_I`, and
 one field has one name.
 
+`sqrt(d)` is the number SymPy gives that name. For `d > 0` it is the positive
+square root. For `d < 0` it is `i` times the positive square root of `-d`, the
+root with positive imaginary part. An element `[a, b]` is `a + b sqrt(d)` with
+that root. *Amended in work package 2.1, after an audit of work package 2.* The
+first wording did not say which of the two roots is meant.
+
 Finite fields are left out. A chain over `GF(p)` carries no collision by COL-7
 and no witness, and no file of this project needs one.
 
@@ -2757,6 +2778,13 @@ coefficient, with one exponent per generator of the ring of a map, or per
 parameter of a domain. A term with the coefficient zero is refused, and so are
 two terms with one exponent vector. A denominator of zero is refused.
 
+An exponent is a non-negative JSON integer. An exponent vector of another
+length than the number of generators or parameters is refused. The zero
+polynomial is the empty list, and the zero of a field of fractions has the
+empty list as its numerator. *Amended in work package 2.1, after an audit of
+work package 2.* The first wording left negative exponents, vectors of the
+wrong length and the spelling of zero unstated.
+
 A float is never read. JSON has no exact rationals, and a coefficient that went
 through a float would be a different number. The rules exclude every second
 spelling of a value, so that a file cannot say one thing in two ways. The one
@@ -2785,10 +2813,29 @@ contains the domain of its map, and "contains" means one of these:
 - a base lies in a polynomial ring and in a field of fractions over a base
   that contains it;
 - a polynomial ring lies in the field of fractions in the same parameters and
-  order, over a base that contains its base.
+  order, over a base that contains its base;
+- a polynomial ring or a field of fractions lies in the one of the same kind,
+  in the same parameters and order, over a base that contains its base.
 
 The checker evaluates a map at points of the collision's domain, and this is
 what makes the evaluation defined. A map may carry several collisions or none.
+
+`Collision` holds no domain, by COL-5, so `dumps` chooses one. It writes the
+first domain of the following order that contains the domain of the map and
+every coordinate. For a map over a base, the order is `ZZ`, `QQ`, `ZZ_I`,
+`QQ_I`, and then the quadratic field of the one square-free `d` that the
+coordinates need. For a map over a polynomial ring or a field of fractions, the
+polynomial rings come before the fields of fractions. Each is in the parameters
+and the order of the map's domain, and over the bases in the order `ZZ`, `QQ`,
+`ZZ_I`, `QQ_I`. A collision for which no domain of the list qualifies is
+refused and cites FMT-5. The domain a file writes is then a function of the map
+and the collision. A reader accepts every domain that this obligation allows
+and does not ask for the one `dumps` would choose.
+
+*Amended in work package 2.1, after an audit of work package 2.* The rule of
+the last paragraph and the last item of the list were added. A collision of
+rational points over a map over `ZZ` lies in `QQ`, in `QQ_I` and in every
+quadratic field, and the first wording did not say which of them a file writes.
 
 **FMT-9 — The witness names its parts. [0.9]** `witness.step` is the index of
 a `SymmetricLiftStep`. `witness.collision` is the index of a collision attached
@@ -2814,10 +2861,33 @@ it, is the first control of the format. Work package 3 runs it on every chain
 of the reconstruction scripts.
 
 `loads` does not verify, with the comparison of FMT-4 as the one exception. It
-builds the objects, refuses what this section refuses with a
-`VerificationError` that cites the obligation, and leaves the obligations of
-the objects to `verify()`. A constructor invariant that a file breaks raises as
-it does for the same arguments passed by hand.
+builds the objects and leaves their obligations to `verify()`.
+
+Everything `loads` refuses, it refuses with a `VerificationError` that cites an
+obligation and says where in the file it failed, in the `location` of the
+section on errors. There are three kinds of refusal.
+
+- A rule of this section that the file breaks cites that rule. A witness that
+  names a step that is not a lift, or a collision at another position, cites
+  FMT-9, and its location is the witness.
+- A derived target that differs from the written map cites DSC-1, and its
+  location is the step.
+- A constructor invariant that the file breaks cites the obligation that the
+  invariant belongs to. The exception the constructor raised is attached as
+  the cause. A factor of a linear transformation cites LIN-2 and a factor of a
+  descent cites DSC-4, as in CHK-3, because the factor types have no
+  obligations of their own.
+
+The constructors keep their exceptions. A caller who passes the same arguments
+by hand gets the `ValueError` that the table of errors lists, as before.
+
+*Amended in work package 2.1, after an audit of work package 2.* The first
+wording said that a file which breaks a constructor invariant raises what the
+constructor raises. The audit pointed out that the checker then cites COL-4 for
+two equal points where the library raises a `ValueError` without an identifier.
+Today no exception of a constructor says which invariant it enforces, so
+`loads` could not cite one. Work package 2.2 gives each of them the identifier
+before work package 3 reads it. `docs/roadmap.md` has the plan.
 
 **FMT-11 — A certificate verifies its parts and computes nothing else. [0.9]**
 `Certificate.verify()` verifies the chain by RED-3, each collision against the
@@ -2826,15 +2896,31 @@ RED-3 again. A failure names the obligation of the part and where it failed:
 the index of the step by RED-4, the index of the collision, or the witness.
 
 **FMT-12 — Writing is deterministic, and reading inverts it. [0.9]** The text
-`dumps` writes depends only on what the file holds: the keys are sorted and the
-terms of a polynomial are in a fixed order. A certificate and the certificate
-read back from its file therefore give the same text.
+`dumps` writes depends only on what the certificate holds. It is JSON in ASCII,
+with no whitespace outside strings, with the keys of every object sorted by
+code point, and with one newline at the end. In Python that is
+`json.dumps(value, sort_keys=True, separators=(",", ":"), ensure_ascii=True)`
+followed by a newline.
+
+The terms of a polynomial are sorted by their exponent vectors, read as tuples
+of integers, in descending lexicographic order. The monomial order of the ring
+does not change that. The points of a collision are sorted by the text of their
+encoding, because COL-6 makes a collision a set of points. Every other list
+keeps the order of the certificate, because there the order carries meaning.
+The domain of a collision is the one FMT-8 chooses. A certificate and the
+certificate read back from its file therefore give the same text.
 
 `loads(dumps(c))` has the maps and the collisions of `c`, equal by value. Each
 of its steps is the step that the public constructor gives for the same
 arguments, that is the step of `c` with `SUPPLIED` provenance.
 `dumps(loads(t))` is `t` for every text `t` that `dumps` wrote. The second half
 lets a paper cite a file by a hash of its bytes.
+
+*Amended in work package 2.1, after an audit of work package 2.* The first
+wording asked for a fixed order of the terms and did not say which, so an
+independent writer could not tell whether it agrees with this one. It also left
+two equal collisions, whose points arrive in different orders, to be written as
+two texts.
 
 ### Files and the licence rule
 
@@ -2881,7 +2967,8 @@ reads version `1`. What a later version reads is for that version to state.
 ## The independent checker
 
 A second implementation of the checks a file needs, without the library. It
-reads a file of the format above and accepts it or refuses it. It is the eight
+reads a file of the format above and reaches one of the three verdicts of
+CHK-6. It is the eight
 reconstruction scripts made general: each of them repeats one chain in plain
 SymPy, and the checker repeats any chain a file holds.
 
@@ -2892,16 +2979,33 @@ class Refusal(Exception):
     message: str
 
 
-def check(text: str) -> Report: ...
+@dataclass(frozen=True)
+class Report:
+    verdict: str  # "VERIFIED" or "INCOMPLETE"
+    checked: tuple[tuple[str, tuple[str, ...]], ...]  # location, identifiers
+    skipped: tuple[tuple[str, tuple[str, ...]], ...]
+    not_computed: tuple[str, ...]  # "SYM-7", "VAN-5"
+    claims: tuple[str, ...]
+
+
+def check(text: str, skip: frozenset[str] = frozenset()) -> Report: ...
 ```
 
-From the command line it is `python -m kellermap_check FILE`. What `Report`
-holds is CHK-7.
+From the command line it is `python -m kellermap_check FILE`, with `--skip ID`
+for each check to leave out. CHK-6 says what the verdicts mean and CHK-7 what
+a `Report` holds.
 
 **CHK-1 — Independent of the library. [0.9]** The checker is the package
 `kellermap_check`. It imports nothing from `kellermap`, directly or through
 another module, and nothing outside the standard library and SymPy. A test
 holds it to that, as `tests/test_scripts.py` holds the reconstruction scripts.
+
+The test has two parts. It reads the source of the package and finds no import
+of `kellermap`. And it imports `kellermap_check` in a fresh interpreter and
+finds no module of `kellermap` loaded afterwards. The second part covers an
+import through another module, which the first cannot see. *Amended in work
+package 2.1, after an audit of work package 2.* The first wording named a test
+and not what it does.
 
 Independent means independent of the code of this library. SymPy is shared,
 and an error in SymPy could reach both. The page does not claim more.
@@ -2910,6 +3014,14 @@ and an error in SymPy could reach both. The page does not claim more.
 `kellermap`, with the same lower bounds for Python and SymPy. `kellermap` may
 import it, and the command line of work package 6 may do so for `kellermap
 verify`. The checker never imports `kellermap`, so the dependency runs one way.
+
+The wheel and the source archive both carry the package, and
+`tests/test_packaging.py` checks both. The coverage run measures the package
+beside `kellermap`, with the same threshold of 100 per cent, so
+`[tool.coverage.run]` names both source directories. *Amended in work package
+2.1, after an audit of work package 2.* The configuration measures
+`src/kellermap` alone, and the first wording would have left the checker
+outside the threshold.
 
 **CHK-3 — It refuses what the format refuses. [0.9]** The checker reads a file
 by the rules of FMT-1 to FMT-9 and refuses a file that breaks one of them,
@@ -2950,9 +3062,16 @@ derives.
 Four of these take a determinant: UNI-4, HOM-3, CHC-4 and SYM-4. The library
 takes them without dividing, after the Schur complement of MAP-4. The checker
 may use the same mathematics, written on its own. Whether it can afford the
-four on the chains of this project is measured in work package 4. If one
-cannot be afforded, the obligation is amended in the open, and the report of
-CHK-7 names it as not checked, as SYM-7 is not checked by the library.
+four on the chains of this project is measured in work package 4.
+
+*Amended in work package 2.1, after an audit of work package 2.* The first
+wording said that a determinant the checker cannot afford would be amended away
+and named as not checked. The audit pointed out that a checker which still
+reported such a file as accepted would report a confirmation it did not make.
+CHK-6 now has a verdict for a check that was not made, and CHK-8 requires the
+full verdict on the eight chains. A determinant the checker cannot afford on
+one of them is therefore a failure of work package 4. It goes to the
+maintainer, and it is not resolved by an amendment that lets the gate pass.
 
 **CHK-5 — What it leaves to the library. [0.9]** The self-checks: BCW-5,
 BCW-7, LIN-3, the `MA^1` clause of LIN-6, LIN-7, TRA-3, TRA-4, the `MA^0`
@@ -2968,35 +3087,88 @@ TRA-7, UNI-11, HOM-9, CHC-9, SYM-8, SYM-9, SYM-10 and DSC-6 have nothing to act
 on. Nor are the properties of the types that a file does not carry, such as a
 filtration level or a provenance.
 
-**CHK-6 — A refusal names one obligation and where it failed. [0.9]** The
-checker stops at the first obligation that fails. The order is fixed: the file
-by the format, then the maps, the steps, the collisions and the witness, each
-in the order of the file. Within one object the order is fixed by the package
-and written in its documentation. So one file always gives one refusal.
+**CHK-6 — Three verdicts, and a refusal names one obligation. [0.9]** A run of
+the checker ends in one of three verdicts.
 
-`check` raises `Refusal` with the identifier, the location and a message. From
-the command line the checker prints the three and exits with 1. A file it
-accepts exits with 0. A file that cannot be opened exits with 2. A file that
+- `VERIFIED`: every check of CHK-3 and CHK-4 that applies to the file was made,
+  and every one passed.
+- `INCOMPLETE`: every check that was made passed, and at least one that
+  applies was not made. The only reason is a caller who asked to leave out
+  named checks, and the report names them. `INCOMPLETE` is not an acceptance.
+- `REFUSED`: a check failed.
+
+A refusal stops at the first check that fails. The order is fixed: the file by
+the format, then the maps, the steps, the collisions and the witness, each in
+the order of the file. Within one object the order is fixed by the package and
+written in its documentation. So one file always gives one refusal.
+
+`check` returns a `Report` for the first two verdicts. For the third it raises
+`Refusal`, with the identifier, the location and a message. `skip` names checks
+to leave out, by identifier, wherever they apply. An identifier that is not in
+the table of CHK-4 is a wrong call and not an empty skip, as for a selector of
+`scripts/mutation_probe.py`.
+
+The exit status is 0 for `VERIFIED`, 1 for `REFUSED`, 2 for a file that cannot
+be opened or a wrong call, and 3 for `INCOMPLETE`. The value 3 is the one
+`scripts/gate_outcome.py` uses for a script that checked nothing, and the two
+mean the same: nothing failed, and something was not checked. A file that
 opens and is not JSON is refused under FMT-1 and exits with 1.
 
-**CHK-7 — An acceptance says what it rests on. [0.9]** The report of an
-accepted file lists, for every object, the identifiers the checker checked.
-Where the file holds a lift or a witness, it names SYM-7 and VAN-5 as
-consequences that were not computed. A reader of the output sees what an
-acceptance rests on and what it does not.
+*Amended in work package 2.1, after an audit of work package 2.* The first
+wording had two outcomes, accepted and refused. A check that was left out could
+then be read as one that was made.
 
-**CHK-8 — Its controls. [0.9]** Two kinds, as the roadmap plans them.
+**CHK-7 — A report says what its verdict rests on. [0.9]** The report lists,
+for every object, the identifiers the checker checked and those it left out at
+the caller's request. It states the claims of the file that the checker
+confirmed: that each step takes its map to the next, that each collision is a
+collision of its map, and that the witness is a witness. Where the file holds a
+lift or a witness, the report names SYM-7 and VAN-5 as consequences that were
+not computed. They do not make a verdict `INCOMPLETE`, because neither is a
+check of CHK-4.
 
-On each of the eight chains of the reconstruction scripts, the checker accepts
-the file the library writes, and the maps and collisions that the script
-computes are the ones in the file. The two chains whose maps are in
+The report also says what is not claimed. By RED-3 the checker computes no
+global invariant, so it does not check that the first map of a chain is a
+Keller map. Only a step that asks for it checks its own source, as UNI-4, CHC-4
+and SYM-4 do. A file with no step and no collision makes no
+mathematical claim, and the report says so in those words. Such a file is not
+refused. Its verdict says that the file is well formed, and nothing about the
+map.
+
+*Amended in work package 2.1, after an audit of work package 2.* The second
+paragraph was added. The audit pointed out that a file with one map passes
+every check and confirms nothing, and that a successful read must not be
+mistaken for a proof that a map is Keller.
+
+**CHK-8 — Its controls. [0.9]** Three kinds.
+
+On each of the eight chains of the reconstruction scripts, the checker returns
+`VERIFIED` for the file the library writes, and the maps and collisions that
+the script computes are the ones in the file. The two chains whose maps are in
 `tests/data.py` are checked where that file is present and skipped where it is
 not, as their scripts are.
 
-A file that the checker accepts, changed in one coefficient, one slot or one
-point, is refused, and the refusal cites the obligation that the change breaks.
-Each control names that obligation in advance. The library refuses the same
-file when it reads it back and verifies it.
+The negative controls. Each takes a file the checker verifies and changes one
+coefficient, one slot or one point, chosen so that the change breaks an
+obligation. The control states in advance which obligation the change breaks,
+at which location, and why. The checker has to refuse the file with that
+identifier and that location. The library has to refuse the same file when it
+reads it back and verifies it. Where the library cites another obligation, the
+control says why.
+
+The positive controls. A change that keeps a file valid has to be accepted. Two
+are required: the points of a collision in another order, and an element of a
+field of fractions with its numerator and its denominator multiplied by one
+non-zero constant. The first is a set under COL-6, and the second is the
+exception of FMT-6. Both files are verified, and `loads` gives the same
+certificate for each as for the original file.
+
+*Amended in work package 2.1, after an audit of work package 2.* The first
+wording said that a file changed in one coefficient, one slot or one point is
+refused. As a statement about every such change that is false. A file with one
+map and nothing else stays valid when a coefficient changes, and a changed
+point can give another collision. `docs/errata.md` records it. The positive
+controls were added at the same time.
 
 ### Which of these can fail on supplied data
 
@@ -3004,7 +3176,8 @@ None of them is a check on a file in the sense of the other families. CHK-3
 and CHK-4 say which obligations of other families the checker checks, and
 those carry their own answers. CHK-1, CHK-2, CHK-6 and CHK-7 are obligations
 on the conduct of the checker. CHK-8 is the evidence that the checker checks
-anything at all, and it is the obligation to weigh.
+anything at all, and it is the obligation to weigh. CHK-6 is the one to read
+next: it decides when an output may say `VERIFIED`.
 
 ---
 
@@ -4683,9 +4856,15 @@ class VerificationError(Exception):
     obligation: str  # "COL-3", "BCW-1", "RED-2", ...
     message: str  # what went wrong, naming the offending object
     step: int | None  # index within the reduction, if applicable
+    location: str | None  # "step 4", "map 0", "collision 1", "witness", "file"
 
     def located_at(self, step: int) -> VerificationError: ...
 ```
+
+`location` is new in milestone 0.9 and is not implemented. It is set by
+`Certificate.loads` under FMT-10 and holds the strings the checker uses for
+the same places. For a failure inside a reduction it is `step i`, beside
+`step`. Work package 2.2 adds it.
 
 A step verifies itself without knowing where in a chain it sits, so the index
 is attached afterwards by the reduction that catches the failure.
@@ -4721,7 +4900,7 @@ identifier also appears in `str(...)`, but a caller is expected to branch on
 | `reordered()` given anything but a permutation of the variables | `ValueError` |
 | a structural case the search does not handle | `NotImplementedError` |
 | an argument over a ring other than `over` | `VerificationError` |
-| a file that breaks a rule of the certificate format | `VerificationError` |
+| a file that breaks a rule of the certificate format, or an invariant of a constructor | `VerificationError` |
 | a certificate whose witness or collision is not part of it | `ValueError` |
 | arguments of the wrong type | `TypeError` |
 

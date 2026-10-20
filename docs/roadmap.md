@@ -95,6 +95,19 @@ obligations have to settle:
   import `kellermap`, and `tests/test_scripts.py` already holds the
   reconstruction scripts to that.
 
+**WP 2.1** answers an audit of WP 2 and is documentation only. It was added
+when the audit asked for it before WP 3. The section "The audit of work
+package 2" below says what changed.
+
+**WP 2.2** is a restructuring that WP 2.1 made necessary. Every constructor
+invariant that a file can break raises a `ValueError` that carries the
+identifier of the obligation it enforces, and `VerificationError` gains a
+`location`. Where `docs/contracts.md` names no obligation for an invariant, the
+package names the one it serves and says so on that page. No check changes. It
+comes before WP 3, because `loads` reads both, and it is a package of its own,
+for the reason `AGENTS.md` gives for keeping a restructuring apart from an
+extension.
+
 **WP 3** is the exporter: a chain, a step and a witness to a file, and a file
 back to the objects. Reading a file back and verifying it with the library is
 the first control of the format.
@@ -295,6 +308,43 @@ The format is a new way for values to leave the repository, so it was checked
 against the licence rule before anything was written. The result stands in
 `docs/contracts.md` under "Files and the licence rule": the repository holds no
 certificate file, and a test of WP 3 holds it to that.
+
+### The audit of work package 2
+
+An external audit read FMT-1 to FMT-12 and CHK-1 to CHK-8 before any of them
+was implemented. It found no mathematical error and asked for nothing in the
+four decisions above to change. It found two things to correct before WP 3 and
+four to make precise. WP 2.1 answers all six, and each amendment in
+`docs/contracts.md` says so where it stands.
+
+- **CHK-8 promised a refusal for every change of one coefficient, slot or
+  point.** That is false, and `docs/errata.md` records it. The finding is
+  narrower than it reads: the next sentence of the paragraph already asked each
+  control to name its obligation in advance. CHK-8 now asks for exactly that,
+  and adds positive controls.
+- **A check the checker cannot afford would still have ended in an
+  acceptance.** CHK-6 now has three verdicts, `VERIFIED`, `INCOMPLETE` and
+  `REFUSED`, and CHK-8 requires `VERIFIED` on the eight chains. `INCOMPLETE`
+  needs a cause that a test can reach, so the checker takes a list of checks to
+  leave out. Without one, the verdict would be code that no file reaches.
+- **Errors of `loads` were of two kinds.** FMT-10 now has every refusal of a
+  file cite an obligation and a location. The audit asked for a translation of
+  the recognisable cases. Today no exception of a constructor carries its
+  identifier, so `loads` would recognise none of them except by its message.
+  That is why WP 2.2 exists. A copy of the invariants inside `loads` would also
+  have answered the finding, with two implementations of each invariant in one
+  library. It was not chosen.
+- **The domain of a collision was not determined.** FMT-8 now fixes an order,
+  and FMT-5 fixes the root that `sqrt(d)` names.
+- **Edge cases of the syntax.** FMT-1 and FMT-6 now refuse a repeated key, a
+  boolean where an integer belongs, `NaN`, a negative exponent and a vector of
+  the wrong length, and they spell the zero polynomial. FMT-12 fixes the text
+  byte by byte and the order of terms and of points.
+- **Packaging and coverage.** CHK-2 now names the wheel, the source archive
+  and the coverage threshold, and CHK-1 says what its test does.
+
+The audit also asked what a file with one map certifies. Nothing, and CHK-7
+now requires the report to say so.
 
 ## What the fast suite costs at 0.8.0
 

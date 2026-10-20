@@ -871,3 +871,25 @@ pipeline script says what it is compared with.
 **Worth keeping:** a count of independent checks is a figure like any other.
 Each check the sentence named existed, which is why it read as true; one of
 them ran on a different object.
+
+## The controls of the checker were promised for every change
+
+**Said, in work package 2 of milestone 0.9, in CHK-8 of `docs/contracts.md`:**
+that a file the checker accepts, changed in one coefficient, one slot or one
+point, is refused, and that the refusal cites the obligation the change breaks.
+
+**True:** that holds for a change chosen to break an obligation, and not for
+every change of that kind. A file with one map and no step stays valid when a
+coefficient of the map changes. A changed point can give another collision of
+the same map.
+
+**Found** by an external audit of work package 2, before anything was
+implemented.
+
+**Now:** CHK-8 asks for negative controls whose change and broken obligation
+are stated in advance, and adds positive controls, changes that keep a file
+valid and have to be accepted.
+
+**Worth keeping:** the next sentence of the same paragraph said that each
+control names its obligation in advance. That was the intended meaning, and
+the first sentence said more than it.
