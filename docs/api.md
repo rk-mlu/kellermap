@@ -33,6 +33,8 @@ what they do.
 - [Collision-hull compression](#collision-hull-compression)
 - [The symmetric lift](#the-symmetric-lift)
 - [The vanishing witness](#the-vanishing-witness)
+- [The descent](#the-descent)
+- [Certificates in a file](#certificates-in-a-file)
 - [Finding candidates](#finding-candidates)
 - [Assembling a chain](#assembling-a-chain)
 - [Peeling a chain off a target](#peeling-a-chain-off-a-target)
@@ -47,7 +49,7 @@ what they do.
 ```python
 >>> import kellermap
 >>> kellermap.__all__
-['DEFAULT_VARIABLE_FACTORY', 'Candidate', 'Collision', 'CompressionStep', 'DescentStep', 'Dilation', 'ElementaryAutomorphism', 'ElementaryFactor', 'FixedVariableFactory', 'IndexedVariableFactory', 'InvariantError', 'LinearAutomorphism', 'LinearFactor', 'LinearStep', 'PeelOutcome', 'PolynomialMap', 'Provenance', 'Reduction', 'ReductionOutcome', 'ReductionContext', 'SearchOutcome', 'Step', 'SymmetricLiftStep', 'TranslationStep', 'Transposition', 'Transvection', 'Undo', 'VanishingWitness', 'VariableFactory', 'VerificationError', 'anchors', 'collision_hull', 'conjugate', 'diagonal_matching', 'enumerate_candidates', 'lowers_the_weight', 'multi_affine_steps', 'field_ring', 'over_field', 'peel', 'reduce_to_degree3', 'reduce_to_multi_affine', 'remaining_excess', 'remaining_weight', 'reserved_names', 'search', 'untargeted_candidates']
+['DEFAULT_VARIABLE_FACTORY', 'Candidate', 'Certificate', 'Collision', 'CompressionStep', 'DescentStep', 'Dilation', 'ElementaryAutomorphism', 'ElementaryFactor', 'FixedVariableFactory', 'IndexedVariableFactory', 'InvariantError', 'LinearAutomorphism', 'LinearFactor', 'LinearStep', 'PeelOutcome', 'PolynomialMap', 'Provenance', 'Reduction', 'ReductionOutcome', 'ReductionContext', 'SearchOutcome', 'Step', 'SymmetricLiftStep', 'TranslationStep', 'Transposition', 'Transvection', 'Undo', 'VanishingWitness', 'VariableFactory', 'VerificationError', 'anchors', 'collision_hull', 'conjugate', 'diagonal_matching', 'enumerate_candidates', 'lowers_the_weight', 'multi_affine_steps', 'field_ring', 'over_field', 'peel', 'reduce_to_degree3', 'reduce_to_multi_affine', 'remaining_excess', 'remaining_weight', 'reserved_names', 'search', 'untargeted_candidates']
 
 ```
 
@@ -1430,6 +1432,64 @@ kellermap.errors.VerificationError: [DSC-3] Component 0 of the conjugate mention
 A collision goes through, with its points undone by `right` and the deleted
 coordinate dropped. The points stay distinct because the deleted component is
 the variable plus a tail free of it.
+
+---
+
+## Certificates in a file
+
+`Certificate(chain, collisions, witness)` holds a chain, collisions attached
+to its maps by position, and a witness. `dumps` writes it as the JSON text of
+FMT-1 to FMT-12 in `docs/contracts.md`, and `loads` reads it back. Position
+`0` is the source of the chain and position `i + 1` the target of step `i`.
+
+```python
+>>> from kellermap import Certificate
+>>> from kellermap.bcw import BCWStep, Carried, Fresh
+>>> x, y, u = sp.symbols("x y u")
+>>> source = PolynomialMap((x, y), (x**2 + y**2, y))
+>>> step = BCWStep.build(source, 0, Fresh(y, u), Carried(1), filtration_level=0)
+>>> collision = Collision.at(source, ((1, 0), (-1, 0)))
+>>> certificate = Certificate(
+...     Reduction((step,)), ((0, collision), (1, step.transport(collision)))
+... )
+>>> text = certificate.dumps()
+>>> back = Certificate.loads(text)
+>>> back.verify() is None
+True
+>>> back.maps[1].components
+(-u*y + x**2, y, u + y)
+>>> back.maps == certificate.maps, back.dumps() == text
+(True, True)
+
+```
+
+A step read from a file is `SUPPLIED`, whatever wrote it. Its identity then
+compares a target from outside the library with the formula, so verifying a
+chain read back is a check that can fail:
+
+```python
+>>> step.provenance is Provenance.CONSTRUCTED
+True
+>>> back.steps[0].provenance is Provenance.SUPPLIED
+True
+
+```
+
+A file that breaks a rule of the format is refused with the obligation and the
+place in the file:
+
+```python
+>>> Certificate.loads(text.replace('"version":1', '"version":2'))
+Traceback (most recent call last):
+    ...
+kellermap.errors.VerificationError: [FMT-1] in file Version 2 is not 1.
+
+```
+
+The text depends only on what the certificate holds, so a certificate and the
+one read back from its file give the same bytes. The repository keeps no such
+file: the maps of two chains here have no licence, and `docs/contracts.md`
+says why under "Files and the licence rule".
 
 ---
 

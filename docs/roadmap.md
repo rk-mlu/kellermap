@@ -112,6 +112,33 @@ extension.
 back to the objects. Reading a file back and verifying it with the library is
 the first control of the format.
 
+*Done in WP 3.* `kellermap.certificate` holds `Certificate`, with `dumps`,
+`loads` and `verify`. `tests/test_certificate.py` writes and reads back a
+certificate of every step type and of every domain of FMT-5, and every
+refusal of FMT-1 to FMT-12 has a control that names its identifier and its
+place. Four things are worth stating.
+
+The chains of the reconstruction scripts are built by `tests/chains.py`, from
+the step data each script carries, with `build` for every step. Seven scripts
+start from Alpoege's map. The eighth, `reconstruct_prellberg40.py`, compresses
+and lifts Thompson's map, and that chain is built from `kellermap.examples`
+with the fixtures of `tests/conftest.py`. All eight are written, read back and
+verified. The ends of the seven are also compared with what each script
+computes, which is the agreement CHK-8 will ask of the checker. That
+comparison was not asked of WP 3. It is cheap, and it found nothing.
+
+`BCWStep.build` takes the filtration level, and the scripts do not write it.
+`tests/chains.py` declares the highest level the step attains, one where every
+factor it introduces has order two and zero otherwise. A level that was too
+high would fail BCW-6 when the chain is verified.
+
+`dumps` refuses what it cannot write with a `VerificationError` and a
+location, as `loads` does. The contract said "refused and cites" and did not
+name the exception. The table of errors in `docs/contracts.md` now has the row.
+
+`docs/api.md` gains a section on certificates. Its table of contents also gains
+the section on the descent, which had been missing from it since 0.7.
+
 **WP 4** is the independent checker. Plain Python and SymPy, as the
 reconstruction scripts are. It reads a file and checks it, and a failure names
 the obligation. Its controls are of two kinds. The eight reconstruction scripts

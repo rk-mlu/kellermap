@@ -44,7 +44,7 @@ They ask today's question of today's code. Every one of them should report
 ``tests/test_scripts.py`` checks that every fragment still matches the code it
 aims at.
 
-The set holds 78 probes. That sentence is held against ``PROBES`` by
+The set holds 87 probes. That sentence is held against ``PROBES`` by
 ``tests/test_scripts.py``, which is the only reason to write a number here at
 all. Until ``0.7.0rc11`` this paragraph carried a running total instead, one
 audit's addition at a time, and an audit of ``0.7.0rc10`` found it one too
@@ -110,6 +110,16 @@ Milestone 0.9 added three, LIN-7, TRA-9 and UNI-13, and none of them is here.
 Each cannot fail after the identity of its step, for the reason HOM-11 and
 HOM-12 cannot. Their hypothesis is code, and its control is a test in
 ``tests/test_multi_affine.py`` that calls it directly.
+
+Work package 3 of milestone 0.9 added nine for the certificate file. Every
+clause of FMT-1 to FMT-9 can fail on a file from outside, so each refusal has a
+control that names it. The nine are the refusals no other check would make in
+their place: a repeated key, a boolean read as an integer, a rational not in
+lowest terms, a domain that does not hold the map's, a lift the witness does
+not name, and the comparison of the target a descent derives. Two aim at the
+writer: a symbol with assumptions, and the order of the points of a collision,
+which FMT-12 fixes. The ninth drops the cause a refusal carries, because FMT-10
+asks for it.
 
 They do **not** reproduce the ten misses of the first run, and until
 ``0.4.0rc14`` this file and ``CHANGELOG.md`` said they did. Two reasons. The
@@ -771,6 +781,70 @@ PROBES: tuple[Probe, ...] = (
         "src/kellermap/vanishing.py",
         "    if not laplacian(square):",
         "    if False:",
+    ),
+    Probe(
+        "FMT-1",
+        "a key twice in one object is read as the last",
+        "src/kellermap/certificate.py",
+        "            if key in found:",
+        "            if False:",
+    ),
+    Probe(
+        "FMT-1",
+        "a boolean is read as an integer",
+        "src/kellermap/certificate.py",
+        "    if isinstance(value, bool) or not isinstance(value, int):",
+        "    if not isinstance(value, int):",
+    ),
+    Probe(
+        "FMT-6",
+        "a rational not in lowest terms is read",
+        "src/kellermap/certificate.py",
+        "    if denominator and (q < 2 or math.gcd(p, q) != 1):",
+        "    if False:",
+    ),
+    Probe(
+        "FMT-7",
+        "a symbol with assumptions is written by its name",
+        "src/kellermap/certificate.py",
+        "    if symbol != sp.Symbol(name):",
+        "    if False:",
+    ),
+    Probe(
+        "FMT-8",
+        "a collision over a domain without its map's is read",
+        "src/kellermap/certificate.py",
+        "    if not _contains(descriptor, descriptors[position]):",
+        "    if False:",
+    ),
+    Probe(
+        "FMT-9",
+        "a witness may name a step that is not a lift",
+        "src/kellermap/certificate.py",
+        "    if not 0 <= index < len(steps) or not isinstance("
+        "steps[index], SymmetricLiftStep):",
+        "    if not 0 <= index < len(steps):",
+    ),
+    Probe(
+        "FMT-10",
+        "a refusal of a constructor loses its cause",
+        "src/kellermap/certificate.py",
+        "        ) from refusal\n    except ValueError as refusal:",
+        "        ) from None\n    except ValueError as refusal:",
+    ),
+    Probe(
+        "FMT-12",
+        "the points of a collision are written as they arrive",
+        "src/kellermap/certificate.py",
+        "    points = sorted((point(entry) for entry in collision.points), key=_text)",
+        "    points = [point(entry) for entry in collision.points]",
+    ),
+    Probe(
+        "DSC-1",
+        "the target a descent derives is not compared with the file",
+        "src/kellermap/certificate.py",
+        "            if derived != maps[index + 1]:",
+        "            if False:",
     ),
 )
 

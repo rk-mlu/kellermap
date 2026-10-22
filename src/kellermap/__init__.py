@@ -1,3 +1,4 @@
+from .certificate import Certificate
 from .collision import Collision
 from .compression import CompressionStep, collision_hull
 from .context import ReductionContext
@@ -54,6 +55,7 @@ from .variables import (
 __all__ = [
     "DEFAULT_VARIABLE_FACTORY",
     "Candidate",
+    "Certificate",
     "Collision",
     "CompressionStep",
     "DescentStep",

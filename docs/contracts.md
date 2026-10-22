@@ -63,11 +63,10 @@ step type that can lie between `reduce_to_multi_affine` and the
 homogenization. All three are self-checks: none can fail after the identity of
 its step. `docs/roadmap.md` gives the reason for stating them anyway.
 
-The other twenty were stated in work package 2 and none of them is
-implemented. FMT-1 to FMT-12 are the file a certificate is written to, under
-"The certificate file", and CHK-1 to CHK-8 are the checker that reads it
-without the library, under "The independent checker". Work packages 3 and 4
-implement them. Two of them want a reviewer's attention. FMT-5 narrows the
+The other twenty were stated in work package 2. FMT-1 to FMT-12 are the file a
+certificate is written to, under "The certificate file", and are implemented
+since work package 3. CHK-1 to CHK-8 are the checker that reads it without the
+library, under "The independent checker", and work package 4 implements them. Two of them want a reviewer's attention. FMT-5 narrows the
 domains a file can hold, and the paragraph under it gives the measurement that
 forced the narrowing. CHK-8 is the only evidence that the checker checks
 anything, and the other seven say what it checks.
@@ -2575,8 +2574,9 @@ can be derived from them. The library writes such a file and reads it back.
 The checker of the next section reads it without the library.
 
 Every obligation of this section and the next carries the marker of milestone
-0.9, and none of them is implemented. Work package 2 states them before
-anything is written. `docs/roadmap.md` under "Version 0.9" records the four
+0.9. Work package 2 stated them before anything was written. The obligations of
+this section are implemented since work package 3, and those of the next are
+not. `docs/roadmap.md` under "Version 0.9" records the four
 decisions they rest on: JSON with structured coefficients, every map of a chain
 written once, the checker as a package of its own in the wheel, and the
 coefficient domains that the chains of this project use.
@@ -2587,6 +2587,9 @@ class Certificate:
     chain: Reduction | PolynomialMap
     collisions: tuple[tuple[int, Collision], ...] = ()
     witness: VanishingWitness | None = None
+
+    @property
+    def steps(self) -> tuple[Step, ...]: ...
 
     @property
     def maps(self) -> tuple[PolynomialMap, ...]: ...
@@ -2603,7 +2606,8 @@ It lives in `kellermap.certificate`, at the top level. A file is not a notion
 of the 1982 paper, by the argument this page makes for `Reduction`.
 
 `chain` is a `Reduction`, or a single map when the certificate holds no step.
-`maps` is derived. It is the source of the chain followed by the target of
+`steps` is the steps of the chain, and none for a single map. `maps` is
+derived. It is the source of the chain followed by the target of
 every step, or the single map. Position `0` is the source, and position `i + 1`
 is the target of step `i`. A collision is attached to a map by its position.
 The witness takes its lift from the steps of the chain and its collision from
@@ -4871,8 +4875,8 @@ class InvariantError(ValueError):
 ```
 
 `location` is new in milestone 0.9 and was added in work package 2.2. It holds
-the strings the checker uses for the same places, and `Certificate.loads` will
-set it under FMT-10. A failure given a step and no location has the location
+the strings the checker uses for the same places, and `Certificate.loads` and
+`Certificate.dumps` set it under FMT-10. A failure given a step and no location has the location
 `step i`, so a failure inside a reduction carries both.
 
 `InvariantError` is new in the same package. A constructor that refuses its
@@ -4929,6 +4933,7 @@ identifier also appears in `str(...)`, but a caller is expected to branch on
 | a structural case the search does not handle | `NotImplementedError` |
 | an argument over a ring other than `over` | `VerificationError` |
 | a file that breaks a rule of the certificate format, or an invariant of a constructor | `VerificationError` |
+| a certificate that has no form in a file, by FMT-3, FMT-5 or FMT-7 | `VerificationError` |
 | a certificate whose witness or collision is not part of it | `ValueError` |
 | arguments of the wrong type | `TypeError` |
 
