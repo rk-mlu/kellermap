@@ -56,7 +56,7 @@ from sympy.polys.rings import PolyElement, PolyRing
 from .canonical import agree
 from .collision import Collision
 from .context import ReductionContext
-from .errors import VerificationError
+from .errors import InvariantError, VerificationError
 from .polynomial_map import PolynomialMap, widening_advice
 from .reduction import Provenance
 from .variables import VariableFactory, reserved_names
@@ -177,19 +177,23 @@ class SymmetricLiftStep:
                 raise TypeError("Every variable of the target must be a SymPy symbol.")
 
         if len(names) != 2 * source.dimension:
-            raise ValueError(
+            raise InvariantError(
+                "SYM-5",
                 f"The lift doubles the dimension: expected "
                 f"{2 * source.dimension} generators for a source of "
-                f"{source.dimension}, got {len(names)}."
+                f"{source.dimension}, got {len(names)}.",
             )
 
         if len({variable.name for variable in names}) != len(names):
-            raise ValueError("The variables of the target must be distinct.")
+            raise InvariantError(
+                "SYM-5", "The variables of the target must be distinct."
+            )
 
         taken = {variable.name for variable in names} & reserved_names(source.ring)
         if taken:
-            raise ValueError(
-                f"The variables {sorted(taken)} are already in use by the source."
+            raise InvariantError(
+                "SYM-5",
+                f"The variables {sorted(taken)} are already in use by the source.",
             )
 
         object.__setattr__(self, "_source", source)

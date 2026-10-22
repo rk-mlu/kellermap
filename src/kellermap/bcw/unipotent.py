@@ -49,7 +49,7 @@ from ..canonical import agree
 from ..collision import Collision
 from ..context import ReductionContext
 from ..elementary import ElementaryAutomorphism, ElementaryFactor
-from ..errors import VerificationError
+from ..errors import InvariantError, VerificationError
 from ..polynomial_map import PolynomialMap
 from ..reduction import Provenance
 from ..variables import FixedVariableFactory, VariableFactory, reserved_names
@@ -105,9 +105,10 @@ class UnipotentStep:
         # formula introduces one generator per component of the source and a
         # different count describes no step at all.
         if len(fresh) != source.dimension:
-            raise ValueError(
+            raise InvariantError(
+                "UNI-5",
                 f"The step introduces one generator per component: expected "
-                f"{source.dimension} fresh variables, got {len(fresh)}."
+                f"{source.dimension} fresh variables, got {len(fresh)}.",
             )
 
         # By name, and not by ``Symbol.__eq__``: ``Symbol("v")`` and
@@ -115,9 +116,10 @@ class UnipotentStep:
         # generator for a ``PolyRing``. Same reading as BCW-3.
         names = [variable.name for variable in fresh]
         if len(set(names)) != len(names):
-            raise ValueError(
+            raise InvariantError(
+                "UNI-5",
                 "The fresh variables must be distinct; "
-                f"got {sorted(names)} with a repetition."
+                f"got {sorted(names)} with a repetition.",
             )
 
         # Early, and not first in verify(). A colliding name can no longer be
@@ -127,8 +129,9 @@ class UnipotentStep:
         # coefficient domain is taken as well.
         taken = set(names) & reserved_names(source.ring)
         if taken:
-            raise ValueError(
-                f"The variables {sorted(taken)} are already in use by the source."
+            raise InvariantError(
+                "UNI-5",
+                f"The variables {sorted(taken)} are already in use by the source.",
             )
 
         object.__setattr__(self, "_source", source)

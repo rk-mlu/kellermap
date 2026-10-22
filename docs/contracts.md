@@ -77,6 +77,10 @@ Work package 2.1 amended twelve of them, and each amendment says so where it
 stands. The two that changed most are CHK-6, which now has three verdicts, and
 CHK-8, whose first wording promised more than a control can show.
 
+Work package 2.2 changed no obligation. It gave the constructor invariants
+their identifiers and `VerificationError` a location, as the section on errors
+describes.
+
 **Milestone `0.8`, closed.** The milestone added `VanishingWitness`, VAN-1 to
 VAN-5, the witness to Zhao's Vanishing Conjecture that the symmetric lift
 provides. Their `[0.8]` markers are gone with the close.
@@ -2885,9 +2889,9 @@ by hand gets the `ValueError` that the table of errors lists, as before.
 wording said that a file which breaks a constructor invariant raises what the
 constructor raises. The audit pointed out that the checker then cites COL-4 for
 two equal points where the library raises a `ValueError` without an identifier.
-Today no exception of a constructor says which invariant it enforces, so
-`loads` could not cite one. Work package 2.2 gives each of them the identifier
-before work package 3 reads it. `docs/roadmap.md` has the plan.
+No exception of a constructor said which invariant it enforces, so `loads`
+could not have cited one. Work package 2.2 gave each of them the identifier,
+as `InvariantError` in the section on errors.
 
 **FMT-11 — A certificate verifies its parts and computes nothing else. [0.9]**
 `Certificate.verify()` verifies the chain by RED-3, each collision against the
@@ -4859,12 +4863,36 @@ class VerificationError(Exception):
     location: str | None  # "step 4", "map 0", "collision 1", "witness", "file"
 
     def located_at(self, step: int) -> VerificationError: ...
+
+
+class InvariantError(ValueError):
+    obligation: str  # "BCW-10", "COL-4", "CHC-2", ...
+    message: str
 ```
 
-`location` is new in milestone 0.9 and is not implemented. It is set by
-`Certificate.loads` under FMT-10 and holds the strings the checker uses for
-the same places. For a failure inside a reduction it is `step i`, beside
-`step`. Work package 2.2 adds it.
+`location` is new in milestone 0.9 and was added in work package 2.2. It holds
+the strings the checker uses for the same places, and `Certificate.loads` will
+set it under FMT-10. A failure given a step and no location has the location
+`step i`, so a failure inside a reduction carries both.
+
+`InvariantError` is new in the same package. A constructor that refuses its
+arguments raises it, with the identifier of the obligation the invariant
+belongs to. It is a `ValueError`, so every caller who caught a `ValueError`
+from a constructor still catches it, and its message begins with the
+identifier in brackets, as the message of a `VerificationError` does. Every
+constructor invariant of a step, a collision, a reduction and a witness raises
+it. The rows of the table below that say `ValueError` for those types mean
+`InvariantError`. The factor types and `PolynomialMap` raise a plain
+`ValueError`, because they have no obligations of their own.
+
+Some of these invariants had no obligation named for them on this page before
+work package 2.2, and the package assigned the one each serves. Fewer than two
+points of a collision cite COL-4, because a collision needs two distinct
+points. Points and an image of different lengths, or of no coordinate at all,
+cite COL-1. A linear step that changes the dimension cites LIN-1, and so do a
+translation that changes it and a shift of the wrong length for TRA-1. A
+descent at an index that is not a coordinate cites DSC-1, and a descent from a
+map in one variable cites DSC-2.
 
 A step verifies itself without knowing where in a chain it sits, so the index
 is attached afterwards by the reduction that catches the failure.

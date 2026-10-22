@@ -43,7 +43,7 @@ from sympy.polys.rings import PolyRing
 from .canonical import agree, canonical, is_zero
 from .collision import Collision
 from .elementary import ElementaryAutomorphism, ElementaryFactor
-from .errors import VerificationError
+from .errors import InvariantError, VerificationError
 from .linear import LinearAutomorphism, is_unit
 from .polynomial_map import PolynomialMap, determinant_without_division
 
@@ -267,9 +267,10 @@ class LinearStep:
             raise TypeError("The transformation must be a LinearAutomorphism.")
 
         if source.dimension != target.dimension:
-            raise ValueError(
+            raise InvariantError(
+                "LIN-1",
                 f"The source has dimension {source.dimension}, "
-                f"the target {target.dimension}; a linear step keeps it."
+                f"the target {target.dimension}; a linear step keeps it.",
             )
 
         object.__setattr__(self, "_source", source)
@@ -670,9 +671,10 @@ class TranslationStep:
             raise TypeError("The target must be a PolynomialMap.")
 
         if source.dimension != target.dimension:
-            raise ValueError(
+            raise InvariantError(
+                "TRA-1",
                 f"The source has dimension {source.dimension}, "
-                f"the target {target.dimension}; a translation keeps it."
+                f"the target {target.dimension}; a translation keeps it.",
             )
 
         entries = self._coerce_shift(source, shift)
@@ -703,9 +705,10 @@ class TranslationStep:
         entries = tuple(shift)
 
         if len(entries) != source.dimension:
-            raise ValueError(
+            raise InvariantError(
+                "TRA-1",
                 f"The shift has {len(entries)} entries, but the source has "
-                f"dimension {source.dimension}."
+                f"dimension {source.dimension}.",
             )
 
         domain = source.ring.domain
@@ -714,11 +717,12 @@ class TranslationStep:
             try:
                 converted.append(domain.to_sympy(domain.from_sympy(canonical(entry))))
             except (CoercionFailed, sp.SympifyError) as error:
-                raise ValueError(
+                raise InvariantError(
+                    "TRA-2",
                     f"Entry {position} of the shift, {entry}, does not lie in "
                     f"the coefficient domain {domain}; a translation is by a "
                     "constant, and an entry involving a generator would not "
-                    "have the identity as its Jacobian."
+                    "have the identity as its Jacobian.",
                 ) from error
 
         return tuple(converted)
@@ -993,9 +997,10 @@ class Reduction:
         collected = tuple(steps)
 
         if not collected:
-            raise ValueError(
+            raise InvariantError(
+                "RED-1",
                 "A reduction needs at least one step, so that its source and "
-                "target are defined."
+                "target are defined.",
             )
 
         for position, step in enumerate(collected):

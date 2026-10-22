@@ -33,7 +33,7 @@ from sympy.polys.rings import PolyRing
 
 from .collision import Collision
 from .elementary import ElementaryAutomorphism
-from .errors import VerificationError
+from .errors import InvariantError, VerificationError
 from .polynomial_map import PolynomialMap, clone_ring, reindex
 from .reduction import Provenance
 
@@ -94,15 +94,17 @@ class DescentStep:
             raise TypeError(f"The index must be an int; got {type(index).__name__}.")
 
         if not 0 <= index < source.dimension:
-            raise ValueError(
+            raise InvariantError(
+                "DSC-1",
                 f"The index {index} is not a coordinate of a map in "
-                f"{source.dimension} variables."
+                f"{source.dimension} variables.",
             )
 
         if source.dimension < 2:
-            raise ValueError(
+            raise InvariantError(
+                "DSC-2",
                 "A descent from one variable would leave a map in none, and "
-                "PolynomialMap has no such thing."
+                "PolynomialMap has no such thing.",
             )
 
         object.__setattr__(self, "_source", source)

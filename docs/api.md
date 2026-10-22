@@ -47,7 +47,7 @@ what they do.
 ```python
 >>> import kellermap
 >>> kellermap.__all__
-['DEFAULT_VARIABLE_FACTORY', 'Candidate', 'Collision', 'CompressionStep', 'DescentStep', 'Dilation', 'ElementaryAutomorphism', 'ElementaryFactor', 'FixedVariableFactory', 'IndexedVariableFactory', 'LinearAutomorphism', 'LinearFactor', 'LinearStep', 'PeelOutcome', 'PolynomialMap', 'Provenance', 'Reduction', 'ReductionOutcome', 'ReductionContext', 'SearchOutcome', 'Step', 'SymmetricLiftStep', 'TranslationStep', 'Transposition', 'Transvection', 'Undo', 'VanishingWitness', 'VariableFactory', 'VerificationError', 'anchors', 'collision_hull', 'conjugate', 'diagonal_matching', 'enumerate_candidates', 'lowers_the_weight', 'multi_affine_steps', 'field_ring', 'over_field', 'peel', 'reduce_to_degree3', 'reduce_to_multi_affine', 'remaining_excess', 'remaining_weight', 'reserved_names', 'search', 'untargeted_candidates']
+['DEFAULT_VARIABLE_FACTORY', 'Candidate', 'Collision', 'CompressionStep', 'DescentStep', 'Dilation', 'ElementaryAutomorphism', 'ElementaryFactor', 'FixedVariableFactory', 'IndexedVariableFactory', 'InvariantError', 'LinearAutomorphism', 'LinearFactor', 'LinearStep', 'PeelOutcome', 'PolynomialMap', 'Provenance', 'Reduction', 'ReductionOutcome', 'ReductionContext', 'SearchOutcome', 'Step', 'SymmetricLiftStep', 'TranslationStep', 'Transposition', 'Transvection', 'Undo', 'VanishingWitness', 'VariableFactory', 'VerificationError', 'anchors', 'collision_hull', 'conjugate', 'diagonal_matching', 'enumerate_candidates', 'lowers_the_weight', 'multi_affine_steps', 'field_ring', 'over_field', 'peel', 'reduce_to_degree3', 'reduce_to_multi_affine', 'remaining_excess', 'remaining_weight', 'reserved_names', 'search', 'untargeted_candidates']
 
 ```
 
@@ -677,7 +677,21 @@ distinctness is decided by value:
 >>> Collision(((sp.Rational(1, 2), 0), (sp.Rational(2, 4), 0)), (0, 0))
 Traceback (most recent call last):
     ...
-ValueError: Points 0 and 1 are equal; a collision needs distinct points.
+kellermap.errors.InvariantError: [COL-4] Points 0 and 1 are equal; a collision needs distinct points.
+
+```
+
+The refusal is an `InvariantError`. It is a `ValueError`, so code that caught
+one before still catches it, and it names the obligation that the constructor
+enforces:
+
+```python
+>>> from kellermap import InvariantError
+>>> try:
+...     Collision(((1, 0), (1, 0)), (0, 0))
+... except ValueError as refusal:
+...     isinstance(refusal, InvariantError), refusal.obligation
+(True, 'COL-4')
 
 ```
 
@@ -935,7 +949,7 @@ T*x2**2
 >>> BCWStep.build(parametric, 0, Fresh(1 / x2, x4), Fresh(x3**2, x5))
 Traceback (most recent call last):
     ...
-ValueError: P must be a polynomial over the coefficient domain ZZ[T] in the variables ('x1', 'x2', 'x3'); got 1/x2.
+kellermap.errors.InvariantError: [BCW-3] P must be a polynomial over the coefficient domain ZZ[T] in the variables ('x1', 'x2', 'x3'); got 1/x2.
 
 ```
 
@@ -1342,7 +1356,7 @@ variables checks nothing more, by Zhao's Theorem 4.3, and is refused:
 >>> VanishingWitness(lifted, witness.collision, depth=41)
 Traceback (most recent call last):
     ...
-ValueError: The depth is 41. VAN-3 checks Delta^m(P^m) = 0 for m from one to the depth, so a depth below one checks nothing, and above the 40 variables of the lift it checks nothing that depth 40 does not (Zhao, Theorem 4.3).
+kellermap.errors.InvariantError: [VAN-3] The depth is 41. VAN-3 checks Delta^m(P^m) = 0 for m from one to the depth, so a depth below one checks nothing, and above the 40 variables of the lift it checks nothing that depth 40 does not (Zhao, Theorem 4.3).
 
 ```
 
@@ -1947,6 +1961,7 @@ True
 | a collision whose points and image differ in length | `ValueError` |
 | a witness depth below one or above the number of variables | `ValueError` |
 | an obligation of `contracts.md` failing | `VerificationError` |
+| an invariant of the constructor of a step, a collision, a reduction or a witness | `InvariantError`, a `ValueError` |
 | variables or components of the wrong type | `TypeError` |
 | a source or target of a search that is not a `PolynomialMap` | `TypeError` |
 | a value pool that is not a mapping, or a pool name that is not a symbol | `TypeError` |

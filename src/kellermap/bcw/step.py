@@ -64,7 +64,7 @@ from sympy.polys.rings import PolyElement, PolyRing
 from ..canonical import agree, canonical
 from ..collision import Collision
 from ..elementary import ElementaryAutomorphism, ElementaryFactor
-from ..errors import VerificationError
+from ..errors import InvariantError, VerificationError
 from ..polynomial_map import PolynomialMap
 from ..reduction import Provenance
 from ..variables import FixedVariableFactory, reserved_names
@@ -121,7 +121,7 @@ class Carried:
                 f"A carried index must be an integer, not {type(self.index).__name__}."
             )
         if self.index < 0:
-            raise ValueError("A carried index must not be negative.")
+            raise InvariantError("BCW-10", "A carried index must not be negative.")
 
 
 Factor = Fresh | Carried
@@ -147,10 +147,11 @@ def _coerce_factor(
     try:
         return cast(PolyElement, source.ring.from_expr(sp.sympify(factor)))
     except (ValueError, TypeError, sp.SympifyError) as error:
-        raise ValueError(
+        raise InvariantError(
+            "BCW-3",
             f"{name} must be a polynomial over the coefficient domain "
             f"{source.ring.domain} in the variables "
-            f"{tuple(str(v) for v in source.variables)}; got {factor}."
+            f"{tuple(str(v) for v in source.variables)}; got {factor}.",
         ) from error
 
 
@@ -166,13 +167,14 @@ def _coerce_coefficient(source: PolynomialMap, coefficient: sp.Expr) -> sp.Expr:
     try:
         value = domain.to_sympy(domain.from_sympy(canonical(coefficient)))
     except (CoercionFailed, sp.SympifyError) as error:
-        raise ValueError(
+        raise InvariantError(
+            "BCW-11",
             f"The coefficient {coefficient} does not lie in the coefficient "
-            f"domain {domain}; it scales a product and is not part of one."
+            f"domain {domain}; it scales a product and is not part of one.",
         ) from error
 
     if value == 0:
-        raise ValueError("The coefficient must not be zero.")
+        raise InvariantError("BCW-11", "The coefficient must not be zero.")
 
     return value
 
@@ -247,14 +249,16 @@ class BCWStep:
                 f"The index must be an integer, not {type(index).__name__}."
             )
         if not 0 <= index < source.dimension:
-            raise ValueError(
+            raise InvariantError(
+                "BCW-4",
                 f"Index {index} is out of range for {source.dimension} "
-                "components of the source."
+                "components of the source.",
             )
 
         if isinstance(filtration_level, bool) or filtration_level not in (0, 1):
-            raise ValueError(
-                f"The filtration level must be 0 or 1, not {filtration_level!r}."
+            raise InvariantError(
+                "BCW-6",
+                f"The filtration level must be 0 or 1, not {filtration_level!r}.",
             )
 
         slots = (left, right)
@@ -269,15 +273,17 @@ class BCWStep:
             # leave the displacement of G free of X_index.
             if isinstance(slot, Carried):
                 if not 0 <= slot.index < source.dimension:
-                    raise ValueError(
+                    raise InvariantError(
+                        "BCW-10",
                         f"Slot {position} reuses coordinate {slot.index}, "
                         f"which is out of range for {source.dimension} "
-                        "components of the source."
+                        "components of the source.",
                     )
                 if slot.index == index:
-                    raise ValueError(
+                    raise InvariantError(
+                        "BCW-10",
                         f"Slot {position} reuses coordinate {slot.index}, "
-                        "which is the component the step acts on."
+                        "which is the component the step acts on.",
                     )
 
         fresh = tuple(slot.variable for slot in slots if isinstance(slot, Fresh))
@@ -291,8 +297,9 @@ class BCWStep:
         # parameter of the coefficient domain is taken as well.
         taken = {symbol.name for symbol in fresh} & reserved_names(source.ring)
         if taken:
-            raise ValueError(
-                f"The variables {sorted(taken)} are already in use by the source."
+            raise InvariantError(
+                "BCW-2",
+                f"The variables {sorted(taken)} are already in use by the source.",
             )
 
         values = tuple(
@@ -317,9 +324,10 @@ class BCWStep:
         if len({symbol.name for symbol in fresh}) != len(fresh) and (
             values[0] != values[1]
         ):
-            raise ValueError(
+            raise InvariantError(
+                "BCW-12",
                 "Two fresh slots naming one variable must carry the same "
-                "polynomial; a coordinate holds one value."
+                "polynomial; a coordinate holds one value.",
             )
 
         object.__setattr__(self, "_source", source)

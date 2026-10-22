@@ -44,7 +44,7 @@ import sympy as sp
 from sympy.polys.rings import PolyElement
 
 from .collision import Collision
-from .errors import VerificationError
+from .errors import InvariantError, VerificationError
 from .lift import SymmetricLiftStep, _degree
 
 
@@ -163,12 +163,13 @@ class VanishingWitness:
 
         variables = self.lift.target.dimension
         if not 1 <= self.depth <= variables:
-            raise ValueError(
+            raise InvariantError(
+                "VAN-3",
                 f"The depth is {self.depth}. VAN-3 checks Delta^m(P^m) = 0 for "
                 f"m from one to the depth, so a depth below one checks nothing, "
                 f"and above the {variables} variables of the lift it checks "
                 "nothing that depth "
-                f"{variables} does not (Zhao, Theorem 4.3)."
+                f"{variables} does not (Zhao, Theorem 4.3).",
             )
 
     @property

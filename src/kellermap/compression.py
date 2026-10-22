@@ -39,7 +39,7 @@ from sympy.polys.rings import PolyElement, PolyRing
 from .canonical import agree
 from .collision import Collision
 from .context import ReductionContext
-from .errors import VerificationError
+from .errors import InvariantError, VerificationError
 from .polynomial_map import PolynomialMap, widening_advice
 from .reduction import Provenance
 from .variables import VariableFactory, reserved_names
@@ -182,9 +182,10 @@ def _field(source: PolynomialMap, obligation: str | None) -> Domain:
     # arguments, so it raises a ``VerificationError`` citing CHC-8. The
     # constructor raises ``ValueError`` like every other constructor invariant
     # of this type, since CHC-2 says so and an audit of ``0.6.0rc2`` found the
-    # page and the code disagreeing about it.
+    # page and the code disagreeing about it. Since milestone 0.9 that is an
+    # ``InvariantError``, the ``ValueError`` that carries its identifier.
     if obligation is None:
-        raise ValueError(complaint)
+        raise InvariantError("CHC-2", complaint)
 
     raise VerificationError(obligation, complaint)
 
@@ -408,13 +409,14 @@ class CompressionStep:
                 raise TypeError("Every variable of the target must be a SymPy symbol.")
 
         if len(rows) != len(names):
-            raise ValueError(
+            raise InvariantError(
+                "CHC-5",
                 f"The basis has {len(rows)} vectors and the target "
-                f"{len(names)} generators; there is one generator per vector."
+                f"{len(names)} generators; there is one generator per vector.",
             )
 
         if not rows:
-            raise ValueError("The basis is empty and spans no subspace.")
+            raise InvariantError("CHC-2", "The basis is empty and spans no subspace.")
 
         # CHC-2. A wrong length describes no subspace of the source's space,
         # and a dependent list describes one of a smaller dimension than it
@@ -422,26 +424,35 @@ class CompressionStep:
         # about arithmetic that ``verify`` could locate.
         for row in rows:
             if len(row) != source.dimension:
-                raise ValueError(
+                raise InvariantError(
+                    "CHC-2",
                     f"Every basis vector has {source.dimension} coordinates, "
-                    f"one per variable of the source; got one with {len(row)}."
+                    f"one per variable of the source; got one with {len(row)}.",
                 )
 
         if len(rows) > source.dimension:
-            raise ValueError(
+            raise InvariantError(
+                "CHC-5",
                 f"The basis has {len(rows)} vectors in a space of dimension "
-                f"{source.dimension}."
+                f"{source.dimension}.",
             )
 
         domain = _field(source, None)
         echelon = _Echelon(domain)
         canonical = []
         for row in rows:
-            entries = _to_domain(row, domain)
+            # CHC-2 here, and not inside ``_to_domain``. The hull and the
+            # transport convert points with the same function, and a point
+            # outside the domain is not a fault of a basis there.
+            try:
+                entries = _to_domain(row, domain)
+            except ValueError as failure:
+                raise InvariantError("CHC-2", str(failure)) from failure
             if not echelon.offer(entries):
-                raise ValueError(
+                raise InvariantError(
+                    "CHC-2",
                     "The basis vectors are linearly dependent, so they do not "
-                    f"span a subspace of dimension {len(rows)}."
+                    f"span a subspace of dimension {len(rows)}.",
                 )
             # Stored through the domain and not as they arrived. Over a
             # fraction field ``(T^2 - 1)/(T - 1)`` and ``T + 1`` are one
@@ -457,12 +468,15 @@ class CompressionStep:
         # different things by one name in one chain.
         taken = {variable.name for variable in names} & reserved_names(source.ring)
         if taken:
-            raise ValueError(
-                f"The variables {sorted(taken)} are already in use by the source."
+            raise InvariantError(
+                "CHC-5",
+                f"The variables {sorted(taken)} are already in use by the source.",
             )
 
         if len({variable.name for variable in names}) != len(names):
-            raise ValueError("The variables of the target must be distinct.")
+            raise InvariantError(
+                "CHC-5", "The variables of the target must be distinct."
+            )
 
         object.__setattr__(self, "_source", source)
         object.__setattr__(self, "_target", target)

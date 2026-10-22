@@ -3,7 +3,7 @@ from .compression import CompressionStep, collision_hull
 from .context import ReductionContext
 from .descent import DescentStep
 from .elementary import ElementaryAutomorphism, ElementaryFactor
-from .errors import VerificationError
+from .errors import InvariantError, VerificationError
 from .lift import SymmetricLiftStep
 from .linear import (
     Dilation,
@@ -62,6 +62,7 @@ __all__ = [
     "ElementaryFactor",
     "FixedVariableFactory",
     "IndexedVariableFactory",
+    "InvariantError",
     "LinearAutomorphism",
     "LinearFactor",
     "LinearStep",

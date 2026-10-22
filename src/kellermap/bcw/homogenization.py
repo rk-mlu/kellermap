@@ -52,7 +52,7 @@ from sympy.polys.rings import PolyElement, PolyRing
 from ..canonical import agree
 from ..collision import Collision
 from ..context import ReductionContext
-from ..errors import VerificationError
+from ..errors import InvariantError, VerificationError
 from ..polynomial_map import PolynomialMap
 from ..reduction import Provenance
 from ..variables import FixedVariableFactory, VariableFactory, reserved_names
@@ -107,8 +107,9 @@ class HomogenizationStep:
         # reserved names and not only the coordinates: a parameter of the
         # coefficient domain is taken as well.
         if variable.name in reserved_names(source.ring):
-            raise ValueError(
-                f"The variable {variable.name} is already in use by the source."
+            raise InvariantError(
+                "HOM-4",
+                f"The variable {variable.name} is already in use by the source.",
             )
 
         object.__setattr__(self, "_source", source)

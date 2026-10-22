@@ -25,7 +25,7 @@ from dataclasses import dataclass
 import sympy as sp
 
 from .canonical import agree, canonical
-from .errors import VerificationError
+from .errors import InvariantError, VerificationError
 from .polynomial_map import PolynomialMap
 
 # A point of affine space, coordinate by coordinate as a SymPy expression.
@@ -68,19 +68,20 @@ class Collision:
         target = _coerce_point(image)
 
         if len(collected) < 2:
-            raise ValueError(
-                f"A collision needs at least two points; got {len(collected)}."
+            raise InvariantError(
+                "COL-4", f"A collision needs at least two points; got {len(collected)}."
             )
 
         dimensions = {len(point) for point in collected} | {len(target)}
         if len(dimensions) != 1:
-            raise ValueError(
+            raise InvariantError(
+                "COL-1",
                 "All points and the image must have the same number of "
-                f"coordinates; got {sorted(dimensions)}."
+                f"coordinates; got {sorted(dimensions)}.",
             )
 
         if not target:
-            raise ValueError("A collision needs at least one coordinate.")
+            raise InvariantError("COL-1", "A collision needs at least one coordinate.")
 
         _reject_repeated_points(collected)
 
@@ -355,7 +356,8 @@ def _reject_repeated_points(points: tuple[Point, ...]) -> None:
             if all(
                 agree(a, b) for a, b in zip(points[left], points[right], strict=True)
             ):
-                raise ValueError(
+                raise InvariantError(
+                    "COL-4",
                     f"Points {left} and {right} are equal; a collision needs "
-                    "distinct points."
+                    "distinct points.",
                 )

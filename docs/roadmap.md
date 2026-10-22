@@ -346,6 +346,33 @@ four to make precise. WP 2.1 answers all six, and each amendment in
 The audit also asked what a file with one map certifies. Nothing, and CHK-7
 now requires the report to say so.
 
+*Done in WP 2.2.* `InvariantError` is a `ValueError` with an `obligation`, and
+every constructor invariant of a step, a collision, a reduction and a witness
+raises it. `VerificationError` has a `location`. `tests/test_errors.py` holds
+one row per invariant, with the identifier the refusal has to carry. Some
+invariants had no obligation named for them, and `docs/contracts.md` says
+under its section on errors which one each now cites. Four things differ from
+the plan or are worth stating.
+
+The factor types and `PolynomialMap` keep a plain `ValueError`. They have no
+obligations of their own, and FMT-10 already has `loads` cite LIN-2 or DSC-4
+for a factor by its context. A name check of `PolynomialMap` is FMT-7, which
+`loads` checks before it builds a map.
+
+Refusals outside a constructor keep a plain `ValueError`: the refusals of
+`LinearStep.normalize`, of `Collision.at` with no points, and of
+`Collision.extended`. A file never reaches them.
+
+The basis of a compression is converted by a helper that the hull and the
+transport use as well. A point outside the domain is not a fault of a basis
+there, so the constructor cites CHC-2 around the call and the helper raises
+what it raised before.
+
+Three examples of `docs/api.md` showed the traceback of a refused
+construction, and they now show `InvariantError`. One example was added for
+the new class, as every public feature has one.
+
+
 ## What the fast suite costs at 0.8.0
 
 Profiled when the milestone opened, on 11 October 2026, on the assistant's
