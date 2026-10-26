@@ -311,8 +311,15 @@ python scripts/mutation_probe.py --list SYM # what that would run
 ```
 
 A selection is not a smaller sweep. Each probe still runs the whole fast
-suite, so a CAUGHT means what it always meant; what a selection cannot say is
-that the *set* has no gap, which is what a whole sweep is for. The commit
+suite, so a CAUGHT means what it does in a sweep; what a selection cannot say is
+that the *set* has no gap, which is what a whole sweep is for.
+
+The whole fast suite here leaves out the tests marked `probe_set`, which read
+the set from the tree and fail under every probe. Until milestone 0.9 they
+were not left out, and every probe was reported as caught; `docs/errata.md`
+records it. Every run, sweep or selection, now starts with a control that has
+to be missed, and stops if it is caught. So a selection costs one suite run
+more than its probes, and a selection with a miss in it costs two at least. The commit
 message names the selection that was run and leaves the sweep to the
 maintainer.
 

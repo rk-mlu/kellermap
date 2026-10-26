@@ -4488,7 +4488,9 @@ ring it searched and was carrying three probes about arithmetic; `LIN-2` says
 an exhibited inverse undoes its transformation and was carrying one about what
 `factorize` can build. An audit of `0.7.0rc9` found both, and named the cost:
 the full sweep still catches every mutation, but a targeted run of `DOM-4` or
-`LIN-2` no longer means what its name says.
+`LIN-2` no longer means what its name says. That sweep could not report a miss at all,
+and `docs/errata.md` says why under "The probe runner reported every probe as
+caught".
 
 **MAP-1 — Evaluation happens in the coefficient domain.** `F(point)` converts
 every coordinate into `ring.domain` and evaluates there, so the answer is the

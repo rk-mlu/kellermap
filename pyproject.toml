@@ -59,6 +59,7 @@ testpaths = ["tests", "docs"]
 addopts = "-m 'not slow' --doctest-glob=*.md"
 markers = [
     "slow: runs for minutes. Select with `pytest -m slow` or `pytest -m ''`.",
+    "probe_set: reads the probe set from the tree; scripts/mutation_probe.py leaves it out.",
 ]
 
 [tool.ruff]

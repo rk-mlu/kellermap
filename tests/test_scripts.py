@@ -14,6 +14,7 @@ The scripts are not a package. They are loaded by path, the way
 ``scripts/_common.py`` loads the fixed input under ``tests/``.
 """
 
+import ast
 import hashlib
 import importlib.util
 import re
@@ -123,6 +124,14 @@ def source_hashes() -> dict[str, str]:
     }
 
 
+def under_the_control(probe: ModuleType, root: Path) -> bool:
+    """Return whether the control is applied in ``root``."""
+    path = root / probe.CONTROL.path
+
+    return probe.CONTROL.new in path.read_text(encoding="utf-8")
+
+
+@pytest.mark.probe_set
 def test_a_whole_sweep_leaves_the_repository_untouched(probe: ModuleType) -> None:
     """The regression for the finding.
 
@@ -130,12 +139,17 @@ def test_a_whole_sweep_leaves_the_repository_untouched(probe: ModuleType) -> Non
     suite: what it checks is the copying and the restoring and not the running.
     The same hash over every Python file of the repository before and after.
 
-    The stub reports ``CAUGHT`` so that the sweep counts no miss. What it
-    reports is immaterial for this test.
+    The stub reports the control as missed and every probe as caught, so that
+    the sweep runs to the end and counts no miss.
+
+    It carries ``probe_set``: it applies every probe of the set, and under a
+    probe one of them has no fragment left to apply.
     """
     before = source_hashes()
 
-    missed = probe.sweep(probe.PROBES, run=lambda root: (True, "stub"))
+    missed = probe.sweep(
+        probe.PROBES, run=lambda root: (not under_the_control(probe, root), "stub")
+    )
 
     assert missed == 0
     assert source_hashes() == before
@@ -159,6 +173,7 @@ def test_the_stated_count_is_the_count_of_the_set(probe: ModuleType) -> None:
     assert int(stated.group(1)) == len(probe.PROBES)
 
 
+@pytest.mark.probe_set
 def test_every_fragment_still_matches_the_code_it_aims_at(probe: ModuleType) -> None:
     """A probe whose fragment has gone checks nothing any more.
 
@@ -166,11 +181,159 @@ def test_every_fragment_still_matches_the_code_it_aims_at(probe: ModuleType) -> 
     every one of the probes, it is at the same time the freshness check
     of the whole set. This test says it once more on its own, so that a failure
     is readable.
+
+    It carries ``probe_set``: under a probe one fragment is gone by design.
+    The control is checked too, and its edit has to remove its fragment as
+    every probe does, or it would not fail this test the way a probe does.
     """
-    for entry in probe.PROBES:
+    for entry in (probe.CONTROL, *probe.PROBES):
         text = (ROOT / entry.path).read_text(encoding="utf-8")
 
         assert entry.old in text, f"{entry.obligation}: {entry.what}"
+
+    assert probe.CONTROL.old not in probe.CONTROL.new
+
+
+# The runner reads the probe set, and the tests above read it from the tree.
+# Under a probe the tree is broken by design, so those tests fail under every
+# probe. Until work package 4.1 of milestone 0.9 the runner did not leave them
+# out, and every probe was reported as caught. The tests below are the repair:
+# the runner leaves out exactly those tests, its control is missed where it has
+# to be, and a run stops when the control is caught.
+
+PROBE_SET_TESTS = {
+    "test_a_whole_sweep_leaves_the_repository_untouched",
+    "test_every_fragment_still_matches_the_code_it_aims_at",
+    "test_a_run_stops_when_the_control_is_caught",
+}
+"""The tests that read the probe set from the tree, and that the runner leaves out.
+
+The first two were found by applying a probe that changes nothing and running
+the whole fast suite: they failed, and nothing else did. The third was written
+in the same work package and fails under the control, whose fragment it needs.
+The control found it on its first run.
+"""
+
+
+def marked(path: Path) -> set[str]:
+    """Return the names of the functions in ``path`` that carry ``probe_set``."""
+    tree = ast.parse(path.read_text(encoding="utf-8"))
+
+    return {
+        node.name
+        for node in ast.walk(tree)
+        if isinstance(node, ast.FunctionDef)
+        and any(ast.unparse(d) == "pytest.mark.probe_set" for d in node.decorator_list)
+    }
+
+
+def test_only_the_tests_that_read_the_set_carry_its_marker() -> None:
+    """A marker on any other test would take a control out of every probe run."""
+    found = {
+        (path.name, name)
+        for path in sorted((ROOT / "tests").glob("*.py"))
+        for name in marked(path)
+    }
+
+    assert found == {("test_scripts.py", name) for name in PROBE_SET_TESTS}
+
+
+def test_the_marker_search_finds_a_marked_test(tmp_path: Path) -> None:
+    """The control of the search above."""
+    path = tmp_path / "test_module.py"
+    path.write_text(
+        "import pytest\n\n@pytest.mark.probe_set\ndef test_one():\n    pass\n",
+        encoding="utf-8",
+    )
+
+    assert marked(path) == {"test_one"}
+
+
+def test_the_runner_runs_the_default_suite_without_the_set(probe: ModuleType) -> None:
+    """``SUITE`` is the default of ``pyproject.toml`` plus one exclusion.
+
+    The runner passes ``-m`` itself, which replaces the default. A runner that
+    lost ``not slow`` would run for hours, and one that lost ``not probe_set``
+    would report every probe as caught again.
+    """
+    text = (ROOT / "pyproject.toml").read_text(encoding="utf-8")
+    default = re.search(r"-m '([^']*)'", text)
+
+    assert default is not None
+    assert probe.SUITE == f"{default.group(1)} and not probe_set"
+
+
+def project(root: Path) -> None:
+    """Lay down a project of two tests: one about the code, one about the set."""
+    (root / "src").mkdir()
+    (root / "tests").mkdir()
+    (root / "pyproject.toml").write_text(
+        "[tool.pytest.ini_options]\n"
+        "addopts = \"-m 'not slow'\"\n"
+        'pythonpath = ["src"]\n'
+        'markers = ["slow: slow", "probe_set: reads the set"]\n',
+        encoding="utf-8",
+    )
+    (root / "src" / "thing.py").write_text("# a remark\nVALUE = 1\n", encoding="utf-8")
+    (root / "tests" / "test_thing.py").write_text(
+        "import thing\n\n\ndef test_value():\n    assert thing.VALUE == 1\n",
+        encoding="utf-8",
+    )
+    (root / "tests" / "test_set.py").write_text(
+        "from pathlib import Path\n\nimport pytest\n\n\n"
+        "@pytest.mark.probe_set\n"
+        "def test_fragments():\n"
+        '    path = Path(__file__).parent.parent / "src" / "thing.py"\n'
+        "    text = path.read_text()\n"
+        '    assert "# a remark" in text and "VALUE = 1" in text\n',
+        encoding="utf-8",
+    )
+
+
+def probe_run(probe: ModuleType, entry: Any, root: Path) -> bool:
+    """Apply ``entry`` in ``root``, run the runner's suite, and put it back."""
+    original = probe.apply(entry, root)
+    try:
+        caught, _ = probe.run_suite(root, launcher=(sys.executable, "-m"))
+    finally:
+        probe.restore(entry, root, original)
+
+    return bool(caught)
+
+
+def test_the_runner_reports_a_miss_where_there_is_one(
+    probe: ModuleType,
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """The negative control of the runner, which it did not have.
+
+    In a project of its own, with the runner's own command: a probe that a test
+    sees is caught, and a probe that only the test of the set sees is missed.
+    With the expression the runner had before, the second is caught as well,
+    which is the defect.
+    """
+    project(tmp_path)
+    seen = probe.Probe("X-1", "a value", "src/thing.py", "VALUE = 1", "VALUE = 2")
+    unseen = probe.Probe("X-2", "a remark", "src/thing.py", "# a remark", "# other")
+
+    assert probe_run(probe, seen, tmp_path)
+    assert not probe_run(probe, unseen, tmp_path)
+
+    monkeypatch.setattr(probe, "SUITE", "not slow")
+
+    assert probe_run(probe, unseen, tmp_path)
+
+
+@pytest.mark.probe_set
+def test_a_run_stops_when_the_control_is_caught(probe: ModuleType) -> None:
+    """With a suite that fails under every probe, no probe is reported.
+
+    It carries ``probe_set``: it applies the control, and under the control
+    there is no fragment left to apply.
+    """
+    with pytest.raises(SystemExit, match="The control was caught"):
+        probe.sweep(probe.PROBES[:1], run=lambda root: (True, "stub"))
 
 
 def test_a_fragment_that_is_gone_stops_the_run(probe: ModuleType, tmp_path) -> None:  # type: ignore[no-untyped-def]

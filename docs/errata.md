@@ -893,3 +893,45 @@ valid and have to be accepted.
 **Worth keeping:** the next sentence of the same paragraph said that each
 control names its obligation in advance. That was the intended meaning, and
 the first sentence said more than it.
+
+## The probe runner reported every probe as caught
+
+**Said, in this page under "Seven findings of the audit of `0.6.0rc1`":** that
+the mutation probe caught 34 of 34. **Said, in `docs/contracts.md` under
+"Evaluating and factorizing", of an audit of `0.7.0rc9`:** that the full sweep
+still catches every mutation. **Said, in `AGENTS.md`:** that under a selection a
+`CAUGHT` means what it always meant. The commit message of work package 3 of
+milestone 0.9 reported its nine probes as caught.
+
+**True:** a run of `scripts/mutation_probe.py` could not report a miss for a
+probe of its set. Two tests of `tests/test_scripts.py` read the fragments of
+the set from the tree. Under a probe one fragment is replaced, so both tests
+failed under every probe, and the suite failed with them. Every probe was
+reported as `CAUGHT`, whatever the other tests did. A selection ran the same
+suite and had the same defect. The counts of probes were right. These runs did
+not show that a test of its promise catches each probe. Two probes of work
+package 3 had no control at all: a key twice in an object, FMT-1, and a
+witness on a step that is not a lift, FMT-9.
+
+Since when cannot be settled from this repository. The sweep test came with
+the working copy at `0.4.0rc14`, as the comment above it says, when the set
+held twelve probes. The fragment test is not dated. The ten misses of the
+first run in 0.4 were reported before both.
+
+**Found** in work package 4 of milestone 0.9. The new probes of the checker
+were run against `tests/test_checker.py` alone, and two of them were missed
+there. The question why the probes of work package 3 had passed led to the two
+tests.
+
+**Now:** the tests that read the set from the tree carry the marker
+`probe_set`, and the runner leaves out exactly those. Every run starts with a
+control, a probe that changes nothing a test can see. It has to be missed, and
+a run whose control is caught stops before it reports anything.
+`tests/test_scripts.py` checks in a project of its own that the runner reports
+a miss where there is one. The docstring of `scripts/mutation_probe.py`
+describes it. The first whole sweep after work package 4.1 is the first that
+can show a gap in the set.
+
+**Worth keeping:** the runner is a check of the other checks, and it had no
+negative control of its own. A tool that can only answer yes needs what every
+other check here needs: a case where the answer has to be no.

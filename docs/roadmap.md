@@ -197,6 +197,29 @@ this package were run against the test files that hold their controls, which
 do not include `tests/test_scripts.py`. The repair, and a control that the
 runner can report a miss, are left to a work package of their own.
 
+**WP 4.1** repairs the probe runner. It was added after WP 4, when the
+maintainer asked for it before WP 5. It changes no obligation of
+`docs/contracts.md` and nothing of the library.
+
+*Done in WP 4.1.* The tests that read the probe set from the tree carry the
+marker `probe_set`, and `scripts/mutation_probe.py` runs the fast suite without
+them. Which tests those are was found by applying a probe that changes nothing
+and running the whole fast suite: two failed, and nothing else. Every run now
+starts with that probe as its control. It has to be missed, and a run whose
+control is caught stops. `tests/test_scripts.py` holds the marker to those
+tests, the runner's expression to the default of `pyproject.toml`, and, in a
+project of its own, the runner to reporting a miss where there is one.
+`docs/errata.md` records what the runs before reported.
+
+The control found a third test on its first run. The test that a run stops
+when its control is caught applies the control itself, so it fails under the
+control. It carries the marker as well.
+
+The repair does not say which probes of the set have a control. A whole sweep
+says that, and it is the maintainer's. Each of its misses is a promise without
+a control, and each is answered by a control or by a statement on the contract
+page that the clause cannot fail on supplied data.
+
 **WP 5** is a LaTeX export, as the first view of a certificate: a chain with
 its steps, and a witness with its form. It is a view. Nothing in it is checked
 beyond being generated from a file the checker accepts.

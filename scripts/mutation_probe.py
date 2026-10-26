@@ -160,6 +160,24 @@ What a selection does not do is narrow the suite. Each probe still runs every
 fast test, because a probe asks whether *anything* catches the edit; choosing
 which tests may answer would turn a control that exists into a miss, and a
 miss is the one thing this script is for.
+
+The tests a probe runs against, and the control
+-----------------------------------------------
+
+Every fast test, with one exception: the tests marked ``probe_set``. They read
+the fragments of this set from the tree, and under a probe one fragment has
+been replaced, so they fail under every probe. ``SUITE`` leaves them out, and
+nothing else. Until work package 4.1 of milestone 0.9 they were not left out,
+and the suite failed under every probe for that reason alone. Every run since
+those tests were written therefore reported every probe of the set as
+``CAUGHT``, whatever the other tests did, and so did every selection.
+``docs/errata.md`` records it.
+
+Nothing in the runner could show that, because nothing in it could report a
+miss it had to report. So every run now starts with ``CONTROL``, a probe that
+changes nothing a test can see. It has to be ``MISSED``. If it is caught, some
+test fails because a probe is applied and not because of what the probe
+breaks, and the run stops before it reports anything.
 """
 
 from __future__ import annotations
@@ -209,6 +227,30 @@ class Probe:
     old: str
     new: str
 
+
+SUITE = "not slow and not probe_set"
+"""The marker expression a probe runs the suite with.
+
+The first half is the default of ``pyproject.toml``, and the second leaves out
+the tests of the probe set. ``tests/test_scripts.py`` holds both halves.
+"""
+
+LAUNCHER = ("uv", "run")
+"""What runs ``pytest`` in the working copy. A test gives a project of its own."""
+
+CONTROL = Probe(
+    "control",
+    "a probe that changes nothing a test can see",
+    "src/kellermap/__init__.py",
+    "from .certificate import Certificate",
+    "from .certificate import (Certificate)",
+)
+"""The probe that has to be missed, and that every run starts with.
+
+The edit puts parentheses around one imported name. Like every probe it
+removes its fragment from the tree, so it fails every test that the fragments
+of the set are read by, and it changes nothing else.
+"""
 
 PROBES: tuple[Probe, ...] = (
     Probe(
@@ -971,18 +1013,23 @@ PROBES: tuple[Probe, ...] = (
 )
 
 
-def run_suite(root: Path) -> tuple[bool, str]:
-    """Return whether the fast suite failed under ``root``, and the line saying so."""
+def run_suite(root: Path, launcher: Sequence[str] = LAUNCHER) -> tuple[bool, str]:
+    """Return whether the fast suite failed under ``root``, and the line saying so.
+
+    The suite is the one ``SUITE`` names: the fast tests without the tests of
+    the probe set.
+    """
     finished = subprocess.run(  # noqa: S603
         [
-            "uv",
-            "run",
+            *launcher,
             "pytest",
             "-q",
             "-x",
             "--no-header",
             "-p",
             "no:cacheprovider",
+            "-m",
+            SUITE,
         ],
         cwd=root,
         capture_output=True,
@@ -1054,10 +1101,31 @@ def sweep(
     sweep without spending two minutes on twelve suite runs. What the test
     checks is the part that damaged a tree: that the repository is untouched
     afterwards, and that every fragment still matches the code it aims at.
+
+    ``CONTROL`` runs first and is not counted. A run whose control is caught
+    stops with ``SystemExit`` before the first probe.
     """
     missed = 0
     with tempfile.TemporaryDirectory() as scratch:
         copy = working_copy(Path(scratch))
+
+        original = apply(CONTROL, copy)
+        try:
+            caught, summary = run(copy)
+        finally:
+            restore(CONTROL, copy, original)
+
+        mark = "CAUGHT " if caught else "MISSED "
+        print(f"{mark} {CONTROL.obligation:7} {CONTROL.what:46} {summary}")
+        sys.stdout.flush()
+        if caught:
+            raise SystemExit(
+                "The control was caught. A test fails because a probe is "
+                "applied, and not because of what the probe breaks, so no "
+                "result of this run would mean anything. Mark that test "
+                "probe_set if it reads the fragments of the set, or give the "
+                "control a fragment no test reads."
+            )
 
         for probe in probes:
             original = apply(probe, copy)
@@ -1146,6 +1214,7 @@ def main(argv: Sequence[str] | None = None) -> int:
 
     print(f"{len(chosen)} of {len(PROBES)} probes, run against a copy of the project.")
     print("The repository is not written to.")
+    print("The control runs first and has to be missed.")
 
     if len(chosen) != len(PROBES):
         print("A selection. Only a whole sweep says the set has no gap.")
