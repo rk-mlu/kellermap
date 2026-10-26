@@ -509,42 +509,32 @@ FOLD_TEXT = folded((1 / T, 0), (-1 / T, 0)).dumps()
 SQUARE_TEXT = squared((sp.I / 2, 0), (-sp.I / 2, 0)).dumps()
 
 
-@pytest.mark.parametrize(
-    ("text", "obligation"),
-    [
-        ("not json", "FMT-1"),
-        ("[]", "FMT-1"),
-        ('{"a": 1, "a": 2}', "FMT-1"),
-        ('{"a": NaN}', "FMT-1"),
-        ('{"a": 1.5}', "FMT-6"),
-    ],
-    ids=["not JSON", "not an object", "a key twice", "NaN", "a float"],
-)
+TEXTS = [
+    pytest.param("not json", "FMT-1", id="not JSON"),
+    pytest.param("[]", "FMT-1", id="not an object"),
+    pytest.param('{"a": 1, "a": 2}', "FMT-1", id="a key twice"),
+    pytest.param('{"a": NaN}', "FMT-1", id="NaN"),
+    pytest.param('{"a": 1.5}', "FMT-6", id="a float"),
+]
+
+
+@pytest.mark.parametrize(("text", "obligation"), TEXTS)
 def test_text_that_is_no_file_is_refused(text: str, obligation: str) -> None:
     refused(text, obligation, "file")
 
 
-@pytest.mark.parametrize(
-    ("edit", "obligation"),
-    [
-        (lambda d: d.update(format="other"), "FMT-1"),
-        (lambda d: d.update(version=2), "FMT-1"),
-        (lambda d: d.update(version=True), "FMT-1"),
-        (lambda d: d.update(extra=1), "FMT-1"),
-        (lambda d: d.pop("steps"), "FMT-1"),
-        (lambda d: d.update(maps={}), "FMT-1"),
-        (lambda d: d["maps"].pop(), "FMT-2"),
-    ],
-    ids=[
-        "format",
-        "version",
-        "a boolean version",
-        "an unknown key",
-        "a missing key",
-        "maps not a list",
-        "a map short",
-    ],
-)
+FRAME_EDITS = [
+    pytest.param(lambda d: d.update(format="other"), "FMT-1", id="format"),
+    pytest.param(lambda d: d.update(version=2), "FMT-1", id="version"),
+    pytest.param(lambda d: d.update(version=True), "FMT-1", id="a boolean version"),
+    pytest.param(lambda d: d.update(extra=1), "FMT-1", id="an unknown key"),
+    pytest.param(lambda d: d.pop("steps"), "FMT-1", id="a missing key"),
+    pytest.param(lambda d: d.update(maps={}), "FMT-1", id="maps not a list"),
+    pytest.param(lambda d: d["maps"].pop(), "FMT-2", id="a map short"),
+]
+
+
+@pytest.mark.parametrize(("edit", "obligation"), FRAME_EDITS)
 def test_the_frame_of_a_file_is_checked(edit: Edit, obligation: str) -> None:
     refused(edited(SMALL_TEXT, edit), obligation, "file")
 
@@ -562,79 +552,119 @@ def first_term(document: Any) -> Any:
     return document["maps"][0]["components"][0][0]
 
 
-@pytest.mark.parametrize(
-    ("edit", "obligation"),
-    [
-        (lambda d: ring_of(d).update(generators=["x", "1y"]), "FMT-7"),
-        (lambda d: ring_of(d).update(generators=["x", "x"]), "FMT-7"),
-        (lambda d: ring_of(d).update(generators=[]), "FMT-7"),
-        (lambda d: ring_of(d).update(generators=[1, "y"]), "FMT-1"),
-        (lambda d: ring_of(d).update(order="ilex"), "FMT-1"),
-        (lambda d: ring_of(d).update(domain="RR"), "FMT-5"),
-        (lambda d: ring_of(d).update(domain={"quadratic": "2"}), "FMT-5"),
-        (
-            lambda d: ring_of(d).update(
-                domain={"polynomial": "RR", "parameters": ["T"], "order": "lex"}
-            ),
-            "FMT-5",
+MAP_EDITS = [
+    pytest.param(
+        lambda d: ring_of(d).update(generators=["x", "1y"]),
+        "FMT-7",
+        id="a name outside the pattern",
+    ),
+    pytest.param(
+        lambda d: ring_of(d).update(generators=["x", "x"]),
+        "FMT-7",
+        id="two equal names",
+    ),
+    pytest.param(
+        lambda d: ring_of(d).update(generators=[]), "FMT-7", id="no generator"
+    ),
+    pytest.param(
+        lambda d: ring_of(d).update(generators=[1, "y"]),
+        "FMT-1",
+        id="a name that is not a string",
+    ),
+    pytest.param(
+        lambda d: ring_of(d).update(order="ilex"),
+        "FMT-1",
+        id="an order outside the list",
+    ),
+    pytest.param(
+        lambda d: ring_of(d).update(domain="RR"), "FMT-5", id="an unknown domain"
+    ),
+    pytest.param(
+        lambda d: ring_of(d).update(domain={"quadratic": "2"}),
+        "FMT-5",
+        id="a quadratic field for a map",
+    ),
+    pytest.param(
+        lambda d: ring_of(d).update(
+            domain={"polynomial": "RR", "parameters": ["T"], "order": "lex"}
         ),
-        (
-            lambda d: ring_of(d).update(
-                domain={"polynomial": "QQ", "parameters": [], "order": "lex"}
-            ),
-            "FMT-7",
+        "FMT-5",
+        id="an unknown base",
+    ),
+    pytest.param(
+        lambda d: ring_of(d).update(
+            domain={"polynomial": "QQ", "parameters": [], "order": "lex"}
         ),
-        (
-            lambda d: ring_of(d).update(
-                domain={"polynomial": "QQ", "parameters": ["x"], "order": "lex"}
-            ),
-            "FMT-7",
+        "FMT-7",
+        id="no parameter",
+    ),
+    pytest.param(
+        lambda d: ring_of(d).update(
+            domain={"polynomial": "QQ", "parameters": ["x"], "order": "lex"}
         ),
-        (lambda d: d["maps"][0]["components"].pop(), "FMT-1"),
-        (lambda d: first_term(d).append(1), "FMT-1"),
-        (lambda d: first_term(d).__setitem__(0, [1]), "FMT-6"),
-        (lambda d: first_term(d).__setitem__(0, [-1, 0]), "FMT-6"),
-        (lambda d: first_term(d).__setitem__(0, [True, 0]), "FMT-1"),
-        (
-            lambda d: d["maps"][0]["components"][0].append([first_term(d)[0], "5"]),
-            "FMT-6",
-        ),
-        (lambda d: first_term(d).__setitem__(1, "0"), "FMT-6"),
-        (lambda d: first_term(d).__setitem__(1, "01"), "FMT-6"),
-        (lambda d: first_term(d).__setitem__(1, "-0"), "FMT-6"),
-        (lambda d: first_term(d).__setitem__(1, "+1"), "FMT-6"),
-        (lambda d: first_term(d).__setitem__(1, "2/4"), "FMT-6"),
-        (lambda d: first_term(d).__setitem__(1, "3/1"), "FMT-6"),
-        (lambda d: first_term(d).__setitem__(1, "1/-2"), "FMT-6"),
-        (lambda d: first_term(d).__setitem__(1, 1), "FMT-1"),
-    ],
-    ids=[
-        "a name outside the pattern",
-        "two equal names",
-        "no generator",
-        "a name that is not a string",
-        "an order outside the list",
-        "an unknown domain",
-        "a quadratic field for a map",
-        "an unknown base",
-        "no parameter",
-        "a parameter named like a generator",
-        "a component short",
-        "a term of three parts",
-        "an exponent vector too short",
-        "a negative exponent",
-        "a boolean exponent",
-        "two terms with one exponent vector",
-        "a zero coefficient",
-        "a leading zero",
-        "minus zero",
-        "a plus sign",
-        "not in lowest terms",
-        "a denominator of one",
-        "a negative denominator",
-        "a number that is not a string",
-    ],
-)
+        "FMT-7",
+        id="a parameter named like a generator",
+    ),
+    pytest.param(
+        lambda d: d["maps"][0]["components"].pop(), "FMT-1", id="a component short"
+    ),
+    pytest.param(
+        lambda d: first_term(d).append(1), "FMT-1", id="a term of three parts"
+    ),
+    pytest.param(
+        lambda d: first_term(d).__setitem__(0, [1]),
+        "FMT-6",
+        id="an exponent vector too short",
+    ),
+    pytest.param(
+        lambda d: first_term(d).__setitem__(0, [-1, 0]),
+        "FMT-6",
+        id="a negative exponent",
+    ),
+    pytest.param(
+        lambda d: first_term(d).__setitem__(0, [True, 0]),
+        "FMT-1",
+        id="a boolean exponent",
+    ),
+    pytest.param(
+        lambda d: d["maps"][0]["components"][0].append([first_term(d)[0], "5"]),
+        "FMT-6",
+        id="two terms with one exponent vector",
+    ),
+    pytest.param(
+        lambda d: first_term(d).__setitem__(1, "0"), "FMT-6", id="a zero coefficient"
+    ),
+    pytest.param(
+        lambda d: first_term(d).__setitem__(1, "01"), "FMT-6", id="a leading zero"
+    ),
+    pytest.param(
+        lambda d: first_term(d).__setitem__(1, "-0"), "FMT-6", id="minus zero"
+    ),
+    pytest.param(
+        lambda d: first_term(d).__setitem__(1, "+1"), "FMT-6", id="a plus sign"
+    ),
+    pytest.param(
+        lambda d: first_term(d).__setitem__(1, "2/4"), "FMT-6", id="not in lowest terms"
+    ),
+    pytest.param(
+        lambda d: first_term(d).__setitem__(1, "3/1"),
+        "FMT-6",
+        id="a denominator of one",
+    ),
+    pytest.param(
+        lambda d: first_term(d).__setitem__(1, "1/-2"),
+        "FMT-6",
+        id="a negative denominator",
+    ),
+    pytest.param(
+        lambda d: first_term(d).__setitem__(1, 1),
+        "FMT-1",
+        id="a number that is not a string",
+    ),
+]
+
+
+@pytest.mark.parametrize(("edit", "obligation"), MAP_EDITS)
 def test_a_map_breaking_a_rule_of_the_format_is_refused(
     edit: Edit, obligation: str
 ) -> None:
@@ -649,14 +679,13 @@ def test_an_integer_domain_refuses_a_fraction() -> None:
     )
 
 
-@pytest.mark.parametrize(
-    ("value", "obligation"),
-    [
-        (["1", "2", "3"], "FMT-1"),
-        (["1/2", "0"], "FMT-6"),
-    ],
-    ids=["a triple", "not a Gaussian integer"],
-)
+GAUSSIAN_VALUES = [
+    pytest.param(["1", "2", "3"], "FMT-1", id="a triple"),
+    pytest.param(["1/2", "0"], "FMT-6", id="not a Gaussian integer"),
+]
+
+
+@pytest.mark.parametrize(("value", "obligation"), GAUSSIAN_VALUES)
 def test_a_gaussian_element_is_a_pair_of_integers(value: Any, obligation: str) -> None:
     text = squared((sp.I, 0), (-sp.I, 0)).dumps()
 
@@ -700,59 +729,99 @@ def step(document: Any, index: int) -> Any:
     return document["steps"][index]
 
 
-@pytest.mark.parametrize(
-    ("edit", "obligation", "location"),
-    [
-        (lambda d: step(d, 0).update(type="Unknown"), "FMT-1", "step 0"),
-        (lambda d: step(d, 0).pop("type"), "FMT-1", "step 0"),
-        (lambda d: step(d, 0).update(type=1), "FMT-1", "step 0"),
-        (lambda d: step(d, 0).pop("normalizing"), "FMT-1", "step 0"),
-        (lambda d: step(d, 0).update(normalizing=1), "FMT-1", "step 0"),
-        (lambda d: step(d, 0).update(shift=["0"]), "TRA-1", "step 0"),
-        (lambda d: step(d, 1).update(left={"carried": 0}), "BCW-10", "step 1"),
-        (lambda d: step(d, 1).update(left={"carried": -1}), "BCW-10", "step 1"),
-        (lambda d: step(d, 1).update(left={"other": 0}), "FMT-1", "step 1"),
-        (lambda d: step(d, 1).update(filtration_level=2), "BCW-6", "step 1"),
-        (lambda d: step(d, 1).update(coefficient="0"), "BCW-11", "step 1"),
-        (lambda d: step(d, 1)["left"]["fresh"].update(variable="x"), "BCW-2", "step 1"),
-        (lambda d: step(d, 2)["transformation"].append({}), "FMT-1", "step 2"),
-        (
-            lambda d: step(d, 2)["transformation"][0]["transvection"].update(source=0),
-            "LIN-2",
-            "step 2",
-        ),
-        (
-            lambda d: step(d, 2)["transformation"][1]["transposition"].update(second=0),
-            "LIN-2",
-            "step 2",
-        ),
-        (
-            lambda d: step(d, 2)["transformation"][2]["dilation"].update(
-                coefficient="0"
-            ),
-            "LIN-2",
-            "step 2",
-        ),
-    ],
-    ids=[
-        "an unknown type",
-        "no type",
-        "a type that is not a string",
-        "a missing field",
-        "an integer where a boolean belongs",
-        "a shift of the wrong length",
-        "a carried slot on the target component",
-        "a negative carried slot",
-        "a slot of neither kind",
-        "a level outside zero and one",
-        "a coefficient of zero",
-        "a fresh variable already taken",
-        "a linear factor of no kind",
-        "a transvection on one coordinate",
-        "a transposition of one coordinate",
-        "a dilation by zero",
-    ],
-)
+STEP_EDITS = [
+    pytest.param(
+        lambda d: step(d, 0).update(type="Unknown"),
+        "FMT-1",
+        "step 0",
+        id="an unknown type",
+    ),
+    pytest.param(lambda d: step(d, 0).pop("type"), "FMT-1", "step 0", id="no type"),
+    pytest.param(
+        lambda d: step(d, 0).update(type=1),
+        "FMT-1",
+        "step 0",
+        id="a type that is not a string",
+    ),
+    pytest.param(
+        lambda d: step(d, 0).pop("normalizing"), "FMT-1", "step 0", id="a missing field"
+    ),
+    pytest.param(
+        lambda d: step(d, 0).update(normalizing=1),
+        "FMT-1",
+        "step 0",
+        id="an integer where a boolean belongs",
+    ),
+    pytest.param(
+        lambda d: step(d, 0).update(shift=["0"]),
+        "TRA-1",
+        "step 0",
+        id="a shift of the wrong length",
+    ),
+    pytest.param(
+        lambda d: step(d, 1).update(left={"carried": 0}),
+        "BCW-10",
+        "step 1",
+        id="a carried slot on the target component",
+    ),
+    pytest.param(
+        lambda d: step(d, 1).update(left={"carried": -1}),
+        "BCW-10",
+        "step 1",
+        id="a negative carried slot",
+    ),
+    pytest.param(
+        lambda d: step(d, 1).update(left={"other": 0}),
+        "FMT-1",
+        "step 1",
+        id="a slot of neither kind",
+    ),
+    pytest.param(
+        lambda d: step(d, 1).update(filtration_level=2),
+        "BCW-6",
+        "step 1",
+        id="a level outside zero and one",
+    ),
+    pytest.param(
+        lambda d: step(d, 1).update(coefficient="0"),
+        "BCW-11",
+        "step 1",
+        id="a coefficient of zero",
+    ),
+    pytest.param(
+        lambda d: step(d, 1)["left"]["fresh"].update(variable="x"),
+        "BCW-2",
+        "step 1",
+        id="a fresh variable already taken",
+    ),
+    pytest.param(
+        lambda d: step(d, 2)["transformation"].append({}),
+        "FMT-1",
+        "step 2",
+        id="a linear factor of no kind",
+    ),
+    pytest.param(
+        lambda d: step(d, 2)["transformation"][0]["transvection"].update(source=0),
+        "LIN-2",
+        "step 2",
+        id="a transvection on one coordinate",
+    ),
+    pytest.param(
+        lambda d: step(d, 2)["transformation"][1]["transposition"].update(second=0),
+        "LIN-2",
+        "step 2",
+        id="a transposition of one coordinate",
+    ),
+    pytest.param(
+        lambda d: step(d, 2)["transformation"][2]["dilation"].update(coefficient="0"),
+        "LIN-2",
+        "step 2",
+        id="a dilation by zero",
+    ),
+]
+
+
+@pytest.mark.parametrize(("edit", "obligation", "location"), STEP_EDITS)
 def test_a_step_breaking_its_constructor_is_refused_with_its_identifier(
     edit: Edit, obligation: str, location: str
 ) -> None:
@@ -817,85 +886,91 @@ def collision(document: Any) -> Any:
     return document["collisions"][0]
 
 
-@pytest.mark.parametrize(
-    ("text", "edit", "obligation"),
-    [
-        (SQUARE_TEXT, lambda d: collision(d).update(map=1), "FMT-8"),
-        (SQUARE_TEXT, lambda d: collision(d).update(domain="ZZ_I"), "FMT-6"),
-        (FOLD_TEXT, lambda d: collision(d).update(domain="QQ_I"), "FMT-8"),
-        (
-            FOLD_TEXT,
-            lambda d: collision(d).update(
-                domain={"fraction": "ZZ", "parameters": ["x"], "order": "lex"}
-            ),
-            "FMT-7",
+COLLISION_EDITS = [
+    pytest.param(
+        SQUARE_TEXT,
+        lambda d: collision(d).update(map=1),
+        "FMT-8",
+        id="a position past the maps",
+    ),
+    pytest.param(
+        SQUARE_TEXT,
+        lambda d: collision(d).update(domain="ZZ_I"),
+        "FMT-6",
+        id="an element outside the stated domain",
+    ),
+    pytest.param(
+        FOLD_TEXT,
+        lambda d: collision(d).update(domain="QQ_I"),
+        "FMT-8",
+        id="a domain without the map's",
+    ),
+    pytest.param(
+        FOLD_TEXT,
+        lambda d: collision(d).update(
+            domain={"fraction": "ZZ", "parameters": ["x"], "order": "lex"}
         ),
-        (
-            FOLD_TEXT,
-            lambda d: collision(d).update(
-                domain={"fraction": "ZZ", "parameters": ["S"], "order": "lex"}
-            ),
-            "FMT-8",
+        "FMT-7",
+        id="a parameter named like a generator",
+    ),
+    pytest.param(
+        FOLD_TEXT,
+        lambda d: collision(d).update(
+            domain={"fraction": "ZZ", "parameters": ["S"], "order": "lex"}
         ),
-        (
-            FOLD_TEXT,
-            lambda d: collision(d)["points"].__setitem__(1, collision(d)["points"][0]),
-            "COL-4",
-        ),
-        (FOLD_TEXT, lambda d: collision(d)["points"].pop(), "COL-4"),
-    ],
-    ids=[
-        "a position past the maps",
-        "an element outside the stated domain",
-        "a domain without the map's",
-        "a parameter named like a generator",
-        "fractions in another parameter",
-        "two equal points",
-        "one point",
-    ],
-)
+        "FMT-8",
+        id="fractions in another parameter",
+    ),
+    pytest.param(
+        FOLD_TEXT,
+        lambda d: collision(d)["points"].__setitem__(1, collision(d)["points"][0]),
+        "COL-4",
+        id="two equal points",
+    ),
+    pytest.param(
+        FOLD_TEXT, lambda d: collision(d)["points"].pop(), "COL-4", id="one point"
+    ),
+]
+
+
+@pytest.mark.parametrize(("text", "edit", "obligation"), COLLISION_EDITS)
 def test_a_collision_breaking_a_rule_is_refused(
     text: str, edit: Edit, obligation: str
 ) -> None:
     refused(edited(text, edit), obligation, "collision 0")
 
 
-@pytest.fixture(scope="module")
-def witness_text(
-    thompson_compressed: CompressionStep, thompson_lift: SymmetricLiftStep
-) -> str:
-    collision = examples.thompson24_homogeneous_collision()
-    pair = thompson_compressed.transport(collision)
-    lifted = thompson_lift.transport(pair)
+WITNESS_EDITS = [
+    pytest.param(
+        lambda d: d["witness"].update(step=0), "FMT-9", id="a step that is not a lift"
+    ),
+    pytest.param(
+        lambda d: d["witness"].update(step=0, collision=0),
+        "FMT-9",
+        id="a step that is not a lift, with a collision at its target",
+    ),
+    pytest.param(
+        lambda d: d["witness"].update(step=2), "FMT-9", id="a step past the steps"
+    ),
+    pytest.param(
+        lambda d: d["witness"].update(collision=0),
+        "FMT-9",
+        id="a collision at another position",
+    ),
+    pytest.param(
+        lambda d: d["witness"].update(collision=5),
+        "FMT-9",
+        id="a collision past the collisions",
+    ),
+    pytest.param(lambda d: d["witness"].update(depth=0), "VAN-3", id="a depth of zero"),
+    pytest.param(
+        lambda d: d["witness"].update(depth=True), "FMT-1", id="a boolean depth"
+    ),
+    pytest.param(lambda d: d["witness"].update(extra=1), "FMT-1", id="an unknown key"),
+]
 
-    return Certificate(
-        Reduction((thompson_compressed, thompson_lift)),
-        ((1, pair), (2, lifted)),
-        VanishingWitness(thompson_lift, lifted),
-    ).dumps()
 
-
-@pytest.mark.parametrize(
-    ("edit", "obligation"),
-    [
-        (lambda d: d["witness"].update(step=0), "FMT-9"),
-        (lambda d: d["witness"].update(step=2), "FMT-9"),
-        (lambda d: d["witness"].update(collision=0), "FMT-9"),
-        (lambda d: d["witness"].update(collision=5), "FMT-9"),
-        (lambda d: d["witness"].update(depth=0), "VAN-3"),
-        (lambda d: d["witness"].update(depth=True), "FMT-1"),
-        (lambda d: d["witness"].update(extra=1), "FMT-1"),
-    ],
-    ids=[
-        "a step that is not a lift",
-        "a step past the steps",
-        "a collision at another position",
-        "a collision past the collisions",
-        "a depth of zero",
-        "a boolean depth",
-        "an unknown key",
-    ],
-)
+@pytest.mark.parametrize(("edit", "obligation"), WITNESS_EDITS)
 def test_a_witness_breaking_a_rule_is_refused(
     witness_text: str, edit: Edit, obligation: str
 ) -> None:

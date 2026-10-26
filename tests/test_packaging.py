@@ -30,6 +30,7 @@ not in the nightly chain.
 import shutil
 import subprocess
 import tarfile
+import zipfile
 from collections.abc import Iterator
 from pathlib import Path
 
@@ -188,6 +189,8 @@ def test_the_sources_and_the_fixed_data_are_where_they_belong(
 
     assert "src/kellermap/__init__.py" in inside
     assert "src/kellermap/py.typed" in inside
+    assert "src/kellermap_check/__init__.py" in inside
+    assert "src/kellermap_check/py.typed" in inside
     assert "tests/test_packaging.py" in inside
     assert "docs/contracts.md" in inside
 
@@ -196,6 +199,32 @@ def test_the_sources_and_the_fixed_data_are_where_they_belong(
     assert "tests/data.py" not in inside
 
     assert not [name for name in inside if "__pycache__" in name]
+
+
+def test_the_wheel_carries_the_library_and_the_checker(
+    archive: tarfile.TarFile, project: Path
+) -> None:
+    """CHK-2: the checker is installed with the library, as a package of its own.
+
+    The wheel is the one the fixture built from the archive. Only the two
+    packages and the metadata stand at its top.
+    """
+    wheels = sorted((project / "dist").glob("*.whl"))
+
+    assert len(wheels) == 1, wheels
+
+    with zipfile.ZipFile(wheels[0]) as opened:
+        names = opened.namelist()
+    top = {
+        name.split("/", 1)[0]
+        for name in names
+        if not name.split("/")[0].endswith(".dist-info")
+    }
+
+    assert top == {"kellermap", "kellermap_check"}
+    assert "kellermap_check/__main__.py" in names
+    assert "kellermap_check/py.typed" in names
+    assert not [name for name in names if name.startswith("tests/")]
 
 
 def test_an_exclusion_list_lets_an_unforeseen_name_through(

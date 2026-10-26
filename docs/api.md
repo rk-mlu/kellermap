@@ -35,6 +35,7 @@ what they do.
 - [The vanishing witness](#the-vanishing-witness)
 - [The descent](#the-descent)
 - [Certificates in a file](#certificates-in-a-file)
+  - [The independent checker](#the-independent-checker)
 - [Finding candidates](#finding-candidates)
 - [Assembling a chain](#assembling-a-chain)
 - [Peeling a chain off a target](#peeling-a-chain-off-a-target)
@@ -1490,6 +1491,53 @@ The text depends only on what the certificate holds, so a certificate and the
 one read back from its file give the same bytes. The repository keeps no such
 file: the maps of two chains here have no licence, and `docs/contracts.md`
 says why under "Files and the licence rule".
+
+### The independent checker
+
+`kellermap_check` reads the same file without `kellermap`, CHK-1 to CHK-8 in
+`docs/contracts.md`. It is installed with the library and imports nothing from
+it. `check` returns a report whose verdict is `VERIFIED` when every check that
+applies was made and passed:
+
+```python
+>>> import kellermap_check
+>>> report = kellermap_check.check(text)
+>>> report.verdict
+'VERIFIED'
+>>> dict(report.checked)["step 0"]
+('BCW-4', 'BCW-6', 'BCW-10', 'BCW-11', 'BCW-2', 'BCW-1')
+>>> report.claims[0]
+'step 0 (BCWStep) takes map 0 to map 1'
+
+```
+
+The report also says what the file does not claim. No step of this file
+checks that its first map is a Keller map, so the report says so:
+
+```python
+>>> report.not_claimed
+('that map 0 is a Keller map: no step of this file checks its source for it there (RED-3)',)
+
+```
+
+A check left out with `skip` makes the verdict `INCOMPLETE`, which is not an
+acceptance. A file the checker refuses raises `Refusal` with the obligation and
+the place:
+
+```python
+>>> kellermap_check.check(text, {"BCW-1"}).verdict
+'INCOMPLETE'
+>>> kellermap_check.check(text.replace('"version":1', '"version":2'))
+Traceback (most recent call last):
+    ...
+kellermap_check._report.Refusal: [FMT-1] in file version 2 is not 1
+
+```
+
+From the command line it is `python -m kellermap_check FILE`, with `--skip ID`
+for each check to leave out. The exit status is 0 for `VERIFIED`, 1 for a
+refusal, 2 for a file that cannot be opened or a wrong call, and 3 for
+`INCOMPLETE`.
 
 ---
 

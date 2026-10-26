@@ -145,6 +145,58 @@ the obligation. Its controls are of two kinds. The eight reconstruction scripts
 have to agree with it on their chains. And a file changed in one coefficient,
 one slot or one point has to be refused, with the right identifier.
 
+*Done in WP 4.* `src/kellermap_check` holds the checker: a reader of its own
+for FMT-1 to FMT-9, the checks of CHK-4, and the command line of CHK-6.
+`tests/test_checker.py` holds it to CHK-1 to CHK-8, and
+`tests/test_packaging.py` finds it in the wheel and in the source archive. The
+plan above predates the audit of WP 2. The controls follow CHK-8 as WP 2.1
+amended it, not the last sentence of the plan. Five things are worth stating.
+
+The determinant. On 2026-10-23, on the assistant's machine `vm` (two logical
+processors, 7.8 GB, Python 3.10.20, SymPy 1.14.0), `DomainMatrix.det` of the
+whole Jacobian did not finish within 240 seconds, on Thompson's map of 24
+variables and on its compression of 20. The checker's Schur complement has
+three rows on both, and its determinant took about a hundredth of a second
+on each. Checking the whole file of each of the eight chains took less than a
+second. The measurement ran from a script outside the tree. The size of the
+complement is a property of the code, and a test holds it. So the checker
+affords UNI-4, HOM-3, CHC-4 and SYM-4 on every chain, and nothing had to go to
+the maintainer under CHK-4.
+
+The two readers agree. The checker answers every refusal table of
+`tests/test_certificate.py` with the identifier and the place the library
+gives. The tables became module constants for that purpose, and the fixture of
+the file with Thompson's witness moved to `tests/conftest.py`.
+
+The negative controls of CHK-8 state their obligation, their place and their
+reason in the test. One of them is cited differently by the two: a changed
+dilation of a normalization is LIN-6 for the checker, which reads that clause
+first, and LIN-1 for the library, which compares the identity first. The row
+says so.
+
+CHK-8 said that the two chains whose maps are in `tests/data.py` are skipped
+where that file is absent. No chain needs that file, so nothing is skipped, and
+the contract is amended. The sketch of `Report` gained `not_claimed`, which
+CHK-7 asked for and the sketch did not hold.
+
+Sixteen probes aim at the checker. They carry the checker's identifiers, so
+`scripts/mutation_probe.py CHK` selects them. Two were missed on the first run
+against `tests/test_checker.py`: a key twice in an otherwise valid file, and
+the third clause of BCW-10. Both had no control in that file, and both have one
+now.
+
+Running the probes found a defect of the probe runner itself, which this
+package does not repair. `tests/test_scripts.py` checks that the fragment of
+every probe is in the code. Under a probe one fragment has been replaced, so
+that test fails, and with it the fast suite. A whole sweep therefore reports
+every probe as caught, whatever the other tests do. Two probes of WP 3 had no
+control and were reported as caught for this reason: a key twice in an object,
+FMT-1, and a witness on a step that is not a lift, FMT-9. Both have a control
+now, in `tests/test_certificate.py` and `tests/test_checker.py`. The probes of
+this package were run against the test files that hold their controls, which
+do not include `tests/test_scripts.py`. The repair, and a control that the
+runner can report a miss, are left to a work package of their own.
+
 **WP 5** is a LaTeX export, as the first view of a certificate: a chain with
 its steps, and a witness with its form. It is a view. Nothing in it is checked
 beyond being generated from a file the checker accepts.

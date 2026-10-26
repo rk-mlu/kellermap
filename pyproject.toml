@@ -97,7 +97,10 @@ module = ["sympy", "sympy.*"]
 ignore_missing_imports = true
 
 [tool.coverage.run]
-source = ["src/kellermap"]
+# Both packages of the wheel, with one threshold. The checker of milestone 0.9
+# is a package of its own, CHK-2, and a source list that named the library
+# alone would have left it outside the threshold.
+source = ["src/kellermap", "src/kellermap_check"]
 
 [tool.coverage.report]
 show_missing = true
@@ -114,7 +117,9 @@ build-backend = "hatchling.build"
 
 
 [tool.hatch.build.targets.wheel]
-packages = ["src/kellermap"]
+# The library and its independent checker, CHK-2. The checker never imports the
+# library, and tests/test_checker.py holds it to that.
+packages = ["src/kellermap", "src/kellermap_check"]
 
 [tool.hatch.build.targets.sdist]
 # A positive list and not a list of exclusions. Without either, the content of

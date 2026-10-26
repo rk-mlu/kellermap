@@ -66,7 +66,8 @@ its step. `docs/roadmap.md` gives the reason for stating them anyway.
 The other twenty were stated in work package 2. FMT-1 to FMT-12 are the file a
 certificate is written to, under "The certificate file", and are implemented
 since work package 3. CHK-1 to CHK-8 are the checker that reads it without the
-library, under "The independent checker", and work package 4 implements them. Two of them want a reviewer's attention. FMT-5 narrows the
+library, under "The independent checker", and are implemented since work
+package 4. Two of them want a reviewer's attention. FMT-5 narrows the
 domains a file can hold, and the paragraph under it gives the measurement that
 forced the narrowing. CHK-8 is the only evidence that the checker checks
 anything, and the other seven say what it checks.
@@ -2575,8 +2576,8 @@ The checker of the next section reads it without the library.
 
 Every obligation of this section and the next carries the marker of milestone
 0.9. Work package 2 stated them before anything was written. The obligations of
-this section are implemented since work package 3, and those of the next are
-not. `docs/roadmap.md` under "Version 0.9" records the four
+this section are implemented since work package 3, and those of the next
+since work package 4. `docs/roadmap.md` under "Version 0.9" records the four
 decisions they rest on: JSON with structured coefficients, every map of a chain
 written once, the checker as a package of its own in the wheel, and the
 coefficient domains that the chains of this project use.
@@ -2994,14 +2995,19 @@ class Report:
     skipped: tuple[tuple[str, tuple[str, ...]], ...]
     not_computed: tuple[str, ...]  # "SYM-7", "VAN-5"
     claims: tuple[str, ...]
+    not_claimed: tuple[str, ...]
 
 
-def check(text: str, skip: frozenset[str] = frozenset()) -> Report: ...
+def check(text: str, skip: Iterable[str] = frozenset()) -> Report: ...
 ```
 
 From the command line it is `python -m kellermap_check FILE`, with `--skip ID`
 for each check to leave out. CHK-6 says what the verdicts mean and CHK-7 what
 a `Report` holds.
+
+*Amended in work package 4.* The sketch gained `not_claimed`, which CHK-7
+asks for since work package 2.1 and the first sketch did not hold. `skip` takes
+any iterable of identifiers, as the command line passes a list.
 
 **CHK-1 — Independent of the library. [0.9]** The checker is the package
 `kellermap_check`. It imports nothing from `kellermap`, directly or through
@@ -3069,8 +3075,15 @@ derives.
 
 Four of these take a determinant: UNI-4, HOM-3, CHC-4 and SYM-4. The library
 takes them without dividing, after the Schur complement of MAP-4. The checker
-may use the same mathematics, written on its own. Whether it can afford the
-four on the chains of this project is measured in work package 4.
+uses the same mathematics, written on its own. Its block is the coordinates
+whose diagonal entry of the Jacobian is one. While the dependencies among them
+have a cycle, it drops from each cyclic component the coordinate with the most
+edges inside it. What is left is `I` plus a nilpotent matrix, and the
+determinant of the complement is taken over the polynomial ring. Work package 4
+measured whether the checker can afford the four on the chains of this
+project. It can, on all eight, and `docs/roadmap.md` gives the measurement. A
+determinant of the whole Jacobian, without the complement, could not be taken
+on Thompson's map in the time the measurement allowed.
 
 *Amended in work package 2.1, after an audit of work package 2.* The first
 wording said that a determinant the checker cannot afford would be amended away
@@ -3152,9 +3165,14 @@ mistaken for a proof that a map is Keller.
 
 On each of the eight chains of the reconstruction scripts, the checker returns
 `VERIFIED` for the file the library writes, and the maps and collisions that
-the script computes are the ones in the file. The two chains whose maps are in
-`tests/data.py` are checked where that file is present and skipped where it is
-not, as their scripts are.
+the script computes are the ones in the file. No chain depends on
+`tests/data.py`: the library reaches the end of every chain from its steps, and
+the file is compared with what the script computes and not with that file.
+
+*Amended in work package 4.* The first wording said that the two chains whose
+maps are in `tests/data.py` are skipped where that file is absent. The
+implementation needs no skip, so the controls run from the source archive as
+well.
 
 The negative controls. Each takes a file the checker verifies and changes one
 coefficient, one slot or one point, chosen so that the change breaks an

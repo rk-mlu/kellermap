@@ -196,3 +196,20 @@ def script_target(name: str) -> tuple[sp.Expr, ...]:
         return tuple(components[variable] for variable in order)
 
     return tuple(module.reduce_alpoege())
+
+
+def script_points(name: str) -> set[tuple[sp.Expr, ...]]:
+    """Return Alpoege's points as the script carries them to the end of its chain."""
+    module = script(name)
+    if name == "alpoege19":
+        _, order, _, _, _ = module.apply_steps()
+        return {
+            tuple(sp.nsimplify(point[variable]) for variable in order)
+            for point in module.transport()
+        }
+
+    _, points = _source(name)
+    return {
+        tuple(sp.nsimplify(value) for value in module.transport(point))
+        for point in points
+    }

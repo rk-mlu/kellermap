@@ -44,7 +44,7 @@ They ask today's question of today's code. Every one of them should report
 ``tests/test_scripts.py`` checks that every fragment still matches the code it
 aims at.
 
-The set holds 87 probes. That sentence is held against ``PROBES`` by
+The set holds 103 probes. That sentence is held against ``PROBES`` by
 ``tests/test_scripts.py``, which is the only reason to write a number here at
 all. Until ``0.7.0rc11`` this paragraph carried a running total instead, one
 audit's addition at a time, and an audit of ``0.7.0rc10`` found it one too
@@ -120,6 +120,15 @@ not name, and the comparison of the target a descent derives. Two aim at the
 writer: a symbol with assumptions, and the order of the points of a collision,
 which FMT-12 fixes. The ninth drops the cause a refusal carries, because FMT-10
 asks for it.
+
+Work package 4 added sixteen for the independent checker, ``kellermap_check``.
+They carry the identifier of the checker's own clause, so that
+``mutation_probe.py CHK`` selects them all, and ``what`` says which check is
+edited. Four aim at the reader, CHK-3: the refusals the library's reader has a
+probe for. Nine aim at the checks, CHK-4: the identity of a step, the
+determinant and its Schur correction, the normalization, the carrier, the
+compression, two on the points of a collision, and the depth. Three aim at the
+verdict and the report, CHK-6 and CHK-7.
 
 They do **not** reproduce the ten misses of the first run, and until
 ``0.4.0rc14`` this file and ``CHANGELOG.md`` said they did. Two reasons. The
@@ -845,6 +854,119 @@ PROBES: tuple[Probe, ...] = (
         "src/kellermap/certificate.py",
         "            if derived != maps[index + 1]:",
         "            if False:",
+    ),
+    Probe(
+        "CHK-3",
+        "the checker reads a key twice in one object as the last",
+        "src/kellermap_check/_reading.py",
+        "        if len(set(keys)) != len(keys):",
+        "        if False:",
+    ),
+    Probe(
+        "CHK-3",
+        "the checker reads a boolean as an integer",
+        "src/kellermap_check/_reading.py",
+        "        if type(value) is not int:",
+        "        if not isinstance(value, int):",
+    ),
+    Probe(
+        "CHK-3",
+        "the checker reads a rational not in lowest terms",
+        "src/kellermap_check/_reading.py",
+        "(q == 1 or math.gcd(p, q) != 1)",
+        "(q == 1)",
+    ),
+    Probe(
+        "CHK-3",
+        "the checker reads a collision over a domain without its map's",
+        "src/kellermap_check/_reading.py",
+        "    if not domain.contains(maps[position].domain):",
+        "    if False:",
+    ),
+    Probe(
+        "CHK-4",
+        "the checker compares no identity of a step",
+        "src/kellermap_check/_checks.py",
+        "            left == right,\n",
+        "            True,\n",
+    ),
+    Probe(
+        "CHK-4",
+        "the checker takes every Jacobian determinant to be one",
+        "src/kellermap_check/_checks.py",
+        "        algebra.determinant_is_one(ring, components),",
+        "        True,",
+    ),
+    Probe(
+        "CHK-4",
+        "the determinant of the checker leaves out the Schur correction",
+        "src/kellermap_check/_algebra.py",
+        "            - sum((jacobian[row][j] * solved[j][position] for j in kept), "
+        "ring.zero)",
+        "            - ring.zero",
+    ),
+    Probe(
+        "CHK-4",
+        "the checker does not compare the normalization with the linear part",
+        "src/kellermap_check/_checks.py",
+        "                identity[i][j] == (domain.one if i == j else domain.zero)",
+        "                True",
+    ),
+    Probe(
+        "CHK-4",
+        "the checker accepts any carrier of a reused slot",
+        "src/kellermap_check/_checks.py",
+        "                    algebra.free_of(displaced[j], j),",
+        "                    True,",
+    ),
+    Probe(
+        "CHK-4",
+        "the checker does not compare a compression with its source",
+        "src/kellermap_check/_checks.py",
+        '            "CHC-1", left == right, f"coordinate {i}',
+        '            "CHC-1", True, f"coordinate {i}',
+    ),
+    Probe(
+        "CHK-4",
+        "the checker does not evaluate the points of a collision",
+        "src/kellermap_check/_checks.py",
+        "                value == entry.image,",
+        "                True,",
+    ),
+    Probe(
+        "CHK-4",
+        "the checker accepts two equal points",
+        "src/kellermap_check/_checks.py",
+        "                    entry.points[first] != entry.points[second],",
+        "                    True,",
+    ),
+    Probe(
+        "CHK-4",
+        "the checker accepts a depth out of range",
+        "src/kellermap_check/_checks.py",
+        "            1 <= depth <= len(target.names),",
+        "            True,",
+    ),
+    Probe(
+        "CHK-6",
+        "a skipped check leaves the verdict VERIFIED",
+        "src/kellermap_check/__init__.py",
+        "        INCOMPLETE if ledger.skipped else VERIFIED,",
+        "        VERIFIED,",
+    ),
+    Probe(
+        "CHK-6",
+        "a skip that names no check is ignored",
+        "src/kellermap_check/__init__.py",
+        "    if unknown:",
+        "    if False:",
+    ),
+    Probe(
+        "CHK-7",
+        "the report does not name SYM-7",
+        "src/kellermap_check/__init__.py",
+        '        not_computed.append("SYM-7")',
+        "        pass",
     ),
 )
 
