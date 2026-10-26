@@ -30,6 +30,8 @@ from kellermap import (
 from kellermap.bcw import HomogenizationStep, UnipotentStep
 from kellermap.variables import IndexedVariableFactory
 
+from .test_bcw_step import reported_arity
+
 x1, x2, x3, x4 = sp.symbols("x1 x2 x3 x4")
 
 # F = (x1 + x2 + x2^2, x2). Its displacement has a linear part and a quadratic
@@ -354,11 +356,34 @@ def test_zero_would_not_have_been_a_collision() -> None:
 
 
 def test_transport_verifies_the_incoming_collision() -> None:
-    """STEP-3."""
+    """STEP-3. The source has two coordinates and the target three.
+
+    Both checks of ``transport`` raise COL-3, so the arity of the report is
+    what says that the input check fired, as in ``tests/test_unipotent.py``.
+    """
     step = HomogenizationStep.build(SQUARE)
 
-    with pytest.raises(VerificationError, match=r"\[COL-3\]"):
+    with pytest.raises(VerificationError) as failure:
         step.transport(Collision(((1, 2), (0, 2)), (9, 2)))
+
+    assert failure.value.obligation == "COL-3"
+    assert reported_arity(failure.value) == 2
+
+
+def test_transport_verifies_its_own_result() -> None:
+    """STEP-2 and HOM-9: a supplied step with a wrong target is refused there."""
+    built = HomogenizationStep.build(SQUARE)
+    wrong = PolynomialMap(
+        built.target.variables,
+        (built.target.components[0] + 1,) + built.target.components[1:],
+    )
+    supplied = HomogenizationStep(SQUARE, wrong, built.variable)
+
+    with pytest.raises(VerificationError) as failure:
+        supplied.transport(SQUARE_COLLISION)
+
+    assert failure.value.obligation == "COL-3"
+    assert reported_arity(failure.value) == 3
 
 
 def test_transport_preserves_the_number_of_points() -> None:

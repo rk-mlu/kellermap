@@ -220,6 +220,39 @@ says that, and it is the maintainer's. Each of its misses is a promise without
 a control, and each is answered by a control or by a statement on the contract
 page that the clause cannot fail on supplied data.
 
+**WP 4.2** answers the first whole sweep with the repaired runner. The
+maintainer ran it after WP 4.1: the control was missed, and nine of 103 probes
+were missed. It changes no obligation and nothing of the library.
+
+*Done in WP 4.2.* Seven of the nine misses were promises without a control.
+Each has one now.
+
+- UNI-11 and HOM-9, the two checks of `transport`. Both raise COL-3, so a test
+  that read only the identifier could not tell them apart, as `BCWStep` found
+  at `0.4.0rc13`. The input check is now held by the arity the refusal
+  reports, and the output check by a supplied step with a wrong target.
+- LIN-6, the product of the transformation with the linear part. The clause
+  after it, that the target lies in `MA^1`, fails on the same step with the
+  same identifier. The test now reads the message.
+- WID-2 over `GF(5)`. The docstring of its test named three domains, and the
+  body reached two.
+- FAC-1, the Euclidean fold. The test of FAC-2 reaches its matrix over `ZZ`
+  without the fold, because the quotient candidate of the search gives a unit
+  in one step. A matrix whose first column holds two consecutive Fibonacci
+  numbers needs the fold.
+
+Two misses are halves of a check whose other half refuses the same domains:
+the field test of WID-1 and the zero-divisor half of the gate of the fold.
+No domain SymPy offers tells the halves apart, which was checked by
+measurement, and `docs/contracts.md` says so at both clauses. Their probes are
+removed, and the set holds 101.
+
+The sweep also printed "no summary" for MAP-2. That probe breaks the
+evaluation of a point over a field of fractions, and `tests/test_certificate.py`
+evaluates one when it is imported. The run ended with a collection error,
+whose line names neither passed nor failed tests. It was caught, and the
+runner now reports that line.
+
 **WP 5** is a LaTeX export, as the first view of a certificate: a chain with
 its steps, and a witness with its form. It is a view. Nothing in it is checked
 beyond being generated from a file the checker accepts.

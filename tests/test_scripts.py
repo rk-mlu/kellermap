@@ -325,6 +325,27 @@ def test_the_runner_reports_a_miss_where_there_is_one(
     assert probe_run(probe, unseen, tmp_path)
 
 
+def test_a_collection_error_is_reported_as_the_summary(
+    probe: ModuleType, tmp_path: Path
+) -> None:
+    """A probe that breaks an import ends the run with an error and no count.
+
+    The first sweep of the repaired runner printed "no summary" for such a
+    probe: the line it read said "1 error" and named neither passed nor failed
+    tests. The probe was caught all the same, and the line now says how.
+    """
+    project(tmp_path)
+    broken = probe.Probe("X-3", "an import", "src/thing.py", "VALUE = 1", "VALUE =")
+    original = probe.apply(broken, tmp_path)
+    try:
+        caught, summary = probe.run_suite(tmp_path, launcher=(sys.executable, "-m"))
+    finally:
+        probe.restore(broken, tmp_path, original)
+
+    assert caught
+    assert "error" in summary
+
+
 @pytest.mark.probe_set
 def test_a_run_stops_when_the_control_is_caught(probe: ModuleType) -> None:
     """With a suite that fails under every probe, no probe is reported.

@@ -375,6 +375,35 @@ def test_FAC2_the_bound_is_still_reachable_over_a_parameter_ring() -> None:  # n
     assert sp.Matrix(factored.matrix(integral)) == given
 
 
+def test_FAC1_the_fold_reaches_what_the_search_does_not() -> None:  # noqa: N802
+    """The Euclidean fold is the first attempt over ``ZZ``, and it is needed.
+
+    The first column of this matrix holds two consecutive Fibonacci numbers.
+    Their gcd is one, and the Euclidean algorithm needs nine subtractions to
+    reach it. The bounded search does not reach it. Over ``ZZ[T]``, where there
+    is no fold, the matrix is refused. Over ``ZZ`` it is folded to a unit
+    pivot, and with the fold replaced by ``None`` it was refused there too.
+
+    ``[[7, 17], [2, 5]]`` of the test above does not show this. Over ``ZZ``
+    its quotient candidate gives ``7 - 3 * 2 = 1`` in one step, so the search
+    alone reaches it there. A sweep of the probes found the fold without a
+    control for that reason.
+    """
+    parameter = sp.Symbol("T")
+    integral = sp.ring("a,b", sp.ZZ)[0]
+    ring = sp.ring("a,b", sp.ZZ[parameter])[0]
+    given = sp.Matrix([[89, 55], [144, 89]])
+
+    assert given.det() == 1
+
+    factored = LinearAutomorphism.factorize(integral, given)
+
+    assert sp.Matrix(factored.matrix(integral)) == given
+
+    with pytest.raises(ValueError, match="No unit pivot was reached in column 0"):
+        LinearAutomorphism.factorize(ring, given)
+
+
 def test_the_identity_factors_into_nothing(ring: object) -> None:
     factored = LinearAutomorphism.factorize(ring, sp.eye(3))
 
@@ -593,6 +622,18 @@ def test_WID2_the_advice_names_over_field_only_where_it_exists() -> None:  # noq
         Dilation(residue, 0, sp.Rational(1, 2))
 
     assert "over_field" not in str(unconvertible.value)
+
+    # The third domain of the docstring, which the body did not reach until
+    # work package 4.2 of milestone 0.9. GF(5) has a field of fractions, and it
+    # is GF(5) itself, so the advice would move nothing. A sweep of the probes
+    # found the clause for this reading without a control.
+    finite = sp.ring("u,v", sp.GF(5))[0]
+
+    with pytest.raises(ValueError) as already_a_field:
+        Dilation(finite, 0, sp.Rational(1, 5))
+
+    assert "does not lie in" in str(already_a_field.value)
+    assert "over_field" not in str(already_a_field.value)
 
 
 # --------------------------------------------------------------------------

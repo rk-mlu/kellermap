@@ -4633,6 +4633,16 @@ defect that was found. One answer to one question all the same: two predicates
 that disagree about the same ring are how the audits of `0.7.0rc9` and
 `0.7.0rc11` both began.
 
+*Amended in work package 4.2 of milestone 0.9, after the first sweep that could
+report a miss.* The zero-divisor half of the gate changes no result today. Two
+domains with zero divisors report `is_PID`: `Z/nZ` with composite `n`, and a
+field of fractions over it. The fold runs only on a column without a unit, and
+its first division by a non-unit fails there, so the guard inside the fold
+returns and the search runs as it would have. With that half removed, all 288
+invertible `2x2` matrices over `Z/6Z` with entries from 0 to 5 gave the same
+answer as before, over `Z/6Z` and over `(Z/6Z)(T)`. The half stays, for the
+reason the guard does, and the probe set holds no probe for it.
+
 The search tries three combinations for each ordered pair of rows, and it tests
 them before it applies one: subtract the other row, add it, or subtract the
 quotient the domain's division reports. The first whose entry is a unit is the
@@ -4744,6 +4754,15 @@ did not reach `(Z/4Z)[T]`, which is what a probe per reading is for.
 
 A domain that already is a field is returned as it is. That is a widening that
 changes nothing and not a failure, and `GF(5)` reaches it.
+
+*Amended in work package 4.2 of milestone 0.9, after the first sweep that could
+report a miss.* The two checks are not independent today. `get_field` answers
+a ring that is not a field only for `Z/nZ` with composite `n`, measured over
+the domains `field_of_fractions` names in its docstring, and that ring has
+zero divisors. So the zero-divisor test refuses every domain the field test
+refuses, and no domain SymPy offers tells the two apart. The field test stays,
+because it is the statement of this clause and costs nothing. The probe set
+holds no probe for it, and `scripts/mutation_probe.py` says why.
 
 **WID-2 — `over_field` is named as advice only where it exists.** A message
 that tells a caller to widen names `over_field()` only where the widening

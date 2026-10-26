@@ -218,7 +218,11 @@ def test_LIN6_a_step_that_claims_to_normalize_and_does_not(  # noqa: N802
     with pytest.raises(VerificationError) as failure:
         LinearStep.build(ALPOEGE, swap, normalizing=True).verify()
 
+    # The product check, and not the MA^1 clause after it. That clause fails
+    # on the same step with the same identifier, so only the message tells the
+    # two apart; without it the product check could go unnoticed.
     assert failure.value.obligation == "LIN-6"
+    assert "not the inverse of the linear part" in str(failure.value)
 
 
 def test_LIN6_is_only_claimed_when_declared(swap: LinearAutomorphism) -> None:  # noqa: N802

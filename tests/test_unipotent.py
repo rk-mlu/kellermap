@@ -30,6 +30,8 @@ from kellermap.bcw import UnipotentStep
 from kellermap.bcw.grading import homogeneous_part
 from kellermap.variables import IndexedVariableFactory
 
+from .test_bcw_step import reported_arity
+
 x1, x2, x3, x4, x5, x6, x7 = sp.symbols("x1 x2 x3 x4 x5 x6 x7")
 
 # F = (x1 + x2^2 x3, x2, x3), in MA^1 and of degree three. Its displacement has
@@ -455,11 +457,41 @@ def test_transport_leaves_the_image_where_it_was() -> None:
 
 
 def test_transport_verifies_the_incoming_collision() -> None:
-    """STEP-3. A collision that does not hold for the source is refused."""
+    """STEP-3. A collision that does not hold for the source is refused.
+
+    Both checks of ``transport`` raise COL-3. The source has three coordinates
+    and the target six, so a report of three says that the input check fired.
+    Without the arity, the output check would catch the same collision one line
+    later, and the input check could go without a test noticing.
+    """
     step = UnipotentStep.build(CUBIC)
 
-    with pytest.raises(VerificationError, match=r"\[COL-3\]"):
+    with pytest.raises(VerificationError) as failure:
         step.transport(Collision(((1, 2, 3), (0, 2, 3)), (9, 2, 3)))
+
+    assert failure.value.obligation == "COL-3"
+    assert reported_arity(failure.value) == 3
+
+
+def test_transport_verifies_its_own_result() -> None:
+    """STEP-2 and UNI-11: the output is checked, and that is reachable.
+
+    ``transport`` does not verify the step. For a supplied step with a wrong
+    target the output check is the only thing that refuses, and it reports the
+    six coordinates of the target.
+    """
+    built = UnipotentStep.build(CUBIC)
+    wrong = PolynomialMap(
+        built.target.variables,
+        (built.target.components[0] + 1,) + built.target.components[1:],
+    )
+    supplied = UnipotentStep(CUBIC, wrong, built.variables)
+
+    with pytest.raises(VerificationError) as failure:
+        supplied.transport(CUBIC_COLLISION)
+
+    assert failure.value.obligation == "COL-3"
+    assert reported_arity(failure.value) == 6
 
 
 def test_transport_preserves_the_number_of_points() -> None:

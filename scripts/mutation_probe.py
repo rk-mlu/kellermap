@@ -44,7 +44,7 @@ They ask today's question of today's code. Every one of them should report
 ``tests/test_scripts.py`` checks that every fragment still matches the code it
 aims at.
 
-The set holds 103 probes. That sentence is held against ``PROBES`` by
+The set holds 101 probes. That sentence is held against ``PROBES`` by
 ``tests/test_scripts.py``, which is the only reason to write a number here at
 all. Until ``0.7.0rc11`` this paragraph carried a running total instead, one
 audit's addition at a time, and an audit of ``0.7.0rc10`` found it one too
@@ -130,6 +130,16 @@ determinant and its Schur correction, the normalization, the carrier, the
 compression, two on the points of a collision, and the depth. Three aim at the
 verdict and the report, CHK-6 and CHK-7.
 
+Work package 4.2 removed two, after the first whole sweep that could report a
+miss. Each aimed at one half of a check whose other half refuses the same
+domains, so no domain SymPy offers tells the halves apart. One is the field
+test of WID-1: ``get_field`` answers a non-field only for ``Z/nZ`` with
+composite ``n``, which has zero divisors, and the zero-divisor test refuses it.
+The other is the zero-divisor half of the gate of the fold, FAC-1: where it
+would let the fold run, the fold's own guard returns at its first division.
+``docs/contracts.md`` says so at both clauses. The other seven misses of that
+sweep have a control now.
+
 They do **not** reproduce the ten misses of the first run, and until
 ``0.4.0rc14`` this file and ``CHANGELOG.md`` said they did. Two reasons. The
 misses were fixed in ``0.4.0rc13``, so those twelve probes against the current
@@ -183,6 +193,7 @@ breaks, and the run stops before it reports anything.
 from __future__ import annotations
 
 import argparse
+import re
 import shutil
 import subprocess
 import sys
@@ -672,13 +683,6 @@ PROBES: tuple[Probe, ...] = (
     ),
     Probe(
         "WID-1",
-        "a widening that does not produce a field is refused",
-        "src/kellermap/polynomial_map.py",
-        "    if not widened.is_Field:\n        return None",
-        "    if False:\n        return None",
-    ),
-    Probe(
-        "WID-1",
         "a widening onto zero divisors below is refused",
         "src/kellermap/polynomial_map.py",
         "    if has_zero_divisors(widened):\n        return None",
@@ -769,13 +773,6 @@ PROBES: tuple[Probe, ...] = (
         "            value = value * reciprocal[index] ** exponent",
         "        for _ in range(exponent):\n"
         "            value = value * reciprocal[index]",
-    ),
-    Probe(
-        "FAC-1",
-        "the fold is not run over a domain with zero divisors",
-        "src/kellermap/linear.py",
-        "    if not domain.is_PID or has_zero_divisors(domain):",
-        "    if not domain.is_PID:",
     ),
     Probe(
         "MAP-3",
@@ -1036,10 +1033,12 @@ def run_suite(root: Path, launcher: Sequence[str] = LAUNCHER) -> tuple[bool, str
         text=True,
         check=False,
     )
+    # A collection error ends the run with "1 error in ..." and no count of
+    # passed or failed tests, and that line is the summary then.
     summary = [
         line
         for line in finished.stdout.splitlines()
-        if "passed" in line or "failed" in line
+        if re.search(r"\b(passed|failed|errors?)\b", line)
     ]
 
     return finished.returncode != 0, summary[-1] if summary else "no summary"
