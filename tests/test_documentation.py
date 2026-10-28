@@ -134,6 +134,7 @@ FAMILIES = {
     "SEA",
     "STEP",
     "SYM",
+    "TEX",
     "TRA",
     "UNI",
     "UNT",

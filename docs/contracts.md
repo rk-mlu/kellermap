@@ -56,7 +56,7 @@ number maintained in one place and checked in none does. What it says now holds
 whenever it is read, and the milestone paragraphs below carry the history.
 `docs/errata.md` records the stale one.
 
-**Milestone `0.9`, open.** Twenty-three obligations are marked. Three of
+**Milestone `0.9`, open.** Twenty-nine obligations are marked. Three of
 them are implemented since work package 1.1: LIN-7, TRA-9 and UNI-13. With
 HOM-12 they make the conditional chain of Theorem 2.1(b) explicit for every
 step type that can lie between `reduce_to_multi_affine` and the
@@ -80,6 +80,10 @@ CHK-8, whose first wording promised more than a control can show.
 Work package 2.2 changed no obligation. It gave the constructor invariants
 their identifiers and `VerificationError` a location, as the section on errors
 describes.
+
+TEX-1 to TEX-6 were stated in work package 5, before the view they describe,
+under "The LaTeX view", and work package 5 implements them. TEX-1 is the one
+to read first: the view is made only from a file the checker verifies.
 
 **Milestone `0.8`, closed.** The milestone added `VanishingWitness`, VAN-1 to
 VAN-5, the witness to Zhao's Vanishing Conjecture that the symmetric lift
@@ -229,6 +233,7 @@ the implementation is required to guarantee.
 - [Reduction](#reduction)
 - [The certificate file](#the-certificate-file)
 - [The independent checker](#the-independent-checker)
+- [The LaTeX view](#the-latex-view)
 - [Search](#search)
 - [Peeling](#peeling)
 - [The untargeted search](#the-untargeted-search)
@@ -3204,6 +3209,93 @@ those carry their own answers. CHK-1, CHK-2, CHK-6 and CHK-7 are obligations
 on the conduct of the checker. CHK-8 is the evidence that the checker checks
 anything at all, and it is the obligation to weigh. CHK-6 is the one to read
 next: it decides when an output may say `VERIFIED`.
+
+---
+
+## The LaTeX view
+
+A view of a certificate file, for a reader who wants to see the chain rather
+than run it. `to_latex(text)` returns LaTeX for the text of a file. Nothing in
+the view is checked by the view. What makes it worth reading is that it is
+made only from a file the checker verifies, and that it shows what that file
+holds.
+
+```python
+def to_latex(text: str, *, standalone: bool = True) -> str: ...
+```
+
+**TEX-1 — Only from a file the checker verifies. [0.9]** `to_latex` checks the
+text with `kellermap_check.check` first and goes on only for the verdict
+`VERIFIED`. A file the checker refuses raises `VerificationError` with the
+identifier and the location of the refusal, and the refusal as its cause. No
+check is left out, so the verdict `INCOMPLETE` cannot arise.
+
+The checker and not the library decides, because the view is a statement about
+a file. `kellermap` imports `kellermap_check` for it, which CHK-2 allows; the
+checker still imports nothing of the library.
+
+**TEX-2 — It shows what the file holds. [0.9]** Every map, with its generators,
+its coefficient domain, its monomial order and its components. Every step,
+with its type, the two maps it joins and every parameter the file writes for
+it. Every collision, with its map, its domain, its points and its image. The
+witness, with its step, its collision and its depth. And what the checker's
+report says: the claims it confirmed, what the file does not claim, and the
+consequences it did not compute.
+
+One thing is shown that the file does not hold: the form `P` of the lift a
+witness names, which the roadmap of milestone 0.9 asks for. It is derived from
+the lift by the library and labelled as derived. Nothing else is derived: not
+`G` or `H` of a step, not a transport, not a determinant.
+
+**TEX-3 — As the file writes it. [0.9]** The view is made from the text that
+`Certificate.loads(text).dumps()` returns. Terms stand in the order FMT-6
+writes them and points in the order FMT-12 writes them. Indices count from
+zero, as in the file. So two files that hold one certificate have one view,
+including a file whose points stand in another order or whose fractions are
+written with a common factor.
+
+**TEX-4 — Two forms, and no package. [0.9]** With `standalone=True` the view
+is a document from `\documentclass{article}` to `\end{document}`, and `pdflatex`
+compiles it without any package. With `standalone=False` it is the body of
+that document, to be read into another one with `\input`; it needs no package
+either. Both begin with one comment line that names them as a view of a
+certificate file.
+
+**TEX-5 — Two names are never shown alike. [0.9]** A name of one letter
+followed by digits is shown as that letter with the digits as a subscript:
+`x12` is `x_{12}`. Every other name is shown as itself in `\mathit`, with its
+underscores escaped: `x_1` is `\mathit{x\_1}`. The imaginary unit is shown
+upright, as `\mathrm{i}`, so a generator named `i` is not mistaken for it.
+
+SymPy's own rendering of a name is not used, because it is not injective. It
+shows `x1` and `x_1` both as `x_{1}`, and it gives no valid LaTeX for some
+names a file admits, such as `x__`.
+
+**TEX-6 — Plain ASCII, and text is escaped. [0.9]** The view is ASCII, so it
+compiles under any input encoding. Text that comes from the report is escaped,
+so a character that LaTeX reads as a command stands as itself.
+
+### Files and the licence rule
+
+A view holds the values of the maps in its file, as the file does. So the
+repository holds no view either. The comment line of TEX-4 makes a view
+findable by its content, and a test of work package 5 fails on a file that
+begins with it anywhere in the tree.
+
+### Which of these can fail on supplied data
+
+TEX-1, on a file the checker refuses. TEX-2 to TEX-6 are obligations on the
+library's own output.
+
+### Deliberate non-obligations of the view
+
+**No check of its own.** The view repeats nothing the checker did, and a
+compiled document is not checked by anybody. The file is the certificate; the
+view is a way to read it.
+
+**No layout.** Long components are left to the line breaking of TeX. A
+long vector may run past the margin, which `pdflatex` reports as an overfull
+box and not as an error.
 
 ---
 

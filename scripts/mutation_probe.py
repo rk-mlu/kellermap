@@ -44,7 +44,7 @@ They ask today's question of today's code. Every one of them should report
 ``tests/test_scripts.py`` checks that every fragment still matches the code it
 aims at.
 
-The set holds 101 probes. That sentence is held against ``PROBES`` by
+The set holds 110 probes. That sentence is held against ``PROBES`` by
 ``tests/test_scripts.py``, which is the only reason to write a number here at
 all. Until ``0.7.0rc11`` this paragraph carried a running total instead, one
 audit's addition at a time, and an audit of ``0.7.0rc10`` found it one too
@@ -139,6 +139,12 @@ The other is the zero-divisor half of the gate of the fold, FAC-1: where it
 would let the fold run, the fold's own guard returns at its first division.
 ``docs/contracts.md`` says so at both clauses. The other seven misses of that
 sweep have a control now.
+
+Work package 5 added nine for the LaTeX view, TEX-1 to TEX-6. Two aim at
+TEX-1, the one that matters: a view made with every check left out, and a
+refusal that loses its identifier. The others leave out the witness, make the
+view from the text as given, reverse the terms, load a package, render names
+with SymPy, show the imaginary unit in italics, and leave text unescaped.
 
 They do **not** reproduce the ten misses of the first run, and until
 ``0.4.0rc14`` this file and ``CHANGELOG.md`` said they did. Two reasons. The
@@ -1006,6 +1012,70 @@ PROBES: tuple[Probe, ...] = (
         "src/kellermap_check/__init__.py",
         '        not_computed.append("SYM-7")',
         "        pass",
+    ),
+    Probe(
+        "TEX-1",
+        "the view is made with every check left out",
+        "src/kellermap/latex.py",
+        "        report = kellermap_check.check(text)",
+        "        report = kellermap_check.check(text, kellermap_check.CHECKS)",
+    ),
+    Probe(
+        "TEX-1",
+        "a refusal of the checker loses its identifier",
+        "src/kellermap/latex.py",
+        "            refusal.obligation, refusal.message, location=refusal.location",
+        '            "FMT-1", refusal.message, location=refusal.location',
+    ),
+    Probe(
+        "TEX-2",
+        "the witness is left out of the view",
+        "src/kellermap/latex.py",
+        "            self.witness(),",
+        '            "",',
+    ),
+    Probe(
+        "TEX-3",
+        "the view is made from the text as it was given",
+        "src/kellermap/latex.py",
+        "    canonical = certificate.dumps()",
+        "    canonical = text",
+    ),
+    Probe(
+        "TEX-3",
+        "terms stand in the reverse of the file's order",
+        "src/kellermap/latex.py",
+        "        for exponents, coefficient in terms:",
+        "        for exponents, coefficient in reversed(terms):",
+    ),
+    Probe(
+        "TEX-4",
+        "the document loads a package",
+        "src/kellermap/latex.py",
+        '        "\\\\documentclass{article}\\n"',
+        '        "\\\\documentclass{article}\\n\\\\usepackage{amsmath}\\n"',
+    ),
+    Probe(
+        "TEX-5",
+        "SymPy renders the names",
+        "src/kellermap/latex.py",
+        '    return "\\\\mathit{" + identifier.replace("_", "\\\\_") + "}"',
+        "    return str(sp.latex(sp.Symbol(identifier)))",
+    ),
+    Probe(
+        "TEX-5",
+        "the imaginary unit is shown as an italic i",
+        "src/kellermap/latex.py",
+        '                imaginary_unit="ri",',
+        '                imaginary_unit="i",',
+    ),
+    Probe(
+        "TEX-6",
+        "text from the report is not escaped",
+        "src/kellermap/latex.py",
+        '    return "".join(_TEXT_SPECIALS.get(character, character) '
+        "for character in words)",
+        "    return words",
     ),
 )
 

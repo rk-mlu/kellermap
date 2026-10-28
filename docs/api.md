@@ -36,6 +36,7 @@ what they do.
 - [The descent](#the-descent)
 - [Certificates in a file](#certificates-in-a-file)
   - [The independent checker](#the-independent-checker)
+  - [A LaTeX view](#a-latex-view)
 - [Finding candidates](#finding-candidates)
 - [Assembling a chain](#assembling-a-chain)
 - [Peeling a chain off a target](#peeling-a-chain-off-a-target)
@@ -50,7 +51,7 @@ what they do.
 ```python
 >>> import kellermap
 >>> kellermap.__all__
-['DEFAULT_VARIABLE_FACTORY', 'Candidate', 'Certificate', 'Collision', 'CompressionStep', 'DescentStep', 'Dilation', 'ElementaryAutomorphism', 'ElementaryFactor', 'FixedVariableFactory', 'IndexedVariableFactory', 'InvariantError', 'LinearAutomorphism', 'LinearFactor', 'LinearStep', 'PeelOutcome', 'PolynomialMap', 'Provenance', 'Reduction', 'ReductionOutcome', 'ReductionContext', 'SearchOutcome', 'Step', 'SymmetricLiftStep', 'TranslationStep', 'Transposition', 'Transvection', 'Undo', 'VanishingWitness', 'VariableFactory', 'VerificationError', 'anchors', 'collision_hull', 'conjugate', 'diagonal_matching', 'enumerate_candidates', 'lowers_the_weight', 'multi_affine_steps', 'field_ring', 'over_field', 'peel', 'reduce_to_degree3', 'reduce_to_multi_affine', 'remaining_excess', 'remaining_weight', 'reserved_names', 'search', 'untargeted_candidates']
+['DEFAULT_VARIABLE_FACTORY', 'Candidate', 'Certificate', 'Collision', 'CompressionStep', 'DescentStep', 'Dilation', 'ElementaryAutomorphism', 'ElementaryFactor', 'FixedVariableFactory', 'IndexedVariableFactory', 'InvariantError', 'LinearAutomorphism', 'LinearFactor', 'LinearStep', 'PeelOutcome', 'PolynomialMap', 'Provenance', 'Reduction', 'ReductionOutcome', 'ReductionContext', 'SearchOutcome', 'Step', 'SymmetricLiftStep', 'TranslationStep', 'Transposition', 'Transvection', 'Undo', 'VanishingWitness', 'VariableFactory', 'VerificationError', 'anchors', 'collision_hull', 'conjugate', 'diagonal_matching', 'enumerate_candidates', 'lowers_the_weight', 'multi_affine_steps', 'field_ring', 'over_field', 'peel', 'reduce_to_degree3', 'reduce_to_multi_affine', 'remaining_excess', 'remaining_weight', 'reserved_names', 'search', 'to_latex', 'untargeted_candidates']
 
 ```
 
@@ -1538,6 +1539,42 @@ From the command line it is `python -m kellermap_check FILE`, with `--skip ID`
 for each check to leave out. The exit status is 0 for `VERIFIED`, 1 for a
 refusal, 2 for a file that cannot be opened or a wrong call, and 3 for
 `INCOMPLETE`.
+
+### A LaTeX view
+
+`to_latex(text)` returns a LaTeX document that shows what a file holds: every
+map, every step with its parameters, every collision, the witness, and what
+the checker's report says. TEX-1 to TEX-6 in `docs/contracts.md` state it. It
+checks the file with `kellermap_check` first and makes a view only of a file
+the checker verifies:
+
+```python
+>>> from kellermap import to_latex
+>>> view = to_latex(text)
+>>> print("\n".join(view.splitlines()[:3]))
+% A view of a kellermap certificate file that kellermap_check verified.
+\documentclass{article}
+\begin{document}
+>>> print([line for line in view.splitlines() if line.startswith("\\noindent")][2])
+\noindent$F_{0} = x^{2} - y u$
+
+```
+
+The document needs no package, and `pdflatex` compiles it. With
+`standalone=False` the result is the body only, to be read into another
+document with `\input`. A file the checker refuses has no view:
+
+```python
+>>> to_latex(text.replace('"version":1', '"version":2'))
+Traceback (most recent call last):
+    ...
+kellermap.errors.VerificationError: [FMT-1] in file version 2 is not 1
+
+```
+
+The view checks nothing itself. The file is the certificate, and the view is a
+way to read it. It holds the values of the maps in the file, so the repository
+keeps no view, for the reason it keeps no file.
 
 ---
 

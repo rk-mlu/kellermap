@@ -38,9 +38,26 @@ from collections.abc import Iterable
 
 from . import _checks
 from ._reading import Document, read
-from ._report import INCOMPLETE, REFUSED, VERIFIED, Ledger, Refusal, Report
+from ._report import (
+    INCOMPLETE,
+    NOT_COMPUTED,
+    REFUSED,
+    VERIFIED,
+    Ledger,
+    Refusal,
+    Report,
+)
 
-__all__ = ["CHECKS", "INCOMPLETE", "REFUSED", "VERIFIED", "Refusal", "Report", "check"]
+__all__ = [
+    "CHECKS",
+    "INCOMPLETE",
+    "NOT_COMPUTED",
+    "REFUSED",
+    "VERIFIED",
+    "Refusal",
+    "Report",
+    "check",
+]
 
 CHECKS = frozenset(
     {

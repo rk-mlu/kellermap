@@ -5,6 +5,7 @@ from .context import ReductionContext
 from .descent import DescentStep
 from .elementary import ElementaryAutomorphism, ElementaryFactor
 from .errors import InvariantError, VerificationError
+from .latex import to_latex
 from .lift import SymmetricLiftStep
 from .linear import (
     Dilation,
@@ -100,5 +101,6 @@ __all__ = [
     "remaining_weight",
     "reserved_names",
     "search",
+    "to_latex",
     "untargeted_candidates",
 ]

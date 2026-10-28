@@ -257,6 +257,36 @@ runner now reports that line.
 its steps, and a witness with its form. It is a view. Nothing in it is checked
 beyond being generated from a file the checker accepts.
 
+*Done in WP 5.* `kellermap.latex` holds `to_latex`, and TEX-1 to TEX-6 in
+`docs/contracts.md` state it. They were written first, in the same package,
+after four answers of the maintainer. The view is made from the text of a
+file, after `kellermap_check` has verified it. It is a whole document by
+default and the body alone on request. It shows everything the file holds. A
+test compiles it with `pdflatex` where that program is on the path, and says
+that it skipped where it is not. Five things are worth stating.
+
+The form of a witness is shown although the file does not hold it. The plan
+above asks for it. TEX-2 allows it as the one derived value, and the view
+labels it so.
+
+Names are not rendered by SymPy. SymPy shows `x1` and `x_1` alike, and it
+writes no valid LaTeX for some names a file admits, such as `x__`. TEX-5 gives
+the rule that replaces it, and the imaginary unit is printed upright so that a
+generator named `i` stays apart from it.
+
+The body sets `\sloppy` inside a group. Without it the chain of
+`reconstruct_alpoege19.py` gave three overfull lines, and with it none. The
+group ends the setting with the view when it is read into another document.
+
+`kellermap_check` now exports `NOT_COMPUTED`, the sentences its report gives
+for SYM-7 and VAN-5, so that the view states them as the report does. The view
+reads the values of a file with the reader of `kellermap.certificate`, so the
+two cannot read a value differently.
+
+The licence rule reaches the view as it reaches the file. A view holds the
+values of its maps. Every view begins with one comment line, and a test fails
+on a file that begins with it anywhere in the tree.
+
 **WP 6** is a small command line: `kellermap verify FILE` and
 `kellermap latex FILE`. It adds an entry point to `pyproject.toml` and no
 behaviour that WP 3 to WP 5 do not already have.
