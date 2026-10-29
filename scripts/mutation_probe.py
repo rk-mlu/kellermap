@@ -44,7 +44,7 @@ They ask today's question of today's code. Every one of them should report
 ``tests/test_scripts.py`` checks that every fragment still matches the code it
 aims at.
 
-The set holds 110 probes. That sentence is held against ``PROBES`` by
+The set holds 115 probes. That sentence is held against ``PROBES`` by
 ``tests/test_scripts.py``, which is the only reason to write a number here at
 all. Until ``0.7.0rc11`` this paragraph carried a running total instead, one
 audit's addition at a time, and an audit of ``0.7.0rc10`` found it one too
@@ -145,6 +145,12 @@ TEX-1, the one that matters: a view made with every check left out, and a
 refusal that loses its identifier. The others leave out the witness, make the
 view from the text as given, reverse the terms, load a package, render names
 with SymPy, show the imaginary unit in italics, and leave text unescaped.
+
+Work package 6 added five for the command line, CLI-1 to CLI-4. Each changes
+what the program passes on: the name in the usage of ``verify``, the
+``--body`` of ``latex``, and three exit statuses that would report success
+for a refused file, an output that cannot be written, and a call without a
+command.
 
 They do **not** reproduce the ten misses of the first run, and until
 ``0.4.0rc14`` this file and ``CHANGELOG.md`` said they did. Two reasons. The
@@ -1076,6 +1082,44 @@ PROBES: tuple[Probe, ...] = (
         '    return "".join(_TEXT_SPECIALS.get(character, character) '
         "for character in words)",
         "    return words",
+    ),
+    Probe(
+        "CLI-1",
+        "verify gives the checker's usage name",
+        "src/kellermap/cli.py",
+        "        return kellermap_check.__main__.main("
+        'arguments[1:], prog="kellermap verify")',
+        "        return kellermap_check.__main__.main(arguments[1:])",
+    ),
+    Probe(
+        "CLI-2",
+        "latex ignores --body",
+        "src/kellermap/cli.py",
+        "        view = to_latex(text, standalone=not body)",
+        "        view = to_latex(text, standalone=True)",
+    ),
+    Probe(
+        "CLI-3",
+        "latex of a refused file exits with 0",
+        "src/kellermap/cli.py",
+        "        return 1\n\n    if output is None:",
+        "        return 0\n\n    if output is None:",
+    ),
+    Probe(
+        "CLI-3",
+        "an output that cannot be written exits with 0",
+        "src/kellermap/cli.py",
+        '        print(f"{output}: cannot be written: {failure}", '
+        "file=sys.stderr)\n        return 2",
+        '        print(f"{output}: cannot be written: {failure}", '
+        "file=sys.stderr)\n        return 0",
+    ),
+    Probe(
+        "CLI-4",
+        "a call without a command exits with 0",
+        "src/kellermap/cli.py",
+        "        return 2\n\n    return _latex(",
+        "        return 0\n\n    return _latex(",
     ),
 )
 

@@ -56,7 +56,7 @@ number maintained in one place and checked in none does. What it says now holds
 whenever it is read, and the milestone paragraphs below carry the history.
 `docs/errata.md` records the stale one.
 
-**Milestone `0.9`, open.** Twenty-nine obligations are marked. Three of
+**Milestone `0.9`, open.** Thirty-three obligations are marked. Three of
 them are implemented since work package 1.1: LIN-7, TRA-9 and UNI-13. With
 HOM-12 they make the conditional chain of Theorem 2.1(b) explicit for every
 step type that can lie between `reduce_to_multi_affine` and the
@@ -82,8 +82,12 @@ their identifiers and `VerificationError` a location, as the section on errors
 describes.
 
 TEX-1 to TEX-6 were stated in work package 5, before the view they describe,
-under "The LaTeX view", and work package 5 implements them. TEX-1 is the one
-to read first: the view is made only from a file the checker verifies.
+under "The LaTeX view", and are implemented since work package 5. TEX-1 is
+the one to read first: the view is made only from a file the checker verifies.
+
+CLI-1 to CLI-4 were stated in work package 6, before the command line they
+describe, under "The command line", and work package 6 implements them. They
+add a way to call what work packages 3 to 5 built, and nothing else.
 
 **Milestone `0.8`, closed.** The milestone added `VanishingWitness`, VAN-1 to
 VAN-5, the witness to Zhao's Vanishing Conjecture that the symmetric lift
@@ -234,6 +238,7 @@ the implementation is required to guarantee.
 - [The certificate file](#the-certificate-file)
 - [The independent checker](#the-independent-checker)
 - [The LaTeX view](#the-latex-view)
+- [The command line](#the-command-line)
 - [Search](#search)
 - [Peeling](#peeling)
 - [The untargeted search](#the-untargeted-search)
@@ -3296,6 +3301,57 @@ view is a way to read it.
 **No layout.** Long components are left to the line breaking of TeX. A
 long vector may run past the margin, which `pdflatex` reports as an overfull
 box and not as an error.
+
+---
+
+## The command line
+
+A program `kellermap` with two commands, for a reader who has a file and no
+wish to write Python. It adds no behaviour of its own: each command calls what
+the checker and the view already do, and these obligations say how.
+
+```
+kellermap verify FILE [--skip ID ...]
+kellermap latex FILE [--output OUT] [--body]
+```
+
+**CLI-1 — `verify` is the checker. [0.9]** `kellermap verify` runs the command
+line of `kellermap_check`, with the same arguments, the same output and the
+same exit status as `python -m kellermap_check`, CHK-6. Only the name of the
+program in a usage message differs. The checker and not the library decides,
+for the reason it decides for the view: the command answers a question about
+a file.
+
+**CLI-2 — `latex` is the view. [0.9]** `kellermap latex` writes what
+`to_latex` returns for the text of the file: the document, or with `--body`
+the body, TEX-4. It writes to the standard output, or with `--output` to the
+file it names.
+
+**CLI-3 — Exit status, and nothing written on failure. [0.9]** `latex` exits
+with 0 when the view was written. For a file the checker refuses it exits with
+1 and prints the identifier, the location and the message, as `verify` does.
+For a file that cannot be read, an output that cannot be written, or a wrong
+call it exits with 2. A refused file writes nothing: no view and no file of
+that name. The status of `verify` is the checker's.
+
+**CLI-4 — One program, two ways in. [0.9]** The wheel installs the program
+`kellermap` through an entry point in `pyproject.toml`, and
+`python -m kellermap` is the same program. A command that is not one of the
+two, or no command, is a wrong call and exits with 2.
+
+### Which of these can fail on supplied data
+
+None of them checks data. A file is checked by the checker, through CLI-1 and
+CLI-2, and the command line only passes on its verdict.
+
+### Deliberate non-obligations of the command line
+
+**No standard input.** A command reads a file it is given by name. A file is
+small, and a name is what a refusal and a report can point to.
+
+**No command of its own.** There is no `kellermap check` that would verify
+with the library instead of the checker. A caller who wants that writes the
+two lines of Python `docs/api.md` shows.
 
 ---
 

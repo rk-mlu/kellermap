@@ -37,6 +37,7 @@ what they do.
 - [Certificates in a file](#certificates-in-a-file)
   - [The independent checker](#the-independent-checker)
   - [A LaTeX view](#a-latex-view)
+  - [The command line](#the-command-line)
 - [Finding candidates](#finding-candidates)
 - [Assembling a chain](#assembling-a-chain)
 - [Peeling a chain off a target](#peeling-a-chain-off-a-target)
@@ -1575,6 +1576,38 @@ kellermap.errors.VerificationError: [FMT-1] in file version 2 is not 1
 The view checks nothing itself. The file is the certificate, and the view is a
 way to read it. It holds the values of the maps in the file, so the repository
 keeps no view, for the reason it keeps no file.
+
+### The command line
+
+The program `kellermap` has two commands, and CLI-1 to CLI-4 in
+`docs/contracts.md` state them. `kellermap verify FILE` is the checker under
+another name: the same output and the same exit status as
+`python -m kellermap_check FILE`. `kellermap latex FILE` writes the view, to
+the standard output or with `--output OUT` to a file, and with `--body` the
+body only. `python -m kellermap` is the same program, and `main` is the
+function both call:
+
+```python
+>>> import shutil, tempfile
+>>> from pathlib import Path
+>>> from kellermap.cli import main
+>>> folder = Path(tempfile.mkdtemp())
+>>> file, view = str(folder / "chain.json"), folder / "chain.tex"
+>>> _ = Path(file).write_text(text)
+>>> main(["latex", file, "--output", str(view)])
+0
+>>> view.read_text().splitlines()[0]
+'% A view of a kellermap certificate file that kellermap_check verified.'
+>>> main(["verify", file])  # doctest: +ELLIPSIS
+VERIFIED .../chain.json
+...
+0
+>>> shutil.rmtree(folder)
+
+```
+
+A refused file exits with 1 and writes no view. A file that cannot be read, an
+output that cannot be written, and a wrong call exit with 2.
 
 ---
 

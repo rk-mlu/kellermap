@@ -119,6 +119,7 @@ FAMILIES = {
     "BCW",
     "CHC",
     "CHK",
+    "CLI",
     "CNJ",
     "COL",
     "DSC",

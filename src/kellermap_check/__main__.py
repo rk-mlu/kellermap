@@ -14,9 +14,16 @@ from pathlib import Path
 from . import CHECKS, INCOMPLETE, REFUSED, Refusal, check
 
 
-def main(argv: Sequence[str] | None = None) -> int:
+def main(
+    argv: Sequence[str] | None = None, prog: str = "python -m kellermap_check"
+) -> int:
+    """Run the checker on the file ``argv`` names, and return the exit status.
+
+    ``prog`` is the name a usage message gives. ``kellermap verify`` passes its
+    own, CLI-1, and nothing else differs.
+    """
     parser = argparse.ArgumentParser(
-        prog="python -m kellermap_check",
+        prog=prog,
         description="Check a kellermap certificate file without kellermap.",
     )
     parser.add_argument("file", type=Path, help="the certificate file")

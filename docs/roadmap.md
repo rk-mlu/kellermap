@@ -291,6 +291,27 @@ on a file that begins with it anywhere in the tree.
 `kellermap latex FILE`. It adds an entry point to `pyproject.toml` and no
 behaviour that WP 3 to WP 5 do not already have.
 
+*Done in WP 6.* `kellermap.cli` holds `main`, the entry point installs it as
+`kellermap`, and `python -m kellermap` runs it too. CLI-1 to CLI-4 in
+`docs/contracts.md` state it, written first in the same package. Three things
+are worth stating.
+
+`verify` is the checker's own command line, called with the arguments after
+the command. The program hands them over before it parses anything, so that
+the checker parses its own arguments and a change there needs no change here.
+The checker's `main` gained a parameter for the name its usage message gives.
+That is the one change to `kellermap_check`, and its default keeps
+`python -m kellermap_check` as it was.
+
+`verify` runs the checker and not the library, as CHK-2 foresaw. A command
+that verified with the library would be a second answer to the same question,
+and the page says under "Deliberate non-obligations of the command line" why
+there is none.
+
+`latex` prints a refusal in the line `verify` prints for it, and writes no file
+for a refused one. The view is formed before anything is written, so a refusal
+cannot leave half a file behind.
+
 Why this order. WP 1 is a restructuring and WP 1.1 an extension, and they are
 two packages for the reason `AGENTS.md` gives. The obligations come before the
 exporter for the reason the contracts always come first. The exporter comes

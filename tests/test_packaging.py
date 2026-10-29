@@ -227,6 +227,21 @@ def test_the_wheel_carries_the_library_and_the_checker(
     assert not [name for name in names if name.startswith("tests/")]
 
 
+def test_the_wheel_installs_the_program(
+    archive: tarfile.TarFile, project: Path
+) -> None:
+    """CLI-4: the entry point of ``kellermap`` is in the metadata of the wheel."""
+    (wheel,) = sorted((project / "dist").glob("*.whl"))
+
+    with zipfile.ZipFile(wheel) as opened:
+        names = opened.namelist()
+        (entry_points,) = [name for name in names if name.endswith("/entry_points.txt")]
+        text = opened.read(entry_points).decode("utf-8")
+
+    assert "[console_scripts]\nkellermap = kellermap.cli:main" in text
+    assert "kellermap/__main__.py" in names
+
+
 def test_an_exclusion_list_lets_an_unforeseen_name_through(
     uv: str,
     tmp_path: Path,

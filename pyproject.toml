@@ -43,6 +43,10 @@ dependencies = [
     "sympy>=1.14",
 ]
 
+# The program of CLI-4. `python -m kellermap` runs the same function.
+[project.scripts]
+kellermap = "kellermap.cli:main"
+
 [dependency-groups]
 dev = [
     "pytest>=8",
