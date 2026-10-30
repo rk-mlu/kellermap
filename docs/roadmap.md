@@ -611,6 +611,24 @@ stay apart, because an example in `docs/api.md` has to run without a fixture.
 The coverage run is now taken in three parts and not in two. `AGENTS.md` says
 how it is cut.
 
+## Where the milestone stands
+
+All planned packages are done, and three were added on the way. WP 1 and WP
+1.1 made the conditional chain of Theorem 2.1(b) explicit. WP 1.2 gave every
+kind of statement one home. WP 2 stated the file format and the checker, WP
+2.1 answered the audit of those obligations, and WP 2.2 gave the constructor
+invariants their identifiers. WP 3 wrote the exporter, WP 4 the checker, WP 5
+the LaTeX view and WP 6 the program. WP 4.1 repaired the probe runner, and WP
+4.2 answered the first whole sweep that could report a miss. Each package has
+its record under "The packages" above, with the measurements it made.
+
+What a reviewer should read first: CHK-8, the controls of the checker, and
+the decision under CHK-4 that the checker affords every determinant on the
+eight chains. Then the entry of `docs/errata.md` on the probe runner, which
+says what earlier runs did and did not show.
+
+`0.9.0rc1` is tagged from here.
+
 ## What the old list had
 
 | item | where it went |

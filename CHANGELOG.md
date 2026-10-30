@@ -4,6 +4,49 @@ Notable changes per release. The milestone plan and its reasoning live in
 `docs/roadmap.md`, the binding obligations of the verification surface in
 `docs/contracts.md`.
 
+## 0.9.0rc1
+
+The milestone gives a certified chain and its witness a file, a checker that
+reads the file without the library, a LaTeX view of a file the checker
+verifies, and a program that runs both. It is the first release candidate, and
+it goes to an external audit.
+
+### Added
+
+- `Certificate`, with `dumps` and `loads`: a chain, the collisions of its maps
+  and a witness in one JSON file, FMT-1 to FMT-12. A step read from a file is
+  `SUPPLIED`.
+- `kellermap_check`, a package of its own in the same wheel, which imports
+  nothing of `kellermap`. `check(text)` returns a report or raises `Refusal`,
+  and `python -m kellermap_check FILE` exits with 0, 1, 2 or 3, CHK-1 to
+  CHK-8.
+- `to_latex(text)`, the LaTeX view of a file the checker verifies, TEX-1 to
+  TEX-6.
+- The program `kellermap`, with `verify` and `latex`, CLI-1 to CLI-4.
+- `InvariantError`, a `ValueError` that names the obligation a constructor
+  enforces, and the `location` of a `VerificationError`.
+
+### Changed
+
+Every constructor invariant a file can break raises `InvariantError` with its
+identifier. It is a subclass of `ValueError`, so a caller who caught one still
+does. `docs/contracts.md` lists the identifiers in its section on errors.
+
+### Corrected
+
+The probe runner reported every probe of its set as caught, whatever the
+tests did, because two of its own tests failed under every probe. It now
+leaves them out, starts every run with a control that has to be missed, and
+the first whole sweep with it found nine probes without a control. Each has a
+control now, or a statement in `docs/contracts.md` that its clause cannot fail
+on its own. `docs/errata.md` records what the earlier runs reported.
+
+### Evidence
+
+`docs/roadmap.md` under "Where the milestone stands" says what each package
+did and points to the measurements. The count of probes stands in
+`scripts/mutation_probe.py`.
+
 ## 0.8.0
 
 The milestone added the last link of the chain: a witness to Zhao's Vanishing

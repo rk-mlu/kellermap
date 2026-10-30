@@ -86,7 +86,7 @@ under "The LaTeX view", and are implemented since work package 5. TEX-1 is
 the one to read first: the view is made only from a file the checker verifies.
 
 CLI-1 to CLI-4 were stated in work package 6, before the command line they
-describe, under "The command line", and work package 6 implements them. They
+describe, under "The command line", and are implemented since work package 6. They
 add a way to call what work packages 3 to 5 built, and nothing else.
 
 **Milestone `0.8`, closed.** The milestone added `VanishingWitness`, VAN-1 to

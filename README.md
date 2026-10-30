@@ -43,7 +43,7 @@ machine-checkable certificate.
 
 ## Project Status
 
-Current version: **0.8.0**
+Current version: **0.9.0rc1**
 
 DOI: [10.5281/zenodo.23295965](https://doi.org/10.5281/zenodo.23295965). That
 is the DOI of the newest release, reserved on Zenodo before that release. A
@@ -106,42 +106,43 @@ record holds.
   makes is written in `docs/contracts.md` under a stable identifier, and the
   exception that fails cites it.
 
-### This milestone, 0.8
+### This milestone, 0.9
 
-The last link of the chain this project follows: Jacobian Conjecture, BCW
-reduction, gradient form, Zhao's Vanishing Conjecture.
+Certificates outside the running process. Until this milestone a certificate
+existed only as an object in memory, and only eight reconstruction scripts,
+written by hand, checked a chain without the library.
 
-**The witness.** `VanishingWitness` holds the gradient form of a symmetric lift
-together with a collision of its gradient map. By Theorem 3, part 4, of
-arXiv:2608.12543v3 that form is a counterexample to Zhao's Vanishing
-Conjecture. `verify()` checks the lift, the collision, the hypothesis
-`Delta^m(P^m) = 0` up to a depth, and `Delta(P^2) != 0`. On the forty-variable
-form of the paper, the library and a reconstruction script that does not use
-it reach the count of `Delta(P^2)` that the paper states, by two different
-methods. `docs/milestones.md` under "Version 0.8" has the figures.
+**The file.** `Certificate` writes a chain, the collisions of its maps and a
+witness to one JSON file, and reads it back. Every map is written once and
+every step as the parameters of its constructor, so a file holds what a reader
+needs and nothing that can be derived from it. A step read from a file is
+`SUPPLIED`, so verifying it is a check that can fail. FMT-1 to FMT-12 in
+`docs/contracts.md` state the format.
 
-The conclusion is derived and not computed. A non-zero value of
-`Delta^m(P^(m+1))` at any index above a known bound would decide it, and for
-the forms here that bound is far beyond any computation. VAN-5 says so.
+**The checker.** `kellermap_check` is a second package in the same wheel. It
+reads a file without importing `kellermap`, checks every obligation a file can
+break, and reports `VERIFIED`, `INCOMPLETE` or `REFUSED`, the last with the
+identifier of the obligation that failed. On the chains of the eight
+reconstruction scripts it agrees with what the scripts compute, and the
+scripts stay as its controls. CHK-1 to CHK-8.
 
-**The scripts.** A script whose data the source archive does not carry now
-says that it is not checked, instead of failing. Every measurement prints the
-machine, the date and the state of the tree. `make benchmark` records counts
-that do not depend on the machine, so that the cost of the pipeline can be
-compared between releases.
+**The view and the program.** `to_latex` shows a file the checker verifies as
+a LaTeX document. `kellermap verify FILE` runs the checker, and
+`kellermap latex FILE` writes the view. TEX-1 to TEX-6 and CLI-1 to CLI-4.
 
-### Next, 0.9
+**The probe runner.** `scripts/mutation_probe.py` could not report a missed
+probe, and when that began cannot be settled from this repository. It now
+starts every run with a control that has to be missed. `docs/errata.md` records
+what the earlier runs reported.
 
-Certificates outside the running process. Today a certificate exists only as
-an object in memory, and it is checked independently only by eight
-reconstruction scripts written by hand, one per chain. Milestone 0.9 gives a
-certified chain and its witness a file format, stated as obligations first,
-and an exporter. An independent checker that does not import the library
-checks such a file. The eight reconstructions stay as its controls. A LaTeX
-export is the first view of a certificate, and a small command line runs both.
+The repository holds no certificate file and no view. Two of the chains end in
+maps whose licence could not be established, and a file holds the values of
+its maps. `docs/contracts.md` says so under "Files and the licence rule".
 
-The research questions milestone 0.7 left open go to a milestone of their own.
-The plan is in `docs/roadmap.md`.
+### Next
+
+The research questions milestones 0.7 and 0.8 left open go to a milestone of
+their own. The plan is in `docs/roadmap.md`.
 `CHANGELOG.md` lists what each release changed, and the milestones before
 this one are there rather than here.
 
