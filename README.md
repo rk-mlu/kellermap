@@ -43,7 +43,7 @@ machine-checkable certificate.
 
 ## Project Status
 
-Current version: **0.9.0rc1**
+Current version: **0.9.0rc2**
 
 DOI: [10.5281/zenodo.23295965](https://doi.org/10.5281/zenodo.23295965). That
 is the DOI of the newest release, reserved on Zenodo before that release. A

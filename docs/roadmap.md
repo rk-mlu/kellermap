@@ -627,7 +627,30 @@ the decision under CHK-4 that the checker affords every determinant on the
 eight chains. Then the entry of `docs/errata.md` on the probe runner, which
 says what earlier runs did and did not show.
 
-`0.9.0rc1` is tagged from here.
+`0.9.0rc1` was tagged from here. Its audit found no defect in the
+mathematics, the architecture or the independence of the checker. It found one
+defect in the checker's reader, at two places. The reader looked up the base
+of a coefficient domain and the type of a step in a table before it tested
+that the value is a string, so a list or an object raised `TypeError` where
+CHK-3 asks for a refusal under FMT-1. The library's reader refused both. The
+audit recommended a small second candidate with the correction and its tests.
+
+`0.9.0rc2` carries the correction. To see whether the same cause stands
+anywhere else, every value of each small certificate file was replaced by
+each kind of JSON value, and both readers read every result. The file of
+Thompson's witness was searched the same way outside the coefficients of its
+maps and points, which the small files cover. The two places of the audit were
+the only ones where a reader raised anything but its refusal. Where the two
+readers refused one of the small files for different obligations, the file
+broke two obligations at once, which CHK-6 leaves to the order each reader
+states.
+
+That search is now a test, marked slow because it reads some thousands of
+files per certificate with both readers, on the order of two minutes. A table
+of the two places runs through both readers in the fast suite, and two probes
+put the defect back.
+
+`0.9.0rc2` is tagged from here.
 
 ## What the old list had
 

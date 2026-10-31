@@ -506,6 +506,8 @@ def test_a_step_type_the_format_does_not_know_is_not_written() -> None:
 
 SMALL_TEXT = small_chain().dumps()
 FOLD_TEXT = folded((1 / T, 0), (-1 / T, 0)).dumps()
+PARAMETRIC_TEXT = parametric().dumps()
+QUOTIENT_TEXT = SMALL["a map over ZZ(T)"]().dumps()
 SQUARE_TEXT = squared((sp.I / 2, 0), (-sp.I / 2, 0)).dumps()
 
 
@@ -731,6 +733,12 @@ def step(document: Any, index: int) -> Any:
 
 STEP_EDITS = [
     pytest.param(
+        lambda d: d["steps"].__setitem__(0, []),
+        "FMT-1",
+        "step 0",
+        id="a step that is not an object",
+    ),
+    pytest.param(
         lambda d: step(d, 0).update(type="Unknown"),
         "FMT-1",
         "step 0",
@@ -938,6 +946,68 @@ def test_a_collision_breaking_a_rule_is_refused(
     text: str, edit: Edit, obligation: str
 ) -> None:
     refused(edited(text, edit), obligation, "collision 0")
+
+
+# --------------------------------------------------------------------------
+# A value of the wrong type where a string is read: FMT-1
+#
+# The audit of 0.9.0rc1 found the checker's reader testing a value for
+# membership in a table before testing that it is a string, so a list or an
+# object raised TypeError there. Two places, the base of a domain and the type
+# of a step. The library's reader refused both under FMT-1. The table runs
+# through both readers: here, and in tests/test_checker.py.
+# --------------------------------------------------------------------------
+
+
+def _base(document: Any, value: Any) -> None:
+    document["maps"][0]["ring"]["domain"]["polynomial"] = value
+
+
+def _fraction_base(document: Any, value: Any) -> None:
+    document["maps"][0]["ring"]["domain"]["fraction"] = value
+
+
+def _collision_base(document: Any, value: Any) -> None:
+    document["collisions"][0]["domain"] = {
+        "polynomial": value,
+        "parameters": ["T"],
+        "order": "lex",
+    }
+
+
+def _step_type(document: Any, value: Any) -> None:
+    document["steps"][0]["type"] = value
+
+
+WRONG_TYPES = [
+    pytest.param([], id="an array"),
+    pytest.param({}, id="an object"),
+    pytest.param(0, id="a number"),
+    pytest.param(True, id="a boolean"),
+    pytest.param(None, id="null"),
+]
+
+TYPE_EDITS = [
+    pytest.param(
+        text, lambda d, change=change, value=value: change(d, value), location, id=id_
+    )
+    for text, change, location, kind in (
+        (PARAMETRIC_TEXT, _base, "map 0", "the base of a polynomial domain"),
+        (QUOTIENT_TEXT, _fraction_base, "map 0", "the base of a fraction domain"),
+        (FOLD_TEXT, _collision_base, "collision 0", "the base of a collision domain"),
+        (SMALL_TEXT, _step_type, "step 0", "the type of a step"),
+    )
+    for value, id_ in (
+        (param.values[0], f"{kind}, {param.id}") for param in WRONG_TYPES
+    )
+]
+
+
+@pytest.mark.parametrize(("text", "edit", "location"), TYPE_EDITS)
+def test_a_value_of_another_type_where_a_string_is_read_is_refused(
+    text: str, edit: Edit, location: str
+) -> None:
+    refused(edited(text, edit), "FMT-1", location)
 
 
 WITNESS_EDITS = [

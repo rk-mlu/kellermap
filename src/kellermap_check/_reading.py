@@ -162,6 +162,13 @@ class _Reader:
             self.refuse("FMT-1", f"a boolean was expected, not {value!r}")
         return value
 
+    def string(self, value: Any) -> str:
+        # Before any test of membership: a list or an object is not hashable,
+        # and a lookup with one raised TypeError until 0.9.0rc2.
+        if not isinstance(value, str):
+            self.refuse("FMT-1", f"a string was expected, not {value!r}")
+        return value
+
     def name(self, value: Any) -> str:
         if not isinstance(value, str):
             self.refuse("FMT-1", f"a name is a string, not {value!r}")
@@ -221,7 +228,7 @@ class _Reader:
             self.refuse("FMT-1", f"{value!r} is not a domain")
         kind = "polynomial" if "polynomial" in value else "fraction"
         entry = self.object(value, {kind, "parameters", "order"})
-        base = entry[kind]
+        base = self.string(entry[kind])
         if base not in BASES:
             self.refuse("FMT-5", f"{base!r} is not one of the bases {sorted(BASES)}")
         parameters = self.names(entry["parameters"])
@@ -378,9 +385,11 @@ def _linear_factor(reader: _Reader, value: Any, source: Map) -> tuple[Any, ...]:
 
 def _step(value: Any, source: Map, location: str) -> Step:
     reader = _Reader(location)
-    if not isinstance(value, dict) or value.get("type") not in FIELDS:
-        reader.refuse("FMT-1", "a step names one of the step types")
-    kind = value["type"]
+    if not isinstance(value, dict):
+        reader.refuse("FMT-1", f"a step is an object, not {value!r}")
+    kind = reader.string(value.get("type"))
+    if kind not in FIELDS:
+        reader.refuse("FMT-1", f"{kind!r} is not one of the step types")
     entry = reader.object(value, {"type", *FIELDS[kind]})
     fields: dict[str, Any] = {}
 

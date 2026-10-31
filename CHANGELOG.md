@@ -4,6 +4,28 @@ Notable changes per release. The milestone plan and its reasoning live in
 `docs/roadmap.md`, the binding obligations of the verification surface in
 `docs/contracts.md`.
 
+## 0.9.0rc2
+
+The second release candidate. It corrects the one defect the audit of
+`0.9.0rc1` found and changes nothing else.
+
+### Corrected
+
+The checker's reader looked up the base of a coefficient domain and the type
+of a step in a table before it tested that the value is a string. A file with
+a list or an object in one of those places stopped the checker with a
+`TypeError` instead of a refusal. It now refuses such a file under FMT-1, at
+the place the library names, as CHK-3 asks.
+
+### Evidence
+
+A table of such files, one per kind of JSON value at each of the two places,
+runs through both readers. A slow test puts each kind of JSON value at every
+place of the small certificate files and requires both readers to accept or to
+refuse, and nothing else. Two probes restore the defect, and both are caught.
+`docs/roadmap.md` under "Where the milestone stands" says what the search
+found besides.
+
 ## 0.9.0rc1
 
 The milestone gives a certified chain and its witness a file, a checker that

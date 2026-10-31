@@ -44,7 +44,7 @@ They ask today's question of today's code. Every one of them should report
 ``tests/test_scripts.py`` checks that every fragment still matches the code it
 aims at.
 
-The set holds 115 probes. That sentence is held against ``PROBES`` by
+The set holds 117 probes. That sentence is held against ``PROBES`` by
 ``tests/test_scripts.py``, which is the only reason to write a number here at
 all. Until ``0.7.0rc11`` this paragraph carried a running total instead, one
 audit's addition at a time, and an audit of ``0.7.0rc10`` found it one too
@@ -151,6 +151,11 @@ what the program passes on: the name in the usage of ``verify``, the
 ``--body`` of ``latex``, and three exit statuses that would report success
 for a refused file, an output that cannot be written, and a call without a
 command.
+
+``0.9.0rc2`` added two after the audit of ``0.9.0rc1``. The checker's reader
+looked up the base of a domain and the type of a step in a table before it
+tested that they are strings, so a list or an object raised ``TypeError``. Each
+probe puts one of the two lookups back in front of the test.
 
 They do **not** reproduce the ten misses of the first run, and until
 ``0.4.0rc14`` this file and ``CHANGELOG.md`` said they did. Two reasons. The
@@ -1120,6 +1125,20 @@ PROBES: tuple[Probe, ...] = (
         "src/kellermap/cli.py",
         "        return 2\n\n    return _latex(",
         "        return 0\n\n    return _latex(",
+    ),
+    Probe(
+        "CHK-3",
+        "the checker tests the base of a domain before its type",
+        "src/kellermap_check/_reading.py",
+        "        base = self.string(entry[kind])",
+        "        base = entry[kind]",
+    ),
+    Probe(
+        "CHK-3",
+        "the checker tests the type of a step before its kind",
+        "src/kellermap_check/_reading.py",
+        '    kind = reader.string(value.get("type"))',
+        '    kind = value.get("type")',
     ),
 )
 

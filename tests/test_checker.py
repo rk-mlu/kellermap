@@ -19,6 +19,7 @@ tested here, in the order of the contract:
 from __future__ import annotations
 
 import ast
+import json
 import subprocess
 import sys
 from collections.abc import Callable
@@ -31,6 +32,7 @@ import sympy as sp
 import kellermap_check
 from kellermap import (
     Certificate,
+    InvariantError,
     LinearStep,
     PolynomialMap,
     Reduction,
@@ -55,6 +57,7 @@ from .test_certificate import (
     SMALL_TEXT,
     STEP_EDITS,
     TEXTS,
+    TYPE_EDITS,
     WITNESS_EDITS,
     Edit,
     descent,
@@ -220,6 +223,79 @@ def test_a_collision_is_refused_as_the_library_refuses_it(
     text: str, edit: Edit, obligation: str
 ) -> None:
     refused(edited(text, edit), obligation, "collision 0")
+
+
+@pytest.mark.parametrize(("text", "edit", "location"), TYPE_EDITS)
+def test_a_value_of_another_type_is_refused_as_the_library_refuses_it(
+    text: str, edit: Edit, location: str
+) -> None:
+    """The finding of the audit of 0.9.0rc1: a refusal, not a TypeError."""
+    refused(edited(text, edit), "FMT-1", location)
+
+
+OTHER_TYPES: list[Any] = [[], {}, 0, True, None, "x"]
+"""What a file can hold in place of any value: each kind of JSON value once."""
+
+
+def places(node: Any, path: tuple[Any, ...] = ()) -> list[tuple[Any, ...]]:
+    """Return the path of every value in a parsed file, the file itself first."""
+    found = [path]
+    if isinstance(node, dict):
+        for key, value in node.items():
+            found += places(value, (*path, key))
+    elif isinstance(node, list):
+        for index, value in enumerate(node):
+            found += places(value, (*path, index))
+    return found
+
+
+def replaced(document: Any, path: tuple[Any, ...], value: Any) -> str:
+    """Return the text of ``document`` with the value at ``path`` replaced."""
+    changed = json.loads(json.dumps(document))
+    if not path:
+        changed = value
+    else:
+        node = changed
+        for step in path[:-1]:
+            node = node[step]
+        node[path[-1]] = value
+    return json.dumps(changed, sort_keys=True, separators=(",", ":")) + "\n"
+
+
+@pytest.mark.slow
+@pytest.mark.parametrize("label", list(SMALL))
+def test_no_value_of_another_type_makes_a_reader_fail_otherwise(label: str) -> None:
+    """Every place of a small file, every kind of JSON value in it.
+
+    Each reader either accepts the changed file or refuses it in its own
+    terms: the checker with ``Refusal``, the library with
+    ``VerificationError`` or ``InvariantError``. Anything else is the defect
+    the audit of 0.9.0rc1 found at two places, and this test looks for it at
+    every place. It does not ask the two readers to agree. A file that breaks
+    two obligations at once may be refused for either, CHK-6.
+
+    Marked slow: one change per place and per kind is some thousands of files
+    per certificate, and both readers read each of them.
+    """
+    document = json.loads(SMALL[label]().dumps())
+    failures = []
+    for path in places(document):
+        for value in OTHER_TYPES:
+            text = replaced(document, path, value)
+            try:
+                check(text)
+            except Refusal:
+                pass
+            except Exception as error:  # noqa: BLE001 - what the test looks for
+                failures.append(("checker", path, value, repr(error)))
+            try:
+                Certificate.loads(text).verify()
+            except (VerificationError, InvariantError):
+                pass
+            except Exception as error:  # noqa: BLE001 - what the test looks for
+                failures.append(("library", path, value, repr(error)))
+
+    assert not failures, failures[:5]
 
 
 @pytest.mark.parametrize(("edit", "obligation"), WITNESS_EDITS)
