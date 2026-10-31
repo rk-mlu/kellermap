@@ -916,7 +916,7 @@ def test_a_collision_alone_claims_only_itself() -> None:
 
 
 def test_the_complement_on_thompsons_maps_has_three_rows(witness_text: str) -> None:
-    """Why the checker affords CHC-4 and SYM-4, which ``docs/roadmap.md`` measured.
+    """Why the checker affords CHC-4 and SYM-4, which ``docs/milestones.md`` records.
 
     The determinant left to compute is that of a matrix of three rows, on the
     map of 24 variables and on the compressed map of 20.

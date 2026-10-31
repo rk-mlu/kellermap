@@ -97,6 +97,7 @@ one model per milestone, and both models changed with milestone 0.8.
 | --- | --- | --- |
 | up to 0.7 | Claude Opus 5 | ChatGPT 5.6 Sol |
 | 0.8 | Claude Opus 5.5 | ChatGPT 6.1 Sol |
+| 0.9 | Claude Opus 5.5 | ChatGPT 6.1 Sol |
 
 **What each did.** The writing model drafted source, tests, documentation and
 commit messages in a conversation with the maintainer, milestone by milestone
@@ -113,7 +114,8 @@ rather than in a count: each audit is named in the clause, the errata entry or
 the changelog entry that carries its finding. Every audit of milestones 0.7
 and 0.8 found something the suite, the coverage and the mutation probe had all
 passed, and in both milestones more than once the fault was in a repair made
-for the previous audit.
+for the previous audit. In milestone 0.9 the first audit found such a defect,
+in the reader of the checker, and the second found none.
 
 A number of audits stood here and was kept by adding to it. It went stale, as
 the count of mutation probes on this page did and the carrier figures of

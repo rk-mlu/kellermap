@@ -13,14 +13,15 @@ authors:
     country: DE
 license: MIT
 repository-code: "https://github.com/rk-mlu/kellermap"
-version: 0.9.0rc2
+version: 0.9.0
 # The DOI of the newest release, reserved on Zenodo before that release. A
 # release candidate is not deposited and has none of its own, so while the
 # candidates for a release run, this names the release before them: it named
-# 0.6.0 through the candidates for 0.7.0, and 0.7.0 through those for 0.8.0.
+# 0.6.0 through the candidates for 0.7.0, 0.7.0 through those for 0.8.0, and
+# 0.8.0 through those for 0.9.0.
 # The README says the same in prose, and a test holds the two against each
 # other.
-doi: 10.5281/zenodo.23295965
+doi: 10.5281/zenodo.23839738
 keywords:
   - Keller maps
   - Jacobian conjecture

@@ -40,7 +40,7 @@ thing, and avoiding it costs one click in the right order.
 This page said to write the DOI in afterwards, which would have meant a commit
 after the tag, an archive naming no record, and a repository whose newest
 commit is not the one that was deposited. The order below is the one used for
-`0.6.0`, `0.7.0` and `0.8.0`.
+`0.6.0`, `0.7.0`, `0.8.0` and `0.9.0`.
 
 That is the version DOI, and each version gets its own. The concept DOI is
 not reservable and is not per version: Zenodo assigned it when the first
@@ -87,7 +87,7 @@ below and `docs/provenance.md` for why.
 *Version:* the version of the archive, which is the number `pyproject.toml`
 carries.
 
-*DOI:* the reserved one, `10.5281/zenodo.23295965` for `0.8.0`. It is already
+*DOI:* the reserved one, `10.5281/zenodo.23839738` for `0.9.0`. It is already
 in `CITATION.cff` and `README.md`; the form only has to keep it.
 
 *Related identifiers:* the GitHub release tag, and the PyPI release of the same
@@ -107,7 +107,16 @@ its own obligations; verification names the obligation that failed rather than
 returning a boolean, and a collision is transported across each step and
 re-verified, so that a reduction of a counterexample is still a counterexample.
 
-Version 0.8 adds a witness to Zhao's Vanishing Conjecture. It holds the
+Version 0.9 gives a certified chain and its witness a file. A chain, the
+collisions of its maps and a witness are written to one JSON file and read
+back, every map once and every step as the parameters of its constructor. A
+second package in the same distribution, kellermap_check, reads such a file
+without importing the library, checks every obligation a file can break, and
+names the obligation that failed. On the chains of the eight reconstruction
+scripts it agrees with what the scripts compute. A LaTeX view shows a file the
+checker verifies, and a small program runs the checker and the view.
+
+Version 0.8 added a witness to Zhao's Vanishing Conjecture. It holds the
 gradient form of a symmetric lift together with a collision of its gradient
 map, which by Theorem 3, part 4, of arXiv:2608.12543v3 makes the form a
 counterexample to the conjecture. It checks the lift, the collision, the
@@ -126,7 +135,7 @@ third stages of the Bass-Connell-Wright Reduction Theorem, collision-hull
 compression, and the symmetric lift to the gradient form of a quartic over a
 field containing i. Applied in sequence to the smallest degree-three map this
 project holds, the chain runs 11, 22, 23, 19, 38 variables with every step
-verified and the collision arriving at the far end, and version 0.8 builds the
+verified and the collision arriving at the far end, and version 0.8 built the
 witness on the form at that end.
 
 The constructions are other people's. What this project contributes is the
@@ -139,11 +148,13 @@ of what this project claimed too widely and corrected is in `docs/errata.md`.
 Generative AI tools were used in two roles: one model wrote code, tests and
 documentation in conversation with the maintainer, and a different model
 audited the release candidates. `docs/provenance.md` names the tools and says
-what each did. Every audit of this milestone found something that the test
-suite, the coverage requirement and the mutation sweep had all passed, and
-twice it was in a repair made for the previous audit. None of them found a
-defect in the witness or in the arithmetic of the library. Neither model is an
-author. The maintainer set the tasks, ran the gates, read the deliveries and
+what each did. The first audit of this milestone found a defect in the reader
+of the checker that the test suite, the coverage requirement and the mutation
+sweep had all passed: a file with a list where a string belongs stopped the
+checker instead of being refused. The second audit found none. The same
+milestone found that the mutation sweep could not report a miss, and repaired
+it. Neither audit found a defect in the arithmetic of the library or of the
+checker. Neither model is an author. The maintainer set the tasks, ran the gates, read the deliveries and
 decided what entered the repository.
 
 ---
@@ -176,6 +187,7 @@ concept DOI stands in one place, so nothing can compare it with a second copy;
 what is checked is that it is not the version DOI, since a number pasted from a
 browser after the release is the one that can end up as a duplicate.
 
-For `0.8.0` the two are `10.5281/zenodo.23295965` for the version and
-`10.5281/zenodo.22299351` for the concept. For `0.6.0` they differed in a
+For `0.9.0` the two are `10.5281/zenodo.23839738` for the version and
+`10.5281/zenodo.22299351` for the concept. For `0.8.0` the version DOI was
+`10.5281/zenodo.23295965`. For `0.6.0` they differed in a
 single digit, which is where the check above comes from.

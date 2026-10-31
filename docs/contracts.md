@@ -39,8 +39,8 @@ WID-1 and WID-2 were stated that way and are implemented since `0.7.0rc11`.
 They carried no `[0.7]` marker in between: the test that holds the markers to
 the version read `0.7.0rc10` as released. That is settled since milestone 0.9.
 A candidate is now read as below its release, and an obligation added during
-the candidates carries the marker. `docs/roadmap.md` records the decision under
-"Version 0.9".
+the candidates carries the marker. `docs/milestones.md` records the decision
+under "Version 0.9".
 
 An audit of `0.7.0rc11` found two more, and three clauses are ahead of the
 implementation for them, by the same order and without markers for the same
@@ -56,17 +56,18 @@ number maintained in one place and checked in none does. What it says now holds
 whenever it is read, and the milestone paragraphs below carry the history.
 `docs/errata.md` records the stale one.
 
-**Milestone `0.9`, open.** Thirty-three obligations are marked. Three of
-them are implemented since work package 1.1: LIN-7, TRA-9 and UNI-13. With
-HOM-12 they make the conditional chain of Theorem 2.1(b) explicit for every
+**Milestone `0.9`, closed.** The milestone added thirty-three obligations,
+and their `[0.9]` markers are gone with the close. Three of them were
+implemented in work package 1.1: LIN-7, TRA-9 and UNI-13. With HOM-12 they make the conditional chain of Theorem 2.1(b) explicit for every
 step type that can lie between `reduce_to_multi_affine` and the
 homogenization. All three are self-checks: none can fail after the identity of
-its step. `docs/roadmap.md` gives the reason for stating them anyway.
+its step. `docs/milestones.md` under "Version 0.9" gives the reason for
+stating them anyway.
 
 The other twenty were stated in work package 2. FMT-1 to FMT-12 are the file a
-certificate is written to, under "The certificate file", and are implemented
-since work package 3. CHK-1 to CHK-8 are the checker that reads it without the
-library, under "The independent checker", and are implemented since work
+certificate is written to, under "The certificate file", and were implemented
+in work package 3. CHK-1 to CHK-8 are the checker that reads it without the
+library, under "The independent checker", and were implemented in work
 package 4. Two of them want a reviewer's attention. FMT-5 narrows the
 domains a file can hold, and the paragraph under it gives the measurement that
 forced the narrowing. CHK-8 is the only evidence that the checker checks
@@ -82,12 +83,17 @@ their identifiers and `VerificationError` a location, as the section on errors
 describes.
 
 TEX-1 to TEX-6 were stated in work package 5, before the view they describe,
-under "The LaTeX view", and are implemented since work package 5. TEX-1 is
+under "The LaTeX view", and were implemented in work package 5. TEX-1 is
 the one to read first: the view is made only from a file the checker verifies.
 
 CLI-1 to CLI-4 were stated in work package 6, before the command line they
-describe, under "The command line", and are implemented since work package 6. They
+describe, under "The command line", and were implemented in work package 6. They
 add a way to call what work packages 3 to 5 built, and nothing else.
+
+The audit of `0.9.0rc1` found the checker's reader raising `TypeError` at two
+places where CHK-3 asks for a refusal. `0.9.0rc2` corrected the code and
+changed no obligation. `docs/milestones.md` under "Version 0.9" has the
+record.
 
 **Milestone `0.8`, closed.** The milestone added `VanishingWitness`, VAN-1 to
 VAN-5, the witness to Zhao's Vanishing Conjecture that the symmetric lift
@@ -1059,7 +1065,7 @@ insert a translation of its own. Proposition (1.1) has three factors and a
 `Reduction` shows all three, rather than folding two of them into one step
 whose name mentions only one.
 
-**LIN-7 — A multi-affine source gives a multi-affine target. [0.9]** If no
+**LIN-7 — A multi-affine source gives a multi-affine target.** If no
 variable occurs squared in any monomial of `source - X`, then no variable occurs
 squared in any monomial of `target - X`.
 
@@ -1178,7 +1184,7 @@ the origin.
 reading: an integrity marker against mislabelling by accident, not a security
 boundary.
 
-**TRA-9 — A multi-affine source gives a multi-affine target. [0.9]** As LIN-7.
+**TRA-9 — A multi-affine source gives a multi-affine target.** As LIN-7.
 By TRA-1 the displacement of the target is that of the source minus a constant,
 and a constant is no square.
 
@@ -1412,7 +1418,7 @@ points, and the three points of Alpoege's collision stay three.
 the same reading: an integrity marker against mislabelling by accident, not a
 security boundary.
 
-**UNI-13 — A multi-affine source gives a multi-affine target. [0.9]** If no
+**UNI-13 — A multi-affine source gives a multi-affine target.** If no
 variable occurs squared in any monomial of `source - X`, then no variable occurs
 squared in any monomial of `target - X`.
 
@@ -1622,7 +1628,7 @@ normalization, which is a `TranslationStep` and a `LinearStep`, and the
 so. *Amended when milestone 0.9 opened.* Until then this paragraph said that
 both stages preserve the property by inspection and that neither is held to
 it, and it left open whether UNI wants an obligation of its own. The decision
-is in `docs/roadmap.md` under "Version 0.9".
+is in `docs/milestones.md` under "Version 0.9".
 
 ### Which of these can fail on supplied data
 
@@ -2584,10 +2590,10 @@ passes through, collisions of those maps and a witness. It holds nothing that
 can be derived from them. The library writes such a file and reads it back.
 The checker of the next section reads it without the library.
 
-Every obligation of this section and the next carries the marker of milestone
-0.9. Work package 2 stated them before anything was written. The obligations of
-this section are implemented since work package 3, and those of the next
-since work package 4. `docs/roadmap.md` under "Version 0.9" records the four
+Every obligation of this section and the next was added in milestone 0.9.
+Work package 2 stated them before anything was written. The obligations of
+this section were implemented in work package 3, and those of the next in
+work package 4. `docs/milestones.md` under "Version 0.9" records the four
 decisions they rest on: JSON with structured coefficients, every map of a chain
 written once, the checker as a package of its own in the wheel, and the
 coefficient domains that the chains of this project use.
@@ -2697,7 +2703,7 @@ Every polynomial of a step lies in the ring of the step's source. Every
 coefficient, every entry of a shift and every entry of a basis is an element
 of that ring's domain.
 
-**FMT-1 — One format, one version. [0.9]** A file is one JSON object with the
+**FMT-1 — One format, one version.** A file is one JSON object with the
 keys shown above and no others, and every object inside it has the keys shown
 for it and no others. `format` is `"kellermap-certificate"` and `version` is
 `1`. A reader refuses any other value and any key it does not know.
@@ -2715,7 +2721,7 @@ above was added. Python's `json` module keeps the last of two equal keys and
 accepts `NaN`. It reads `true` as `True`, which Python treats as an integer
 equal to `1`. The first wording excluded none of the three.
 
-**FMT-2 — Every map once, every step between two maps. [0.9]** `maps` has one
+**FMT-2 — Every map once, every step between two maps.** `maps` has one
 entry more than `steps`. Step `i` takes the map at position `i` to the map at
 position `i + 1`. A map that is the target of one step and the source of the
 next is written once.
@@ -2725,7 +2731,7 @@ the one exception that FMT-4 names. A file with no step holds exactly one map,
 and it is read back as a certificate whose chain is that map. RED-1 is not
 weakened: no empty `Reduction` is built.
 
-**FMT-3 — A step is written as the parameters of its constructor. [0.9]** The
+**FMT-3 — A step is written as the parameters of its constructor.** The
 fields of a step are the parameters of its public constructor, under the same
 names, without `source` and `target`. Those two are the positions of FMT-2. A
 parameter that has a default is written all the same, so that a file says what
@@ -2739,7 +2745,7 @@ stored beside the data it is derived from can disagree with that data. The
 constructors already take exactly the data that cannot be derived. So the rule
 needs no list of its own beyond the table above.
 
-**FMT-4 — A target that its step derives is compared and not taken. [0.9]**
+**FMT-4 — A target that its step derives is compared and not taken.**
 `DescentStep` takes no target, and DSC-1 derives it. Its target is still
 written at its position, because every map is. `loads` derives the target and
 compares it with the written map. A difference is refused and cites DSC-1.
@@ -2748,7 +2754,7 @@ This is the one place where the layout of FMT-2 does not give RED-2 by itself.
 It is also the one comparison that `loads` makes. FMT-10 says why it cannot be
 left to `verify()`: the object read back cannot hold both maps.
 
-**FMT-5 — The coefficient domains. [0.9]** The domain of a map is `ZZ`, `QQ`,
+**FMT-5 — The coefficient domains.** The domain of a map is `ZZ`, `QQ`,
 `ZZ_I` or `QQ_I`, or a polynomial ring or a field of fractions over one of
 these four, in named parameters and with a monomial order. The domain of a
 collision may also be a quadratic field `QQ(sqrt(d))`, for a square-free
@@ -2786,7 +2792,7 @@ with the original to thirty digits, and under none of them does
 over an algebraic field are possible in this library and occur in its tests,
 but in no chain. Widening the list is an amendment of this obligation.
 
-**FMT-6 — Exact numbers, one spelling each. [0.9]** Every coefficient is a
+**FMT-6 — Exact numbers, one spelling each.** Every coefficient is a
 JSON string, a `NUMBER`. An integer is written in decimal, with a minus sign
 when it is negative and without leading zeros, and zero is `0`. A rational that
 is not an integer is written `p/q`, with `q > 1` and `p` and `q` coprime.
@@ -2811,7 +2817,7 @@ exception is an element of a field of fractions. Its numerator and denominator
 are compared by value and are written as SymPy holds them, which FMT-12 makes
 deterministic.
 
-**FMT-7 — Names. [0.9]** A generator or a parameter is written by its name,
+**FMT-7 — Names.** A generator or a parameter is written by its name,
 and the name matches `[A-Za-z_][A-Za-z0-9_]*`. The generators of one ring and
 the parameters of its domain are pairwise distinct by name. The domain of a
 collision has no parameter that is named like a generator of its map, which is
@@ -2823,7 +2829,7 @@ assumptions included, so the map read back would not be equal to the map
 written.
 
 **FMT-8 — A collision is attached to a map, over a domain that contains the
-map's. [0.9]** `map` is a position of FMT-2. The domain of the collision
+map's.** `map` is a position of FMT-2. The domain of the collision
 contains the domain of its map, and "contains" means one of these:
 
 - the two are equal;
@@ -2856,7 +2862,7 @@ the last paragraph and the last item of the list were added. A collision of
 rational points over a map over `ZZ` lies in `QQ`, in `QQ_I` and in every
 quadratic field, and the first wording did not say which of them a file writes.
 
-**FMT-9 — The witness names its parts. [0.9]** `witness.step` is the index of
+**FMT-9 — The witness names its parts.** `witness.step` is the index of
 a `SymmetricLiftStep`. `witness.collision` is the index of a collision attached
 at position `step + 1`, which is the target of that step. `witness.depth` is
 the depth of VAN-3. The form is not written: VAN-1 derives it from the lift.
@@ -2866,7 +2872,7 @@ step of `chain`, `witness.collision` is attached to the target of that step,
 and every position of `collisions` lies in `maps`. The constructor raises
 `ValueError` otherwise.
 
-**FMT-10 — A file read back is supplied. [0.9]** Every step that `loads`
+**FMT-10 — A file read back is supplied.** Every step that `loads`
 builds is built through its public constructor and is `SUPPLIED`, whatever
 wrote the file and whatever the provenance of the step it was written from.
 The file has no field for provenance and none for the program that wrote it. A
@@ -2908,13 +2914,13 @@ No exception of a constructor said which invariant it enforces, so `loads`
 could not have cited one. Work package 2.2 gave each of them the identifier,
 as `InvariantError` in the section on errors.
 
-**FMT-11 — A certificate verifies its parts and computes nothing else. [0.9]**
+**FMT-11 — A certificate verifies its parts and computes nothing else.**
 `Certificate.verify()` verifies the chain by RED-3, each collision against the
 map at its position, and the witness. It computes nothing of its own, which is
 RED-3 again. A failure names the obligation of the part and where it failed:
 the index of the step by RED-4, the index of the collision, or the witness.
 
-**FMT-12 — Writing is deterministic, and reading inverts it. [0.9]** The text
+**FMT-12 — Writing is deterministic, and reading inverts it.** The text
 `dumps` writes depends only on what the certificate holds. It is JSON in ASCII,
 with no whitespace outside strings, with the keys of every object sorted by
 code point, and with one newline at the end. In Python that is
@@ -3019,7 +3025,7 @@ a `Report` holds.
 asks for since work package 2.1 and the first sketch did not hold. `skip` takes
 any iterable of identifiers, as the command line passes a list.
 
-**CHK-1 — Independent of the library. [0.9]** The checker is the package
+**CHK-1 — Independent of the library.** The checker is the package
 `kellermap_check`. It imports nothing from `kellermap`, directly or through
 another module, and nothing outside the standard library and SymPy. A test
 holds it to that, as `tests/test_scripts.py` holds the reconstruction scripts.
@@ -3034,7 +3040,7 @@ and not what it does.
 Independent means independent of the code of this library. SymPy is shared,
 and an error in SymPy could reach both. The page does not claim more.
 
-**CHK-2 — Shipped in the wheel. [0.9]** The package is in the wheel beside
+**CHK-2 — Shipped in the wheel.** The package is in the wheel beside
 `kellermap`, with the same lower bounds for Python and SymPy. `kellermap` may
 import it, and the command line of work package 6 may do so for `kellermap
 verify`. The checker never imports `kellermap`, so the dependency runs one way.
@@ -3047,7 +3053,7 @@ beside `kellermap`, with the same threshold of 100 per cent, so
 `src/kellermap` alone, and the first wording would have left the checker
 outside the threshold.
 
-**CHK-3 — It refuses what the format refuses. [0.9]** The checker reads a file
+**CHK-3 — It refuses what the format refuses.** The checker reads a file
 by the rules of FMT-1 to FMT-9 and refuses a file that breaks one of them,
 citing it. It calls no constructor of the library, because it has none. So
 every constructor invariant that a file can break is a check of the checker,
@@ -3056,7 +3062,7 @@ library enforces without an identifier of its own cites the obligation of the
 step it serves: LIN-2 for the factors of a linear transformation, whose
 inverse it makes exist, and DSC-4 for the factors of a descent.
 
-**CHK-4 — What it checks. [0.9]** For every object, the obligations that can
+**CHK-4 — What it checks.** For every object, the obligations that can
 fail on supplied data, and the constructor invariants a file can break.
 
 | object | checked |
@@ -3091,7 +3097,7 @@ have a cycle, it drops from each cyclic component the coordinate with the most
 edges inside it. What is left is `I` plus a nilpotent matrix, and the
 determinant of the complement is taken over the polynomial ring. Work package 4
 measured whether the checker can afford the four on the chains of this
-project. It can, on all eight, and `docs/roadmap.md` gives the measurement. A
+project. It can, on all eight, and `docs/milestones.md` gives the measurement. A
 determinant of the whole Jacobian, without the complement, could not be taken
 on Thompson's map in the time the measurement allowed.
 
@@ -3104,7 +3110,7 @@ full verdict on the eight chains. A determinant the checker cannot afford on
 one of them is therefore a failure of work package 4. It goes to the
 maintainer, and it is not resolved by an amendment that lets the gate pass.
 
-**CHK-5 — What it leaves to the library. [0.9]** The self-checks: BCW-5,
+**CHK-5 — What it leaves to the library.** The self-checks: BCW-5,
 BCW-7, LIN-3, the `MA^1` clause of LIN-6, LIN-7, TRA-3, TRA-4, the `MA^0`
 clause of TRA-6, TRA-9, UNI-6, UNI-9, UNI-10, UNI-13, HOM-5, HOM-6, HOM-7,
 HOM-8, HOM-11, HOM-12, CHC-6, SYM-6, DSC-5, VAN-3 apart from the range of its
@@ -3118,7 +3124,7 @@ TRA-7, UNI-11, HOM-9, CHC-9, SYM-8, SYM-9, SYM-10 and DSC-6 have nothing to act
 on. Nor are the properties of the types that a file does not carry, such as a
 filtration level or a provenance.
 
-**CHK-6 — Three verdicts, and a refusal names one obligation. [0.9]** A run of
+**CHK-6 — Three verdicts, and a refusal names one obligation.** A run of
 the checker ends in one of three verdicts.
 
 - `VERIFIED`: every check of CHK-3 and CHK-4 that applies to the file was made,
@@ -3149,7 +3155,7 @@ opens and is not JSON is refused under FMT-1 and exits with 1.
 wording had two outcomes, accepted and refused. A check that was left out could
 then be read as one that was made.
 
-**CHK-7 — A report says what its verdict rests on. [0.9]** The report lists,
+**CHK-7 — A report says what its verdict rests on.** The report lists,
 for every object, the identifiers the checker checked and those it left out at
 the caller's request. It states the claims of the file that the checker
 confirmed: that each step takes its map to the next, that each collision is a
@@ -3171,7 +3177,7 @@ paragraph was added. The audit pointed out that a file with one map passes
 every check and confirms nothing, and that a successful read must not be
 mistaken for a proof that a map is Keller.
 
-**CHK-8 — Its controls. [0.9]** Three kinds.
+**CHK-8 — Its controls.** Three kinds.
 
 On each of the eight chains of the reconstruction scripts, the checker returns
 `VERIFIED` for the file the library writes, and the maps and collisions that
@@ -3229,7 +3235,7 @@ holds.
 def to_latex(text: str, *, standalone: bool = True) -> str: ...
 ```
 
-**TEX-1 — Only from a file the checker verifies. [0.9]** `to_latex` checks the
+**TEX-1 — Only from a file the checker verifies.** `to_latex` checks the
 text with `kellermap_check.check` first and goes on only for the verdict
 `VERIFIED`. A file the checker refuses raises `VerificationError` with the
 identifier and the location of the refusal, and the refusal as its cause. No
@@ -3239,7 +3245,7 @@ The checker and not the library decides, because the view is a statement about
 a file. `kellermap` imports `kellermap_check` for it, which CHK-2 allows; the
 checker still imports nothing of the library.
 
-**TEX-2 — It shows what the file holds. [0.9]** Every map, with its generators,
+**TEX-2 — It shows what the file holds.** Every map, with its generators,
 its coefficient domain, its monomial order and its components. Every step,
 with its type, the two maps it joins and every parameter the file writes for
 it. Every collision, with its map, its domain, its points and its image. The
@@ -3252,21 +3258,21 @@ witness names, which the roadmap of milestone 0.9 asks for. It is derived from
 the lift by the library and labelled as derived. Nothing else is derived: not
 `G` or `H` of a step, not a transport, not a determinant.
 
-**TEX-3 — As the file writes it. [0.9]** The view is made from the text that
+**TEX-3 — As the file writes it.** The view is made from the text that
 `Certificate.loads(text).dumps()` returns. Terms stand in the order FMT-6
 writes them and points in the order FMT-12 writes them. Indices count from
 zero, as in the file. So two files that hold one certificate have one view,
 including a file whose points stand in another order or whose fractions are
 written with a common factor.
 
-**TEX-4 — Two forms, and no package. [0.9]** With `standalone=True` the view
+**TEX-4 — Two forms, and no package.** With `standalone=True` the view
 is a document from `\documentclass{article}` to `\end{document}`, and `pdflatex`
 compiles it without any package. With `standalone=False` it is the body of
 that document, to be read into another one with `\input`; it needs no package
 either. Both begin with one comment line that names them as a view of a
 certificate file.
 
-**TEX-5 — Two names are never shown alike. [0.9]** A name of one letter
+**TEX-5 — Two names are never shown alike.** A name of one letter
 followed by digits is shown as that letter with the digits as a subscript:
 `x12` is `x_{12}`. Every other name is shown as itself in `\mathit`, with its
 underscores escaped: `x_1` is `\mathit{x\_1}`. The imaginary unit is shown
@@ -3276,7 +3282,7 @@ SymPy's own rendering of a name is not used, because it is not injective. It
 shows `x1` and `x_1` both as `x_{1}`, and it gives no valid LaTeX for some
 names a file admits, such as `x__`.
 
-**TEX-6 — Plain ASCII, and text is escaped. [0.9]** The view is ASCII, so it
+**TEX-6 — Plain ASCII, and text is escaped.** The view is ASCII, so it
 compiles under any input encoding. Text that comes from the report is escaped,
 so a character that LaTeX reads as a command stands as itself.
 
@@ -3315,26 +3321,26 @@ kellermap verify FILE [--skip ID ...]
 kellermap latex FILE [--output OUT] [--body]
 ```
 
-**CLI-1 — `verify` is the checker. [0.9]** `kellermap verify` runs the command
+**CLI-1 — `verify` is the checker.** `kellermap verify` runs the command
 line of `kellermap_check`, with the same arguments, the same output and the
 same exit status as `python -m kellermap_check`, CHK-6. Only the name of the
 program in a usage message differs. The checker and not the library decides,
 for the reason it decides for the view: the command answers a question about
 a file.
 
-**CLI-2 — `latex` is the view. [0.9]** `kellermap latex` writes what
+**CLI-2 — `latex` is the view.** `kellermap latex` writes what
 `to_latex` returns for the text of the file: the document, or with `--body`
 the body, TEX-4. It writes to the standard output, or with `--output` to the
 file it names.
 
-**CLI-3 — Exit status, and nothing written on failure. [0.9]** `latex` exits
+**CLI-3 — Exit status, and nothing written on failure.** `latex` exits
 with 0 when the view was written. For a file the checker refuses it exits with
 1 and prints the identifier, the location and the message, as `verify` does.
 For a file that cannot be read, an output that cannot be written, or a wrong
 call it exits with 2. A refused file writes nothing: no view and no file of
 that name. The status of `verify` is the checker's.
 
-**CLI-4 — One program, two ways in. [0.9]** The wheel installs the program
+**CLI-4 — One program, two ways in.** The wheel installs the program
 `kellermap` through an entry point in `pyproject.toml`, and
 `python -m kellermap` is the same program. A command that is not one of the
 two, or no command, is a wrong call and exits with 2.

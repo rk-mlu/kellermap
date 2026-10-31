@@ -1,52 +1,37 @@
 # Changelog
 
-Notable changes per release. The milestone plan and its reasoning live in
-`docs/roadmap.md`, the binding obligations of the verification surface in
+Notable changes per release. The plan of a milestone and its reasoning live in
+`docs/roadmap.md` while the milestone is open and in `docs/milestones.md` after
+its release, the binding obligations of the verification surface in
 `docs/contracts.md`.
 
-## 0.9.0rc2
-
-The second release candidate. It corrects the one defect the audit of
-`0.9.0rc1` found and changes nothing else.
-
-### Corrected
-
-The checker's reader looked up the base of a coefficient domain and the type
-of a step in a table before it tested that the value is a string. A file with
-a list or an object in one of those places stopped the checker with a
-`TypeError` instead of a refusal. It now refuses such a file under FMT-1, at
-the place the library names, as CHK-3 asks.
-
-### Evidence
-
-A table of such files, one per kind of JSON value at each of the two places,
-runs through both readers. A slow test puts each kind of JSON value at every
-place of the small certificate files and requires both readers to accept or to
-refuse, and nothing else. Two probes restore the defect, and both are caught.
-`docs/roadmap.md` under "Where the milestone stands" says what the search
-found besides.
-
-## 0.9.0rc1
+## 0.9.0
 
 The milestone gives a certified chain and its witness a file, a checker that
 reads the file without the library, a LaTeX view of a file the checker
-verifies, and a program that runs both. It is the first release candidate, and
-it goes to an external audit.
+verifies, and a program that runs both. It also repairs the runner of the
+mutation probes, which could not report a miss. Two release candidates and two
+external audits.
 
 ### Added
 
 - `Certificate`, with `dumps` and `loads`: a chain, the collisions of its maps
-  and a witness in one JSON file, FMT-1 to FMT-12. A step read from a file is
-  `SUPPLIED`.
+  and a witness in one JSON file, FMT-1 to FMT-12. Every map is written once
+  and every step as the parameters of its constructor. A step read from a file
+  is `SUPPLIED`, so verifying it is a check that can fail.
 - `kellermap_check`, a package of its own in the same wheel, which imports
-  nothing of `kellermap`. `check(text)` returns a report or raises `Refusal`,
-  and `python -m kellermap_check FILE` exits with 0, 1, 2 or 3, CHK-1 to
-  CHK-8.
+  nothing of `kellermap`. `check(text)` returns a report or raises `Refusal`
+  naming the obligation that failed, and `python -m kellermap_check FILE`
+  exits with 0, 1, 2 or 3, CHK-1 to CHK-8. On the chains of the eight
+  reconstruction scripts it agrees with what the scripts compute.
 - `to_latex(text)`, the LaTeX view of a file the checker verifies, TEX-1 to
   TEX-6.
 - The program `kellermap`, with `verify` and `latex`, CLI-1 to CLI-4.
 - `InvariantError`, a `ValueError` that names the obligation a constructor
   enforces, and the `location` of a `VerificationError`.
+- LIN-7, TRA-9 and UNI-13, which make the conditional chain of Theorem 2.1(b)
+  explicit for every step type between `reduce_to_multi_affine` and the
+  homogenization.
 
 ### Changed
 
@@ -54,19 +39,29 @@ Every constructor invariant a file can break raises `InvariantError` with its
 identifier. It is a subclass of `ValueError`, so a caller who caught one still
 does. `docs/contracts.md` lists the identifiers in its section on errors.
 
+The plans of the released milestones moved from `docs/roadmap.md` to
+`docs/milestones.md`, and each kind of statement has one home, as `AGENTS.md`
+says under "Where a statement lives".
+
 ### Corrected
 
-The probe runner reported every probe of its set as caught, whatever the
-tests did, because two of its own tests failed under every probe. It now
-leaves them out, starts every run with a control that has to be missed, and
-the first whole sweep with it found nine probes without a control. Each has a
-control now, or a statement in `docs/contracts.md` that its clause cannot fail
-on its own. `docs/errata.md` records what the earlier runs reported.
+The runner of the mutation probes reported every probe of its set as caught,
+whatever the tests did, because two of its own tests failed under every probe.
+It now leaves them out and starts every run with a control that has to be
+missed. The first whole sweep with it found nine probes without a control.
+Each has a control now, or a statement in `docs/contracts.md` that its clause
+cannot fail on its own. `docs/errata.md` records what the earlier runs
+reported.
 
 ### Evidence
 
-`docs/roadmap.md` under "Where the milestone stands" says what each package
-did and points to the measurements. The count of probes stands in
+The audit of `0.9.0rc1` found the checker's reader raising `TypeError` on a
+list or an object at two places where it has to refuse the file. `0.9.0rc2`
+corrected it, and a search that put every kind of JSON value at every place
+of the small certificate files found no other such place. That search is a
+slow test now. The audit of `0.9.0rc2` found no defect and recommended the
+release. `docs/milestones.md` under "Version 0.9" has the record of both
+audits and the measurements of every package. The count of probes stands in
 `scripts/mutation_probe.py`.
 
 ## 0.8.0

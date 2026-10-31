@@ -43,13 +43,14 @@ machine-checkable certificate.
 
 ## Project Status
 
-Current version: **0.9.0rc2**
+Current version: **0.9.0**
 
-DOI: [10.5281/zenodo.23295965](https://doi.org/10.5281/zenodo.23295965). That
+DOI: [10.5281/zenodo.23839738](https://doi.org/10.5281/zenodo.23839738). That
 is the DOI of the newest release, reserved on Zenodo before that release. A
 release candidate is not deposited and has none of its own, so while the
 candidates for a release run, the DOI names the release before them: `0.6.0`
-through the candidates for `0.7.0`, and `0.7.0` through those for `0.8.0`.
+through the candidates for `0.7.0`, `0.7.0` through those for `0.8.0`, and
+`0.8.0` through those for `0.9.0`.
 `CITATION.cff` carries the same number and a test holds the two against each
 other. The sentence used to name the candidate it was written for and went
 stale at the next one, which is why it names none.
